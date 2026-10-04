@@ -3,19 +3,21 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="Hum a note. This page plays the pitch back as a tone you can send." />
-<meta name="theme-color" content="#f6f3ec" />
+<meta name="description" content="Hum a note. We'll catch the pitch and play it back as a tone — not your voice." />
+<meta name="theme-color" content="#0C1012" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'self'; img-src 'self'; media-src 'none'; connect-src 'none'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
 <title>Hold This Note — 10hi</title>
 <style>
   * { box-sizing: border-box; }
-  html { color-scheme: light; }
+  html { color-scheme: dark; }
   body {
     margin: 0;
     min-height: 100dvh;
-    background: #f6f3ec;
-    color: #1c1916;
-    font-family: system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(80% 40% at 50% 42%, rgba(170, 210, 204, 0.08), transparent 60%),
+      #0C1012;
+    color: #E4F1EF;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
     line-height: 1.45;
     padding: 20px 16px 48px;
   }
@@ -29,119 +31,176 @@
     height: 40px;
     border-radius: 10px;
     overflow: hidden;
+    opacity: 0.72;
   }
-  .home-logo img { width: 100%; height: 100%; display: block; }
+  .home-logo img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    filter: invert(1) brightness(1.35);
+  }
   main {
-    max-width: 34rem;
+    max-width: 28rem;
     margin: 72px auto 0;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100dvh - 120px);
   }
   h1 {
     font-size: 1.75rem;
-    font-weight: 650;
-    letter-spacing: -0.03em;
-    margin: 0 0 12px;
+    font-weight: 560;
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+    text-align: center;
   }
   #lede, .hint {
     margin: 0 0 16px;
-    color: #3f3a34;
-    font-size: 1.05rem;
+    color: #E4F1EF;
+    opacity: 0.72;
+    font-size: 1rem;
+    text-align: center;
   }
   #status {
     min-height: 1.45em;
-    margin: 0 0 16px;
-    font-size: 1.15rem;
+    margin: 0 0 12px;
+    font-size: 1.05rem;
+    text-align: center;
   }
   #status:empty { display: none; }
-  .mark {
-    display: inline-block;
-    margin: 0 0 16px;
-    padding: 10px 14px 10px 42px;
-    border: 2px solid #1c1916;
-    border-radius: 999px;
-    font-weight: 700;
-    position: relative;
-    background: transparent;
-  }
-  .mark::before {
-    content: "";
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    width: 16px;
-    height: 16px;
-    border: 2px solid #1c1916;
-    border-radius: 50%;
-    transform: translateY(-50%);
-  }
-  .mark.landed {
-    background: #efe2c6;
-    border-radius: 12px;
-  }
-  .mark.landed::before {
-    content: "✓";
-    border: 0;
-    width: auto;
-    height: auto;
-    font-size: 1rem;
-    line-height: 1;
-    background: transparent;
-  }
-  #meter {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 0 0 16px;
-  }
-  #meter[hidden], .mark[hidden] { display: none; }
-  #meter span { min-width: 8.5rem; font-weight: 650; }
-  #meter b {
+  .string {
     flex: 1;
-    height: 12px;
-    border: 2px solid #1c1916;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin: 8px 0 20px;
+  }
+  .string .ghost,
+  .string .live {
+    height: 3px;
+    width: 78%;
+    background: #7AA8A4;
+    border: 0;
     border-radius: 999px;
-    overflow: hidden;
-    background: transparent;
   }
-  #meter i {
+  .string .ghost { display: none; }
+  .string .segs { display: none; }
+  .string[data-state="idle"] .live {
+    width: 78%;
+    height: 2px;
+    background: #7AA8A4;
+    opacity: 0.35;
+  }
+  .string[data-state="capture"] .live { display: none; }
+  .string[data-state="capture"] .segs {
+    display: flex;
+    width: 86%;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+  }
+  .string[data-state="capture"] .segs i {
     display: block;
-    height: 100%;
+    height: 2px;
+    background: #7AA8A4;
+    border-radius: 999px;
+  }
+  .string[data-state="capture"] .segs i:nth-child(1) { width: 18%; opacity: 0.35; }
+  .string[data-state="capture"] .segs i:nth-child(2) { width: 22%; height: 3px; background: #D7EBE8; opacity: 1; }
+  .string[data-state="capture"] .segs i:nth-child(3) { width: 8%; opacity: 0.2; }
+  .string[data-state="capture"] .segs i:nth-child(4) { width: 16%; background: #9CC4BF; opacity: 0.7; }
+  .string[data-state="held"] .live {
+    width: 78%;
+    height: 3px;
+    background: #F4FFFD;
+    opacity: 1;
+    box-shadow: 0 0 18px rgba(215, 235, 232, 0.65);
+  }
+  .string[data-state="match"] .ghost {
+    display: block;
+    width: 78%;
+    height: 2px;
+    background: #7AA8A4;
+    opacity: 0.45;
+  }
+  .string[data-state="match"] .live {
+    width: 62%;
+    height: 3px;
+    background: #F4FFFD;
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(215, 235, 232, 0.45);
+  }
+  .string[data-state="landed"] .live {
+    width: 86%;
+    height: 4px;
+    background: #F4FFFD;
+    opacity: 1;
+    box-shadow: 0 0 28px rgba(215, 235, 232, 0.8);
+  }
+  .string[data-state="dim"] .live {
+    width: 78%;
+    height: 2px;
+    background: #7AA8A4;
+    opacity: 0.25;
+  }
+  .mark {
+    display: block;
+    margin: 0 0 12px;
+    text-align: center;
+    font-weight: 650;
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+  .mark[hidden] { display: none; }
+  #meter {
+    display: block;
+    margin: 0 0 12px;
+    text-align: center;
+    color: #7AA8A4;
+    font-weight: 650;
+  }
+  #meter[hidden] { display: none; }
+  #meter b { display: none; }
+  #actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     width: 100%;
-    background: #1c1916;
-    transform: scaleX(0);
-    transform-origin: left center;
   }
-  #actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-  button, input {
-    font: inherit;
-    color: #1c1916;
-  }
+  button, input { font: inherit; color: #E4F1EF; }
   button {
-    min-height: 44px;
-    padding: 10px 16px;
-    border-radius: 10px;
-    border: 2px solid #1c1916;
+    min-height: 48px;
+    padding: 12px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(215, 235, 232, 0.45);
     background: transparent;
     cursor: pointer;
+    font-weight: 600;
   }
-  button.primary { background: #1c1916; color: #f6f3ec; }
+  button.primary { background: #D7EBE8; color: #0C1012; border-color: transparent; }
   button:disabled { opacity: 0.45; cursor: not-allowed; }
   input {
     width: 100%;
     min-height: 44px;
-    padding: 8px 10px;
-    border: 2px solid #1c1916;
-    border-radius: 10px;
-    background: #fff;
+    padding: 8px 12px;
+    border: 1px solid rgba(215, 235, 232, 0.45);
+    border-radius: 12px;
+    background: #101418;
+    color: #E4F1EF;
   }
   a:focus-visible, button:focus-visible, input:focus-visible {
-    outline: 3px solid #1c1916;
+    outline: 3px solid #F4FFFD;
     outline-offset: 3px;
   }
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
   }
   @media (forced-colors: active) {
-    button, .mark, #meter b { border: 1px solid ButtonText; }
+    button, .string .live, .string .ghost { border: 1px solid ButtonText; }
+    .home-logo img { filter: none; }
   }
 </style>
 </head>
@@ -153,6 +212,11 @@
     <h1>Hold This Note</h1>
     <p id="lede"></p>
     <p id="status" role="status" aria-live="polite"></p>
+    <div id="string" class="string" data-state="idle" aria-hidden="true">
+      <div class="ghost"></div>
+      <div class="live"></div>
+      <div class="segs"><i></i><i></i><i></i><i></i></div>
+    </div>
     <p id="mark" class="mark" hidden aria-hidden="true"></p>
     <p id="meter" hidden aria-hidden="true">
       <span></span>
@@ -160,7 +224,7 @@
     </p>
     <div id="actions"></div>
     <noscript>
-      <p>Hold This Note needs JavaScript to listen and to play the tone. Nothing is recorded either way.</p>
+      <p>Hold This Note needs JavaScript to catch a pitch and play it as a tone. Your voice isn't recorded either way.</p>
     </noscript>
   </main>
   <script type="module" src="app.js"></script>

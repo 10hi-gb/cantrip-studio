@@ -159,37 +159,44 @@ try {
   const textBefore = await evaluate(client, plain.sessionId, "document.body.innerText");
   if (missing) throw new Error("headless Chrome has no mediaDevices; mic gate could not be observed");
   if (before !== 0) throw new Error("getUserMedia ran before a control was activated: " + before);
-  if (!textBefore.includes("Start listening")) throw new Error("start control missing");
-  await clickButton(client, plain.sessionId, "Start listening");
+  if (!textBefore.includes("Hold a note")) throw new Error("start control missing");
+  await clickButton(client, plain.sessionId, "Hold a note");
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  const explained = await evaluate(client, plain.sessionId, "window.__gumCalls");
+  const explainText = await evaluate(client, plain.sessionId, "document.body.innerText");
+  if (explained !== 0) throw new Error("mic explanation requested the microphone");
+  if (!explainText.includes("I'm ready")) throw new Error("mic explanation missing");
+  if (!explainText.includes("isn't recorded")) throw new Error("mic privacy line missing");
+  await clickButton(client, plain.sessionId, "I'm ready");
   await new Promise((resolve) => setTimeout(resolve, 400));
   const after = await evaluate(client, plain.sessionId, "window.__gumCalls");
   const denied = await evaluate(client, plain.sessionId, "document.getElementById('status').textContent");
   if (after !== 1) throw new Error("expected one getUserMedia call after the tap, got " + after);
-  if (!denied.includes("microphone stayed off")) throw new Error("unexpected status after denial: " + denied);
+  if (!denied.includes("The mic is off")) throw new Error("unexpected status after denial: " + denied);
 
   const linked = await openPage(client, "http://127.0.0.1:" + PORT + "/hold-this-note/#1.4400");
   const linkedCalls = await evaluate(client, linked.sessionId, "window.__gumCalls");
   const linkedText = await evaluate(client, linked.sessionId, "document.body.innerText");
   const matchDisabled = await evaluate(client, linked.sessionId, `(() => {
-    const button = [...document.querySelectorAll("button")].find((node) => node.textContent === "Start matching");
+    const button = [...document.querySelectorAll("button")].find((node) => node.textContent === "I'm ready");
     return button ? button.disabled : null;
   })()`);
   if (linkedCalls !== 0) throw new Error("recipient page requested the mic on load");
-  if (!linkedText.includes("Play the tone")) throw new Error("recipient play control missing");
-  if (!linkedText.includes("It isn't their voice")) throw new Error("recipient copy missing");
+  if (!linkedText.includes("Play the note")) throw new Error("recipient play control missing");
+  if (!linkedText.includes("Not their voice")) throw new Error("recipient copy missing");
   if (matchDisabled !== true) throw new Error("matching was available before playback");
-  await clickButton(client, linked.sessionId, "Play the tone");
+  await clickButton(client, linked.sessionId, "Play the note");
   await new Promise((resolve) => setTimeout(resolve, 300));
   const during = await evaluate(client, linked.sessionId, "window.__gumCalls");
   const duringMatch = await evaluate(client, linked.sessionId, `(() => {
-    const button = [...document.querySelectorAll("button")].find((node) => node.textContent === "Start matching");
+    const button = [...document.querySelectorAll("button")].find((node) => node.textContent === "I'm ready");
     return button ? button.disabled : "missing";
   })()`);
   if (during !== 0) throw new Error("playing the tone requested the mic");
   if (duringMatch === false) throw new Error("matching became available while the tone was still starting");
   const enabled = await waitFor(async () => {
     const state = await evaluate(client, linked.sessionId, `(() => {
-      const button = [...document.querySelectorAll("button")].find((node) => node.textContent === "Start matching");
+      const button = [...document.querySelectorAll("button")].find((node) => node.textContent === "I'm ready");
       return { disabled: button ? button.disabled : null, calls: window.__gumCalls, status: document.getElementById("status").textContent };
     })()`);
     if (!state || state.disabled !== false) throw new Error("still waiting " + JSON.stringify(state));

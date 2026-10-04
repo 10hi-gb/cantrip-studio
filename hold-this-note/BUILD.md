@@ -2,7 +2,9 @@
 
 Static first playable for review only. Path: `/hold-this-note/`.
 
-Copy and visuals in this folder are **interim**. Creative and Writer artifacts were not in this repo yet. Swap them later without changing the pitch link format unless the version token changes.
+Copy on this page is still the interim engineer wording. Writer's visitor table at `/workspace/hold-this-note-writer/writer/VISITOR-COPY.md` is marked a Workshop draft and is not on this page. The privacy sentences there were checked against review commit d0627e4 and are explicitly not shipped, including not on this review page.
+
+Visuals follow Creative direction A, Held String, from `/workspace/hold-this-note/creative/DIRECTIONS.md` (2026-10-04). Room `#0C1012`, listening string `#7AA8A4`, held string `#F4FFFD`. Glass Ring was not applied. Studio home link stays the existing logo. Reduced motion is the default: the string does not animate.
 
 This page does not record a voice. A visitor hums; the browser estimates one pitch; playback is a sine tone at that pitch. The shared link carries the pitch only.
 

@@ -10,41 +10,39 @@ const ledeEl = document.getElementById("lede");
 const statusEl = document.getElementById("status");
 const markEl = document.getElementById("mark");
 const meterEl = document.getElementById("meter");
+const stringEl = document.getElementById("string");
 const actionsEl = document.getElementById("actions");
 
 const COPY = {
-  soloLede: "Hum one steady note. This page catches the pitch and plays it back as a tone. Your voice stays on this device.",
-  listen: "Listening. Hum one note and hold it.",
-  hearing: "Hearing you. Hold it steady.",
-  holding: "Holding steady.",
-  quiet: "Still quiet. Hum a little closer, or cancel.",
-  noise: "That's hard to hear as one note. Try a steady hum.",
-  range: "That pitch is outside what this page can hold. Try a comfortable hum.",
-  locked: "Got it. This plays your pitch as a tone, not a recording.",
-  played: "That's the tone.",
-  timeout: "No steady note landed. Try again whenever you like.",
-  denied: "The microphone stayed off. If the browser didn't ask, allow the microphone for this site, then try again.",
-  noDevice: "No microphone is available. You can still play a tone from a link someone sends you.",
-  busyMic: "The microphone is busy in another app. You can try again when it's free.",
-  unsupported: "This browser can't listen for a hum. You can still open a link and play the tone.",
-  noAudio: "This browser can't play the tone.",
-  interrupted: "Listening stopped. Tap start when you want to try again.",
-  recipientLede: "Someone held a note for you. Tap to hear their pitch as a tone. It isn't their voice.",
-  playFirst: "Play the tone first. Then you can try humming onto it.",
-  listenOnly: "Listening is enough if you'd rather not hum.",
-  notYet: "Not yet. Hum toward the tone.",
-  staying: "Not yet. Hold it steady.",
+  soloLede: "Hum a note. We'll catch the pitch and play it back as a tone — not your voice.",
+  micBody: "We'll listen for a moment, on this phone. Your voice isn't recorded, and it isn't sent. The link just carries the pitch, so someone else can hear it as a tone.",
+  micAbout: "Listening happens on your device, and only after you start it. We don't save a recording of your voice, and we don't send one. The link carries the pitch so the other phone can play a tone. We don't promise the pitch is exact, or that the message gets there.",
+  listen: "Hum something comfortable.",
+  hearing: "Hum something comfortable.",
+  holding: "Hold it steady.",
+  uncertain: "Didn't catch a steady note.",
+  locked: "Got it.",
+  lockedSub: "That's your pitch, played as a tone.",
+  played: "That's the one.",
+  denied: "The mic is off, so we can't catch a pitch. You can allow it in the browser. If someone sent you a note, you can still play it.",
+  unavailable: "This browser can't use the microphone. If someone sent you a note, you can still play it.",
+  busyMic: "The microphone is in use somewhere else. You can try again when it's free.",
+  noAudio: "This browser can't play the note.",
+  interrupted: "Hum another, whenever you're ready.",
+  recipientLede: "A note for you. Their pitch, played as a tone. Not their voice.",
+  matching: "Hum along if you want. We'll say when you land on it.",
+  listenOnly: "You can just play the note. Matching takes hearing it and humming along.",
+  notYet: "Not yet. Keep going.",
   landed: "You landed.",
-  matchTimeout: "Still not yet. You can try again, replay the tone, or leave it.",
-  matchNeedsMic: "Matching needs a microphone, and this browser can't use one. You can still play the tone.",
-  badLink: "This link doesn't hold a note. You can hold one of your own.",
-  playing: "Playing the tone.",
-  shareDone: "The share sheet closed. This page can't tell whether the link was delivered.",
-  shareCancel: "Share canceled. The link was not sent.",
-  shareError: "Sharing didn't finish. You can copy the link instead.",
-  copied: "Link copied. It only carries the pitch. Anyone with this link can play the tone.",
+  landedSub: "Same note.",
+  makeBack: "They'll get a tone. Same idea.",
+  badLink: "That link doesn't hold a note.",
+  playing: "That's the one.",
+  shareDone: "That's as far as this page goes. Your note's still here if you need it.",
+  shareCancel: "Didn't send. Your note's still here.",
+  shareError: "Couldn't share from here.",
+  copied: "Link copied. Send it when you want.",
   copyFail: "Couldn't copy. The link is selected so you can copy it.",
-  linkNote: "The link is not secret. Anyone with it can play the tone.",
 };
 
 let route = { kind: "solo" };
@@ -85,6 +83,12 @@ function setLede(text) {
   ledeEl.textContent = text;
 }
 
+
+function setString(state) {
+  if (!stringEl) return;
+  stringEl.dataset.state = state || "idle";
+}
+
 function setMark(kind) {
   markEl.className = kind ? "mark " + kind : "mark";
   markEl.hidden = !kind;
@@ -122,6 +126,17 @@ function addNote(text) {
   p.className = "hint";
   p.textContent = text;
   actionsEl.appendChild(p);
+}
+
+function addAboutMic() {
+  const details = document.createElement("details");
+  const summary = document.createElement("summary");
+  summary.textContent = "About the mic";
+  const note = document.createElement("p");
+  note.className = "hint";
+  note.textContent = COPY.micAbout;
+  details.append(summary, note);
+  actionsEl.appendChild(details);
 }
 
 function addLinkField(url) {
@@ -217,6 +232,7 @@ function renderSolo() {
   lockedHz = null;
   heardTone = false;
   setLede(COPY.soloLede);
+  setString("idle");
   setMark("");
   setMeter("", 0);
   clearActions();
@@ -225,86 +241,112 @@ function renderSolo() {
     return;
   }
   if (!micSupported()) {
-    setStatus(COPY.unsupported);
+    setStatus(COPY.unavailable);
     return;
   }
   setStatus("");
-  addButton("Start listening", () => startListening("capture"), { primary: true });
+  addButton("Hold a note", () => {
+    renderMicAsk();
+    focusFirstAction();
+  }, { primary: true });
+}
+
+function renderMicAsk() {
+  mode = "mic";
+  setLede(COPY.soloLede);
+  setString("idle");
+  setStatus(COPY.micBody);
+  setMark("");
+  setMeter("", 0);
+  clearActions();
+  addButton("I'm ready", () => startListening("capture"), { primary: true });
+  addButton("Not now", () => {
+    renderSolo();
+    focusFirstAction();
+  });
+  addAboutMic();
 }
 
 function renderLocked() {
   mode = "locked";
   setLede(COPY.soloLede);
+  setString("held");
   setMark("");
   setMeter("", 0);
   setStatus(COPY.locked);
   clearActions();
-  addButton("Play the tone", () => playCurrent(), { primary: true });
+  addNote(COPY.lockedSub);
+  addButton("Hear it", () => playCurrent(), { primary: true });
   addButton("Try again", () => {
     haltAudio();
     renderSolo();
     focusFirstAction();
   });
   addButton("Copy link", () => copyLink());
-  if (navigator.share) addButton("Share link", () => shareLink());
-  addNote(COPY.linkNote);
+  if (navigator.share) addButton("Send it", () => shareLink());
 }
 
 function renderRecipient() {
   mode = "recipient";
   setLede(COPY.recipientLede);
+  setString("held");
   setMark("");
   setMeter("", 0);
   setStatus(heardTone ? COPY.played : "");
   clearActions();
   if (!audioSupported()) {
     setStatus(COPY.noAudio);
-    addButton("Hold one of your own", () => makeOwn(), { primary: true });
+    addButton("Hold one back", () => makeOwn(), { primary: true });
     return;
   }
-  addButton("Play the tone", () => playCurrent(), { primary: true });
-  if (!heardTone) addNote(COPY.playFirst);
+  addButton("Play the note", () => playCurrent(), { primary: true });
+  addNote(COPY.matching);
   addNote(COPY.listenOnly);
   if (!micSupported()) {
-    addNote(COPY.matchNeedsMic);
+    addNote(COPY.unavailable);
   } else {
-    addButton("Start matching", () => startListening("match"), { disabled: !heardTone || playbackActive });
+    addButton("I'm ready", () => startListening("match"), { disabled: !heardTone || playbackActive });
   }
-  addButton("Hold one of your own", () => makeOwn());
+  addButton("Hold one back", () => makeOwn());
 }
 
 function renderMatch() {
   mode = "match";
   setLede(COPY.recipientLede);
+  setString("match");
   setMark("notyet");
   setStatus(COPY.notYet);
   clearActions();
   addButton("Stop", () => stopToRecipient(COPY.interrupted), { primary: true });
-  addButton("Play the tone", () => replayFromMatch());
-  addButton("Hold one of your own", () => makeOwn());
+  addButton("Play the note", () => replayFromMatch());
+  addButton("Hold one back", () => makeOwn());
 }
 
 function renderLanded() {
   mode = "landed";
   setLede(COPY.recipientLede);
+  setString("landed");
   setMark("landed");
   setMeter("", 0);
   setStatus(COPY.landed);
   clearActions();
-  addButton("Play the tone", () => playCurrent(), { primary: true });
+  addNote(COPY.landedSub);
+  addButton("Play the note", () => playCurrent(), { primary: true });
   if (micSupported()) addButton("Match again", () => startListening("match"));
-  addButton("Hold one of your own", () => makeOwn());
+  addButton("Hold one back", () => makeOwn());
+  addNote(COPY.makeBack);
 }
 
 function renderBad() {
   mode = "bad";
   lockedHz = null;
   setLede(COPY.badLink);
+  setString("dim");
   setMark("");
   setMeter("", 0);
   setStatus("");
   clearActions();
-  addButton("Hold one of your own", () => makeOwn(), { primary: true });
+  addButton("Hold one yourself", () => makeOwn(), { primary: true });
 }
 
 function renderPlaying(returnMode) {
@@ -352,20 +394,21 @@ function makeOwn() {
 function micErrorCopy(err) {
   const name = err && err.name;
   if (name === "NotAllowedError" || name === "PermissionDeniedError") return COPY.denied;
-  if (name === "NotFoundError" || name === "DevicesNotFoundError") return COPY.noDevice;
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") return COPY.unavailable;
   if (name === "NotReadableError" || name === "TrackStartError") return COPY.busyMic;
-  if (name === "SecurityError") return COPY.unsupported;
+  if (name === "SecurityError") return COPY.unavailable;
   return COPY.denied;
 }
 
 function showMicError(err) {
   releaseMic();
+  setString("dim");
   setMark("");
   setMeter("", 0);
   setStatus(micErrorCopy(err));
   clearActions();
-  if (micSupported()) addButton("Try again", () => startListening(route.kind === "recipient" ? "match" : "capture"), { primary: true });
-  if (route.kind === "recipient") addButton("Play the tone", () => playCurrent());
+  if (micSupported()) addButton("Try the mic again", () => startListening(route.kind === "recipient" ? "match" : "capture"), { primary: true });
+  if (route.kind === "recipient") addButton("Play the note", () => playCurrent());
   addButton(route.kind === "recipient" ? "Back" : "Start over", () => {
     if (route.kind === "recipient") renderRecipient();
     else renderSolo();
@@ -377,7 +420,7 @@ function showMicError(err) {
 async function startListening(purpose) {
   if (starting || listening || playbackActive) return;
   if (!micSupported()) {
-    setStatus(purpose === "match" ? COPY.matchNeedsMic : COPY.unsupported);
+    setStatus(COPY.unavailable);
     return;
   }
   if (purpose === "match" && (!heardTone || route.kind !== "recipient")) return;
@@ -439,9 +482,10 @@ async function startListening(purpose) {
         pitchClass: false,
       });
       mode = "listen";
+      setString("capture");
       setMark("");
       setStatus(COPY.listen);
-      setMeter("Quiet", 0);
+      setMeter("Hum something comfortable.", 0);
       clearActions();
       addButton("Cancel", () => {
         releaseMic();
@@ -454,10 +498,11 @@ async function startListening(purpose) {
       track.onended = () => {
         if (stopRequested || !listening) return;
         releaseMic();
+        setString("dim");
         setStatus(COPY.interrupted);
         clearActions();
         addButton("Try again", () => startListening(purpose), { primary: true });
-        if (purpose === "match") addButton("Play the tone", () => playCurrent());
+        if (purpose === "match") addButton("Play the note", () => playCurrent());
         focusFirstAction();
       };
     });
@@ -494,8 +539,8 @@ function analyse(purpose) {
         try {
           lockedHz = decodeFragment(encodeFragment(hz));
         } catch (err) {
-          setStatus(COPY.range);
           renderSolo();
+          setStatus(COPY.uncertain);
           focusFirstAction();
           return;
         }
@@ -506,42 +551,43 @@ function analyse(purpose) {
     }
     if (purpose === "match") {
       setMark("notyet");
-      setStatus(held > 0 ? COPY.staying : COPY.notYet);
-      setMeter(held > 0 ? "Holding steady" : "Not yet", held / TUNING.matchDwellMs);
+      setStatus(COPY.notYet);
+      setMeter("Not yet", held / TUNING.matchDwellMs);
     } else {
       setStatus(held > 0 ? COPY.holding : COPY.hearing);
-      setMeter(held > 0 ? "Holding steady" : "Hearing you", held / TUNING.lockMs);
+      setMeter(held > 0 ? "Hold it steady." : "Hum something comfortable.", held / TUNING.lockMs);
     }
   } else {
     dwell.observe(NaN, now, lockedHz);
     if (found.reason === "range") {
-      setStatus(COPY.range);
-      setMeter("Outside range", 0);
+      setStatus(COPY.uncertain);
+      setMeter("Hold it steady.", 0);
     } else if (found.reason === "uncertain" && level === "sound") {
-      setStatus(COPY.noise);
-      setMeter("Not one note", 0);
+      setStatus(COPY.uncertain);
+      setMeter("Hold it steady.", 0);
     } else if (purpose === "match") {
       setMark("notyet");
       setStatus(COPY.notYet);
       setMeter("Not yet", 0);
     } else if (level === "quiet" && now - listenStartedAt > 2000) {
-      setStatus(COPY.quiet);
-      setMeter("Quiet", 0);
+      setStatus(COPY.listen);
+      setMeter("Hum something comfortable.", 0);
     } else {
       setStatus(COPY.listen);
-      setMeter("Quiet", 0);
+      setMeter("Hum something comfortable.", 0);
     }
   }
 
   if (now - listenStartedAt >= timeoutMs) {
     releaseMic();
+    setString("dim");
     setMark(purpose === "match" ? "notyet" : "");
-    setStatus(purpose === "match" ? COPY.matchTimeout : COPY.timeout);
+    setStatus(purpose === "match" ? COPY.notYet : COPY.uncertain);
     clearActions();
     addButton("Try again", () => startListening(purpose), { primary: true });
     if (purpose === "match") {
-      addButton("Play the tone", () => playCurrent());
-      addButton("Hold one of your own", () => makeOwn());
+      addButton("Play the note", () => playCurrent());
+      addButton("Hold one back", () => makeOwn());
     }
     focusFirstAction();
   }
