@@ -4,6 +4,7 @@ import {
   decodeFragment,
   createDwell,
   detectPitch,
+  captureListeningOutcome,
 } from "./pitch.js";
 
 const ledeEl = document.getElementById("lede");
@@ -64,6 +65,7 @@ let currentOsc = null;
 let currentGain = null;
 let ticker = null;
 let listenStartedAt = 0;
+let heardSoundAt = null;
 let level = "quiet";
 let dwell = null;
 
@@ -433,8 +435,9 @@ async function startListening(purpose) {
     try {
       nextStream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
+          // Processing gates a hum into confident-looking sound that never holds one pitch.
+          echoCancellation: false,
+          noiseSuppression: false,
           autoGainControl: false,
           channelCount: 1,
         },
@@ -465,6 +468,7 @@ async function startListening(purpose) {
     muteNode.connect(ctx.destination);
     timeBuf = new Float32Array(analyser.fftSize);
     listenStartedAt = performance.now();
+    heardSoundAt = null;
     level = "quiet";
     if (purpose === "match") {
       dwell = createDwell({
@@ -472,6 +476,8 @@ async function startListening(purpose) {
         toleranceCents: TUNING.matchCents,
         minFrames: TUNING.minMatchFrames,
         pitchClass: true,
+        gapMs: TUNING.gapMs,
+        minVoicedRatio: TUNING.minVoicedRatio,
       });
       renderMatch();
     } else {
@@ -480,6 +486,8 @@ async function startListening(purpose) {
         toleranceCents: TUNING.stableCents,
         minFrames: TUNING.minLockFrames,
         pitchClass: false,
+        gapMs: TUNING.gapMs,
+        minVoicedRatio: TUNING.minVoicedRatio,
       });
       mode = "listen";
       setString("capture");
@@ -523,8 +531,10 @@ function analyse(purpose) {
   timeBuf.fill(0);
   const timeoutMs = purpose === "match" ? TUNING.matchTimeoutMs : TUNING.listenTimeoutMs;
 
-  if (found.rms >= TUNING.soundRms) level = "sound";
-  else if (found.rms < TUNING.silenceRms) level = "quiet";
+  if (found.rms >= TUNING.soundRms) {
+    level = "sound";
+    if (heardSoundAt == null) heardSoundAt = now;
+  } else if (found.rms < TUNING.silenceRms) level = "quiet";
 
   if (found.reason === "pitch") {
     const held = dwell.observe(found.hz, now, lockedHz);
@@ -578,19 +588,29 @@ function analyse(purpose) {
     }
   }
 
-  if (now - listenStartedAt >= timeoutMs) {
-    releaseMic();
-    setString("dim");
-    setMark(purpose === "match" ? "notyet" : "");
-    setStatus(purpose === "match" ? COPY.notYet : COPY.uncertain);
-    clearActions();
-    addButton("Try again", () => startListening(purpose), { primary: true });
-    if (purpose === "match") {
-      addButton("Play the note", () => playCurrent());
-      addButton("Hold one back", () => makeOwn());
-    }
-    focusFirstAction();
+  const outcome = purpose === "capture"
+    ? captureListeningOutcome({
+      now,
+      startedAt: listenStartedAt,
+      heardSoundAt,
+      latched: false,
+    })
+    : (now - listenStartedAt >= timeoutMs ? "uncertain" : "listen");
+  if (outcome === "uncertain") finishUncertain(purpose);
+}
+
+function finishUncertain(purpose) {
+  releaseMic();
+  setString("dim");
+  setMark(purpose === "match" ? "notyet" : "");
+  setStatus(purpose === "match" ? COPY.notYet : COPY.uncertain);
+  clearActions();
+  addButton("Try again", () => startListening(purpose), { primary: true });
+  if (purpose === "match") {
+    addButton("Play the note", () => playCurrent());
+    addButton("Hold one back", () => makeOwn());
   }
+  focusFirstAction();
 }
 
 function restoreAfterPlay(returnMode) {

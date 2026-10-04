@@ -43,10 +43,12 @@ These live in `TUNING` in `pitch.js`. They are implementation choices, not found
 | Choice | Value |
 | --- | --- |
 | Pitch range | 80–1000 Hz |
-| Lock | about 1.5 s of continuous confident pitch, within 35 cents of the anchor, at least 2 frames |
+| Lock | about 1.5 s of confident pitch, each frame within 60 cents of the window's median, pitch frames at least 60% of that window, at least 2 frames. A dropout shorter than 0.35 s does not wipe it. One far frame does not. |
 | Confidence | YIN cumulative-mean dip at or below 0.15, and confidence at least 0.85 |
 | Silence / sound RMS | below 0.008 quiet, at or above 0.015 treated as sound |
-| Capture timeout | 20 s |
+| Heard but not locked | after 6 s of sound without a lock, leave listening and offer Try again |
+| Quiet capture timeout | 20 s, then the same uncertain screen |
+| Capture mic processing | echo cancellation off, noise suppression off, auto gain off |
 | Match | pitch class across octaves, within 50 cents, held about 0.7 s, at least 2 frames |
 | Match timeout | 45 s |
 | Tone | sine, peak gain 0.08, attack 0.05 s, hold 0.7 s, release 0.2 s, then 0.25 s of silence before matching can listen |
@@ -91,7 +93,7 @@ node hold-this-note/pitch.test.mjs
 node hold-this-note/check-mic-gate.mjs
 ```
 
-`check-mic-gate.mjs` uses system `google-chrome` headless. It stubs `getUserMedia` before load. The no-hash page must not call it until **Start listening** is clicked. `#1.4400` must not call it on load, and **Start matching** stays disabled until a tone has been played.
+`check-mic-gate.mjs` uses system `google-chrome` headless. It stubs `getUserMedia` before load. The no-hash page must not call it until **I'm ready** is clicked. `#1.4400` must not call it on load, and matching stays disabled until a tone has been played. `pitch.test.mjs` uses synthetic buffers only. It is not a phone pass.
 
 ## License
 
@@ -99,8 +101,8 @@ Original page code. No runtime dependency and no copied pitch-detection library.
 
 ## Known limits
 
-- Real-phone pitch accuracy is not proven. Desktop synthetic sines and a headless microphone-gate check are not a phone trial.
-- The detector can miss or refuse a note when the hum is breathy, unsteady, or covered by noise. That refusal is intentional; it can also make a real hum harder to lock until these tunables change.
+- Real-phone pitch accuracy is not proven. The pitch tests use synthetic buffers only. A headless microphone-gate check is not a phone trial. Joshua's review hum reached the listening screen and did not lock; that is not a captured pitch.
+- A hum that wobbles past the median window, or never forms a confident pitch, still does not lock. After sound has been heard for the voiced timeout, listening ends on "Didn't catch a steady note." with Try again, instead of staying on Cancel.
 - Octave mistakes are still possible on some voices. Matching compares pitch class so a true octave can still land; a wrong octave in the shared number would play the wrong register.
 - The analysis window is 2048 samples. At sample rates well above 48 kHz the lowest notes may be refused instead of guessed.
 - Speaker echo is blocked by ending playback (oscillator stopped, gain at zero) before matching can listen. It is not proven against every device's echo path.

@@ -1,3 +1,4 @@
+// Synthetic buffers only. Not a microphone recording and not a phone pass.
 import assert from "node:assert/strict";
 import {
   TUNING,
@@ -7,6 +8,7 @@ import {
   detectPitch,
   pitchClassDistanceCents,
   createDwell,
+  captureListeningOutcome,
 } from "./pitch.js";
 
 const example = encodeFragment(440);
@@ -128,5 +130,115 @@ assert.equal(lock.latched(1500), true);
 lock.observe(500, 1600);
 assert.equal(lock.latched(1600), false);
 
+function syntheticHum(baseHz, depthCents, noiseAmp, frames) {
+  const sr = 48000;
+  const hop = 2400;
+  const total = TUNING.fftSize + frames * hop;
+  const samples = new Float32Array(total);
+  let phase = 0;
+  let seed = 99;
+  for (let i = 0; i < total; i++) {
+    const t = i / sr;
+    const hz = baseHz * Math.pow(2, (depthCents * Math.sin(2 * Math.PI * 5 * t)) / 1200);
+    phase += (2 * Math.PI * hz) / sr;
+    seed = (1664525 * seed + 1013904223) >>> 0;
+    const noise = ((seed / 4294967296) * 2 - 1) * noiseAmp;
+    samples[i] = 0.15 * Math.sin(phase) + 0.08 * Math.sin(2 * phase) + 0.03 * Math.sin(3 * phase) + noise;
+  }
+  return { samples, sr, hop };
+}
+
+function runDwell(signal, frames) {
+  const dwell = createDwell({
+    dwellMs: TUNING.lockMs,
+    toleranceCents: TUNING.stableCents,
+    minFrames: TUNING.minLockFrames,
+    pitchClass: false,
+    gapMs: TUNING.gapMs,
+    minVoicedRatio: TUNING.minVoicedRatio,
+  });
+  let latchedAt = null;
+  let pitchFrames = 0;
+  for (let i = 0; i < frames; i++) {
+    const start = i * signal.hop;
+    const buf = signal.samples.subarray(start, start + TUNING.fftSize);
+    const found = detectPitch(buf, signal.sr);
+    const now = i * TUNING.analysisEveryMs;
+    if (found.reason === "pitch") {
+      pitchFrames += 1;
+      dwell.observe(found.hz, now);
+    } else {
+      dwell.observe(Number.NaN, now);
+    }
+    if (latchedAt == null && dwell.latched(now)) latchedAt = now;
+  }
+  return { latchedAt, pitchFrames, median: dwell.medianHz() };
+}
+
+const wobble = runDwell(syntheticHum(196, 40, 0.02, 40), 40);
+assert.ok(wobble.pitchFrames > 30, "synthetic wobble was not heard as pitch");
+assert.equal(wobble.latchedAt, 1500);
+assert.ok(Math.abs(1200 * Math.log2(wobble.median / 196)) < TUNING.stableCents);
+
+const steady = runDwell(syntheticHum(220, 0, 0, 40), 40);
+assert.equal(steady.latchedAt, 1500);
+
+const noiseOnly = new Float32Array(TUNING.fftSize + 40 * 2400);
+let noiseSeed = 5;
+for (let i = 0; i < noiseOnly.length; i++) {
+  noiseSeed = (1664525 * noiseSeed + 1013904223) >>> 0;
+  noiseOnly[i] = ((noiseSeed / 4294967296) * 2 - 1) * 0.2;
+}
+const noiseRun = runDwell({ samples: noiseOnly, sr: 48000, hop: 2400 }, 40);
+assert.equal(noiseRun.pitchFrames, 0);
+assert.equal(noiseRun.latchedAt, null);
+
+const rising = createDwell({
+  dwellMs: TUNING.lockMs,
+  toleranceCents: TUNING.stableCents,
+  minFrames: TUNING.minLockFrames,
+  pitchClass: false,
+  gapMs: TUNING.gapMs,
+  minVoicedRatio: TUNING.minVoicedRatio,
+});
+for (let i = 0; i < 40; i++) {
+  const hz = 180 * Math.pow(2, (i * 8) / 1200);
+  rising.observe(hz, i * 50);
+  if (i < 30) assert.equal(rising.latched(i * 50), false);
+}
+assert.equal(rising.latched(39 * 50), false);
+
+assert.equal(captureListeningOutcome({
+  now: 1500,
+  startedAt: 0,
+  heardSoundAt: 0,
+  latched: true,
+}), "lock");
+assert.equal(captureListeningOutcome({
+  now: TUNING.voicedUncertainMs - 1,
+  startedAt: 0,
+  heardSoundAt: 0,
+  latched: false,
+}), "listen");
+assert.equal(captureListeningOutcome({
+  now: TUNING.voicedUncertainMs,
+  startedAt: 0,
+  heardSoundAt: 0,
+  latched: false,
+}), "uncertain");
+assert.equal(captureListeningOutcome({
+  now: 5000,
+  startedAt: 0,
+  heardSoundAt: null,
+  latched: false,
+}), "listen");
+assert.equal(captureListeningOutcome({
+  now: TUNING.listenTimeoutMs,
+  startedAt: 0,
+  heardSoundAt: null,
+  latched: false,
+}), "uncertain");
+
 console.log("pitch tests passed");
+console.log("synthetic buffers only — not a phone or microphone pass");
 console.log("example " + example + " bytes " + Buffer.byteLength(example, "utf8"));

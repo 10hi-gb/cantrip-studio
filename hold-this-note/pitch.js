@@ -6,9 +6,16 @@ export const TUNING = {
   minConfidence: 0.85,
   silenceRms: 0.008,
   soundRms: 0.015,
-  stableCents: 35,
+  // Cents from the median of the current lock window, not from the first frame.
+  stableCents: 60,
   lockMs: 1500,
   minLockFrames: 2,
+  // Short dropouts inside an otherwise steady hum do not wipe the window.
+  gapMs: 350,
+  // Pitch frames must be the majority of the window. One leap does not replace it.
+  minVoicedRatio: 0.6,
+  // Heard sound that never locks leaves the listening screen before the long timeout.
+  voicedUncertainMs: 6000,
   listenTimeoutMs: 20000,
   matchCents: 50,
   matchDwellMs: 700,
@@ -72,61 +79,94 @@ export function pitchClassDistanceCents(aHz, bHz) {
   return Math.min(wrapped, 1200 - wrapped);
 }
 
-export function createDwell({ dwellMs, toleranceCents, minFrames, pitchClass }) {
-  let since = null;
-  let anchor = 0;
-  let count = 0;
-  let pitches = [];
+export function createDwell({ dwellMs, toleranceCents, minFrames, pitchClass, gapMs = 350, minVoicedRatio = 0.6 }) {
+  let samples = [];
+  let misses = [];
 
   function reset() {
-    since = null;
-    anchor = 0;
-    count = 0;
-    pitches = [];
+    samples = [];
+    misses = [];
+  }
+
+  function medianOf(values) {
+    if (!values.length) return null;
+    const sorted = values.slice().sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    if (sorted.length % 2) return sorted[mid];
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+
+  function prune(now) {
+    const start = now - dwellMs;
+    samples = samples.filter((sample) => sample.now >= start);
+    misses = misses.filter((t) => t >= start);
+  }
+
+  function heldMs(now) {
+    if (!samples.length) return 0;
+    return Math.max(0, now - samples[0].now);
+  }
+
+  function centerHz(targetHz) {
+    return pitchClass ? targetHz : medianOf(samples.map((sample) => sample.hz));
+  }
+
+  function distance(hz, targetHz) {
+    const center = centerHz(targetHz);
+    if (center == null) return 0;
+    return pitchClass ? pitchClassDistanceCents(hz, targetHz) : Math.abs(centsBetween(hz, center));
   }
 
   return {
     reset,
-    heldMs(now) {
-      return since == null ? 0 : Math.max(0, now - since);
-    },
-    latched(now) {
-      return count >= minFrames && since != null && now - since >= dwellMs;
-    },
+    heldMs,
     medianHz() {
-      if (!pitches.length) return null;
-      const sorted = pitches.slice().sort((a, b) => a - b);
-      const mid = Math.floor(sorted.length / 2);
-      if (sorted.length % 2) return sorted[mid];
-      return (sorted[mid - 1] + sorted[mid]) / 2;
+      return medianOf(samples.map((sample) => sample.hz));
+    },
+    latched(now, targetHz) {
+      if (samples.length < minFrames || heldMs(now) < dwellMs) return false;
+      const total = samples.length + misses.length;
+      if (samples.length / total < minVoicedRatio) return false;
+      return samples.every((sample) => {
+        const dist = distance(sample.hz, targetHz);
+        return Number.isFinite(dist) && dist <= toleranceCents;
+      });
     },
     observe(hz, now, targetHz) {
       if (typeof hz !== "number" || !Number.isFinite(hz) || hz <= 0) {
-        reset();
-        return 0;
+        if (!samples.length || now - samples[samples.length - 1].now > gapMs) {
+          reset();
+          return 0;
+        }
+        misses.push(now);
+        prune(now);
+        return heldMs(now);
       }
-      const ref = pitchClass ? targetHz : anchor;
-      const dist = ref ? (pitchClass ? pitchClassDistanceCents(hz, targetHz) : Math.abs(centsBetween(hz, anchor))) : 0;
+      const dist = distance(hz, targetHz);
       if (!Number.isFinite(dist) || dist > toleranceCents) {
-        anchor = pitchClass ? 0 : hz;
-        since = pitchClass ? null : now;
-        count = pitchClass ? 0 : 1;
-        pitches = pitchClass ? [] : [hz];
-        return 0;
+        if (pitchClass || !samples.length || now - samples[samples.length - 1].now > gapMs) {
+          samples = pitchClass ? [] : [{ hz, now }];
+          misses = [];
+          return 0;
+        }
+        misses.push(now);
+        prune(now);
+        return heldMs(now);
       }
-      if (since == null) {
-        anchor = hz;
-        since = now;
-        count = 1;
-        pitches = [hz];
-        return 0;
-      }
-      count += 1;
-      pitches.push(hz);
-      if (pitches.length > 64) pitches.shift();
-      return now - since;
+      samples.push({ hz, now });
+      prune(now);
+      return heldMs(now);
     },
   };
+}
+
+// Listening either locks, or it ends in an explicit uncertain state. It does not
+// stay on the capture controls just because sound was heard.
+export function captureListeningOutcome({ now, startedAt, heardSoundAt, latched, tuning = TUNING }) {
+  if (latched) return "lock";
+  if (typeof heardSoundAt === "number" && now - heardSoundAt >= tuning.voicedUncertainMs) return "uncertain";
+  if (now - startedAt >= tuning.listenTimeoutMs) return "uncertain";
+  return "listen";
 }
 
 function rmsOf(samples) {
