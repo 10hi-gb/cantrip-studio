@@ -219,6 +219,8 @@ try {
     noHashGetUserMediaAfterTap: after,
     fragmentGetUserMediaOnLoad: linkedCalls,
     matchDisabledBeforePlayback: matchDisabled,
+    matchEnabledAfterPlayback: enabled.disabled === false,
+    micCallsAfterPlayback: enabled.calls,
     hostileFragmentExecuted: xss,
   }, null, 2));
   ws.close();

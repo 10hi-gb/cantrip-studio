@@ -30,7 +30,7 @@ const COPY = {
   noAudio: "This browser can't play the tone.",
   interrupted: "Listening stopped. Tap start when you want to try again.",
   recipientLede: "Someone held a note for you. Tap to hear their pitch as a tone. It isn't their voice.",
-  playFirst: "Play the tone before matching, so the speaker can't count as your hum.",
+  playFirst: "Play the tone first. Then you can try humming onto it.",
   listenOnly: "Listening is enough if you'd rather not hum.",
   notYet: "Not yet. Hum toward the tone.",
   staying: "Not yet. Hold it steady.",
@@ -552,6 +552,7 @@ function restoreAfterPlay(returnMode) {
   else if (returnMode === "landed") renderLanded();
   else renderRecipient();
   if (heardTone && returnMode !== "locked") setStatus(COPY.played);
+  focusFirstAction();
 }
 
 function delay(ms) {
@@ -575,6 +576,7 @@ async function playHz(hz, returnMode) {
       return;
     }
     renderPlaying(returnMode);
+    focusFirstAction();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     currentOsc = osc;
