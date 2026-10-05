@@ -8,7 +8,7 @@ export const TUNING = {
   soundRms: 0.015,
   // Cents from the median of the current lock window, not from the first frame.
   stableCents: 60,
-  lockMs: 1500,
+  lockMs: 2200,
   minLockFrames: 2,
   // Short dropouts inside an otherwise steady hum do not wipe the window.
   gapMs: 350,
@@ -21,10 +21,11 @@ export const TUNING = {
   matchDwellMs: 700,
   minMatchFrames: 2,
   matchTimeoutMs: 45000,
-  tonePeakGain: 0.08,
-  toneAttackSec: 0.05,
-  toneHoldSec: 0.7,
-  toneReleaseSec: 0.2,
+  // Sum of harmonic peaks. Kept under 0.9 so the tone is loud without clipping.
+  tonePeakGain: 0.72,
+  toneAttackSec: 0.04,
+  toneHoldSec: 0.8,
+  toneReleaseSec: 0.18,
   postPlaySettleMs: 250,
   analysisEveryMs: 50,
   fftSize: 2048,
@@ -35,6 +36,25 @@ export const TUNING = {
 // "#1." + decihertz. Largest valid form is "#1.10000".
 export const MAX_FRAGMENT_CHARS = 8;
 const FRAGMENT_RE = /^1\.(?:[1-9][0-9]{2,4})$/;
+
+// Integer harmonics of the locked pitch. Low notes put more level on the
+// upper partials so a small speaker can still carry that pitch.
+export function toneMix(hz, tuning = TUNING) {
+  const low = hz < 240 ? Math.min(1, (240 - hz) / 160) : 0;
+  const weights = [
+    1 - 0.55 * low,
+    0.72 + 0.35 * low,
+    0.4 + 0.28 * low,
+    0.22 + 0.2 * low,
+  ];
+  const sum = weights.reduce((total, weight) => total + weight, 0);
+  const gains = weights.map((weight) => (weight / sum) * tuning.tonePeakGain);
+  return {
+    multiples: [1, 2, 3, 4],
+    gains,
+    peak: gains.reduce((total, gain) => total + gain, 0),
+  };
+}
 
 export function encodeFragment(hz) {
   if (typeof hz !== "number" || !Number.isFinite(hz)) {

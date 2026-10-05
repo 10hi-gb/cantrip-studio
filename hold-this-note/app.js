@@ -5,6 +5,7 @@ import {
   createDwell,
   detectPitch,
   captureListeningOutcome,
+  toneMix,
 } from "./pitch.js";
 
 const ledeEl = document.getElementById("lede");
@@ -22,8 +23,15 @@ const COPY = {
   hearing: "Hum something comfortable.",
   holding: "Hold it steady.",
   uncertain: "Didn't catch a steady note.",
+  holdNote: "Hold a note",
+  sendIt: "Send it",
+  tryAgain: "Try again",
+  makeOneBack: "Make one back",
+  humAlong: "Hum along",
+  playNote: "Play the note",
   locked: "Got it.",
   lockedSub: "That's your pitch, played as a tone.",
+  toneFailed: "Couldn't play the tone.",
   played: "That's the one.",
   denied: "The mic is off, so we can't catch a pitch. You can allow it in the browser. If someone sent you a note, you can still play it.",
   unavailable: "This browser can't use the microphone. If someone sent you a note, you can still play it.",
@@ -36,7 +44,6 @@ const COPY = {
   notYet: "Not yet. Keep going.",
   landed: "You landed.",
   landedSub: "Same note.",
-  makeBack: "They'll get a tone. Same idea.",
   badLink: "That link doesn't hold a note.",
   playing: "That's the one.",
   shareDone: "That's as far as this page goes. Your note's still here if you need it.",
@@ -44,6 +51,14 @@ const COPY = {
   shareError: "Couldn't share from here.",
   copied: "Link copied. Send it when you want.",
   copyFail: "Couldn't copy. The link is selected so you can copy it.",
+  cancel: "Cancel",
+  stop: "Stop",
+  holdOneBack: "Hold one back",
+  holdOneYourself: "Hold one yourself",
+  back: "Back",
+  startOver: "Start over",
+  aboutMic: "About the mic",
+  playbackStopped: "Playback stopped.",
 };
 
 let route = { kind: "solo" };
@@ -63,11 +78,13 @@ let muteNode = null;
 let timeBuf = null;
 let currentOsc = null;
 let currentGain = null;
+let toneNodes = [];
 let ticker = null;
 let listenStartedAt = 0;
 let heardSoundAt = null;
 let level = "quiet";
 let dwell = null;
+let sharing = false;
 
 function micSupported() {
   return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.isSecureContext);
@@ -133,7 +150,7 @@ function addNote(text) {
 function addAboutMic() {
   const details = document.createElement("details");
   const summary = document.createElement("summary");
-  summary.textContent = "About the mic";
+  summary.textContent = COPY.aboutMic;
   const note = document.createElement("p");
   note.className = "hint";
   note.textContent = COPY.micAbout;
@@ -196,24 +213,27 @@ function releaseMic() {
   setMeter("", 0);
 }
 
+function stopToneNodes() {
+  const nodes = toneNodes.splice(0);
+  const now = audioCtx ? audioCtx.currentTime : 0;
+  for (const node of nodes) {
+    try {
+      if (node.gain && typeof node.gain.cancelScheduledValues === "function") {
+        node.gain.cancelScheduledValues(now);
+        node.gain.setValueAtTime(0, now);
+      }
+    } catch (err) { /* already gone */ }
+    try { if (typeof node.stop === "function") node.stop(now); } catch (err) { /* already stopped */ }
+    try { node.disconnect(); } catch (err) { /* already gone */ }
+  }
+  currentOsc = null;
+  currentGain = null;
+}
+
 function stopTone() {
   playGen += 1;
   playbackActive = false;
-  const osc = currentOsc;
-  const gain = currentGain;
-  currentOsc = null;
-  currentGain = null;
-  if (!osc) return;
-  try {
-    const now = audioCtx ? audioCtx.currentTime : 0;
-    if (gain) {
-      gain.gain.cancelScheduledValues(now);
-      gain.gain.setValueAtTime(0, now);
-    }
-    osc.stop(now);
-  } catch (err) { /* already stopped */ }
-  try { osc.disconnect(); } catch (err) { /* already gone */ }
-  try { if (gain) gain.disconnect(); } catch (err) { /* already gone */ }
+  stopToneNodes();
 }
 
 function haltAudio() {
@@ -246,26 +266,8 @@ function renderSolo() {
     setStatus(COPY.unavailable);
     return;
   }
-  setStatus("");
-  addButton("Hold a note", () => {
-    renderMicAsk();
-    focusFirstAction();
-  }, { primary: true });
-}
-
-function renderMicAsk() {
-  mode = "mic";
-  setLede(COPY.soloLede);
-  setString("idle");
   setStatus(COPY.micBody);
-  setMark("");
-  setMeter("", 0);
-  clearActions();
-  addButton("I'm ready", () => startListening("capture"), { primary: true });
-  addButton("Not now", () => {
-    renderSolo();
-    focusFirstAction();
-  });
+  addButton(COPY.holdNote, () => startListening("capture"), { primary: true });
   addAboutMic();
 }
 
@@ -278,14 +280,8 @@ function renderLocked() {
   setStatus(COPY.locked);
   clearActions();
   addNote(COPY.lockedSub);
-  addButton("Hear it", () => playCurrent(), { primary: true });
-  addButton("Try again", () => {
-    haltAudio();
-    renderSolo();
-    focusFirstAction();
-  });
-  addButton("Copy link", () => copyLink());
-  if (navigator.share) addButton("Send it", () => shareLink());
+  addButton(COPY.sendIt, () => sendNote(), { primary: true });
+  addButton(COPY.tryAgain, () => retryCapture());
 }
 
 function renderRecipient() {
@@ -298,18 +294,18 @@ function renderRecipient() {
   clearActions();
   if (!audioSupported()) {
     setStatus(COPY.noAudio);
-    addButton("Hold one back", () => makeOwn(), { primary: true });
+    addButton(COPY.holdOneBack, () => makeOwn(), { primary: true });
     return;
   }
-  addButton("Play the note", () => playCurrent(), { primary: true });
+  addButton(COPY.playNote, () => playCurrent(), { primary: true });
   addNote(COPY.matching);
   addNote(COPY.listenOnly);
   if (!micSupported()) {
     addNote(COPY.unavailable);
   } else {
-    addButton("I'm ready", () => startListening("match"), { disabled: !heardTone || playbackActive });
+    addButton(COPY.humAlong, () => startListening("match"), { disabled: !heardTone || playbackActive });
   }
-  addButton("Hold one back", () => makeOwn());
+  addButton(COPY.holdOneBack, () => makeOwn());
 }
 
 function renderMatch() {
@@ -319,9 +315,9 @@ function renderMatch() {
   setMark("notyet");
   setStatus(COPY.notYet);
   clearActions();
-  addButton("Stop", () => stopToRecipient(COPY.interrupted), { primary: true });
-  addButton("Play the note", () => replayFromMatch());
-  addButton("Hold one back", () => makeOwn());
+  addButton(COPY.stop, () => stopToRecipient(COPY.interrupted), { primary: true });
+  addButton(COPY.playNote, () => replayFromMatch());
+  addButton(COPY.holdOneBack, () => makeOwn());
 }
 
 function renderLanded() {
@@ -333,10 +329,7 @@ function renderLanded() {
   setStatus(COPY.landed);
   clearActions();
   addNote(COPY.landedSub);
-  addButton("Play the note", () => playCurrent(), { primary: true });
-  if (micSupported()) addButton("Match again", () => startListening("match"));
-  addButton("Hold one back", () => makeOwn());
-  addNote(COPY.makeBack);
+  addButton(COPY.makeOneBack, () => makeOwn(), { primary: true });
 }
 
 function renderBad() {
@@ -348,14 +341,14 @@ function renderBad() {
   setMeter("", 0);
   setStatus("");
   clearActions();
-  addButton("Hold one yourself", () => makeOwn(), { primary: true });
+  addButton(COPY.holdOneYourself, () => makeOwn(), { primary: true });
 }
 
 function renderPlaying(returnMode) {
   mode = "playing";
   clearActions();
   setStatus(COPY.playing);
-  addButton("Stop", () => {
+  addButton(COPY.stop, () => {
     stopTone();
     restoreAfterPlay(returnMode);
     focusFirstAction();
@@ -409,9 +402,9 @@ function showMicError(err) {
   setMeter("", 0);
   setStatus(micErrorCopy(err));
   clearActions();
-  if (micSupported()) addButton("Try the mic again", () => startListening(route.kind === "recipient" ? "match" : "capture"), { primary: true });
-  if (route.kind === "recipient") addButton("Play the note", () => playCurrent());
-  addButton(route.kind === "recipient" ? "Back" : "Start over", () => {
+  if (micSupported()) addButton(COPY.tryAgain, () => startListening(route.kind === "recipient" ? "match" : "capture"), { primary: true });
+  if (route.kind === "recipient") addButton(COPY.playNote, () => playCurrent());
+  addButton(route.kind === "recipient" ? COPY.back : COPY.startOver, () => {
     if (route.kind === "recipient") renderRecipient();
     else renderSolo();
     focusFirstAction();
@@ -495,7 +488,7 @@ async function startListening(purpose) {
       setStatus(COPY.listen);
       setMeter("Hum something comfortable.", 0);
       clearActions();
-      addButton("Cancel", () => {
+      addButton(COPY.cancel, () => {
         releaseMic();
         renderSolo();
         setStatus(COPY.interrupted);
@@ -509,8 +502,8 @@ async function startListening(purpose) {
         setString("dim");
         setStatus(COPY.interrupted);
         clearActions();
-        addButton("Try again", () => startListening(purpose), { primary: true });
-        if (purpose === "match") addButton("Play the note", () => playCurrent());
+        addButton(COPY.tryAgain, () => startListening(purpose), { primary: true });
+        if (purpose === "match") addButton(COPY.playNote, () => playCurrent());
         focusFirstAction();
       };
     });
@@ -556,6 +549,7 @@ function analyse(purpose) {
         }
         renderLocked();
         focusFirstAction();
+        void playLockedTone(lockedHz);
       }
       return;
     }
@@ -605,10 +599,10 @@ function finishUncertain(purpose) {
   setMark(purpose === "match" ? "notyet" : "");
   setStatus(purpose === "match" ? COPY.notYet : COPY.uncertain);
   clearActions();
-  addButton("Try again", () => startListening(purpose), { primary: true });
+  addButton(COPY.tryAgain, () => startListening(purpose), { primary: true });
   if (purpose === "match") {
-    addButton("Play the note", () => playCurrent());
-    addButton("Hold one back", () => makeOwn());
+    addButton(COPY.playNote, () => playCurrent());
+    addButton(COPY.holdOneBack, () => makeOwn());
   }
   focusFirstAction();
 }
@@ -625,7 +619,17 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function playHz(hz, returnMode) {
+function retryCapture() {
+  stopTone();
+  startListening("capture");
+}
+
+async function playLockedTone(hz) {
+  await runTone(hz, { holdScreen: true });
+}
+
+async function runTone(hz, options) {
+  const holdScreen = !!(options && options.holdScreen);
   if (playbackActive || starting || listening) return;
   if (!audioSupported() || hz == null) {
     setStatus(COPY.noAudio);
@@ -641,35 +645,49 @@ async function playHz(hz, returnMode) {
       if (token === playGen) playbackActive = false;
       return;
     }
-    renderPlaying(returnMode);
-    focusFirstAction();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    currentOsc = osc;
-    currentGain = gain;
-    osc.type = "sine";
+    if (!holdScreen) {
+      renderPlaying("recipient");
+      focusFirstAction();
+    }
+    const mix = toneMix(hz);
+    const master = ctx.createGain();
+    const oscs = [];
     const start = ctx.currentTime;
-    osc.frequency.setValueAtTime(hz, start);
-    const peak = TUNING.tonePeakGain;
+    mix.multiples.forEach((multiple, index) => {
+      const osc = ctx.createOscillator();
+      const partial = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(hz * multiple, start);
+      partial.gain.setValueAtTime(mix.gains[index], start);
+      osc.connect(partial);
+      partial.connect(master);
+      oscs.push(osc);
+      toneNodes.push(osc, partial);
+    });
+    toneNodes.push(master);
+    currentOsc = oscs[0];
+    currentGain = master;
     const releaseAt = start + TUNING.toneAttackSec + TUNING.toneHoldSec + TUNING.toneReleaseSec;
-    gain.gain.setValueAtTime(0, start);
-    gain.gain.linearRampToValueAtTime(peak, start + TUNING.toneAttackSec);
-    gain.gain.setValueAtTime(peak, start + TUNING.toneAttackSec + TUNING.toneHoldSec);
-    gain.gain.linearRampToValueAtTime(0, releaseAt);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(start);
-    osc.stop(releaseAt + 0.02);
+    master.gain.setValueAtTime(0, start);
+    master.gain.linearRampToValueAtTime(1, start + TUNING.toneAttackSec);
+    master.gain.setValueAtTime(1, start + TUNING.toneAttackSec + TUNING.toneHoldSec);
+    master.gain.linearRampToValueAtTime(0, releaseAt);
+    master.connect(ctx.destination);
+    oscs.forEach((osc) => {
+      osc.start(start);
+      osc.stop(releaseAt + 0.02);
+    });
     await new Promise((resolve) => {
-      osc.onended = () => {
+      oscs[0].onended = () => {
         try {
-          gain.gain.cancelScheduledValues(ctx.currentTime);
-          gain.gain.setValueAtTime(0, ctx.currentTime);
+          master.gain.cancelScheduledValues(ctx.currentTime);
+          master.gain.setValueAtTime(0, ctx.currentTime);
         } catch (err) { /* node already closed */ }
-        try { osc.disconnect(); } catch (err) { /* already gone */ }
-        try { gain.disconnect(); } catch (err) { /* already gone */ }
-        if (currentOsc === osc) currentOsc = null;
-        if (currentGain === gain) currentGain = null;
+        toneNodes.splice(0).forEach((node) => {
+          try { node.disconnect(); } catch (ignore) { /* already gone */ }
+        });
+        if (currentOsc === oscs[0]) currentOsc = null;
+        if (currentGain === master) currentGain = null;
         resolve();
       };
     });
@@ -677,78 +695,82 @@ async function playHz(hz, returnMode) {
       if (token === playGen) playbackActive = false;
       return;
     }
-    if (route.kind === "recipient") heardTone = true;
-    setStatus(COPY.played);
-    clearActions();
+    if (!holdScreen && route.kind === "recipient") heardTone = true;
+    if (!holdScreen) {
+      setStatus(COPY.played);
+      clearActions();
+    }
     await delay(TUNING.postPlaySettleMs);
     if (token !== playGen || document.visibilityState === "hidden") {
       if (token === playGen) {
         playbackActive = false;
-        if (route.kind === "recipient") heardTone = false;
+        if (!holdScreen && route.kind === "recipient") heardTone = false;
       }
       return;
     }
     playbackActive = false;
-    restoreAfterPlay(returnMode);
-    if (returnMode === "locked") setStatus(COPY.played);
+    if (!holdScreen) restoreAfterPlay("recipient");
   } catch (err) {
     if (token === playGen) {
-      const osc = currentOsc;
-      const gain = currentGain;
-      currentOsc = null;
-      currentGain = null;
-      try { if (gain && audioCtx) gain.gain.setValueAtTime(0, audioCtx.currentTime); } catch (ignore) { /* already gone */ }
-      try { if (osc) osc.stop(); } catch (ignore) { /* already stopped */ }
-      try { if (osc) osc.disconnect(); } catch (ignore) { /* already gone */ }
-      try { if (gain) gain.disconnect(); } catch (ignore) { /* already gone */ }
+      stopToneNodes();
       playbackActive = false;
-      setStatus("Couldn't play the tone. Tap play to try again.");
-      restoreAfterPlay(returnMode);
+      setStatus(COPY.toneFailed);
+      if (!holdScreen) restoreAfterPlay("recipient");
     }
   }
 }
 
+async function playHz(hz) {
+  await runTone(hz, { holdScreen: false });
+}
+
 function playCurrent() {
-  const returnMode = mode === "landed" ? "landed" : mode === "locked" ? "locked" : "recipient";
-  const hz = lockedHz;
-  playHz(hz, returnMode);
+  playHz(lockedHz);
 }
 
 async function replayFromMatch() {
   if (playbackActive) return;
   releaseMic();
-  await playHz(lockedHz, "recipient");
+  await playHz(lockedHz);
 }
 
-async function copyLink() {
-  if (lockedHz == null || mode !== "locked") return;
-  const url = shareUrl(lockedHz);
+async function copyLinkInline(url) {
+  const existing = actionsEl.querySelector("input");
+  if (existing) existing.remove();
   try {
     await navigator.clipboard.writeText(url);
+    if (mode !== "locked") return;
     setStatus(COPY.copied);
   } catch (err) {
+    if (mode !== "locked") return;
     setStatus(COPY.copyFail);
     addLinkField(url);
   }
 }
 
-async function shareLink() {
-  if (lockedHz == null || mode !== "locked") return;
+async function sendNote() {
+  if (lockedHz == null || mode !== "locked" || sharing) return;
   const url = shareUrl(lockedHz);
-  if (!navigator.share) {
-    setStatus(COPY.shareError);
-    return;
-  }
+  sharing = true;
   try {
-    await navigator.share({
-      title: "Hold This Note",
-      text: "A pitch, played as a tone.",
-      url,
-    });
-    setStatus(COPY.shareDone);
-  } catch (err) {
-    if (err && err.name === "AbortError") setStatus(COPY.shareCancel);
-    else setStatus(COPY.shareError);
+    if (!navigator.share) {
+      await copyLinkInline(url);
+      return;
+    }
+    try {
+      await navigator.share({
+        title: "Hold This Note",
+        text: "A pitch, played as a tone.",
+        url,
+      });
+      if (mode === "locked") setStatus(COPY.shareDone);
+    } catch (err) {
+      if (mode !== "locked") return;
+      if (err && err.name === "AbortError") setStatus(COPY.shareCancel);
+      else setStatus(COPY.shareError);
+    }
+  } finally {
+    sharing = false;
   }
 }
 
@@ -772,13 +794,10 @@ function onHide() {
       renderSolo();
       setStatus(COPY.interrupted);
     }
-  } else if (wasPlaying) {
-    if (mode === "playing") {
-      if (route.kind === "recipient") renderRecipient();
-      else if (lockedHz != null) renderLocked();
-      else renderSolo();
-    }
-    setStatus("Playback stopped.");
+  } else if (wasPlaying && mode === "playing") {
+    if (route.kind === "recipient") renderRecipient();
+    else renderSolo();
+    setStatus(COPY.playbackStopped);
   }
 }
 
@@ -802,13 +821,14 @@ document.addEventListener("keydown", (event) => {
     }
   } else if (playbackActive && currentOsc) {
     event.preventDefault();
-    const returnMode = route.kind === "recipient" ? "recipient" : lockedHz != null ? "locked" : "solo";
+    const replace = mode === "playing";
     stopTone();
-    if (returnMode === "recipient") renderRecipient();
-    else if (returnMode === "locked") renderLocked();
-    else renderSolo();
-    setStatus("Playback stopped.");
-    focusFirstAction();
+    if (replace) {
+      if (route.kind === "recipient") renderRecipient();
+      else renderSolo();
+      setStatus(COPY.playbackStopped);
+      focusFirstAction();
+    }
   }
 });
 

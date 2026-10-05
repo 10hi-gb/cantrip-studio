@@ -9,6 +9,7 @@ import {
   pitchClassDistanceCents,
   createDwell,
   captureListeningOutcome,
+  toneMix,
 } from "./pitch.js";
 
 const example = encodeFragment(440);
@@ -122,13 +123,16 @@ const lock = createDwell({
   minFrames: TUNING.minLockFrames,
   pitchClass: false,
 });
+assert.equal(TUNING.lockMs, 2200);
+assert.ok(TUNING.voicedUncertainMs > TUNING.lockMs);
 lock.observe(440, 0);
 lock.observe(442, 400);
 assert.equal(lock.latched(400), false);
-lock.observe(441, 1500);
-assert.equal(lock.latched(1500), true);
-lock.observe(500, 1600);
-assert.equal(lock.latched(1600), false);
+assert.equal(lock.latched(1500), false);
+lock.observe(441, TUNING.lockMs);
+assert.equal(lock.latched(TUNING.lockMs), true);
+lock.observe(500, TUNING.lockMs + TUNING.gapMs + 50);
+assert.equal(lock.latched(TUNING.lockMs + TUNING.gapMs + 50), false);
 
 function syntheticHum(baseHz, depthCents, noiseAmp, frames) {
   const sr = 48000;
@@ -175,21 +179,22 @@ function runDwell(signal, frames) {
   return { latchedAt, pitchFrames, median: dwell.medianHz() };
 }
 
-const wobble = runDwell(syntheticHum(196, 40, 0.02, 40), 40);
+const dwellFrames = Math.round(TUNING.lockMs / TUNING.analysisEveryMs) + 8;
+const wobble = runDwell(syntheticHum(196, 40, 0.02, dwellFrames), dwellFrames);
 assert.ok(wobble.pitchFrames > 30, "synthetic wobble was not heard as pitch");
-assert.equal(wobble.latchedAt, 1500);
+assert.equal(wobble.latchedAt, TUNING.lockMs);
 assert.ok(Math.abs(1200 * Math.log2(wobble.median / 196)) < TUNING.stableCents);
 
-const steady = runDwell(syntheticHum(220, 0, 0, 40), 40);
-assert.equal(steady.latchedAt, 1500);
+const steady = runDwell(syntheticHum(220, 0, 0, dwellFrames), dwellFrames);
+assert.equal(steady.latchedAt, TUNING.lockMs);
 
-const noiseOnly = new Float32Array(TUNING.fftSize + 40 * 2400);
+const noiseOnly = new Float32Array(TUNING.fftSize + dwellFrames * 2400);
 let noiseSeed = 5;
 for (let i = 0; i < noiseOnly.length; i++) {
   noiseSeed = (1664525 * noiseSeed + 1013904223) >>> 0;
   noiseOnly[i] = ((noiseSeed / 4294967296) * 2 - 1) * 0.2;
 }
-const noiseRun = runDwell({ samples: noiseOnly, sr: 48000, hop: 2400 }, 40);
+const noiseRun = runDwell({ samples: noiseOnly, sr: 48000, hop: 2400 }, dwellFrames);
 assert.equal(noiseRun.pitchFrames, 0);
 assert.equal(noiseRun.latchedAt, null);
 
@@ -201,12 +206,11 @@ const rising = createDwell({
   gapMs: TUNING.gapMs,
   minVoicedRatio: TUNING.minVoicedRatio,
 });
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < dwellFrames; i++) {
   const hz = 180 * Math.pow(2, (i * 8) / 1200);
-  rising.observe(hz, i * 50);
-  if (i < 30) assert.equal(rising.latched(i * 50), false);
+  rising.observe(hz, i * TUNING.analysisEveryMs);
+  assert.equal(rising.latched(i * TUNING.analysisEveryMs), false);
 }
-assert.equal(rising.latched(39 * 50), false);
 
 assert.equal(captureListeningOutcome({
   now: 1500,
@@ -238,6 +242,25 @@ assert.equal(captureListeningOutcome({
   heardSoundAt: null,
   latched: false,
 }), "uncertain");
+
+assert.ok(TUNING.tonePeakGain < 0.9);
+assert.equal(TUNING.tonePeakGain, 0.72);
+assert.ok(TUNING.toneAttackSec > 0);
+assert.ok(TUNING.toneReleaseSec > 0);
+for (const hz of [80, 196, 440, 880]) {
+  const mix = toneMix(hz);
+  assert.deepEqual(mix.multiples, [1, 2, 3, 4]);
+  const summed = mix.gains.reduce((total, gain) => total + gain, 0);
+  assert.ok(Math.abs(summed - TUNING.tonePeakGain) < 1e-9, hz + " peak " + summed);
+  assert.ok(Math.abs(mix.peak - TUNING.tonePeakGain) < 1e-9);
+  assert.ok(mix.gains.every((gain) => gain > 0));
+}
+const lowMix = toneMix(80);
+assert.ok(lowMix.gains[1] + lowMix.gains[2] + lowMix.gains[3] > lowMix.gains[0]);
+const midMix = toneMix(440);
+assert.ok(midMix.gains[0] > midMix.gains[1]);
+assert.ok(midMix.gains[0] > midMix.gains[2]);
+assert.ok(midMix.gains[0] > midMix.gains[3]);
 
 console.log("pitch tests passed");
 console.log("synthetic buffers only — not a phone or microphone pass");
