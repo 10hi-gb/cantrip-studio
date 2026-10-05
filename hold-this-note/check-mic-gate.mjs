@@ -160,7 +160,7 @@ try {
   if (missing) throw new Error("headless Chrome has no mediaDevices; mic gate could not be observed");
   if (before !== 0) throw new Error("getUserMedia ran before a control was activated: " + before);
   if (!textBefore.includes("Hold a note")) throw new Error("start control missing");
-  if (!textBefore.includes("isn't recorded")) throw new Error("mic privacy line missing before the tap");
+  if (!textBefore.includes("We don't keep your voice")) throw new Error("mic privacy line missing before the tap");
   if (textBefore.includes("I'm ready")) throw new Error("start screen still asks for a second confirmation");
   await clickButton(client, plain.sessionId, "Hold a note");
   await new Promise((resolve) => setTimeout(resolve, 400));
@@ -168,7 +168,7 @@ try {
   const denied = await evaluate(client, plain.sessionId, "document.getElementById('status').textContent");
   const afterText = await evaluate(client, plain.sessionId, "document.body.innerText");
   if (after !== 1) throw new Error("expected one getUserMedia call after the tap, got " + after);
-  if (!denied.includes("The mic is off")) throw new Error("unexpected status after denial: " + denied);
+  if (!denied.includes("Mic is blocked")) throw new Error("unexpected status after denial: " + denied);
   if (afterText.includes("I'm ready")) throw new Error("denial still asks for a second confirmation");
   await clickButton(client, plain.sessionId, "Try again");
   await new Promise((resolve) => setTimeout(resolve, 400));
@@ -183,10 +183,10 @@ try {
     return button ? button.disabled : null;
   })()`);
   if (linkedCalls !== 0) throw new Error("recipient page requested the mic on load");
-  if (!linkedText.includes("Play the note")) throw new Error("recipient play control missing");
-  if (!linkedText.includes("Not their voice")) throw new Error("recipient copy missing");
+  if (!linkedText.includes("Play it")) throw new Error("recipient play control missing");
+  if (!linkedText.includes("not their voice")) throw new Error("recipient copy missing");
   if (matchDisabled !== true) throw new Error("matching was available before playback");
-  await clickButton(client, linked.sessionId, "Play the note");
+  await clickButton(client, linked.sessionId, "Play it");
   await new Promise((resolve) => setTimeout(resolve, 300));
   const during = await evaluate(client, linked.sessionId, "window.__gumCalls");
   const duringMatch = await evaluate(client, linked.sessionId, `(() => {

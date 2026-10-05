@@ -18,49 +18,49 @@ const stringEl = document.getElementById("string");
 const actionsEl = document.getElementById("actions");
 
 const COPY = {
-  soloLede: "Hum a note. We'll catch the pitch and play it back as a tone — not your voice.",
-  micBody: "We'll listen for a moment, on this phone. Your voice isn't recorded, and it isn't sent. The link just carries the pitch, so someone else can hear it as a tone.",
-  micAbout: "Listening happens on your device, and only after you start it. We don't save a recording of your voice, and we don't send one. The link carries the pitch so the other phone can play a tone. We don't promise the pitch is exact, or that the message gets there.",
-  listen: "Hum something comfortable.",
-  hearing: "Hum something comfortable.",
+  soloLede: "Hum a note. We'll send it as a tone — not a recording.",
+  micBody: "Mic on for a moment. We don't keep your voice. The link just carries the note.",
+  micAbout: "The mic only turns on when you ask. We don't save your voice or send it. The link holds the note so another phone can play a tone. We don't promise it's exact, or that it gets there.",
+  listen: "Go ahead.",
+  hearing: "Go ahead.",
   holding: "Holding…",
-  uncertain: "Didn't catch a steady note.",
+  uncertain: "Missed that one.",
   holdNote: "Hold a note",
   sendIt: "Send it",
   tryAgain: "Try again",
   makeOneBack: "Make one back",
   humAlong: "Hum along",
-  playNote: "Play the note",
+  playNote: "Play it",
   locked: "Got it.",
-  lockedSub: "That's your pitch, played as a tone.",
-  toneFailed: "Couldn't play the tone.",
-  played: "That's the one.",
-  denied: "The mic is off, so we can't catch a pitch. You can allow it in the browser. If someone sent you a note, you can still play it.",
-  unavailable: "This browser can't use the microphone. If someone sent you a note, you can still play it.",
-  busyMic: "The microphone is in use somewhere else. You can try again when it's free.",
-  noAudio: "This browser can't play the note.",
-  interrupted: "Hum another, whenever you're ready.",
-  recipientLede: "A note for you. Their pitch, played as a tone. Not their voice.",
-  matching: "Hum along if you want. We'll say when you land on it.",
-  listenOnly: "You can just play the note. Matching takes hearing it and humming along.",
-  notYet: "Not yet. Keep going.",
-  landed: "You landed.",
+  lockedSub: "Your note, as a tone.",
+  toneFailed: "Couldn't play it.",
+  played: "There it is.",
+  denied: "Mic is blocked. You can allow it in the browser. A note someone sent still plays.",
+  unavailable: "No mic here. A note someone sent still plays.",
+  busyMic: "Mic is busy somewhere else. Try again when it's free.",
+  noAudio: "This browser can't play sound.",
+  interrupted: "Ready when you are.",
+  recipientLede: "A note for you — as a tone, not their voice.",
+  matching: "Hear it, then hum along if you want.",
+  listenOnly: "Or just listen.",
+  notYet: "Not yet.",
+  landed: "You got it.",
   landedSub: "Same note.",
-  badLink: "That link doesn't hold a note.",
-  playing: "That's the one.",
-  shareDone: "That's as far as this page goes. Your note's still here if you need it.",
-  shareCancel: "Didn't send. Your note's still here.",
+  badLink: "This link doesn't hold a note.",
+  playing: "There it is.",
+  shareDone: "That's as far as this page goes. Your note's still here.",
+  shareCancel: "Didn't send. Still here.",
   shareError: "Couldn't share from here.",
-  copied: "Link copied. Send it when you want.",
-  copyFail: "Couldn't copy. The link is selected so you can copy it.",
+  copied: "Copied. Send it when you want.",
+  copyFail: "Couldn't copy. The link is selected.",
   cancel: "Cancel",
   stop: "Stop",
-  holdOneBack: "Hold one back",
+  holdOneBack: "Make one back",
   holdOneYourself: "Hold one yourself",
   back: "Back",
   startOver: "Start over",
   aboutMic: "About the mic",
-  playbackStopped: "Playback stopped.",
+  playbackStopped: "Stopped.",
 };
 
 let route = { kind: "solo" };
@@ -114,7 +114,7 @@ function setString(state) {
 function setMark(kind) {
   markEl.className = kind ? "mark " + kind : "mark";
   markEl.hidden = !kind;
-  if (kind === "landed") markEl.textContent = "You landed";
+  if (kind === "landed") markEl.textContent = "You got it";
   else if (kind === "notyet") markEl.textContent = "Not yet";
   else markEl.textContent = "";
 }
@@ -166,7 +166,7 @@ function addLinkField(url) {
   input.type = "text";
   input.readOnly = true;
   input.value = url;
-  input.setAttribute("aria-label", "Link to this pitch");
+  input.setAttribute("aria-label", "Link to this note");
   input.addEventListener("focus", () => input.select());
   actionsEl.appendChild(input);
   input.focus();
@@ -759,7 +759,7 @@ async function sendNote() {
     try {
       await navigator.share({
         title: "Hold This Note",
-        text: "A pitch, played as a tone.",
+        text: "A note, as a tone.",
         url,
       });
       if (mode === "locked") setStatus(COPY.shareDone);

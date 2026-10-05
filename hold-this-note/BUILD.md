@@ -68,11 +68,11 @@ The microphone tracks are stopped before a tone starts. Send it stays usable whi
 | --- | --- |
 | Start | Hold a note. About the mic is a disclosure. The privacy line is already on the screen. |
 | Listening | Cancel. While the hum is holding, the string switches to the held line and the status says "Holding…". |
-| Didn't catch a steady note | Try again |
-| Mic blocked | Try again, and Start over. On a received note: Try again, Play the note, Back. |
+| Missed that one | Try again |
+| Mic blocked | Try again, and Start over. On a received note: Try again, Play it, Back. |
 | Locked | Send it, Try again. The tone plays once by itself. If there is no share sheet, Send it copies the link and says so in the status line. Cancelling the share sheet does not say the note was sent. |
-| Received note | Play the note, Hum along, Hold one back. Hum along stays off until playback has ended. |
-| Matching | Stop, Play the note, Hold one back |
+| Received note | Play it, Hum along, Make one back. Hum along stays off until playback has ended. |
+| Matching | Stop, Play it, Make one back |
 | Landed | Make one back |
 | Bad link | Hold one yourself |
 
@@ -113,7 +113,7 @@ node hold-this-note/pitch.test.mjs
 node hold-this-note/check-mic-gate.mjs
 ```
 
-`check-mic-gate.mjs` uses system `google-chrome` headless. It stubs `getUserMedia` before load. The no-hash page must not call it until **Hold a note** is clicked, and that screen already shows that the voice isn't recorded. `#1.4400` must not call it on load. **Hum along** stays disabled until a tone has finished. `pitch.test.mjs` uses synthetic buffers only. It is not a phone pass.
+`check-mic-gate.mjs` uses system `google-chrome` headless. It stubs `getUserMedia` before load. The no-hash page must not call it until **Hold a note** is clicked, and that screen already shows "We don't keep your voice". `#1.4400` must not call it on load. **Hum along** stays disabled until a tone has finished. `pitch.test.mjs` uses synthetic buffers only. It is not a phone pass.
 
 ## License
 
@@ -122,7 +122,7 @@ Original page code. No runtime dependency and no copied pitch-detection library.
 ## Known limits
 
 - Real-phone pitch accuracy is not proven. The pitch tests use synthetic buffers only. A headless microphone-gate check is not a phone trial. A later device pass did lock a steady note and move on. That is still not a measured pitch-accuracy pass.
-- A hum that never settles, or settles and then wanders off before 2.5 s, still does not lock. A steady hum is not cut off at 2.5 s: it locks when the voice goes quiet, or at 8 s if it keeps going. After sound with no open stretch for the voiced timeout, listening ends on "Didn't catch a steady note." with Try again.
+- A hum that never settles, or settles and then wanders off before 2.5 s, still does not lock. A steady hum is not cut off at 2.5 s: it locks when the voice goes quiet, or at 8 s if it keeps going. After sound with no open stretch for the voiced timeout, listening ends on "Missed that one." with Try again.
 - Octave mistakes are still possible on some voices. Matching compares pitch class so a true octave can still land; a wrong octave in the shared number would play the wrong register.
 - The analysis window is 2048 samples. At sample rates well above 48 kHz the lowest notes may be refused instead of guessed.
 - Speaker echo is blocked by ending playback (oscillator stopped, gain at zero) before matching can listen. It is not proven against every device's echo path.
