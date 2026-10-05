@@ -8,7 +8,9 @@ import {
   detectPitch,
   pitchClassDistanceCents,
   createDwell,
+  createHold,
   captureListeningOutcome,
+  replaySustainSec,
   toneMix,
 } from "./pitch.js";
 
@@ -117,22 +119,70 @@ const oneFrame = createDwell({
 oneFrame.observe(440, 0, 440);
 assert.equal(oneFrame.latched(0), false);
 
-const lock = createDwell({
-  dwellMs: TUNING.lockMs,
-  toleranceCents: TUNING.stableCents,
-  minFrames: TUNING.minLockFrames,
-  pitchClass: false,
-});
-assert.equal(TUNING.lockMs, 2200);
-assert.ok(TUNING.voicedUncertainMs > TUNING.lockMs);
-lock.observe(440, 0);
-lock.observe(442, 400);
-assert.equal(lock.latched(400), false);
-assert.equal(lock.latched(1500), false);
-lock.observe(441, TUNING.lockMs);
-assert.equal(lock.latched(TUNING.lockMs), true);
-lock.observe(500, TUNING.lockMs + TUNING.gapMs + 50);
-assert.equal(lock.latched(TUNING.lockMs + TUNING.gapMs + 50), false);
+assert.equal(TUNING.minHoldMs, 2500);
+assert.equal(TUNING.graceMs, 250);
+assert.equal(TUNING.releaseMs, 500);
+assert.equal(TUNING.ceilingMs, 8000);
+assert.ok(TUNING.graceMs >= 200 && TUNING.graceMs <= 300);
+assert.ok(TUNING.releaseMs > TUNING.graceMs);
+assert.ok(TUNING.ceilingMs > TUNING.minHoldMs);
+assert.ok(TUNING.ceilingMs >= 6000 && TUNING.ceilingMs <= 8000);
+
+function feedHold(hold, hz, from, to, step, quiet = false) {
+  let last = null;
+  for (let t = from; t <= to; t += step) last = hold.observe(hz, t, quiet);
+  return last;
+}
+
+const stillHumming = createHold();
+const atMinimum = feedHold(stillHumming, 440, 0, TUNING.minHoldMs, 50);
+assert.equal(atMinimum.lock, false);
+assert.equal(stillHumming.latched(), false);
+assert.ok(stillHumming.heldMs() >= TUNING.minHoldMs);
+const pastMinimum = feedHold(stillHumming, 440, TUNING.minHoldMs + 50, 4000, 50);
+assert.equal(pastMinimum.lock, false);
+assert.equal(pastMinimum.phase, "holding");
+assert.ok(stillHumming.heldMs() > TUNING.minHoldMs);
+assert.ok(stillHumming.heldMs() < TUNING.ceilingMs);
+
+const ended = stillHumming.observe(Number.NaN, 4000 + TUNING.releaseMs, true);
+assert.equal(ended.lock, true);
+assert.equal(ended.reason, "release");
+assert.equal(ended.heldMs, 4000);
+assert.equal(stillHumming.medianHz(), 440);
+assert.equal(replaySustainSec(ended.heldMs), 4);
+
+const wobble = createHold();
+feedHold(wobble, 440, 0, 1000, 50);
+wobble.observe(880, 1100, false);
+const wobbleBack = wobble.observe(442, 1000 + TUNING.graceMs, false);
+assert.equal(wobbleBack.lock, false);
+assert.ok(wobble.heldMs() >= 1000 + TUNING.graceMs);
+assert.ok(Math.abs(wobble.medianHz() - 440) < 5);
+
+const resetEarly = createHold();
+feedHold(resetEarly, 440, 0, 1000, 50);
+const reset = resetEarly.observe(Number.NaN, 1000 + TUNING.graceMs + 50, true);
+assert.equal(reset.lock, false);
+assert.equal(resetEarly.active(), false);
+assert.equal(resetEarly.heldMs(), 0);
+
+const tooShort = createHold();
+feedHold(tooShort, 440, 0, 2000, 50);
+const tooShortEnd = tooShort.observe(Number.NaN, 2000 + TUNING.releaseMs, true);
+assert.equal(tooShortEnd.lock, false);
+assert.equal(tooShort.latched(), false);
+
+const ceiling = createHold();
+let ceilingResult = null;
+for (let t = 0; t <= TUNING.ceilingMs; t += 50) {
+  ceilingResult = ceiling.observe(440, t, false);
+  if (t < TUNING.ceilingMs) assert.equal(ceilingResult.lock, false, "locked while still humming at " + t);
+}
+assert.equal(ceilingResult.lock, true);
+assert.equal(ceilingResult.reason, "ceiling");
+assert.equal(ceilingResult.heldMs, TUNING.ceilingMs);
+assert.equal(replaySustainSec(ceilingResult.heldMs), TUNING.toneHoldMaxSec);
 
 function syntheticHum(baseHz, depthCents, noiseAmp, frames) {
   const sr = 48000;
@@ -152,64 +202,75 @@ function syntheticHum(baseHz, depthCents, noiseAmp, frames) {
   return { samples, sr, hop };
 }
 
-function runDwell(signal, frames) {
-  const dwell = createDwell({
-    dwellMs: TUNING.lockMs,
-    toleranceCents: TUNING.stableCents,
-    minFrames: TUNING.minLockFrames,
-    pitchClass: false,
-    gapMs: TUNING.gapMs,
-    minVoicedRatio: TUNING.minVoicedRatio,
-  });
-  let latchedAt = null;
+function runHold(signal, frames, tailQuietMs) {
+  const holder = createHold();
+  let lockedAt = null;
+  let reason = "";
   let pitchFrames = 0;
   for (let i = 0; i < frames; i++) {
     const start = i * signal.hop;
     const buf = signal.samples.subarray(start, start + TUNING.fftSize);
     const found = detectPitch(buf, signal.sr);
     const now = i * TUNING.analysisEveryMs;
-    if (found.reason === "pitch") {
-      pitchFrames += 1;
-      dwell.observe(found.hz, now);
-    } else {
-      dwell.observe(Number.NaN, now);
+    if (found.reason === "pitch") pitchFrames += 1;
+    const quiet = found.rms < TUNING.silenceRms;
+    const result = holder.observe(found.reason === "pitch" ? found.hz : Number.NaN, now, quiet);
+    if (lockedAt == null && result.lock) {
+      lockedAt = now;
+      reason = result.reason;
     }
-    if (latchedAt == null && dwell.latched(now)) latchedAt = now;
   }
-  return { latchedAt, pitchFrames, median: dwell.medianHz() };
+  if (tailQuietMs && lockedAt == null) {
+    const end = (frames - 1) * TUNING.analysisEveryMs;
+    const result = holder.observe(Number.NaN, end + tailQuietMs, true);
+    if (result.lock) {
+      lockedAt = end + tailQuietMs;
+      reason = result.reason;
+    }
+  }
+  return { lockedAt, reason, pitchFrames, heldMs: holder.heldMs(), median: holder.medianHz(), latched: holder.latched() };
 }
 
-const dwellFrames = Math.round(TUNING.lockMs / TUNING.analysisEveryMs) + 8;
-const wobble = runDwell(syntheticHum(196, 40, 0.02, dwellFrames), dwellFrames);
-assert.ok(wobble.pitchFrames > 30, "synthetic wobble was not heard as pitch");
-assert.equal(wobble.latchedAt, TUNING.lockMs);
-assert.ok(Math.abs(1200 * Math.log2(wobble.median / 196)) < TUNING.stableCents);
+const keepFrames = Math.round(4000 / TUNING.analysisEveryMs) + 1;
+const kept = runHold(syntheticHum(220, 0, 0, keepFrames), keepFrames, 0);
+assert.ok(kept.pitchFrames > keepFrames * 0.9, "synthetic hum was not heard as pitch");
+assert.equal(kept.latched, false);
+assert.ok(kept.heldMs >= TUNING.minHoldMs);
+assert.ok(kept.heldMs < TUNING.ceilingMs);
 
-const steady = runDwell(syntheticHum(220, 0, 0, dwellFrames), dwellFrames);
-assert.equal(steady.latchedAt, TUNING.lockMs);
+const released = runHold(syntheticHum(220, 0, 0, keepFrames), keepFrames, TUNING.releaseMs);
+assert.equal(released.latched, true);
+assert.equal(released.reason, "release");
+assert.ok(released.heldMs >= TUNING.minHoldMs);
+assert.ok(released.heldMs < TUNING.ceilingMs);
+assert.ok(released.lockedAt > released.heldMs);
+assert.ok(Math.abs(1200 * Math.log2(released.median / 220)) < TUNING.stableCents);
 
-const noiseOnly = new Float32Array(TUNING.fftSize + dwellFrames * 2400);
+const ceilingFrames = Math.round((TUNING.ceilingMs + 1000) / TUNING.analysisEveryMs) + 1;
+const heldToCeiling = runHold(syntheticHum(196, 20, 0.01, ceilingFrames), ceilingFrames, 0);
+assert.ok(heldToCeiling.pitchFrames > ceilingFrames * 0.8, "synthetic ceiling hum was not heard as pitch");
+assert.equal(heldToCeiling.latched, true);
+assert.equal(heldToCeiling.reason, "ceiling");
+assert.ok(heldToCeiling.lockedAt >= TUNING.ceilingMs);
+assert.equal(replaySustainSec(heldToCeiling.heldMs), TUNING.toneHoldMaxSec);
+
+const noiseFrames = Math.round(TUNING.ceilingMs / TUNING.analysisEveryMs) + 1;
+const noiseOnly = new Float32Array(TUNING.fftSize + noiseFrames * 2400);
 let noiseSeed = 5;
 for (let i = 0; i < noiseOnly.length; i++) {
   noiseSeed = (1664525 * noiseSeed + 1013904223) >>> 0;
   noiseOnly[i] = ((noiseSeed / 4294967296) * 2 - 1) * 0.2;
 }
-const noiseRun = runDwell({ samples: noiseOnly, sr: 48000, hop: 2400 }, dwellFrames);
+const noiseRun = runHold({ samples: noiseOnly, sr: 48000, hop: 2400 }, noiseFrames, TUNING.releaseMs);
 assert.equal(noiseRun.pitchFrames, 0);
-assert.equal(noiseRun.latchedAt, null);
+assert.equal(noiseRun.latched, false);
 
-const rising = createDwell({
-  dwellMs: TUNING.lockMs,
-  toleranceCents: TUNING.stableCents,
-  minFrames: TUNING.minLockFrames,
-  pitchClass: false,
-  gapMs: TUNING.gapMs,
-  minVoicedRatio: TUNING.minVoicedRatio,
-});
-for (let i = 0; i < dwellFrames; i++) {
+const rising = createHold();
+const risingFrames = Math.round(TUNING.ceilingMs / TUNING.analysisEveryMs) + 1;
+for (let i = 0; i < risingFrames; i++) {
   const hz = 180 * Math.pow(2, (i * 8) / 1200);
-  rising.observe(hz, i * TUNING.analysisEveryMs);
-  assert.equal(rising.latched(i * TUNING.analysisEveryMs), false);
+  const result = rising.observe(hz, i * TUNING.analysisEveryMs, false);
+  assert.equal(result.lock, false);
 }
 
 assert.equal(captureListeningOutcome({
@@ -229,6 +290,14 @@ assert.equal(captureListeningOutcome({
   startedAt: 0,
   heardSoundAt: 0,
   latched: false,
+  holding: true,
+}), "listen");
+assert.equal(captureListeningOutcome({
+  now: TUNING.voicedUncertainMs,
+  startedAt: 0,
+  heardSoundAt: 0,
+  latched: false,
+  holding: false,
 }), "uncertain");
 assert.equal(captureListeningOutcome({
   now: 5000,
@@ -245,8 +314,18 @@ assert.equal(captureListeningOutcome({
 
 assert.ok(TUNING.tonePeakGain < 0.9);
 assert.equal(TUNING.tonePeakGain, 0.72);
-assert.ok(TUNING.toneAttackSec > 0);
-assert.ok(TUNING.toneReleaseSec > 0);
+assert.equal(TUNING.toneAttackSec, 0.1);
+assert.equal(TUNING.toneReleaseSec, 0.2);
+assert.ok(TUNING.toneAttackSec >= 0.08 && TUNING.toneAttackSec <= 0.12);
+assert.ok(TUNING.toneReleaseSec >= 0.15 && TUNING.toneReleaseSec <= 0.25);
+assert.equal(TUNING.toneHoldMinSec, 2);
+assert.equal(TUNING.toneHoldMaxSec, 4);
+assert.equal(TUNING.toneHoldGuestSec, 2.5);
+assert.equal(replaySustainSec(2500), 2.5);
+assert.equal(replaySustainSec(3200), 3.2);
+assert.equal(replaySustainSec(1500), 2);
+assert.equal(replaySustainSec(9000), 4);
+assert.equal(replaySustainSec(Number.NaN), TUNING.toneHoldGuestSec);
 for (const hz of [80, 196, 440, 880]) {
   const mix = toneMix(hz);
   assert.deepEqual(mix.multiples, [1, 2, 3, 4]);

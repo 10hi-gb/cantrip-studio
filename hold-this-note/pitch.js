@@ -6,11 +6,20 @@ export const TUNING = {
   minConfidence: 0.85,
   silenceRms: 0.008,
   soundRms: 0.015,
-  // Cents from the median of the current lock window, not from the first frame.
+  // Cents from the median of the steady stretch, not from the first frame.
   stableCents: 60,
-  lockMs: 2200,
+  // A continuing hum is not finished at this point. It only becomes eligible to lock.
+  minHoldMs: 2500,
+  // Still humming at this point: lock anyway, on the median of the stretch.
+  ceilingMs: 8000,
+  // A shorter hole, or the same pitch class coming back, does not restart the stretch.
+  graceMs: 250,
+  // Quiet for this long, after the minimum, means the hum ended.
+  releaseMs: 500,
+  // Listening screen shows a hold only after the stretch is clearly underway.
+  showHoldMs: 400,
   minLockFrames: 2,
-  // Short dropouts inside an otherwise steady hum do not wipe the window.
+  // Short dropouts inside a match do not wipe that window.
   gapMs: 350,
   // Pitch frames must be the majority of the window. One leap does not replace it.
   minVoicedRatio: 0.6,
@@ -23,9 +32,13 @@ export const TUNING = {
   matchTimeoutMs: 45000,
   // Sum of harmonic peaks. Kept under 0.9 so the tone is loud without clipping.
   tonePeakGain: 0.72,
-  toneAttackSec: 0.04,
-  toneHoldSec: 0.8,
-  toneReleaseSec: 0.18,
+  toneAttackSec: 0.1,
+  toneReleaseSec: 0.2,
+  // Sender replay follows the held stretch, clamped to this range. Ramps sit outside it.
+  toneHoldMinSec: 2,
+  toneHoldMaxSec: 4,
+  // The fragment has no duration. A received note uses this sustain.
+  toneHoldGuestSec: 2.5,
   postPlaySettleMs: 250,
   analysisEveryMs: 50,
   fftSize: 2048,
@@ -180,12 +193,140 @@ export function createDwell({ dwellMs, toleranceCents, minFrames, pitchClass, ga
   };
 }
 
+// The sender's note stays open while he is still humming. It locks on the median
+// of the steady stretch when the hum goes quiet after the minimum, or at the ceiling.
+export function createHold(tuning = TUNING) {
+  const minHoldMs = tuning.minHoldMs;
+  const ceilingMs = tuning.ceilingMs;
+  const graceMs = tuning.graceMs;
+  const releaseMs = tuning.releaseMs;
+  const showHoldMs = tuning.showHoldMs;
+  const minFrames = tuning.minLockFrames;
+  const toleranceCents = tuning.stableCents;
+  let samples = [];
+  let locked = false;
+  let lockHeldMs = 0;
+  let lockReason = "";
+
+  function medianOf(values) {
+    if (!values.length) return null;
+    const sorted = values.slice().sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    if (sorted.length % 2) return sorted[mid];
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+
+  function span() {
+    if (samples.length < 2) return 0;
+    return samples[samples.length - 1].now - samples[0].now;
+  }
+
+  function medianHz() {
+    return medianOf(samples.map((sample) => sample.hz));
+  }
+
+  function sameNote(hz) {
+    const center = medianHz();
+    if (center == null) return true;
+    const dist = Math.abs(centsBetween(hz, center));
+    return Number.isFinite(dist) && dist <= toleranceCents;
+  }
+
+  function snapshot() {
+    const heldMs = locked ? lockHeldMs : span();
+    let phase = "idle";
+    if (locked) phase = "lock";
+    else if (samples.length && heldMs >= showHoldMs) phase = "holding";
+    else if (samples.length) phase = "forming";
+    return { lock: locked, phase, heldMs, reason: lockReason };
+  }
+
+  function finish(reason, heldMs) {
+    locked = true;
+    lockReason = reason;
+    lockHeldMs = heldMs;
+    return snapshot();
+  }
+
+  function resetTo(hz, now) {
+    samples = typeof hz === "number" && Number.isFinite(hz) && hz > 0 ? [{ hz, now }] : [];
+    return snapshot();
+  }
+
+  return {
+    reset() {
+      samples = [];
+      locked = false;
+      lockHeldMs = 0;
+      lockReason = "";
+    },
+    heldMs() {
+      return locked ? lockHeldMs : span();
+    },
+    medianHz,
+    latched() {
+      return locked;
+    },
+    active() {
+      return samples.length > 0 && !locked;
+    },
+    observe(hz, now, quiet = false) {
+      if (locked) return snapshot();
+      const pitch = typeof hz === "number" && Number.isFinite(hz) && hz > 0;
+      if (!samples.length) {
+        if (!pitch) return snapshot();
+        samples = [{ hz, now }];
+        return snapshot();
+      }
+
+      const last = samples[samples.length - 1].now;
+      const gap = now - last;
+      const held = span();
+      const openMs = now - samples[0].now;
+      const earned = samples.length >= minFrames && held >= minHoldMs;
+
+      if (quiet && earned && gap >= releaseMs) {
+        return finish("release", held);
+      }
+      if (earned && openMs >= ceilingMs) {
+        return finish("ceiling", openMs);
+      }
+
+      if (pitch && sameNote(hz)) {
+        if (!earned && gap > graceMs) return resetTo(hz, now);
+        samples.push({ hz, now });
+        const nextHeld = span();
+        const nextOpen = now - samples[0].now;
+        if (samples.length >= minFrames && nextHeld >= minHoldMs && nextOpen >= ceilingMs) {
+          return finish("ceiling", nextOpen);
+        }
+        return snapshot();
+      }
+
+      if (gap <= graceMs || earned) return snapshot();
+      if (pitch) return resetTo(hz, now);
+      return resetTo(NaN, now);
+    },
+  };
+}
+
+// Sustain follows the held stretch. The fragment does not store a duration.
+export function replaySustainSec(heldMs, tuning = TUNING) {
+  if (typeof heldMs !== "number" || !Number.isFinite(heldMs)) return tuning.toneHoldGuestSec;
+  const sec = heldMs / 1000;
+  if (sec < tuning.toneHoldMinSec) return tuning.toneHoldMinSec;
+  if (sec > tuning.toneHoldMaxSec) return tuning.toneHoldMaxSec;
+  return sec;
+}
+
 // Listening either locks, or it ends in an explicit uncertain state. It does not
-// stay on the capture controls just because sound was heard.
-export function captureListeningOutcome({ now, startedAt, heardSoundAt, latched, tuning = TUNING }) {
+// stay on the capture controls just because sound was heard. An open steady
+// stretch is not that failure: it is waiting for the hum to end or the ceiling.
+export function captureListeningOutcome({ now, startedAt, heardSoundAt, latched, holding = false, tuning = TUNING }) {
   if (latched) return "lock";
-  if (typeof heardSoundAt === "number" && now - heardSoundAt >= tuning.voicedUncertainMs) return "uncertain";
   if (now - startedAt >= tuning.listenTimeoutMs) return "uncertain";
+  if (holding) return "listen";
+  if (typeof heardSoundAt === "number" && now - heardSoundAt >= tuning.voicedUncertainMs) return "uncertain";
   return "listen";
 }
 

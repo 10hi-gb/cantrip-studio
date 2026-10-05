@@ -6,7 +6,7 @@ Copy on this page is still the interim engineer wording. Writer's visitor table 
 
 Visuals follow Creative direction A, Held String, from `/workspace/hold-this-note/creative/DIRECTIONS.md` (2026-10-04). Room `#0C1012`, listening string `#7AA8A4`, held string `#F4FFFD`. Glass Ring was not applied. Studio home link stays the existing logo. Reduced motion is the default: the string does not animate.
 
-This page does not record a voice. A visitor hums; the browser estimates one pitch; playback is a short tone at that pitch, not the voice. The shared link carries the pitch only.
+This page does not record a voice. A visitor hums; the browser estimates one pitch; playback is a tone at that pitch, not the voice. The shared link carries the pitch only.
 
 ## Run locally
 
@@ -43,15 +43,15 @@ These live in `TUNING` in `pitch.js`. They are implementation choices, not found
 | Choice | Value |
 | --- | --- |
 | Pitch range | 80–1000 Hz |
-| Lock | 2.2 s of confident pitch, each frame within 60 cents of the window's median, pitch frames at least 60% of that window, at least 2 frames. A dropout shorter than 0.35 s does not wipe it. One far frame does not. |
+| Lock | A steady stretch is pitch within 60 cents of its own median. It becomes eligible at 2.5 s and does not lock while the hum is still going. A hole of 0.25 s, including a brief other pitch, does not restart it. After 2.5 s, quiet for 0.5 s locks on the median. If the hum keeps going, it locks at 8 s. Noise does not lock. |
 | Confidence | YIN cumulative-mean dip at or below 0.15, and confidence at least 0.85 |
 | Silence / sound RMS | below 0.008 quiet, at or above 0.015 treated as sound |
-| Heard but not locked | after 6 s of sound without a lock, leave listening and offer Try again |
+| Heard but not locked | after 6 s of sound with no stretch still open, leave listening and offer Try again. An open stretch waits for the hum to end or the 8 s ceiling. A silent attempt still ends at 20 s. |
 | Quiet capture timeout | 20 s, then the same uncertain screen |
 | Capture mic processing | echo cancellation off, noise suppression off, auto gain off |
 | Match | pitch class across octaves, within 50 cents, held about 0.7 s, at least 2 frames |
 | Match timeout | 45 s |
-| Tone | four sines at 1×, 2×, 3×, and 4× the locked pitch. Their gains sum to 0.72, under 0.9. Below 240 Hz more of that level moves onto the upper partials; the fundamental stays the pitch. Master gain ramps 0→1 in 0.04 s, holds 0.8 s, ramps to 0 in 0.18 s, then 0.25 s of silence before matching can listen. One play when a capture locks. A later lock plays once more. |
+| Tone | four sines at 1×, 2×, 3×, and 4× the locked pitch. Their gains sum to 0.72, under 0.9. Below 240 Hz more of that level moves onto the upper partials; the fundamental stays the pitch. The sender's sustain follows the held stretch, clamped to 2–4 s. A received note has no duration in the link, so its sustain is 2.5 s. Attack 0.1 s, release 0.2 s, then 0.25 s of silence before matching can listen. The mic stops before the tone. One play when a capture locks. Try again that locks again plays once more. |
 | High-note search | up to 2000 Hz, refused above 1000 Hz instead of stored |
 
 Noise, silence, and a weak pitch estimate do not lock. One matching frame does not land.
@@ -62,12 +62,12 @@ Button labels live in the `COPY` object in `app.js`.
 
 One tap starts listening. The browser's own microphone prompt is the only confirmation. Try again starts listening the same way.
 
-The microphone tracks are stopped before a tone starts. Send it stays usable while the locked tone plays.
+The microphone tracks are stopped before a tone starts. Send it stays usable while the locked tone plays. The listening screen has no lock button and no countdown.
 
 | Screen | Actions |
 | --- | --- |
 | Start | Hold a note. About the mic is a disclosure. The privacy line is already on the screen. |
-| Listening | Cancel |
+| Listening | Cancel. While the hum is holding, the string switches to the held line and the status says "Holding…". |
 | Didn't catch a steady note | Try again |
 | Mic blocked | Try again, and Start over. On a received note: Try again, Play the note, Back. |
 | Locked | Send it, Try again. The tone plays once by itself. If there is no share sheet, Send it copies the link and says so in the status line. Cancelling the share sheet does not say the note was sent. |
@@ -122,7 +122,7 @@ Original page code. No runtime dependency and no copied pitch-detection library.
 ## Known limits
 
 - Real-phone pitch accuracy is not proven. The pitch tests use synthetic buffers only. A headless microphone-gate check is not a phone trial. A later device pass did lock a steady note and move on. That is still not a measured pitch-accuracy pass.
-- A hum that wobbles past the median window, or never forms a confident pitch, still does not lock. After sound has been heard for the voiced timeout, listening ends on "Didn't catch a steady note." with Try again, instead of staying on Cancel.
+- A hum that never settles, or settles and then wanders off before 2.5 s, still does not lock. A steady hum is not cut off at 2.5 s: it locks when the voice goes quiet, or at 8 s if it keeps going. After sound with no open stretch for the voiced timeout, listening ends on "Didn't catch a steady note." with Try again.
 - Octave mistakes are still possible on some voices. Matching compares pitch class so a true octave can still land; a wrong octave in the shared number would play the wrong register.
 - The analysis window is 2048 samples. At sample rates well above 48 kHz the lowest notes may be refused instead of guessed.
 - Speaker echo is blocked by ending playback (oscillator stopped, gain at zero) before matching can listen. It is not proven against every device's echo path.

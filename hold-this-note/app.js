@@ -3,8 +3,10 @@ import {
   encodeFragment,
   decodeFragment,
   createDwell,
+  createHold,
   detectPitch,
   captureListeningOutcome,
+  replaySustainSec,
   toneMix,
 } from "./pitch.js";
 
@@ -21,7 +23,7 @@ const COPY = {
   micAbout: "Listening happens on your device, and only after you start it. We don't save a recording of your voice, and we don't send one. The link carries the pitch so the other phone can play a tone. We don't promise the pitch is exact, or that the message gets there.",
   listen: "Hum something comfortable.",
   hearing: "Hum something comfortable.",
-  holding: "Hold it steady.",
+  holding: "Holding…",
   uncertain: "Didn't catch a steady note.",
   holdNote: "Hold a note",
   sendIt: "Send it",
@@ -84,6 +86,7 @@ let listenStartedAt = 0;
 let heardSoundAt = null;
 let level = "quiet";
 let dwell = null;
+let hold = null;
 let sharing = false;
 
 function micSupported() {
@@ -188,6 +191,7 @@ function releaseMic() {
     ticker = null;
   }
   dwell = null;
+  hold = null;
   if (sourceNode) {
     try { sourceNode.disconnect(); } catch (err) { /* already gone */ }
     sourceNode = null;
@@ -464,6 +468,7 @@ async function startListening(purpose) {
     heardSoundAt = null;
     level = "quiet";
     if (purpose === "match") {
+      hold = null;
       dwell = createDwell({
         dwellMs: TUNING.matchDwellMs,
         toleranceCents: TUNING.matchCents,
@@ -474,19 +479,13 @@ async function startListening(purpose) {
       });
       renderMatch();
     } else {
-      dwell = createDwell({
-        dwellMs: TUNING.lockMs,
-        toleranceCents: TUNING.stableCents,
-        minFrames: TUNING.minLockFrames,
-        pitchClass: false,
-        gapMs: TUNING.gapMs,
-        minVoicedRatio: TUNING.minVoicedRatio,
-      });
+      dwell = null;
+      hold = createHold(TUNING);
       mode = "listen";
       setString("capture");
       setMark("");
       setStatus(COPY.listen);
-      setMeter("Hum something comfortable.", 0);
+      setMeter("", 0);
       clearActions();
       addButton(COPY.cancel, () => {
         releaseMic();
@@ -516,80 +515,78 @@ async function startListening(purpose) {
   }
 }
 
+function finishCapture(result) {
+  const hz = hold.medianHz();
+  releaseMic();
+  try {
+    lockedHz = decodeFragment(encodeFragment(hz));
+  } catch (err) {
+    renderSolo();
+    setStatus(COPY.uncertain);
+    focusFirstAction();
+    return;
+  }
+  renderLocked();
+  focusFirstAction();
+  void playLockedTone(lockedHz, result.heldMs);
+}
+
+function showCaptureProgress(result) {
+  if (result.phase === "holding") {
+    setString("held");
+    setStatus(COPY.holding);
+  } else {
+    setString("capture");
+    setStatus(COPY.listen);
+  }
+  setMeter("", 0);
+}
+
 function analyse(purpose) {
-  if (!listening || !analyser || !timeBuf || !dwell) return;
+  if (!listening || !analyser || !timeBuf) return;
+  if (purpose === "match" && !dwell) return;
+  if (purpose !== "match" && !hold) return;
   analyser.getFloatTimeDomainData(timeBuf);
   const now = performance.now();
   const found = detectPitch(timeBuf, audioCtx.sampleRate, TUNING);
   timeBuf.fill(0);
-  const timeoutMs = purpose === "match" ? TUNING.matchTimeoutMs : TUNING.listenTimeoutMs;
 
   if (found.rms >= TUNING.soundRms) {
     level = "sound";
     if (heardSoundAt == null) heardSoundAt = now;
   } else if (found.rms < TUNING.silenceRms) level = "quiet";
 
-  if (found.reason === "pitch") {
-    const held = dwell.observe(found.hz, now, lockedHz);
+  const hz = found.reason === "pitch" ? found.hz : Number.NaN;
+  const quiet = found.rms < TUNING.silenceRms;
+
+  if (purpose === "match") {
+    const held = dwell.observe(hz, now, lockedHz);
     if (dwell.latched(now)) {
-      if (purpose === "match") {
-        releaseMic();
-        renderLanded();
-        focusFirstAction();
-      } else {
-        const hz = dwell.medianHz();
-        releaseMic();
-        try {
-          lockedHz = decodeFragment(encodeFragment(hz));
-        } catch (err) {
-          renderSolo();
-          setStatus(COPY.uncertain);
-          focusFirstAction();
-          return;
-        }
-        renderLocked();
-        focusFirstAction();
-        void playLockedTone(lockedHz);
-      }
+      releaseMic();
+      renderLanded();
+      focusFirstAction();
       return;
     }
-    if (purpose === "match") {
-      setMark("notyet");
-      setStatus(COPY.notYet);
-      setMeter("Not yet", held / TUNING.matchDwellMs);
-    } else {
-      setStatus(held > 0 ? COPY.holding : COPY.hearing);
-      setMeter(held > 0 ? "Hold it steady." : "Hum something comfortable.", held / TUNING.lockMs);
-    }
-  } else {
-    dwell.observe(NaN, now, lockedHz);
-    if (found.reason === "range") {
-      setStatus(COPY.uncertain);
-      setMeter("Hold it steady.", 0);
-    } else if (found.reason === "uncertain" && level === "sound") {
-      setStatus(COPY.uncertain);
-      setMeter("Hold it steady.", 0);
-    } else if (purpose === "match") {
-      setMark("notyet");
-      setStatus(COPY.notYet);
-      setMeter("Not yet", 0);
-    } else if (level === "quiet" && now - listenStartedAt > 2000) {
-      setStatus(COPY.listen);
-      setMeter("Hum something comfortable.", 0);
-    } else {
-      setStatus(COPY.listen);
-      setMeter("Hum something comfortable.", 0);
-    }
+    setMark("notyet");
+    setStatus(COPY.notYet);
+    setMeter("Not yet", Number.isFinite(hz) ? held / TUNING.matchDwellMs : 0);
+    if (now - listenStartedAt >= TUNING.matchTimeoutMs) finishUncertain(purpose);
+    return;
   }
 
-  const outcome = purpose === "capture"
-    ? captureListeningOutcome({
-      now,
-      startedAt: listenStartedAt,
-      heardSoundAt,
-      latched: false,
-    })
-    : (now - listenStartedAt >= timeoutMs ? "uncertain" : "listen");
+  const result = hold.observe(hz, now, quiet);
+  if (result.lock) {
+    finishCapture(result);
+    return;
+  }
+  showCaptureProgress(result);
+  const outcome = captureListeningOutcome({
+    now,
+    startedAt: listenStartedAt,
+    heardSoundAt,
+    latched: false,
+    holding: hold.active(),
+  });
   if (outcome === "uncertain") finishUncertain(purpose);
 }
 
@@ -624,12 +621,13 @@ function retryCapture() {
   startListening("capture");
 }
 
-async function playLockedTone(hz) {
-  await runTone(hz, { holdScreen: true });
+async function playLockedTone(hz, heldMs) {
+  await runTone(hz, { holdScreen: true, holdSec: replaySustainSec(heldMs) });
 }
 
 async function runTone(hz, options) {
   const holdScreen = !!(options && options.holdScreen);
+  const holdSec = options && typeof options.holdSec === "number" ? options.holdSec : TUNING.toneHoldGuestSec;
   if (playbackActive || starting || listening) return;
   if (!audioSupported() || hz == null) {
     setStatus(COPY.noAudio);
@@ -667,10 +665,11 @@ async function runTone(hz, options) {
     toneNodes.push(master);
     currentOsc = oscs[0];
     currentGain = master;
-    const releaseAt = start + TUNING.toneAttackSec + TUNING.toneHoldSec + TUNING.toneReleaseSec;
+    const sustainEnd = start + TUNING.toneAttackSec + holdSec;
+    const releaseAt = sustainEnd + TUNING.toneReleaseSec;
     master.gain.setValueAtTime(0, start);
     master.gain.linearRampToValueAtTime(1, start + TUNING.toneAttackSec);
-    master.gain.setValueAtTime(1, start + TUNING.toneAttackSec + TUNING.toneHoldSec);
+    master.gain.setValueAtTime(1, sustainEnd);
     master.gain.linearRampToValueAtTime(0, releaseAt);
     master.connect(ctx.destination);
     oscs.forEach((osc) => {
@@ -721,7 +720,7 @@ async function runTone(hz, options) {
 }
 
 async function playHz(hz) {
-  await runTone(hz, { holdScreen: false });
+  await runTone(hz, { holdScreen: false, holdSec: TUNING.toneHoldGuestSec });
 }
 
 function playCurrent() {
