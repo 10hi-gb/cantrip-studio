@@ -18,49 +18,49 @@ const stringEl = document.getElementById("string");
 const actionsEl = document.getElementById("actions");
 
 const COPY = {
-  soloLede: "Hum a note. We'll send it as a tone — not a recording.",
-  micBody: "Mic on for a moment. We don't keep your voice. The link just carries the note.",
-  micAbout: "The mic only turns on when you ask. We don't save your voice or send it. The link holds the note so another phone can play a tone. We don't promise it's exact, or that it gets there.",
-  listen: "Go ahead.",
-  hearing: "Go ahead.",
+  soloLede: "Hum a note. Send it to someone. See if they can match it.",
+  micBody: "Your voice isn't recorded or uploaded.",
+  micAbout: "The microphone listens while you hum. Your voice stays on your device. The link contains only the pitch, which plays back as a tone.",
+  listen: "Hum a note.",
+  hearing: "Hum a note.",
   holding: "Holding…",
-  uncertain: "Missed that one.",
-  holdNote: "Hold a note",
+  uncertain: "Didn't catch it.",
+  holdNote: "Start humming",
   sendIt: "Send it",
   tryAgain: "Try again",
   makeOneBack: "Make one back",
-  humAlong: "Hum along",
-  playNote: "Play it",
+  humAlong: "Try to match it",
+  playNote: "Play the note",
   locked: "Got it.",
-  lockedSub: "Your note, as a tone.",
-  toneFailed: "Couldn't play it.",
-  played: "There it is.",
-  denied: "Mic is blocked. You can allow it in the browser. A note someone sent still plays.",
-  unavailable: "No mic here. A note someone sent still plays.",
-  busyMic: "Mic is busy somewhere else. Try again when it's free.",
+  lockedSub: "",
+  toneFailed: "Couldn't play the note.",
+  played: "Ready to match.",
+  denied: "Microphone is blocked. Allow it in the browser, then try again.",
+  unavailable: "This browser can't use the microphone.",
+  busyMic: "Microphone is in use elsewhere. Try again when it's free.",
   noAudio: "This browser can't play sound.",
   interrupted: "Ready when you are.",
-  recipientLede: "A note for you — as a tone, not their voice.",
-  matching: "Hear it, then hum along if you want.",
-  listenOnly: "Or just listen.",
+  recipientLede: "Someone sent you a note.",
+  matching: "Listen, then see if you can hum it back.",
+  listenOnly: "",
   notYet: "Not yet.",
-  landed: "You got it.",
-  landedSub: "Same note.",
+  landed: "You matched it.",
+  landedSub: "",
   badLink: "This link doesn't hold a note.",
-  playing: "There it is.",
-  shareDone: "That's as far as this page goes. Your note's still here.",
-  shareCancel: "Didn't send. Still here.",
-  shareError: "Couldn't share from here.",
-  copied: "Copied. Send it when you want.",
+  playing: "Playing…",
+  shareDone: "Share finished. Your note is still here.",
+  shareCancel: "Share canceled. Your note is still here.",
+  shareError: "Couldn't share. Try copying the link.",
+  copied: "Link copied.",
   copyFail: "Couldn't copy. The link is selected.",
   cancel: "Cancel",
   stop: "Stop",
   holdOneBack: "Make one back",
-  holdOneYourself: "Hold one yourself",
+  holdOneYourself: "Start humming",
   back: "Back",
   startOver: "Start over",
   aboutMic: "About the mic",
-  playbackStopped: "Stopped.",
+  playbackStopped: "Playback stopped.",
 };
 
 let route = { kind: "solo" };
@@ -114,7 +114,7 @@ function setString(state) {
 function setMark(kind) {
   markEl.className = kind ? "mark " + kind : "mark";
   markEl.hidden = !kind;
-  if (kind === "landed") markEl.textContent = "You got it";
+  if (kind === "landed") markEl.textContent = "You matched it";
   else if (kind === "notyet") markEl.textContent = "Not yet";
   else markEl.textContent = "";
 }
@@ -283,7 +283,7 @@ function renderLocked() {
   setMeter("", 0);
   setStatus(COPY.locked);
   clearActions();
-  addNote(COPY.lockedSub);
+  if (COPY.lockedSub) addNote(COPY.lockedSub);
   addButton(COPY.sendIt, () => sendNote(), { primary: true });
   addButton(COPY.tryAgain, () => retryCapture());
 }
@@ -302,8 +302,8 @@ function renderRecipient() {
     return;
   }
   addButton(COPY.playNote, () => playCurrent(), { primary: true });
-  addNote(COPY.matching);
-  addNote(COPY.listenOnly);
+  if (COPY.matching) addNote(COPY.matching);
+  // listenOnly removed per Joshua copy correction
   if (!micSupported()) {
     addNote(COPY.unavailable);
   } else {
@@ -332,7 +332,7 @@ function renderLanded() {
   setMeter("", 0);
   setStatus(COPY.landed);
   clearActions();
-  addNote(COPY.landedSub);
+  if (COPY.landedSub) addNote(COPY.landedSub);
   addButton(COPY.makeOneBack, () => makeOwn(), { primary: true });
 }
 
@@ -759,7 +759,7 @@ async function sendNote() {
     try {
       await navigator.share({
         title: "Hold This Note",
-        text: "A note, as a tone.",
+        text: "Someone sent you a note.",
         url,
       });
       if (mode === "locked") setStatus(COPY.shareDone);
