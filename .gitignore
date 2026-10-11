@@ -1,1 +1,4 @@
 still-have-it/*.png
+public-stage/
+.wrangler/
+node_modules/

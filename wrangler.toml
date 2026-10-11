@@ -1,0 +1,9 @@
+name = "cantrip-two-versions-review"
+pages_build_output_dir = "./public-stage"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "TV_DB"
+database_name = "cantrip-two-versions-review"
+database_id = "28ef2baf-d394-42d3-8e86-6d7dc0638fde"
+migrations_dir = "migrations"

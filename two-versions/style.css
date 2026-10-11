@@ -1,0 +1,16 @@
+:root{--ink:#1d1b18;--paper:#faf7f2;--line:#d8d0c4;--accent:#5a3e8a;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}
+body{margin:0}main{max-width:44rem;margin:0 auto;padding:1.5rem 1rem 4rem;line-height:1.5}
+h1{font-size:1.8rem;margin:.5rem 0}label{display:block;font-weight:600;margin-top:1.2rem}
+.hint,.small{color:#5b554c;font-size:.92rem;margin:.2rem 0}
+input[type=text],textarea{width:100%;box-sizing:border-box;font:inherit;padding:.6rem;border:1px solid var(--line);border-radius:6px;background:#fff}
+textarea{min-height:12rem;resize:vertical}
+button{font:inherit;padding:.6rem 1.1rem;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;margin:.8rem .5rem 0 0;cursor:pointer}
+button.secondary{background:transparent;color:var(--accent)}button:disabled{opacity:.6}
+.status{min-height:1.5em;margin-top:.8rem;font-weight:600}.over{color:#a01818}
+.linkbox{word-break:break-all;background:#fff;border:1px solid var(--line);padding:.5rem;border-radius:6px;font-family:ui-monospace,monospace;font-size:.85rem}
+.moment{font-size:1.2rem;font-style:italic;white-space:pre-wrap}
+.pair{display:grid;grid-template-columns:1fr;gap:1rem;margin-top:1rem}
+@media(min-width:720px){main{max-width:64rem}.pair{grid-template-columns:1fr 1fr}}
+.account{background:#fff;border:1px solid var(--line);border-radius:8px;padding:1rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.account h2{font-size:1rem;margin:0 0 .5rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
