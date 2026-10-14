@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Annual Review of You · Cantrip Studio</title>
+<meta name="description" content="Someone filed a review. Open it to read.">
+<meta property="og:title" content="Annual Review of You">
+<meta property="og:description" content="Someone filed a review. Open it to read.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="ar">
+<a class="ar-nav" href="../">Cantrip Studio</a>
+<div class="ar-stack">
+ <p id="loading" class="ar-fine" data-c="loading"></p>
+
+ <form class="ar-form" id="s-start" hidden novalidate>
+  <div class="ar-head"><span>Form 193-R · Annual Review</span><span>Copy 1 of 3 · Employee</span></div>
+  <h1 class="ar-title" data-c="title"></h1>
+  <p class="ar-lede" data-c="invitation"></p>
+  <div class="ar-grid">
+   <div class="ar-field"><label for="f-name" data-c="nameLabel"></label><input id="f-name" maxlength="60" autocomplete="off"></div>
+   <div class="ar-field"><label for="f-period" data-c="periodLabel"></label><input id="f-period" maxlength="40" autocomplete="off"></div>
+   <div class="ar-field"><label for="f-rev" data-c="reviewerLabel"></label><input id="f-rev" maxlength="60" autocomplete="off"></div>
+   <div class="ar-field"><label data-c="momentsHeading"></label><div class="v" id="req"></div></div>
+  </div>
+  <p class="ar-fine" data-c="privacy"></p>
+  <p class="ar-warn" id="start-msg" role="status"></p>
+  <button class="ar-btn ar-btn--primary" id="start" type="submit" data-c="primary"></button>
+ </form>
+
+ <form class="ar-form" id="s-moments" hidden novalidate>
+  <div class="ar-head"><span>Form 193-R · Annual Review</span><span>Copy 1 of 3 · Employee</span></div>
+  <h1 class="ar-title" data-c="momentsHeading"></h1>
+  <div id="moments"></div>
+  <div class="ar-actions"><button class="ar-btn" type="button" id="add" data-c="addMoment"></button><span class="ar-warn" data-c="limit"></span></div>
+  <div class="ar-entry">
+   <p class="ar-label">Overall</p><div id="closers" role="group" aria-label="Overall"></div>
+   <div class="ar-field"><label for="f-extra" data-c="closerExtraLabel"></label><input id="f-extra" maxlength="80" autocomplete="off"></div>
+  </div>
+  <div class="ar-meter" id="meter" aria-hidden="true"><i></i></div>
+  <p class="ar-warn" id="m-msg" role="status"></p>
+  <div class="ar-actions"><button class="ar-btn ar-btn--primary" type="submit" id="to-preview" data-c="send"></button><button class="ar-btn" type="button" id="back-start" data-c="edit"></button></div>
+ </form>
+
+ <div class="ar-form" id="s-recv" hidden>
+  <div class="ar-head"><span>Form 193-R · Annual Review</span><span>Confidential</span></div>
+  <h1 class="ar-title" data-c="recipientHeading"></h1>
+  <p class="ar-lede" id="recv-body"></p>
+  <button class="ar-btn ar-btn--primary" id="read" data-c="recipientPrimary"></button>
+ </div>
+
+ <div class="ar-form" id="review-form" hidden>
+  <div class="ar-head"><span>Form 193-R · Annual Review</span><span>Confidential</span></div>
+  <p class="ar-label" id="prev-h" data-c="previewHeading"></p>
+  <h1 class="ar-title" id="r-title"></h1>
+  <div class="ar-grid"><div class="ar-field"><label data-c="periodLabel"></label><div class="v" id="r-period"></div></div><div class="ar-field"><label data-c="reviewerLabel"></label><div class="v" id="r-rev"></div></div></div>
+  <div id="r-moments"></div>
+  <div class="ar-field ar-overall"><label>Overall</label><div class="v" id="r-overall"></div></div>
+  <div class="ar-actions" id="sender-actions"><button class="ar-btn ar-btn--primary" id="share" data-c="send"></button><button class="ar-btn" id="save" data-c="save"></button><button class="ar-btn" id="edit" data-c="edit"></button></div>
+  <p class="ar-fine" id="sender-fine"></p>
+  <div class="ar-actions" id="recv-actions" hidden><a class="ar-btn ar-btn--primary" href="./" id="back" data-c="recipientEnd"></a><button class="ar-btn" id="save2" data-c="save"></button></div>
+ </div>
+
+ <div class="ar-form" id="s-bad" hidden><div class="ar-head"><span>Form 193-R</span><span>Returned</span></div><h1 class="ar-title" data-c="title"></h1><p class="ar-lede" data-c="badLink"></p><a class="ar-btn ar-btn--primary" href="./" data-c="primary"></a></div>
+</div>
+<div class="ar-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

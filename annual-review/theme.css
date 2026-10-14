@@ -1,0 +1,65 @@
+/* C193 Annual Review of You, A′ Formal Review: "Form 193-R, carbonless triplicate". Self-host fonts. */
+@font-face{font-family:"Courier Prime";src:local("Courier Prime"),url(fonts/CourierPrime-Regular.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Courier Prime";src:local("Courier Prime Bold"),url(fonts/CourierPrime-Bold.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Archivo Narrow";src:local("Archivo Narrow"),url(fonts/ArchivoNarrow-Variable.woff2) format("woff2");font-weight:400 700;font-display:swap}
+:root{
+  --ar-desk:#5E6B6A; --ar-canary:#F6E9A6; --ar-pink:#F3C9CF; --ar-white:#FBFAF3;
+  --ar-rule:#2E4A8A; --ar-type:#26303F; --ar-stamp:#C42B1C; --ar-muted:#5D6A86;
+  --ar-type-font:"Courier Prime","Courier New",Courier,monospace;
+  --ar-form-font:"Archivo Narrow","Arial Narrow","Helvetica Neue",sans-serif;
+  --ar-type-speed:18ms;
+}
+.ar{margin:0;min-height:100dvh;background:var(--ar-desk);color:var(--ar-type);font-family:var(--ar-type-font);
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 2px,transparent 2px 7px)}
+.ar-stack{position:relative;max-width:820px;margin:0 auto;padding:28px 14px 60px}
+@media(min-width:900px){.ar-stack{padding:64px 0 96px}}
+.ar-stack::before,.ar-stack::after{content:"";position:absolute;inset:34px 8px auto 22px;height:calc(100% - 100px);background:var(--ar-pink);transform:rotate(1.2deg);z-index:0}
+.ar-stack::after{background:var(--ar-white);transform:rotate(-.8deg);inset:30px 18px auto 12px}
+.ar-form{position:relative;z-index:1;background:var(--ar-canary);padding:22px 20px 34px 46px;box-shadow:0 18px 30px -16px rgba(0,0,0,.5)}
+.ar-form::before{content:"";position:absolute;left:28px;top:0;bottom:0;border-left:2px dashed rgba(46,74,138,.45)} /* perforation */
+@media(min-width:900px){.ar-form{padding:36px 48px 48px 84px}.ar-form::before{left:52px}}
+.ar-head{display:flex;justify-content:space-between;gap:12px;border-bottom:3px solid var(--ar-rule);padding-bottom:8px;font:700 12px var(--ar-form-font);letter-spacing:.12em;text-transform:uppercase;color:var(--ar-rule)}
+.ar-title{font:700 clamp(26px,4.4vw,44px)/1.05 var(--ar-form-font);color:var(--ar-rule);text-transform:uppercase;letter-spacing:.02em;margin:14px 0}
+.ar-grid{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--ar-rule)}
+.ar-field{border:.75px solid var(--ar-rule);padding:6px 8px 8px;min-height:44px}
+.ar-field label,.ar-label{display:block;font:600 10px var(--ar-form-font);letter-spacing:.14em;text-transform:uppercase;color:var(--ar-rule)}
+.ar-field .v,.ar-field input,.ar-field textarea{font:16px/1.35 var(--ar-type-font);color:var(--ar-type);border:0;background:transparent;width:100%;padding:2px 0}
+.ar-moment{border:1.5px solid var(--ar-rule);margin-top:14px;display:grid;grid-template-columns:44px 1fr}
+.ar-moment .no{border-right:1.5px solid var(--ar-rule);font:700 22px var(--ar-form-font);color:var(--ar-rule);display:grid;place-items:center}
+.ar-moment .body{padding:8px 12px 10px}
+.ar-moment .cat{font:700 12px var(--ar-form-font);letter-spacing:.12em;text-transform:uppercase;color:var(--ar-rule)}
+.ar-moment .line{font-size:16.5px;line-height:1.45;margin:4px 0}
+.ar-rate{display:inline-block;border:1.5px solid var(--ar-type);padding:1px 6px;font-size:13px}
+.ar-chip{font:600 12px var(--ar-form-font);letter-spacing:.06em;text-transform:uppercase;border:1.5px solid var(--ar-rule);background:transparent;color:var(--ar-rule);padding:8px 10px;min-height:36px;margin:3px 4px 0 0;cursor:pointer}
+.ar-chip[aria-pressed=true]{background:var(--ar-rule);color:var(--ar-canary)}
+.ar-btn{font:700 14px var(--ar-form-font);letter-spacing:.14em;text-transform:uppercase;border:2px solid var(--ar-type);background:transparent;color:var(--ar-type);padding:12px 18px;min-height:44px;cursor:pointer}
+.ar-btn--primary{background:var(--ar-type);color:var(--ar-canary)}
+.ar-btn:focus-visible,.ar-chip:focus-visible{outline:3px dashed var(--ar-stamp);outline-offset:3px}
+.ar-warn{color:var(--ar-stamp);font-size:13px}
+.ar-stamp{position:absolute;right:22px;bottom:26px;z-index:2;font:700 clamp(30px,6vw,56px)/1 var(--ar-form-font);letter-spacing:.12em;color:var(--ar-stamp);
+  border:5px double var(--ar-stamp);padding:6px 16px;transform:rotate(-9deg);mix-blend-mode:multiply;opacity:.88;
+  -webkit-mask:radial-gradient(circle at 30% 40%,#000 60%,rgba(0,0,0,.75) 61%) ;}
+/* motion: typewriter + stamp thunk (JS adds .is-typing with --chars) */
+.ar-moment .line.is-typing{overflow:hidden;white-space:nowrap;width:0;animation:ar-type calc(var(--chars)*var(--ar-type-speed)) steps(var(--chars)) forwards}
+@keyframes ar-type{to{width:calc(var(--chars)*1ch)}}
+.ar-stamp.is-thunk{animation:ar-thunk 320ms cubic-bezier(.3,1.6,.5,1) both}
+@keyframes ar-thunk{from{transform:scale(1.4) rotate(-5deg);opacity:0}to{transform:rotate(-9deg);opacity:.88}}
+@media(prefers-reduced-motion:reduce){.ar-moment .line.is-typing{animation:none;width:auto;white-space:normal}.ar-stamp.is-thunk{animation:none}}
+/* --- build additions (Engineer) --- */
+*{box-sizing:border-box}[hidden]{display:none!important}
+.ar-nav{position:absolute;top:6px;left:14px;font:600 11px var(--ar-form-font);letter-spacing:.14em;text-transform:uppercase;color:var(--ar-canary);text-decoration:none;z-index:3}
+.ar-lede{font-size:17px;line-height:1.5;max-width:46ch}
+.ar-fine{font-size:13px;color:var(--ar-muted);margin-top:12px;line-height:1.45}
+.ar-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.ar-entry{border:1.5px solid var(--ar-rule);margin-top:16px;padding:10px 12px;background:rgba(255,255,255,.18)}
+.ar-entry .ar-field{border:0;border-bottom:1px solid var(--ar-rule);padding:4px 0}
+.ar-entry .ar-label{margin-top:10px}
+.ar-preview{background:var(--ar-white);margin-top:10px}
+.ar-meter{height:6px;border:1px solid var(--ar-rule);margin-top:14px;position:relative}
+.ar-meter i{position:absolute;inset:0 auto 0 0;background:var(--ar-rule)}
+.ar-meter.over i{background:var(--ar-stamp)}
+.ar-overall{margin-top:14px;border-width:1.5px}
+.ar-closer-text{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ar-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ar-type);color:var(--ar-canary);padding:10px 16px;font:13px var(--ar-type-font);z-index:9}
+.ar-x{float:right;font:600 11px var(--ar-form-font);letter-spacing:.1em;text-transform:uppercase;background:none;border:0;color:var(--ar-rule);cursor:pointer;min-height:32px}
+#review-form{padding-bottom:120px}
