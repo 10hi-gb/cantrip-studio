@@ -38,9 +38,10 @@ if (typeof document !== 'undefined') (function () {
   function untear() { torn = false; var t = $('ticket'); t.classList.remove('ps-torn'); var n1 = $('next1'); n1.className = 'ps-ticket ps-ticket--lime is-ghost'; n1.textContent = ''; $('rip').textContent = ''; $('acts-make').hidden = false; $('acts-torn').hidden = true; $('hint').hidden = false; $('linkbox').hidden = true; }
   $('tear').onclick = tear;
   $('ticket').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tear(); } });
-  var y0 = null; $('ticket').addEventListener('pointerdown', function (e) { if (torn || recv) return; y0 = e.clientY; $('ticket').setPointerCapture(e.pointerId); });
-  $('ticket').addEventListener('pointermove', function (e) { if (y0 != null && e.clientY - y0 > 60) { y0 = null; tear(); } });
-  $('ticket').addEventListener('pointerup', function () { y0 = null; });
+  var y0 = null; function dragEnd(e) { if (y0 != null && e.clientY - y0 > 60) { y0 = null; tear(); } }
+  $('ticket').addEventListener('pointerdown', function (e) { if (torn || recv) return; e.preventDefault(); y0 = e.clientY; try { $('ticket').setPointerCapture(e.pointerId); } catch (x) {} });
+  $('ticket').addEventListener('pointermove', dragEnd);
+  $('ticket').addEventListener('pointerup', function (e) { dragEnd(e); y0 = null; }); $('ticket').addEventListener('pointercancel', function () { y0 = null; });
   $('share').onclick = function () { L.share(L.link(PS.encode(cur)), COPY.title, COPY.shareText); };
   // local image: draw the ticket on a canvas
   function save() {

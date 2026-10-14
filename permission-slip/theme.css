@@ -60,3 +60,4 @@
 /* visitor-text wrap: long unbroken words never widen the page */
 body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
+.ps-ticket{user-select:none;-webkit-user-select:none}
