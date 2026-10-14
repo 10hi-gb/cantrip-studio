@@ -20,7 +20,7 @@ var CH = (function () {
   // others = 1 — at most W units per line and N lines; words longer than a line break by grapheme; anything left over is cut with "…".
   var EW = 9, EN = 3;
   function graphemes(t) { if (typeof Intl !== 'undefined' && Intl.Segmenter) return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(t), function (x) { return x.segment; }); return Array.from(t); }
-  function gw(g) { return /\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6]/u.test(g) ? 2 : 1; }
+  function gw(g) { return /\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6]/u.test(g) ? 2.4 : 1; }
   function lines(t) {
     var out = [], cur = [], cw = 0, cut = false;
     function push() { out.push(cur.join('')); cur = []; cw = 0; }
