@@ -16,8 +16,25 @@ var CH = (function () {
       return { toast: t };
     } catch (e) { return null; }
   }
-  // Etch: 2 words per line, max 4 lines (overflow joins the last line).
-  function lines(t) { var w = strip(t).split(' ').filter(Boolean), out = []; for (var i = 0; i < w.length; i += 2) out.push(w.slice(i, i + 2).join(' ')); if (out.length > 4) out = out.slice(0, 3).concat([out.slice(3).join(' ')]); return out; }
+  // Etch (decoration only; the full toast is also shown as real text). Wrap by width units — wide glyphs (emoji, CJK) = 2,
+  // others = 1 — at most W units per line and N lines; words longer than a line break by grapheme; anything left over is cut with "…".
+  var EW = 9, EN = 3;
+  function graphemes(t) { if (typeof Intl !== 'undefined' && Intl.Segmenter) return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(t), function (x) { return x.segment; }); return Array.from(t); }
+  function gw(g) { return /\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6]/u.test(g) ? 2 : 1; }
+  function lines(t) {
+    var out = [], cur = [], cw = 0, cut = false;
+    function push() { out.push(cur.join('')); cur = []; cw = 0; }
+    var words = strip(t).split(' ').filter(Boolean);
+    for (var k = 0; k < words.length && !cut; k++) {
+      var g = graphemes(words[k]), w = g.reduce(function (a, x) { return a + gw(x); }, 0);
+      if (cur.length && cw + 1 + w <= EW) { cur.push(' '); cw += 1; }
+      else if (cur.length) { push(); if (out.length === EN) { cut = true; break; } }
+      for (var q = 0; q < g.length; q++) { var x = gw(g[q]); if (cw + x > EW) { push(); if (out.length === EN) { cut = true; break; } } cur.push(g[q]); cw += x; }
+    }
+    if (!cut && cur.length) push();
+    if (cut && out.length) { var last = graphemes(out[EN - 1]), lw = last.reduce(function (a, x) { return a + gw(x); }, 0); while (last.length && lw + 1 > EW) lw -= gw(last.pop()); out[EN - 1] = last.join('').replace(/ $/, '') + '…'; }
+    return out;
+  }
   // Characters over the limit: text cap (48 code points) AND encoded-link cap (260), so the maker can never produce a link the receiver rejects.
   function overBy(t) { t = strip(t); var a = Array.from(t), over = a.length - MAX; if (over > 0) return over; var n = 0; while (n < a.length && encode(a.slice(0, a.length - n).join('')).length > FRAG_MAX) n++; return n; }
   return { MAX: MAX, FRAG_MAX: FRAG_MAX, overBy: overBy, strip: strip, len: len, encode: encode, decode: decode, lines: lines };
@@ -33,16 +50,18 @@ if (typeof document !== 'undefined') (function () {
   function tst(m) { var t = $('tst'); t.textContent = m; t.hidden = false; clearTimeout(tst.h); tst.h = setTimeout(function () { t.hidden = true; }, 2800); }
   function etch(side, text) {
     var g = $('etch' + side); while (g.firstChild) g.removeChild(g.firstChild);
-    var ls = CH.lines(text), y0 = 95 - (ls.length - 1) * 8;
+    var ls = CH.lines(text), y0 = 100 - (ls.length - 1) * 9;
     ls.forEach(function (l, i) {
-      var t = document.createElementNS('http://www.w3.org/2000/svg', 'text'); t.setAttribute('class', 'ch-etch'); t.setAttribute('x', '75'); t.setAttribute('y', String(y0 + i * 16)); t.setAttribute('text-anchor', 'middle');
-      t.textContent = l; if (CH.len(l) > 13) { t.setAttribute('textLength', '64'); t.setAttribute('lengthAdjust', 'spacingAndGlyphs'); }
+      var t = document.createElementNS('http://www.w3.org/2000/svg', 'text'); t.setAttribute('class', 'ch-etch'); t.setAttribute('x', '75'); t.setAttribute('y', String(y0 + i * 18)); t.setAttribute('text-anchor', 'middle');
+      t.textContent = l;
       g.appendChild(t);
     });
   }
+  // The toast as readable text (and for screen readers): plain textContent, bidi-isolated, hidden when empty.
+  function said(t) { var e = $('said'); e.textContent = t || ''; e.hidden = !t; }
   function show(ids, on) { ids.forEach(function (i) { $(i).hidden = !on; }); }
   function maker() {
-    current = ''; scene.className = 'ch-scene'; $('gl').classList.add('ch-glass--solo'); $('gr').hidden = true; etch('l', ''); etch('r', '');
+    current = ''; said(''); scene.className = 'ch-scene'; $('gl').classList.add('ch-glass--solo'); $('gr').hidden = true; etch('l', ''); etch('r', '');
     $('title').textContent = COPY.title; $('title').classList.remove('ch-title--long'); $('lede').textContent = COPY.invitation; $('lede').hidden = false;
     $('toast-in').value = ''; $('fmsg').textContent = ''; $('field').hidden = false; $('fine').textContent = COPY.privacy;
     show(['raise'], true); show(['share', 'clink', 'back', 'mute'], false); $('barno').hidden = false;
@@ -72,7 +91,7 @@ if (typeof document !== 'undefined') (function () {
   $('clink').onclick = function () { scene.classList.remove('is-raised'); scene.classList.add('is-clinked'); clinkSound(); $('title').textContent = COPY.clinked; $('title').classList.remove('ch-title--long'); show(['clink'], false); show(['back'], true); $('fine').textContent = ''; $('back').focus(); };
   $('back').onclick = maker;
   function receiver(r) {
-    scene.className = 'ch-scene is-raised'; $('gl').classList.remove('ch-glass--solo'); $('gr').hidden = false; etch('l', r.toast); etch('r', '');
+    scene.className = 'ch-scene is-raised'; $('gl').classList.remove('ch-glass--solo'); $('gr').hidden = false; etch('l', r.toast); etch('r', ''); said(r.toast);
     $('title').textContent = COPY.receiverIntro; $('title').classList.add('ch-title--long'); $('lede').hidden = true; $('field').hidden = true;
     show(['raise', 'share', 'back'], false); show(['clink', 'mute'], true); $('barno').hidden = true; $('fine').textContent = COPY.soundHint;
   }

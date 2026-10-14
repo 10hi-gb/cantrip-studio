@@ -64,3 +64,5 @@ body{overflow-x:hidden}
 /* visitor-text wrap: long unbroken words never widen the page */
 body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
+.ch-etch{font-size:16px;letter-spacing:0}
+.ch-said{font:400 clamp(18px,2.4vw,24px)/1.35 var(--ch-display);color:var(--ch-champ);text-align:center;max-width:min(30ch,100%);margin:10px auto 26px;overflow-wrap:anywhere;unicode-bidi:isolate;min-width:0}
