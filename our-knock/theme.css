@@ -58,3 +58,5 @@
 /* visitor-text wrap: long unbroken words never widen the page */
 body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
+/* sound is live (AudioContext running): small speaker-on dot before the sound line; no text change */
+.ok-fine.is-sound-on::before{content:"";display:inline-block;width:.6em;height:.6em;border-radius:50%;background:currentColor;margin-right:.45em;vertical-align:.05em}

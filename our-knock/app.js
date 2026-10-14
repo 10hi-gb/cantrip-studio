@@ -53,21 +53,35 @@ if (typeof document !== 'undefined') (function () {
   function panel(id) { ['p-make', 'p-share', 'p-recv', 'p-open', 'p-bad'].forEach(function (x) { $(x).hidden = x !== id; }); }
   var door = $('door');
 
-  // ---- sound: soft synthesized knock (no samples); starts only from a tap/press
-  var AC = null, muted = false;
+  // ---- sound: soft synthesized knock (no samples, no files); starts only from a tap/press.
+  // Phone speakers barely reproduce < ~300 Hz, so the knock carries woody partials at 420/950/1900 Hz over a 180 Hz body.
+  // AudioUnlock (audio-unlock.js) starts the shared context inside the first ACTIVATING gesture (pointerup/touchend/click/keydown):
+  // a touch pointerdown alone never unlocks audio on mobile Chrome. If Web Audio is missing or still not running, an <audio>
+  // element plays the same knock from a blob: WAV.
+  var muted = false, KB = null, KURL = null, KEL = null, SR = 24000;
+  function knockSamples(rate) {
+    var n = Math.round(rate * 0.2), x = new Float32Array(n), seed = 7, P = [[180, 0.45, 30], [420, 0.35, 45], [950, 0.22, 70], [1900, 0.1, 110]], pk = 0;
+    for (var i = 0; i < n; i++) { var t = i / rate, v = 0;
+      for (var k = 0; k < P.length; k++) v += P[k][1] * Math.sin(2 * Math.PI * P[k][0] * t) * Math.exp(-P[k][2] * t);
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff; v += (seed / 0x3fffffff - 1) * 0.35 * Math.exp(-260 * t);
+      if (i < rate * 0.002) v *= i / (rate * 0.002); x[i] = v; pk = Math.max(pk, Math.abs(v)); }
+    for (i = 0; i < n; i++) x[i] *= 0.7 / pk; return x;
+  }
+  function fallbackKnock() { try { if (!KURL) KURL = AudioUnlock.wavURL(knockSamples(SR), SR); if (!KEL) { KEL = new Audio(KURL); KEL.preload = 'auto'; }
+    KEL.currentTime = 0; var p = KEL.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
   function knockSound() {
     if (muted) return;
+    var c = AudioUnlock.poke();
+    if (!c || c.state === 'closed') return fallbackKnock();
     try {
-      if (!AC) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return; AC = new C(); }
-      if (AC.state === 'suspended') AC.resume();
-      var t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(), n = AC.createBufferSource(), b = AC.createBuffer(1, AC.sampleRate * 0.08, AC.sampleRate), d = b.getChannelData(0);
-      for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
-      n.buffer = b; var bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 220; bp.Q.value = 2.5;
-      o.type = 'sine'; o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.12);
-      g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
-      o.connect(g); n.connect(bp); bp.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + 0.18); n.start(t);
-    } catch (e) {}
+      if (!KB) { KB = c.createBuffer(1, Math.round(c.sampleRate * 0.2), c.sampleRate); KB.getChannelData(0).set(knockSamples(c.sampleRate)); }
+      var src = c.createBufferSource(); src.buffer = KB; src.connect(c.destination);
+      // schedule at the context's own clock (never in the past); if still suspended it plays as soon as resume lands
+      src.start(c.currentTime + 0.005); lastKnockAt = c.currentTime;
+    } catch (e) { fallbackKnock(); }
   }
+  var lastKnockAt = -1; window.__okAudio = function () { var c = AudioUnlock.ctx(); return { state: c ? c.state : 'none', scheduled: lastKnockAt, live: AudioUnlock.running() }; };
+  AudioUnlock.arm(); AudioUnlock.onLive(function () { $('mute').closest('p').classList.add('is-sound-on'); });
   $('mute').onclick = function () { muted = !muted; $('mute').setAttribute('aria-pressed', muted ? 'true' : 'false'); $('mute').textContent = muted ? COPY.unmute : COPY.mute; };
   function visualKnock() {
     door.classList.remove('is-knock'); void door.offsetWidth; door.classList.add('is-knock');
