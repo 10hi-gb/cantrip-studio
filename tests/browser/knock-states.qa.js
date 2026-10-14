@@ -40,6 +40,25 @@ const sleep = t => new Promise(r => setTimeout(r, t));
     await p.focus('#door'); for (const d of [0, 500, 300, 300]) { await sleep(d); await p.keyboard.press('Space'); } await sleep(1900);
     r.rec = await snap(); await p.focus('#closeDoor'); await p.keyboard.press('Enter'); await sleep(200);
     r.shareShown = await p.evaluate(() => !document.getElementById('f-share').hidden && document.activeElement.id); if (r.mode !== 'Copy me' || r.rec.studs !== 8 || r.shareShown !== 'share') F(w + ' sender keyboard path');
+    // D1: "Knock again" after Close the door + Send clears the note and all local state
+    await go(); await p.type('#note', 'Blue gate.'); await p.click('#closeDoor'); await sleep(150); await p.click('#share').catch(() => {}); await sleep(500); await p.click('#again'); await sleep(200);
+    r.reset = await p.evaluate(() => ({ note: document.getElementById('note').value, noteMsg: document.getElementById('note-msg').textContent, msg: document.getElementById('msg').textContent, linkHidden: document.getElementById('linkbox').hidden, link: document.getElementById('linkbox').value,
+      make: !document.getElementById('f-make').hidden, share: !document.getElementById('f-share').hidden, modes: !document.getElementById('modes').hidden, studs: document.querySelectorAll('.ok-stud').length, closeEnabled: !document.getElementById('closeDoor').disabled, hash: location.hash, open: document.getElementById('door').classList.contains('is-open'), noteOut: document.getElementById('note-out').textContent }));
+    if (r.reset.note !== '' || r.reset.noteMsg || r.reset.msg || !r.reset.linkHidden || r.reset.link || !r.reset.make || r.reset.share || !r.reset.modes || r.reset.studs !== 7 || r.reset.hash || r.reset.open || r.reset.noteOut) F(w + ' D1 Knock again did not reset local state');
+    // D1b: Copy me recording in progress, then Knock again -> no stale recording/rail
+    await p.focus('.ok-mode'); await p.keyboard.press('ArrowDown'); await p.keyboard.press('ArrowDown'); await p.focus('#door'); for (const d of [0, 400, 300, 300]) { await sleep(d); await p.keyboard.press('Space'); } await sleep(1900); await p.type('#note', 'x'); await p.click('#redo'); await sleep(200);
+    r.reset2 = await p.evaluate(() => ({ note: document.getElementById('note').value, studs: document.querySelectorAll('.ok-stud').length, closeDisabled: document.getElementById('closeDoor').disabled }));
+    if (r.reset2.note !== '' || r.reset2.studs !== 0 || !r.reset2.closeDisabled) F(w + ' D1b redo did not reset recording');
+    // D2: lamp shade never overlaps the note text with an 80-character note (also at 320x640)
+    for (const hgt of w === 320 ? [640, 844] : [w < 600 ? 844 : 900]) { await p.setViewport({ width: w, height: hgt });
+      const long = Buffer.from('Blue gate, third step, under the pot with the fern. Knock twice and wait for me!'.slice(0, 80)).toString('base64url');
+      await go('#k1.s.n.' + long); await p.click('#gate'); await p.waitForFunction(() => document.getElementById('door').classList.contains('is-turn'), { timeout: 15000 }); await sleep(350); await p.keyboard.press('Space'); await sleep(600); await p.keyboard.press('Space'); await sleep(1500);
+      const L = await p.evaluate(() => { const lamp = document.querySelector('.ok-behind .lamp').getBoundingClientRect(), sh = { l: lamp.left - 14, r: lamp.left + 16, t: lamp.bottom - 2, b: lamp.bottom + 14 }; const rg = document.createRange(); const n = document.getElementById('note-out'); rg.selectNodeContents(n);
+        let ov = 0; for (const q of rg.getClientRects()) ov += Math.max(0, Math.min(q.right, sh.r) - Math.max(q.left, sh.l)) * Math.max(0, Math.min(q.bottom, sh.b) - Math.max(q.top, sh.t));
+        const d = document.getElementById('door').getBoundingClientRect(), nb = n.getBoundingClientRect(), bh = n.parentNode.getBoundingClientRect(); const dov = Math.max(0, Math.min(nb.right, d.right) - Math.max(nb.left, d.left)) * Math.max(0, Math.min(nb.bottom, d.bottom) - Math.max(nb.top, d.top));
+        return { len: [...n.textContent].length, open: document.getElementById('door').classList.contains('is-open'), shadeNoteOverlap: Math.round(ov), doorNoteOverlap: Math.round(dov), clipped: nb.top < bh.top || nb.bottom > bh.bottom, shadeBottom: Math.round(sh.b), noteTop: Math.round(nb.top) }; });
+      r['lamp' + hgt] = L; if (!L.open || L.len !== 80 || L.shadeNoteOverlap > 0 || L.doorNoteOverlap > 0 || L.clipped) F(w + 'x' + hgt + ' D2 lamp/door overlaps or clips the 80-char note');
+      await p.screenshot({ path: `/workspace/qa-knock-lamp-${w}x${hgt}.png` }); }
     // overflow in every state measured
     for (const k of ['s1', 's2', 's3', 's4', 's5', 'rec']) if (r[k].sw > r[k].iw) F(w + ' overflow ' + k);
     // bad links

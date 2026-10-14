@@ -183,7 +183,9 @@ if (typeof document !== 'undefined') (function () {
   }
   function recorded() { rec = null; onKnock = null; buildRail(spec); railReset(true); studs('is-ans').forEach(function (s) { s.classList.add('is-on'); }); $('hint').textContent = ''; $('done').hidden = true; $('replay').hidden = false; $('redo').hidden = false; $('closeDoor').disabled = false; $('closeDoor').focus(); }
   $('done').onclick = function () { if (rec) stopRec(); };
-  $('redo').onclick = function () { startMake(); door.focus(); };
+  // QA 384e5cb6 D1: "Knock again" resets ALL local state (recording, spec, link, note, messages, share box)
+  function resetAll() { if (rec) clearTimeout(rec.idle); rec = null; spec = null; link = ''; $('note').value = ''; $('note-msg').textContent = ''; $('linkbox').value = ''; $('linkbox').hidden = true; $('msg').textContent = ''; }
+  $('redo').onclick = function () { resetAll(); startMake(); door.focus(); };
   $('replay').onclick = function () { unlock(); if (!spec) return; railReset(false); var t = callTimes(), w = t.map(function () { return 'call'; }); R.at.forEach(function (x) { t.push(x); w.push('ans'); }); playPhrase(t, w); };
   function noteCheck() { var n = Array.from(OK.clean($('note').value)).length; $('note-msg').textContent = n > OK.NOTE_MAX ? plural(COPY.noteTooLong, n - OK.NOTE_MAX) : ''; return n <= OK.NOTE_MAX; }
   $('note').addEventListener('input', noteCheck);
@@ -192,7 +194,7 @@ if (typeof document !== 'undefined') (function () {
     if (!f) { $('note-msg').textContent = plural(COPY.noteTooLong, 1); return; } // only a very multi-byte note can push the link past 400
     link = location.origin + location.pathname + '#' + f; flow('f-share'); $('modes').hidden = true; $('share').focus();
   };
-  $('again').onclick = function () { startMake(); };
+  $('again').onclick = function () { resetAll(); startMake(); door.focus(); };
   $('share').onclick = function () {
     var box = $('linkbox'), manual = function () { box.value = link; box.hidden = false; box.focus(); box.select(); };
     var cp = function () { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(function () { toast(COPY.copied); }, manual); else manual(); };
