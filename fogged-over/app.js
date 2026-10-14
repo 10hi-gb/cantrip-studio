@@ -89,8 +89,9 @@ if (typeof document !== 'undefined') (function () {
   function prepare() {
     if (!lines.length) { msg(COPY.empty); return null; }
     var s = FO.simplify(lines); if (!s.ok) { msg(COPY.tooBigHard); return null; }
-    if (s.simplified) lines = s.lines; // what you see from here on is exactly what is sent
-    return s;
+    var oversized = FO.count(lines) > FO.MAX;
+    lines = s.lines; // quantized + simplified: what you see from here on is exactly what is sent
+    return { lines: s.lines, simplified: oversized, ok: true };
   }
   function setMode(m) { mode = m; pane.classList.toggle('is-maker', m === 'make'); $('acts-make').hidden = m !== 'make'; $('acts-prev').hidden = m !== 'prev'; $('acts-recv').hidden = m !== 'recv';
     $('stamps').hidden = m !== 'make'; $('meter').hidden = m !== 'make'; fog.classList.remove('is-gone'); wipe = []; creepSaid = false; clearTimeout(creepT);
