@@ -68,3 +68,7 @@
 .bop-sw[aria-checked="true"]{box-shadow:0 0 0 3px var(--bop-brass)}
 .bop-sw:focus-visible{outline:3px solid var(--bop-brass);outline-offset:3px}
 .bop-hanging{font-family:var(--bop-serif);font-style:italic;font-size:22px}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

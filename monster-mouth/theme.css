@@ -46,3 +46,7 @@
 .mm-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--mm-black);color:var(--mm-lime);padding:10px 16px;font-size:15px;z-index:9}
 .mm-wrap>*{min-width:0}.mm-bubble{width:auto;max-width:100%;overflow-wrap:anywhere}
 .mm-kbhint{margin-top:12px}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

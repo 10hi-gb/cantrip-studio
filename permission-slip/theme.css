@@ -1,0 +1,62 @@
+/* C137 Permission Slip: "Raffle Roll Booth". Fonts self-hosted in fonts/. */
+@font-face{font-family:"Bowlby One SC";src:url(fonts/bowlby-one-sc-latin-400-normal.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Space Mono";src:url(fonts/space-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Space Mono";src:url(fonts/space-mono-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+:root{--ps-pink:#FF3D8B;--ps-lime:#C6F432;--ps-white:#FFFDF5;--ps-ink:#1A1A2E;--ps-red:#D7263D;--ps-booth:#2B2A5C;--ps-booth-2:#38377A;
+ --ps-display:"Bowlby One SC","Arial Black",Impact,sans-serif;--ps-mono:"Space Mono",ui-monospace,Menlo,monospace}
+.ps{margin:0;min-height:100dvh;color:var(--ps-ink);font-family:var(--ps-mono);background:var(--ps-booth);
+ background-image:repeating-linear-gradient(90deg,var(--ps-booth) 0 40px,var(--ps-booth-2) 40px 80px)}
+.ps-top{display:flex;justify-content:space-between;padding:12px 16px;font:700 12px var(--ps-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ps-lime)}
+.ps-wrap{display:grid;gap:18px;padding:0 14px 24px;max-width:1240px;margin:0 auto}
+@media(min-width:900px){.ps-wrap{grid-template-columns:1fr 440px 1fr;gap:36px;align-items:start;padding:0 36px}}
+.ps-title{font:400 clamp(34px,4.6vw,58px)/.95 var(--ps-display);color:var(--ps-lime);margin:0;text-shadow:3px 3px 0 var(--ps-pink)}
+.ps-say{color:var(--ps-white);font-size:15px;line-height:1.5;max-width:36ch}
+/* dispenser + roll (single vertical roll, ONE tear-off; never a side-by-side split) */
+.ps-dispenser{position:relative;height:54px;background:var(--ps-red);border:4px solid var(--ps-ink);border-radius:16px 16px 6px 6px;box-shadow:0 6px 0 var(--ps-ink);z-index:2}
+.ps-dispenser::after{content:"";position:absolute;left:12%;right:12%;bottom:-4px;height:8px;background:var(--ps-ink);border-radius:4px}
+.ps-roll{position:relative;margin:0 22px;display:grid;gap:0}
+.ps-ticket{position:relative;background:var(--tk,var(--ps-pink));color:var(--ps-ink);padding:18px 22px 18px 26px;min-height:150px;box-sizing:border-box;border-left:4px solid var(--ps-ink);border-right:4px solid var(--ps-ink);
+ -webkit-mask:radial-gradient(circle 9px at 0 50%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 98%,#000) right/51% 100% no-repeat;
+ mask:radial-gradient(circle 9px at 0 50%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 98%,#000) right/51% 100% no-repeat}
+.ps-ticket+.ps-ticket{border-top:3px dashed var(--ps-ink)} /* perforation between tickets */
+.ps-ticket--lime{--tk:var(--ps-lime)}.ps-ticket--white{--tk:var(--ps-white)}
+.ps-ticket.is-ghost{opacity:.55;min-height:70px}.ps-ticket.is-ghost .ps-serial,.ps-ticket.is-ghost .ps-admit{display:none}
+.ps-perm{font:400 clamp(22px,2.3vw,30px)/1.05 var(--ps-display);margin:4px 0 8px}
+.ps-fine{font-size:12px;line-height:1.45;margin:0}
+.ps-serial{position:absolute;right:14px;top:10px;font:700 12px var(--ps-mono);color:var(--ps-red);letter-spacing:.08em}
+.ps-admit{font:700 11px var(--ps-mono);letter-spacing:.14em;text-transform:uppercase}
+.ps-names{font:700 13px var(--ps-mono);margin-top:8px}
+/* torn edge: jagged bottom of front ticket / jagged top of stub */
+.ps-torn{clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),95% 100%,90% calc(100% - 9px),85% 100%,80% calc(100% - 10px),75% 100%,70% calc(100% - 9px),65% 100%,60% calc(100% - 10px),55% 100%,50% calc(100% - 9px),45% 100%,40% calc(100% - 10px),35% 100%,30% calc(100% - 9px),25% 100%,20% calc(100% - 10px),15% 100%,10% calc(100% - 9px),5% 100%,0 calc(100% - 10px));-webkit-mask:none;mask:none}
+.ps-ticket:has(.ps-given){padding-bottom:70px}.ps-given{position:absolute;right:18px;bottom:22px;font:400 30px var(--ps-display);color:var(--ps-red);border:4px solid var(--ps-red);padding:2px 10px;transform:rotate(-10deg);opacity:.9}
+.ps-picks{display:grid;gap:8px}
+.ps-pick{font:700 14px/1.25 var(--ps-mono);text-align:left;padding:10px 12px;min-height:44px;border:3px solid var(--ps-ink);border-radius:10px;background:var(--ps-white);color:var(--ps-ink);cursor:pointer}
+.ps-pick[aria-pressed=true]{background:var(--ps-lime);box-shadow:4px 4px 0 var(--ps-pink)}
+.ps-field{font:700 15px var(--ps-mono);width:100%;box-sizing:border-box;padding:10px;border:3px solid var(--ps-ink);border-radius:10px;background:var(--ps-white)}
+.ps-lbl{display:block;font:700 12px var(--ps-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ps-lime);margin:10px 0 4px}
+.ps-btn{font:400 17px var(--ps-display);padding:13px 20px;min-height:48px;border:3px solid var(--ps-ink);border-radius:999px;background:var(--ps-lime);color:var(--ps-ink);box-shadow:0 4px 0 var(--ps-ink);cursor:pointer}
+.ps-btn--pink{background:var(--ps-pink);color:var(--ps-white)}
+.ps-btn--ghost{background:var(--ps-white)}
+.ps-btn:focus-visible,.ps-pick:focus-visible,.ps-field:focus-visible,.ps-ticket:focus-visible{outline:4px solid var(--ps-lime);outline-offset:3px}
+.ps-row{display:flex;flex-wrap:wrap;gap:10px}
+.ps-rip{font:400 40px var(--ps-display);color:var(--ps-pink);margin:0;text-shadow:3px 3px 0 var(--ps-ink)}
+/* motion: roll unspools; tear */
+.ps-roll.is-feeding .ps-ticket{animation:ps-feed 500ms cubic-bezier(.3,1.3,.5,1) both}
+@keyframes ps-feed{from{transform:translateY(-60px)}}
+.ps-ticket.is-tearing{animation:ps-tear 650ms cubic-bezier(.5,0,.3,1) forwards}
+@keyframes ps-tear{30%{transform:translateY(8px) rotate(-1deg)}100%{transform:translateY(40px) rotate(-6deg)}}
+@media(prefers-reduced-motion:reduce){.ps-roll.is-feeding .ps-ticket,.ps-ticket.is-tearing{animation:none}}
+/* Engineer additions (CSP-safe) */
+[hidden]{display:none!important}
+.ps-top a{color:inherit;text-decoration:none}.ps-top a:focus-visible{outline:3px solid var(--ps-lime)}
+.ps-ticket:has(.ps-given) .ps-perm{padding-right:96px}
+.ps-because{font-style:italic;margin-top:6px}.ps-foot{font-size:11px;margin-top:10px}
+.ps-msg{color:var(--ps-white);font-size:13px;margin:4px 0 0;min-height:1em}
+.ps-actions{margin-top:14px}
+.ps-ticket{touch-action:pan-x;cursor:grab}
+.ps-linkbox input{width:100%;padding:8px;font:13px var(--ps-mono)}
+.ps-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--ps-lime);color:var(--ps-ink);padding:10px 16px;border:3px solid var(--ps-ink);border-radius:999px;font-weight:700;z-index:9}
+.ps-stubtxt{font-size:11px;margin:0}
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

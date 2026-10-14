@@ -65,3 +65,7 @@
 .ut-linkbox input{width:100%;padding:8px;font:13px "Figtree",sans-serif}
 .ut-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#F3E6CF;color:#1b1612;padding:10px 16px;border-radius:999px;font-weight:600;z-index:9}
 .ut-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

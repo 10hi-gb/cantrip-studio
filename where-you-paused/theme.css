@@ -49,3 +49,7 @@
 .wp-fine--hint{font-size:13px;margin-top:8px}
 .wp-home{color:inherit;text-decoration:none}
 .wp-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--wp-ink);color:var(--wp-sheet);padding:10px 16px;font:14px var(--wp-serif);z-index:9}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

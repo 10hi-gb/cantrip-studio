@@ -60,3 +60,7 @@ body{overflow-x:hidden}
 .ch-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ch-champ);color:var(--ch-bar);padding:10px 16px;border-radius:99px;font:600 14px var(--ch-sans);z-index:9}
 @media(prefers-reduced-motion:reduce){.ch-glass{transition:none}.ch-scene.is-clinked .bub{animation:none}.ch-scene.is-clinked .ch-spark{animation:none;opacity:1}}
 .ch-home{color:inherit;text-decoration:none}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

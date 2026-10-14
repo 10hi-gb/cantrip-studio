@@ -1,13 +1,13 @@
 {
- "updated": "2026-10-13 10:45 PM PT",
+ "updated": "2026-10-13 10:02 PM PT",
  "items": [
   {
    "id": "C148",
    "batch": "A",
    "name": "Bad on Purpose",
    "description": "Draw something badly on purpose; it gets a serious museum placard.",
-   "status": "QA in progress",
-   "note": "Browser QA pass done on an earlier pin; QA rechecking this pin.",
+   "status": "Ready",
+   "note": "Cantrip QA browser pass on pin 2f9a934d.",
    "url": "../bad-on-purpose/",
    "limitations": []
   },
@@ -17,7 +17,7 @@
    "name": "One Across",
    "description": "Write one crossword clue; a friend fills in the single row.",
    "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "note": "Cantrip QA testing now.",
    "url": "../one-across/",
    "limitations": [
     "The answer check only slows down spoilers; it is not a secret."
@@ -29,7 +29,7 @@
    "name": "Annual Review of You",
    "description": "A deadpan formal annual review of a friend, built from three real moments.",
    "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "note": "Cantrip QA testing now.",
    "url": "../annual-review/",
    "limitations": []
   },
@@ -38,8 +38,8 @@
    "batch": "A",
    "name": "Here It Comes",
    "description": "A ball is incoming: catch it, then throw it back.",
-   "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "status": "Ready",
+   "note": "Cantrip QA browser pass on pin 2f9a934d.",
    "url": "../here-it-comes/",
    "limitations": []
   },
@@ -48,11 +48,11 @@
    "batch": "A",
    "name": "Monster Mouth",
    "description": "Your drawing becomes a touchable monster with its own growl.",
-   "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "status": "Source-clean, browser QA queued",
+   "note": "Source-clean, browser QA queued.",
    "url": "../monster-mouth/",
    "limitations": [
-    "Audio not yet checked on a real speaker."
+    "Audio not yet heard on a real device."
    ]
   },
   {
@@ -60,12 +60,12 @@
    "batch": "A",
    "name": "Our Knock",
    "description": "Tap a secret knock; a friend knocks it back to open a tiny note.",
-   "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "status": "Source-clean, browser QA queued",
+   "note": "Source-clean, browser QA queued.",
    "url": "../our-knock/",
    "limitations": [
-    "Audio not yet checked on a real speaker.",
-    "It's a playful puzzle, not a real lock."
+    "It's a playful puzzle, not a real lock.",
+    "Audio not yet heard on a real device."
    ]
   },
   {
@@ -73,8 +73,8 @@
    "batch": "A",
    "name": "Eyes Closed",
    "description": "Draw a prompt without seeing the canvas, then reveal the wobble.",
-   "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "status": "Source-clean, browser QA queued",
+   "note": "Source-clean, browser QA queued.",
    "url": "../eyes-closed/",
    "limitations": []
   },
@@ -83,11 +83,11 @@
    "batch": "A",
    "name": "Score This",
    "description": "Pick the sound effects for a three-panel comic; a friend can rescore it.",
-   "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "status": "Source-clean, browser QA queued",
+   "note": "Source-clean, browser QA queued.",
    "url": "../score-this/",
    "limitations": [
-    "Audio not yet checked on a real speaker."
+    "Audio not yet heard on a real device."
    ]
   },
   {
@@ -95,11 +95,12 @@
    "batch": "A",
    "name": "This Light",
    "description": "Pick a city and see a computed impression of its sky right now.",
-   "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "status": "Source-clean, browser QA queued",
+   "note": "Source-clean, browser QA queued.",
    "url": "../this-light/",
    "limitations": [
-    "A computed clear-sky impression, not real weather."
+    "A computed clear-sky impression, not real weather.",
+    "Weekday and time follow the browser locale."
    ]
   },
   {
@@ -107,8 +108,8 @@
    "batch": "A",
    "name": "Wishbone",
    "description": "Two people, one device: pull the wishbone and see who gets the bigger half.",
-   "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "status": "Source-clean, browser QA queued",
+   "note": "Source-clean, browser QA queued.",
    "url": "../wishbone/",
    "limitations": [
     "Reloading starts a fresh round (no anti-cheat)."
@@ -119,11 +120,11 @@
    "batch": "A",
    "name": "Cheers",
    "description": "Send a raised glass; your friend taps to clink and can send one back.",
-   "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "status": "Source-clean, browser QA queued",
+   "note": "Source-clean, browser QA queued.",
    "url": "../cheers/",
    "limitations": [
-    "Audio not yet checked on a real speaker."
+    "Audio not yet heard on a real device."
    ]
   },
   {
@@ -131,8 +132,8 @@
    "batch": "A",
    "name": "Where You Paused",
    "description": "A short message that shows where you paused while writing it.",
-   "status": "QA in progress",
-   "note": "Source audit passed on earlier pin; QA rechecking this pin.",
+   "status": "Source-clean, browser QA queued",
+   "note": "Source-clean, browser QA queued.",
    "url": "../where-you-paused/",
    "limitations": [
     "Pauses are an authored presentation, not a reading of mood."
@@ -203,9 +204,9 @@
    "batch": "B",
    "name": "Permission Slip",
    "description": "Tear off a funny permission slip for a friend.",
-   "status": "Not built yet",
-   "note": "Being prepared; link added when pinned.",
-   "url": null,
+   "status": "Playable",
+   "note": "Engineer self-check only; waiting for Cantrip QA.",
+   "url": "../permission-slip/",
    "limitations": []
   },
   {
@@ -213,9 +214,9 @@
    "batch": "B",
    "name": "Don't Mention It",
    "description": "A small secret kindness mission for a friend to carry out.",
-   "status": "Not built yet",
-   "note": "Being prepared; link added when pinned.",
-   "url": null,
+   "status": "Playable",
+   "note": "Engineer self-check only; waiting for Cantrip QA.",
+   "url": "../dont-mention-it/",
    "limitations": []
   },
   {

@@ -63,3 +63,8 @@
 .ar-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ar-type);color:var(--ar-canary);padding:10px 16px;font:13px var(--ar-type-font);z-index:9}
 .ar-x{float:right;font:600 11px var(--ar-form-font);letter-spacing:.1em;text-transform:uppercase;background:none;border:0;color:var(--ar-rule);cursor:pointer;min-height:32px}
 #review-form{padding-bottom:120px}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}
+.ar-moment .body,.ar-moment .line{min-width:0;overflow-wrap:anywhere}

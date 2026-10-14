@@ -50,3 +50,7 @@
 .cy-caption:empty{display:none}
 .cy-linkbox input{width:100%;padding:8px;font:13px var(--cy-sans)}
 .cy-toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:var(--cy-ink);color:var(--cy-cream);padding:10px 16px;border-radius:999px;font-weight:800;z-index:9}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

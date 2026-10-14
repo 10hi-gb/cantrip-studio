@@ -70,3 +70,7 @@
 .tt-linkbox input{width:100%;padding:8px;font:13px var(--tt-sans)}
 .tt-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--tt-chalk);color:var(--tt-slate);padding:10px 16px;border-radius:999px;font-weight:700;z-index:9}
 .tt-legend .f{background:linear-gradient(90deg,var(--tt-sweet),var(--tt-salt),var(--tt-heat))}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

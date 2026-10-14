@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Don&#39;t Mention It · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="lib.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="dm" id="root">
+<div class="dm-top"><a href="../" data-c="studioLabel" data-al="backLabel"></a><span data-c="home"></span></div>
+<div class="dm-wrap">
+ <div>
+  <h1 class="dm-title" id="head" data-c="title"></h1>
+  <p class="dm-say" id="lede" data-c="invitation"></p>
+  <div id="maker-a"><label class="dm-lbl" for="name" data-c="nameLabel"></label><input class="dm-field" id="name" autocomplete="off" data-ph="namePlaceholder" aria-describedby="nmsg"><p class="dm-msg" id="nmsg" aria-live="polite"></p></div>
+ </div>
+ <div>
+  <div id="maker-b">
+   <p class="dm-lbl" id="pickh" data-c="pickHeading"></p>
+   <div class="dm-missions" id="missions" role="radiogroup" aria-labelledby="pickh"></div>
+   <div class="dm-row dm-mt"><button class="dm-btn dm-btn--ghost" id="shuffle" data-c="shuffle"></button><button class="dm-btn" id="accept" data-c="primary"></button></div>
+   <p class="dm-fine" data-c="privacy"></p>
+  </div>
+  <div class="dm-closed" id="closed" hidden><span class="dm-band"></span><p class="dm-label" data-c="studioLabel"></p><p class="dm-pencil dm-name-big"><span class="dm-circle" id="cname"></span></p>
+   <div class="dm-row dm-mt"><button class="dm-btn" id="unfold0" data-c="receiverPrimary"></button></div></div>
+  <div class="dm-file" id="file" hidden><span class="dm-clip"></span>
+   <div class="dm-panel" id="p1"><p class="dm-label" data-c="studioLabel"></p><p class="dm-head" id="dhead"></p><p class="dm-fine dm-mt" data-c="missionHint"></p>
+    <div class="dm-row dm-mt" id="u1" hidden><button class="dm-btn" id="unfold1" data-c="receiverPrimary" data-al="unfoldAria"></button></div></div>
+   <div class="dm-panel" id="p2"><p class="dm-pencil"><span class="dm-underline" id="mission"></span></p><p class="dm-foot" data-c="dossierFooter"></p>
+    <div class="dm-row dm-mt" id="u2" hidden><button class="dm-btn" id="unfold2" data-c="receiverPrimary" data-al="unfoldAria"></button></div></div>
+   <div class="dm-panel" id="p3"><p class="dm-pencil dm-shh" data-c="shh"></p>
+    <div id="p3make"><div class="dm-row dm-mt"><button class="dm-btn" id="share" data-c="share"></button><button class="dm-btn dm-btn--ghost" id="edit" data-c="pickHeading"></button></div></div>
+    <div id="p3recv" hidden><p class="dm-fine" data-c="doneQuestion"></p><div class="dm-row"><button class="dm-btn" id="done" data-c="doneCard"></button><button class="dm-btn dm-btn--ghost" id="dontask" data-c="dontAskCard"></button></div><p class="dm-fine" data-c="returnNote"></p></div>
+   </div>
+  </div>
+  <div class="dm-card" id="card" hidden><p class="dm-pencil" id="cardtext"></p></div>
+  <p class="dm-msg" id="msg" role="status" aria-live="polite"></p>
+  <div class="dm-linkbox" id="linkbox" hidden><input readonly data-al="copyFail"></div>
+  <p class="dm-fine" id="rm" hidden></p><p class="dm-msg" id="err" hidden></p>
+ </div>
+</div>
+<div class="dm-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

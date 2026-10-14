@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Permission Slip · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="lib.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="ps" id="root">
+<div class="ps-top"><a href="../" data-c="studioLabel" data-al="backLabel"></a><span data-c="home"></span></div>
+<div class="ps-wrap">
+ <div>
+  <h1 class="ps-title" id="head" data-c="title"></h1>
+  <p class="ps-say" id="lede" data-c="invitation"></p>
+  <div id="maker">
+   <p class="ps-lbl" id="pickh" data-c="pickHeading"></p>
+   <div class="ps-picks" id="picks" role="group" aria-labelledby="pickh"></div>
+   <label class="ps-lbl" for="to" data-c="toLabel"></label><input class="ps-field" id="to" autocomplete="off" data-ph="toPlaceholder">
+   <label class="ps-lbl" for="from" data-c="fromLabel"></label><input class="ps-field" id="from" autocomplete="off" data-ph="fromPlaceholder">
+   <label class="ps-lbl" for="why" data-c="reasonLabel"></label><input class="ps-field" id="why" autocomplete="off" data-ph="reasonPlaceholder" aria-describedby="wmsg">
+   <p class="ps-msg" id="wmsg" aria-live="polite"></p>
+  </div>
+ </div>
+ <div>
+  <div class="ps-dispenser" aria-hidden="true"></div>
+  <div class="ps-roll" id="roll" role="img" data-al="dispenserAria">
+   <div class="ps-ticket" id="ticket" tabindex="0" data-al="tearHint">
+    <span class="ps-serial" id="serial"></span>
+    <p class="ps-perm" id="perm"></p><p class="ps-fine" id="fine"></p><p class="ps-names" id="names"></p>
+    <p class="ps-fine ps-because" id="because"></p>
+    <p class="ps-fine ps-foot" data-c="ticketFooter"></p><p class="ps-fine ps-foot" data-c="validLine"></p>
+   </div>
+   <div class="ps-ticket ps-ticket--lime is-ghost" id="next1" aria-hidden="true"></div>
+   <div class="ps-ticket ps-ticket--white is-ghost" id="next2" aria-hidden="true"></div>
+  </div>
+ </div>
+ <div>
+  <p class="ps-rip" id="rip" aria-live="polite"></p>
+  <p class="ps-say" id="hint" data-c="tearHint"></p>
+  <div class="ps-row ps-actions" id="acts-make"><button class="ps-btn" id="tear" data-c="primary"></button></div>
+  <div class="ps-row ps-actions" id="acts-torn" hidden><button class="ps-btn ps-btn--pink" id="share" data-c="share"></button><button class="ps-btn ps-btn--ghost" id="save" data-c="save"></button></div>
+  <div class="ps-row ps-actions" id="acts-recv" hidden><button class="ps-btn" id="take" data-c="receiverPrimary"></button><button class="ps-btn ps-btn--ghost" id="again" data-c="receiverAgain"></button><button class="ps-btn ps-btn--ghost" id="save2" data-c="save"></button></div>
+  <div class="ps-linkbox" id="linkbox" hidden><input readonly data-al="copyFail"></div>
+  <p class="ps-say" data-c="serialNote"></p>
+  <p class="ps-say" data-c="privacy"></p>
+  <p class="ps-say" id="rm" hidden></p><p class="ps-msg" id="err" hidden></p>
+ </div>
+</div>
+<div class="ps-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

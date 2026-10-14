@@ -53,3 +53,7 @@
 .st-btn:disabled{opacity:.5}
 .st-hear{grid-column:1/-1;justify-self:start;font:700 12.5px var(--st-sans);padding:6px 10px;min-height:36px;border:2px solid var(--st-k);background:transparent;color:var(--st-k);cursor:pointer}
 .st-hear:disabled{opacity:.4;cursor:default}.st-hear:focus-visible{outline:3px solid var(--st-m);outline-offset:2px}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

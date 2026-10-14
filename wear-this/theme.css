@@ -50,3 +50,7 @@ button:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
 .wt-tabs{display:none}
 @media(max-width:900px){.wt-tabs{grid-area:l;display:flex;gap:4px;position:sticky;bottom:0}.wt-tabs button{flex:1;font:600 14px var(--disp);padding:10px 4px;border:2.5px solid var(--ink);border-bottom:0;border-radius:12px 12px 0 0;background:#fff;color:var(--ink)}.wt-tabs button[aria-selected=true]{background:var(--cobalt);color:#fff}
  .wt{grid-template-areas:"top" "doll" "l" "r" "foot"}.wt-rail--l{grid-area:r}.wt-rail--r{grid-area:r}.wt-slot{display:none}.wt-slot.is-active{display:block}.wt-rail{gap:0}}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

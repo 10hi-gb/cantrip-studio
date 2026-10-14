@@ -66,3 +66,7 @@
 @keyframes hic-dust{from{opacity:1;transform:translate(-50%,10%) scale(.4)}to{opacity:0;transform:translate(-50%,0) scale(1.6)}}
 @media(max-height:700px){.hic-big{font-size:clamp(44px,11vw,120px)}}
 @media(prefers-reduced-motion:reduce){.hic-dust{animation:none;opacity:0}}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

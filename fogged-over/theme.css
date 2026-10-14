@@ -56,3 +56,7 @@
 @media(min-width:900px){.fo-pane{width:min(calc(100% - 96px),calc((100dvh - 230px)*4/3));margin:0 auto}}
 .fo-sill{width:100%;box-sizing:border-box}
 @media(min-width:900px){.fo-sill{margin:0}}
+
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

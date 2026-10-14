@@ -2,8 +2,6 @@
 // C087 Wear This — four independent slots; the link carries only IDs: "w1.h3c2.t1c4.b2c1.s5c3.k3" (h0 = empty slot).
 var WTM = (function (L) {
   var SLOTS = ['head', 'top', 'bottom', 'shoes'], LET = { head: 'h', top: 't', bottom: 'b', shoes: 's' };
-  var COLORS = { c1: '#2346D8', c2: '#F2492A', c3: '#FFC02E', c4: '#3FBF97', c5: '#6B2D7A', c6: '#1D1B26' };
-  var SKIN = { k1: '#F6D7BF', k2: '#E8B894', k3: '#C98D62', k4: '#A86B45', k5: '#7A4A2E', k6: '#4E2E1C' };
   var DEF = { head: 'h1c6', top: 't1c1', bottom: 'b1c1', shoes: 's1c6' };
   function blank() { return { head: { s: 1, c: 6 }, top: { s: 1, c: 1 }, bottom: { s: 1, c: 1 }, shoes: { s: 1, c: 6 }, k: 3 }; }
   function encode(o) { return L.seal(['w1', SLOTS.map(function (k) { var v = o[k]; return LET[k] + (v ? v.s + 'c' + v.c : '0'); }).join('.') + '.k' + o.k]); }
@@ -20,7 +18,7 @@ var WTM = (function (L) {
     var km = /^k([1-6])$/.exec(parts[4]); o.k = km ? +km[1] : 3; if (!km) unknown = true;
     return { o: o, unknown: unknown };
   }
-  return { SLOTS: SLOTS, LET: LET, COLORS: COLORS, SKIN: SKIN, blank: blank, encode: encode, decode: decode };
+  return { SLOTS: SLOTS, LET: LET, blank: blank, encode: encode, decode: decode };
 })(typeof L !== 'undefined' ? L : require('./lib.js'));
 if (typeof module !== 'undefined') module.exports = WTM;
 
@@ -58,7 +56,7 @@ if (typeof document !== 'undefined') (function () {
     radiogroup(opts, items, function (v) { return o[slot] && o[slot].s === v; }, function (v) { o[slot] = { s: v, c: o[slot] ? o[slot].c : 1 }; changed(slot); }, COPY.slots[slot]);
     sec.appendChild(opts);
     var sw = document.createElement('div'); sw.className = 'wt-sw';
-    var cit = [1, 2, 3, 4, 5, 6].map(function (c) { var b = document.createElement('button'); b.style.background = WTM.COLORS['c' + c]; b.setAttribute('aria-label', L.fill(COPY.colorAria, { color: COPY.colors['c' + c] })); b.title = COPY.colors['c' + c]; return { el: b, v: c }; });
+    var cit = [1, 2, 3, 4, 5, 6].map(function (c) { var b = document.createElement('button'); b.style.background = WT_C['c' + c]; b.setAttribute('aria-label', L.fill(COPY.colorAria, { color: COPY.colors['c' + c] })); b.title = COPY.colors['c' + c]; return { el: b, v: c }; });
     radiogroup(sw, cit, function (v) { return o[slot] && o[slot].c === v; }, function (v) { o[slot] = { s: o[slot] ? o[slot].s : 1, c: v }; changed(slot); }, COPY.slots[slot] + ' · ' + COPY.colorLabel);
     var off = document.createElement('button'); off.className = 'wt-off'; off.type = 'button'; off.textContent = COPY.clearSlot; off.setAttribute('aria-label', COPY.clearSlot + ': ' + COPY.emptySlot[slot]); off.onclick = function () { o[slot] = null; changed(slot); }; sw.appendChild(off);
     sec.appendChild(sw); panels[slot] = { sec: sec, opts: opts, sw: sw };
@@ -75,7 +73,7 @@ if (typeof document !== 'undefined') (function () {
     b.onclick = function () { activate(s); }; $('tabs').appendChild(b); });
   function activate(s) { WTM.SLOTS.forEach(function (x, i) { panels[x].sec.classList.toggle('is-active', x === s); $('tabs').children[i].setAttribute('aria-selected', String(x === s)); }); }
   activate('head');
-  var skinG = $('skin'); var sk = [1, 2, 3, 4, 5, 6].map(function (k) { var b = document.createElement('button'); b.style.background = WTM.SKIN['k' + k]; b.setAttribute('aria-label', COPY.skinTones['k' + k]); return { el: b, v: k }; });
+  var skinG = $('skin'); var sk = [1, 2, 3, 4, 5, 6].map(function (k) { var b = document.createElement('button'); b.style.background = WT_SKIN['k' + k]; b.setAttribute('aria-label', COPY.skinTones['k' + k]); return { el: b, v: k }; });
   radiogroup(skinG, sk, function (v) { return o.k === v; }, function (v) { o.k = v; render(); }, COPY.skinLabel);
   $('shuffle').onclick = function () { var r = new Uint8Array(9); crypto.getRandomValues(r); WTM.SLOTS.forEach(function (s, i) { o[s] = { s: 1 + r[i] % 6, c: 1 + r[i + 4] % 6 }; }); render('head'); status(); };
   $('send').onclick = function () { L.share(L.link(WTM.encode(o)), COPY.title, COPY.shareText); };
