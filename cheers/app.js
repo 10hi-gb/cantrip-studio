@@ -1,7 +1,7 @@
 'use strict';
 // Cheers. The toast lives only in the link (sealed). No receipt to the sender: clinking makes no request.
 var CH = (function () {
-  var MAX = 48;
+  var MAX = 48, FRAG_MAX = 260;
   function strip(s) { return String(s == null ? '' : s).replace(/[\u202A-\u202E\u2066-\u2069\u200E\u200F]/g, '').replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ').replace(/\s+/g, ' ').trim(); }
   function len(s) { return Array.from(s).length; }
   function ck(s) { var h = 0x811c9dc5; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return ('00000' + (h & 0xffffff).toString(16)).slice(-6); }
@@ -10,7 +10,7 @@ var CH = (function () {
   function encode(toast) { var p = b64e('1~' + strip(toast)); return p + '.' + ck(p); }
   function decode(f) {
     try {
-      f = String(f || '').replace(/^#/, ''); if (!f || f.length > 260) return null;
+      f = String(f || '').replace(/^#/, ''); if (!f || f.length > FRAG_MAX) return null;
       var m = /^([A-Za-z0-9_-]+)\.([0-9a-f]{6})$/.exec(f); if (!m || ck(m[1]) !== m[2]) return null;
       var s = b64d(m[1]); if (s.slice(0, 2) !== '1~') return null; var t = strip(s.slice(2)); if (len(t) > MAX) return null;
       return { toast: t };
@@ -18,7 +18,9 @@ var CH = (function () {
   }
   // Etch: 2 words per line, max 4 lines (overflow joins the last line).
   function lines(t) { var w = strip(t).split(' ').filter(Boolean), out = []; for (var i = 0; i < w.length; i += 2) out.push(w.slice(i, i + 2).join(' ')); if (out.length > 4) out = out.slice(0, 3).concat([out.slice(3).join(' ')]); return out; }
-  return { MAX: MAX, strip: strip, len: len, encode: encode, decode: decode, lines: lines };
+  // Characters over the limit: text cap (48 code points) AND encoded-link cap (260), so the maker can never produce a link the receiver rejects.
+  function overBy(t) { t = strip(t); var a = Array.from(t), over = a.length - MAX; if (over > 0) return over; var n = 0; while (n < a.length && encode(a.slice(0, a.length - n).join('')).length > FRAG_MAX) n++; return n; }
+  return { MAX: MAX, FRAG_MAX: FRAG_MAX, overBy: overBy, strip: strip, len: len, encode: encode, decode: decode, lines: lines };
 })();
 if (typeof module !== 'undefined') module.exports = CH;
 
@@ -47,12 +49,13 @@ if (typeof document !== 'undefined') (function () {
     if (location.hash) history.replaceState(null, '', location.pathname);
   }
   function check() {
-    var t = CH.strip($('toast-in').value), over = CH.len(t) - CH.MAX;
+    var t = CH.strip($('toast-in').value), over = CH.overBy(t);
     $('fmsg').textContent = over > 0 ? fill(COPY.toastTooLong, { n: over }) : ''; etch('l', over > 0 ? '' : t); return over > 0 ? null : t;
   }
   $('toast-in').addEventListener('input', function () { check(); if (!$('share').hidden) { $('share').hidden = true; $('raise').hidden = false; scene.classList.remove('is-raised'); } });
   $('raise').onclick = function () { var t = check(); if (t === null) { $('toast-in').focus(); return; } current = t; scene.classList.add('is-raised'); $('raise').hidden = true; $('share').hidden = false; $('share').focus(); };
   $('share').onclick = function () {
+    if (CH.overBy(current) > 0) { check(); return; }
     var link = location.origin + location.pathname + '#' + CH.encode(current);
     var cp = function () { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(function () { tst(COPY.copied); }, function () { window.prompt(COPY.share, link); }); else window.prompt(COPY.share, link); };
     if (navigator.share) navigator.share({ title: COPY.title, url: link }).then(function () {}, function (e) { if (e && e.name === 'AbortError') tst(COPY.shareCancel); else cp(); }); else cp();

@@ -113,7 +113,7 @@ if (typeof document !== 'undefined') (function () {
   }
   function gotKnock(t) {
     if (t.length < OK.MIN) { $('msg').textContent = COPY.tooFew; return listen(gotKnock); }
-    G = OK.gapsFromTimes(t.slice(0, OK.MAX)); bars(G); $('msg').textContent = ''; panel('p-make'); $('closeDoor').focus();
+    G = OK.gapsFromTimes(t.slice(0, OK.MAX)); bars(G); $('msg').textContent = t.length >= OK.MAX ? COPY.tooMany : ''; panel('p-make'); $('closeDoor').focus();
   }
   $('redo').onclick = function () { panel(null); bars(null); $('msg').textContent = ''; listen(gotKnock); door.focus(); };
   $('replay').onclick = function () { if (G) play(G); };
