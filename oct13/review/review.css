@@ -14,3 +14,4 @@ li{background:var(--card);border:1px solid var(--line);border-radius:12px;paddin
 a.play{display:inline-block;margin-top:10px;padding:9px 16px;border-radius:9px;background:var(--fg);color:var(--bg);text-decoration:none;font-weight:600}
 a.play:focus-visible{outline:3px solid #1d5fae;outline-offset:2px}
 .nolink{display:inline-block;margin-top:10px;color:var(--mut);font-size:.9rem}
+.qa{margin:6px 0 0;font-size:.92rem}.qa-lim{color:#a05a00}.self{margin-top:8px}.self .badge{font-weight:500;border-style:dashed}.limh{margin:8px 0 0;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
