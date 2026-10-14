@@ -64,6 +64,6 @@ input,textarea{min-width:0;max-width:100%}
 .ps-admit{font:700 13px var(--ps-mono);letter-spacing:.32em;color:var(--ps-red);margin:0 0 6px;border-block:1px dashed currentColor;display:inline-block;padding:2px 6px}
 
 /* Title: never break inside a word; size follows its own column. Visitor names inside it still wrap anywhere. */
-:has(> .ps-title){container-type:inline-size}
-.ps-title{overflow-wrap:normal;word-break:normal;hyphens:none;font-size:clamp(26px,min(10vw,11.5cqi),58px)}
+.ps-title{overflow-wrap:normal;word-break:normal;hyphens:none;font-size:clamp(26px,10vw,58px)}
+@media(min-width:900px){.ps-title{font-size:clamp(26px,calc(19px + 2.45vw),58px)}} /* side column ≈ 131px + 16.8vw; longest word ≈ 6.4em */
 .ps-title .ps-vis{overflow-wrap:anywhere}

@@ -62,5 +62,5 @@ body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
 
 /* Title: never break inside a word; size follows its own column. */
-:has(> .wb-title){container-type:inline-size}
-.wb-title{overflow-wrap:normal;word-break:normal;hyphens:none;font-size:clamp(30px,min(6vw,20cqi),64px)}
+.wb-title{overflow-wrap:normal;word-break:normal;hyphens:none;font-size:clamp(34px,6vw,64px)}
+@media(min-width:900px){.wb-title{font-size:clamp(28px,calc(4.1vw - 7px),64px)}} /* side column ≈ 21vw - 35px; word ≈ 4.8em */
