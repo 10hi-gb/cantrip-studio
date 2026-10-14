@@ -69,3 +69,4 @@ body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
 .ar-moment .body,.ar-moment .line{min-width:0;overflow-wrap:anywhere}
 .ar-moment .line.is-typing{max-width:100%}
+.ar-stack{overflow-x:clip}
