@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-14 4:22 PM PT",
+ "updated": "2026-10-14 4:39 PM PT",
  "items": [
   {
    "id": "C148",
@@ -218,14 +218,14 @@
    "batch": "B",
    "name": "A Plant From This",
    "description": "A phrase grows a unique invented plant; a friend gets the same plant.",
-   "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA).",
+   "status": "Fix awaiting QA retest",
+   "note": "design-check fixes in 77faa78; last QA pass was on 2e668c5f",
    "url": "../a-plant-from-this/",
    "limitations": [],
    "qa": {
-    "verdict": "QA passed",
-    "pin": "2e668c5f",
-    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
+    "verdict": "Fix awaiting QA retest",
+    "pin": "fdbc3526",
+    "ledger": "design-check fixes in 77faa78; last QA pass was on 2e668c5f",
     "untested": []
    }
   },
@@ -234,14 +234,14 @@
    "batch": "B",
    "name": "Wear This",
    "description": "Dress a paper doll in four slots and send the outfit.",
-   "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA).",
+   "status": "Fix awaiting QA retest",
+   "note": "design-check fixes in 77faa78; last QA pass was on 2e668c5f",
    "url": "../wear-this/",
    "limitations": [],
    "qa": {
-    "verdict": "QA passed",
-    "pin": "2e668c5f",
-    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
+    "verdict": "Fix awaiting QA retest",
+    "pin": "fdbc3526",
+    "ledger": "design-check fixes in 77faa78; last QA pass was on 2e668c5f",
     "untested": []
    }
   },
