@@ -54,3 +54,17 @@ button:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
 /* visitor-text wrap: long unbroken words never widen the page */
 body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
+/* design-check C087 (2026-10-14) */
+/* "Take it off" is a text link, not a swatch circle: one line */
+.wt-sw .wt-off{width:auto;height:auto;border:0;border-radius:0;white-space:nowrap;overflow-wrap:normal;padding:6px 2px}
+/* the doll is capped so the whole board fits the viewport; the svg keeps its aspect (meet) */
+.wt-doll{height:min(560px,calc(100dvh - 330px));min-height:300px}
+@media(max-width:900px){
+ /* mobile drawer: compact doll, then the binder tabs + the active slot right under it */
+ .wt-doll{height:min(300px,34dvh);min-height:220px}
+ .wt-dollwrap{padding:6px}
+ .wt-skin{margin-top:4px}
+ /* recipient view has no drawer: never let the hidden tabs take a grid track (caused sideways scroll) */
+ .wt.is-recv .wt-tabs{display:none}
+ .wt.is-recv .wt-dollwrap{max-width:330px}
+}

@@ -52,3 +52,7 @@ html,body{margin:0;min-height:100dvh;background:#E7E2D2;color:var(--sepia);font:
 /* visitor-text wrap: long unbroken words never widen the page */
 body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
+/* design-check C050: the specimen label sits right of the stem base (stem at 50%), never over it */
+.pv-label{width:auto;max-width:min(42%,260px);left:auto}
+/* design-check C050: on narrow screens the inputs come before the (empty) sheet, and the empty sheet is shorter */
+@media(max-width:960px){.pv-stage{max-width:min(520px,62dvh)}.pv:has(#maker:not([hidden])) .pv-side{order:1}.pv:has(#maker:not([hidden])) .pv-stage{order:2}}

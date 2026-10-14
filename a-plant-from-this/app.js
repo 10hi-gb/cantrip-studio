@@ -56,11 +56,14 @@ if (typeof document !== 'undefined') (function () {
     var G = PL.grow(phrase), svg = $('svg'); svg.textContent = ''; svg.classList.toggle('pv-grow', !!animate && !L.reduce);
     var hue = G.F.hue, g = el('g', {});
     G.stems.forEach(function (s) { var p = el('path', { d: s.d, class: 'pv-stem', 'stroke-width': s.w.toFixed(2) }); p.style.setProperty('--l', s.l); p.style.setProperty('--d', Math.round(s.delay * .9) + 'ms'); g.appendChild(p); });
-    G.leaves.forEach(function (l, i) { var p = el('path', { d: PL.leafPath(l, G.F.round), class: 'pv-leaf', transform: 'translate(' + l.x.toFixed(1) + ' ' + l.y.toFixed(1) + ') rotate(' + (l.a * 57.3).toFixed(0) + ')', fill: 'hsla(' + (118 + (i * 7) % 34) + ',34%,' + (30 + (i * 13) % 20) + '%,.8)' }); p.style.setProperty('--d', Math.round(l.delay * .9) + 'ms'); g.appendChild(p); });
-    G.flowers.forEach(function (f) { var fg = el('g', { class: 'pv-flower', transform: 'translate(' + f.x.toFixed(1) + ' ' + f.y.toFixed(1) + ')' }); fg.style.setProperty('--d', Math.round(f.delay * .9) + 'ms');
+    G.leaves.forEach(function (l, i) { var lg = el('g', { transform: 'translate(' + l.x.toFixed(1) + ' ' + l.y.toFixed(1) + ') rotate(' + (l.a * 57.3).toFixed(0) + ')' }), p = el('path', { d: PL.leafPath(l, G.F.round), class: 'pv-leaf', fill: 'hsla(' + (118 + (i * 7) % 34) + ',34%,' + (30 + (i * 13) % 20) + '%,.8)' }); p.style.setProperty('--d', Math.round(l.delay * .9) + 'ms'); lg.appendChild(p); g.appendChild(lg); });
+    G.flowers.forEach(function (f) { var fo = el('g', { transform: 'translate(' + f.x.toFixed(1) + ' ' + f.y.toFixed(1) + ')' }), fg = el('g', { class: 'pv-flower' }); fo.appendChild(fg); fg.style.setProperty('--d', Math.round(f.delay * .9) + 'ms');
       for (var i = 0; i < f.petals; i++) fg.appendChild(el('ellipse', { cx: 0, cy: -f.s * .6, rx: f.s * .38, ry: f.s * .7, transform: 'rotate(' + (360 / f.petals * i).toFixed(0) + ')', fill: 'hsla(' + ((hue % 60) + 5) + ',72%,64%,.85)' }));
-      fg.appendChild(el('circle', { r: f.s * .25, fill: '#E9B949' })); g.appendChild(fg); });
+      fg.appendChild(el('circle', { r: f.s * .25, fill: '#E9B949' })); g.appendChild(fo); });
     svg.appendChild(g);
+    // fit (Creative plant.js): scale about the stem base (150,365) so the whole plant stays inside the sheet with margins
+    try { var bb = g.getBBox(), BX = 150, BY = 365, top = 30, side = 24, k = Math.min(1, (BY - top) / Math.max(1, BY - bb.y), (BX - side) / Math.max(1, BX - bb.x), (300 - side - BX) / Math.max(1, bb.x + bb.width - BX));
+      if (k < 1) g.setAttribute('transform', 'translate(' + BX + ' ' + BY + ') scale(' + k.toFixed(4) + ') translate(' + (-BX) + ' ' + (-BY) + ')'); } catch (e) {}
     svg.setAttribute('aria-label', L.fill(COPY.plantAlt, { phrase: phrase }));
     $('caption').textContent = L.fill(COPY.grownCaption, { phrase: phrase }); $('label').hidden = false;
     clearTimeout(timer); if (animate && !L.reduce) { $('status').textContent = COPY.growing; timer = setTimeout(function () { $('status').textContent = ''; }, 2400); } else $('status').textContent = '';
