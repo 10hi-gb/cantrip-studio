@@ -97,9 +97,9 @@ if (typeof document !== 'undefined') (function () {
     $('stamps').hidden = m !== 'make'; $('meter').hidden = m !== 'make'; fog.classList.remove('is-gone'); wipe = []; creepSaid = false; clearTimeout(creepT);
     pane.setAttribute('role', m === 'make' ? 'application' : 'img'); pane.setAttribute('aria-label', m === 'make' ? COPY.drawHint + ' ' + COPY.keyboardHint : COPY.wipeHint);
     $('hint').textContent = m === 'make' ? COPY.drawHint + ' ' + COPY.keyboardHint : m === 'prev' ? COPY.previewHint : COPY.wipeHint; placeCur(); paint(); }
-  function openPreview() { var s = prepare(); if (!s) return; sent = lines.map(function (l) { return l.slice(); }); setMode('prev'); $('lede').textContent = COPY.preview; msg(s.simplified ? COPY.tooBig : ''); }
-  $('prev').onclick = openPreview;
-  $('go').onclick = function () { var s = prepare(); if (!s) return; if (s.simplified) { openPreview(); return; } L.share(L.link(FO.encode(lines)), COPY.title, COPY.shareText); };
+  function openPreview(pre) { var s = pre && pre.lines ? pre : prepare(); if (!s) return; sent = lines.map(function (l) { return l.slice(); }); setMode('prev'); $('lede').textContent = COPY.preview; msg(s.simplified ? COPY.tooBig : ''); }
+  $('prev').onclick = function () { openPreview(); };
+  $('go').onclick = function () { var s = prepare(); if (!s) return; if (s.simplified) { openPreview(s); return; } L.share(L.link(FO.encode(lines)), COPY.title, COPY.shareText); };
   $('share').onclick = function () { L.share(L.link(FO.encode(sent)), COPY.title, COPY.shareText); };
   $('back').onclick = function () { setMode('make'); $('lede').textContent = COPY.invitation; msg(''); meter(); };
   function reveal() { fog.classList.add('is-gone'); clearTimeout(creepT); msg(COPY.revealed); pane.setAttribute('aria-label', COPY.drawingAlt); }
