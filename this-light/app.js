@@ -51,7 +51,7 @@ if (typeof document !== 'undefined') (function () {
   $('search').placeholder = COPY.citySearch;
   function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 2800); }
   var sel = null, timer = 0, shown = false;
-  function norm(s) { return String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function norm(s) { return String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/ø/g, 'o').replace(/æ/g, 'ae').replace(/ß/g, 'ss').replace(/[łı]/g, function (c) { return c === 'ł' ? 'l' : 'i'; }).replace(/đ/g, 'd'); }
   function utcOffset(tz) { try { var p = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(new Date()).filter(function (x) { return x.type === 'timeZoneName'; })[0]; return p ? p.value.replace('GMT', 'UTC').replace('-', '−') : ''; } catch (e) { return ''; } }
   function renderList() {
     var q = norm($('search').value.trim()), host = $('list'); host.textContent = '';
