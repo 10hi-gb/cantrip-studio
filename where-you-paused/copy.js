@@ -1,0 +1,27 @@
+// C198-where-you-paused — final visitor copy (Writing Bot, 2026-10-13).
+const COPY = {
+  "title": "Where You Paused",
+  "invitation": "Type a short message. The places you stopped to think show up in it.",
+  "editorLabel": "Your message",
+  "editorHint": "Up to 200 characters. Typing pauses in this box become marks.",
+  "counter": "{n} left",
+  "tooLong": "200 characters max.",
+  "explainer": "A mark appears where you stopped typing for a moment in this box. It only measures time between keys here. It doesn't know why you paused.",
+  "pasteNote": "Pasted text doesn't get marks.",
+  "interrupted": "You left the page, so that gap wasn't marked.",
+  "primary": "Preview",
+  "previewHeading": "Here's how it will look.",
+  "removeMark": "Remove this mark",
+  "removeAll": "Remove all marks",
+  "edit": "Edit",
+  "share": "Send it",
+  "copied": "Link copied.",
+  "shareCancel": "Not sent. Your message is still here.",
+  "privacy": "The message and its marks live in the link. Nothing is uploaded, and nothing is tracked outside this box. Anyone with the link can read it.",
+  "receiverIntro": "Someone wrote you this. The marks show where they paused while typing.",
+  "receiverNote": "A pause is just a pause. Only they know what it was.",
+  "receiverPrimary": "Write one back",
+  "empty": "Type something first.",
+  "badLink": "This message didn't come through. Ask them to send it again.",
+  "loading": "Opening…"
+};

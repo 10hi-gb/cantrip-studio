@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Where You Paused · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="wp">
+<div class="wp-galley">
+ <div class="wp-slug"><a class="wp-home" href="../">GALLEY 198</a><span>CANTRIP STUDIO</span></div>
+ <h1 class="wp-title" id="title"></h1>
+ <section id="v-edit">
+  <p class="wp-lede" data-c="invitation"></p>
+  <p class="wp-explain" id="explain" data-c="explainer"></p>
+  <label class="wp-label" for="ed"><span data-c="editorLabel"></span><span id="count"></span></label>
+  <textarea id="ed" class="wp-editor" spellcheck="true" autocomplete="off"></textarea>
+  <p class="wp-fine wp-fine--hint" data-c="editorHint"></p>
+  <p class="wp-note" id="enote" role="status" aria-live="polite"></p>
+  <div class="wp-actions"><button class="wp-btn wp-btn--primary" id="preview" data-c="primary"></button></div>
+ </section>
+ <section id="v-proof" hidden>
+  <p class="wp-explain" id="pexplain"></p>
+  <div class="wp-proof" id="proof"></div>
+  <p class="wp-note" id="rnote" data-c="receiverNote" hidden></p>
+  <div class="wp-actions" id="pactions"><button class="wp-btn wp-btn--primary" id="share" data-c="share"></button><button class="wp-btn" id="edit" data-c="edit"></button><button class="wp-btn wp-btn--red" id="rmall" data-c="removeAll"></button></div>
+  <div class="wp-actions" id="ractions" hidden><button class="wp-btn wp-btn--primary" id="back" data-c="receiverPrimary"></button></div>
+ </section>
+ <p class="wp-fine" id="privacy" data-c="privacy"></p>
+</div>
+<div class="wp-toast" id="tst" role="status" hidden></div>
+</body>
+</html>
