@@ -60,7 +60,10 @@ if (typeof document !== 'undefined') (function () {
       if (k === 'ArrowRight') j = (i + 1) % 8; else if (k === 'ArrowLeft') j = (i + 7) % 8; else if (k === 'ArrowDown') j = (i + cols) % 8; else if (k === 'ArrowUp') j = (i + 8 - cols) % 8; else if (k === 'Home') j = 0; else if (k === 'End') j = 7; else return;
       e.preventDefault(); btns[i].tabIndex = -1; btns[j].tabIndex = 0; btns[j].focus(); });
     keys.appendChild(b); return b; });
-  function toggle(id) { var k = picks.indexOf(id); if (k >= 0) picks.splice(k, 1); else { if (picks.length === 2) picks.shift(); picks.push(id); } paintPick(); }
+  function focusKey(j) { btns.forEach(function (b, n) { b.tabIndex = n === j ? 0 : -1; }); btns[j].focus(); }
+  // QA r527: after the first pick, move focus to the next unpicked colour so Tab/Enter/Space alone can pick two (arrows still work).
+  function toggle(id) { var k = picks.indexOf(id), added = k < 0; if (k >= 0) picks.splice(k, 1); else { if (picks.length === 2) picks.shift(); picks.push(id); } paintPick();
+    var i = NOS.IDS.indexOf(id); if (added && picks.length === 1 && document.activeElement === btns[i]) { for (var n = 1; n < 8; n++) { var j = (i + n) % 8; if (picks.indexOf(NOS.IDS[j]) < 0) { focusKey(j); break; } } } }
   function paintPick() {
     btns.forEach(function (b) { var n = picks.indexOf(b.dataset.id), on = n >= 0; b.setAttribute('aria-pressed', String(on)); b.firstChild.setAttribute('data-n', on ? String(n + 1) : '');
       b.setAttribute('aria-label', L.fill(COPY.colorAria, { color: name(b.dataset.id), state: on ? COPY.selected : COPY.notSelected })); });

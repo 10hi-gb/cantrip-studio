@@ -88,3 +88,7 @@ input,textarea{min-width:0;max-width:100%}
  .ns-table{width:200mm;background:#fff;box-shadow:none}.ns-disc{inset:0;transform:none!important}}
 .ns-plate{margin-top:10px}.ns-h--gap{margin-top:18px}.ns-block{display:block}
 .ns-spin{margin:0;font-size:16px;line-height:1.45}
+/* QA r527: colour labels never break inside a word (body's overflow-wrap:anywhere must not reach them) */
+.ns-key{min-width:0}
+.ns-key .lbl{white-space:nowrap;overflow-wrap:normal;word-break:keep-all;font-size:clamp(9px,2.8vw,11px)}
+@media(max-width:420px){.ns-key .lbl{letter-spacing:.03em;padding:2px 4px}.ns-keys{gap:14px 6px}}
