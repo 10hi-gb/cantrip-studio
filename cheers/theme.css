@@ -1,0 +1,62 @@
+/* C088 Cheers — "Last Round": two flutes meet over an oxblood bar with a brass rail. Self-host fonts. No string, no night sky. */
+@font-face{font-family:"Abril Fatface";src:local("Abril Fatface"),url(fonts/AbrilFatface-Regular.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Bricolage Grotesque";src:local("Bricolage Grotesque"),url(fonts/BricolageGrotesque-Variable.woff2) format("woff2");font-weight:200 800;font-display:swap}
+:root{
+  --ch-bar:#4A1420; --ch-bar-deep:#350E17; --ch-counter:#5E1B2A; --ch-champ:#F2D27A; --ch-brass:#B8893A; --ch-brass-hi:#D9AE5E; --ch-bubble:#FFF8E6; --ch-glass:rgba(255,248,230,.55);
+  --ch-display:"Abril Fatface",Georgia,serif; --ch-sans:"Bricolage Grotesque",system-ui,sans-serif;
+}
+.ch{margin:0;min-height:100dvh;color:var(--ch-bubble);font-family:var(--ch-sans);background:var(--ch-bar);
+  /* back-bar wood paneling: flat vertical boards */
+  background-image:repeating-linear-gradient(90deg,transparent 0 118px,rgba(0,0,0,.22) 118px 120px)}
+.ch-page{position:relative;max-width:1200px;margin:0 auto;padding:20px 20px 0;min-height:100dvh;box-sizing:border-box;display:flex;flex-direction:column}
+.ch-sign{display:flex;justify-content:space-between;font:600 11px var(--ch-sans);letter-spacing:.2em;text-transform:uppercase;color:var(--ch-brass-hi)}
+.ch-title{font:400 clamp(48px,9vw,112px)/.95 var(--ch-display);color:var(--ch-champ);margin:12px 0 6px;text-align:center}
+.ch-lede{font:400 18px/1.4 var(--ch-sans);text-align:center;margin:0 auto 6px;max-width:32ch}
+.ch-scene{position:relative;flex:1;min-height:340px;display:flex;align-items:flex-end;justify-content:center}
+.ch-glasses{position:relative;width:min(88vw,520px);height:330px}
+.ch-glass{position:absolute;bottom:0;width:150px;height:320px;transform-origin:50% 100%;transition:transform 420ms cubic-bezier(.3,1.4,.5,1)}
+.ch-glass svg{width:100%;height:100%;overflow:visible}
+.ch-glass--l{left:calc(50% - 158px)}.ch-glass--r{right:calc(50% - 158px)}
+.ch-glass .bowl{fill:rgba(255,248,230,.08);stroke:var(--ch-glass);stroke-width:2.5}
+.ch-glass .wine{fill:var(--ch-champ)}
+.ch-glass .stem{stroke:var(--ch-glass);stroke-width:3;fill:none;stroke-linecap:round}
+.ch-glass .bub{fill:var(--ch-bubble);opacity:.8}
+.ch-etch{font:400 15px/1.1 var(--ch-display);fill:rgba(255,248,230,.85);letter-spacing:.02em}
+.ch-scene.is-raised .ch-glass--l{transform:rotate(9deg)}
+.ch-scene.is-raised .ch-glass--r{transform:rotate(-9deg)}
+.ch-scene.is-clinked .ch-glass--l{transform:rotate(9.5deg)}
+.ch-scene.is-clinked .ch-glass--r{transform:rotate(-9.5deg)}
+.ch-spark{position:absolute;left:50%;top:6px;width:90px;height:90px;margin-left:-45px;opacity:0}
+.ch-spark line{stroke:var(--ch-champ);stroke-width:3;stroke-linecap:round}
+.ch-scene.is-clinked .ch-spark{animation:ch-spark 700ms ease-out 380ms both}
+@keyframes ch-spark{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+.ch-scene.is-clinked .bub{animation:ch-rise 1.6s ease-in infinite}
+.ch-scene.is-clinked .bub:nth-of-type(2n){animation-delay:.4s}
+@keyframes ch-rise{from{transform:translateY(0);opacity:.9}to{transform:translateY(-60px);opacity:0}}
+/* counter + brass rail */
+.ch-counter{position:relative;height:120px;margin:0 calc(50% - 50vw);background:var(--ch-counter);border-top:4px solid var(--ch-bar-deep);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px}
+.ch-counter::before{content:"";position:absolute;left:0;right:0;top:-14px;height:10px;background:var(--ch-brass);border-radius:6px;box-shadow:inset 0 2px 0 var(--ch-brass-hi),inset 0 -2px 0 #7E5B22}
+.ch-btn{font:700 17px var(--ch-sans);padding:14px 26px;border-radius:999px;border:2px solid var(--ch-champ);background:transparent;color:var(--ch-champ);cursor:pointer}
+.ch-btn--primary{background:var(--ch-champ);color:var(--ch-bar)}
+.ch-btn:focus-visible{outline:3px solid var(--ch-bubble);outline-offset:3px}
+.ch-field{display:block;margin:10px auto 0;width:min(100%,360px)}
+.ch-field span{display:block;font:600 11px var(--ch-sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ch-brass-hi);margin-bottom:6px}
+.ch-field input{width:100%;box-sizing:border-box;padding:12px 14px;border:0;border-bottom:2px solid var(--ch-brass);background:rgba(0,0,0,.2);color:var(--ch-bubble);font:400 18px var(--ch-sans)}
+.ch-fine{font:400 13px/1.45 var(--ch-sans);color:rgba(255,248,230,.75);max-width:48ch;text-align:center;margin:0 auto}
+.ch-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.ch-mute{font:600 12px var(--ch-sans);color:var(--ch-brass-hi);background:none;border:1px solid var(--ch-brass);border-radius:99px;padding:6px 12px}
+@media(max-width:600px){.ch-glass{width:118px;height:250px}.ch-glasses{height:260px}.ch-glass--l{left:calc(50% - 124px)}.ch-glass--r{right:calc(50% - 124px)}.ch-scene{min-height:270px}}
+@media(min-width:900px){.ch-glass{width:190px;height:405px}.ch-glasses{height:415px}.ch-glass--l{left:calc(50% - 200px)}.ch-glass--r{right:calc(50% - 200px)}.ch-spark{top:-30px;width:120px;height:120px;margin-left:-60px}}
+@media(prefers-reduced-motion:reduce){.ch-glass{transition:none}.ch-scene.is-clinked .bub{animation:none}.ch-scene.is-clinked .ch-spark{animation:none;opacity:1}}
+.ch-glass--solo{left:calc(50% - 75px)}
+@media(max-width:600px){.ch-glass--solo{left:calc(50% - 59px)}}@media(min-width:900px){.ch-glass--solo{left:calc(50% - 95px)}}
+body{overflow-x:hidden}
+/* --- build additions (Engineer) --- */
+[hidden]{display:none!important}
+.ch-title--long{font-size:clamp(32px,5vw,56px)}
+.ch-mute[aria-pressed=true]{text-decoration:line-through;opacity:.7}
+.ch-field-msg{font:400 13px var(--ch-sans);color:var(--ch-brass-hi);min-height:1.3em;margin:4px 0 0;text-align:left}
+.ch-scene.is-raised .ch-glass--solo{transform:rotate(-6deg)}
+.ch-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ch-champ);color:var(--ch-bar);padding:10px 16px;border-radius:99px;font:600 14px var(--ch-sans);z-index:9}
+@media(prefers-reduced-motion:reduce){.ch-glass{transition:none}.ch-scene.is-clinked .bub{animation:none}.ch-scene.is-clinked .ch-spark{animation:none;opacity:1}}
+.ch-home{color:inherit;text-decoration:none}
