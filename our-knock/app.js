@@ -68,7 +68,7 @@ if (typeof document !== 'undefined') (function () {
       o.connect(g); n.connect(bp); bp.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + 0.18); n.start(t);
     } catch (e) {}
   }
-  $('mute').onclick = function () { muted = !muted; $('mute').setAttribute('aria-pressed', muted ? 'true' : 'false'); };
+  $('mute').onclick = function () { muted = !muted; $('mute').setAttribute('aria-pressed', muted ? 'true' : 'false'); $('mute').textContent = muted ? COPY.unmute : COPY.mute; };
   function visualKnock() {
     door.classList.remove('is-knock'); void door.offsetWidth; door.classList.add('is-knock');
     if (!RM.matches) { var r = document.createElement('span'); r.className = 'ok-ring'; door.appendChild(r); setTimeout(function () { r.remove(); }, 650); }

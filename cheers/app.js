@@ -68,7 +68,7 @@ if (typeof document !== 'undefined') (function () {
       [[2600, 1], [2614, 0.6], [3900, 0.5], [3921, 0.3]].forEach(function (p) { var o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = p[0]; g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(p[1], now + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, now + 0.6); o.connect(g); g.connect(out); o.start(now); o.stop(now + 0.65); });
     } catch (e) {}
   }
-  $('mute').onclick = function () { muted = !muted; $('mute').setAttribute('aria-pressed', String(muted)); };
+  $('mute').onclick = function () { muted = !muted; $('mute').setAttribute('aria-pressed', String(muted)); $('mute').textContent = muted ? COPY.unmute : COPY.mute; };
   $('clink').onclick = function () { scene.classList.remove('is-raised'); scene.classList.add('is-clinked'); clinkSound(); $('title').textContent = COPY.clinked; $('title').classList.remove('ch-title--long'); show(['clink'], false); show(['back'], true); $('fine').textContent = ''; $('back').focus(); };
   $('back').onclick = maker;
   function receiver(r) {

@@ -28,3 +28,11 @@ const COPY = {
   "badLink": "That city didn't come through. Pick one below.",
   "loading": "Working out where the sun is…"
 };
+// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
+Object.assign(COPY, {
+  "brandLine": "Cantrip Studio · Light Specimen",
+  "specimenNo": "No. 042",
+  "dialRise": "E · rise",
+  "dialSet": "set · W",
+  "dialNoon": "noon"
+});

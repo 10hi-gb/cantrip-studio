@@ -26,6 +26,11 @@ const COPY = {
   "noNote": "No note. Just a door, opened.",
   "knockBack": "Make your own knock",
   "badLink": "This door didn't come through. Ask them to send it again.",
-  "soundHint": "Knocks make a soft sound. Mute",
+  "soundHint": "Knocks make a soft sound.",
   "loading": "Hanging the door…"
 };
+// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
+Object.assign(COPY, {
+  "mute": "Mute",
+  "unmute": "Unmute"
+});

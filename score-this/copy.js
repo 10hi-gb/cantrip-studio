@@ -151,3 +151,7 @@ const COPY = {
   "badLink": "This scene didn't come through. Ask them to send it again.",
   "loading": "Setting up the stage…"
 };
+// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
+Object.assign(COPY, {
+  "unmute": "Unmute"
+});

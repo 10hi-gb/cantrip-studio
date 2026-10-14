@@ -43,3 +43,7 @@ const COPY = {
   altExport: "Annual performance review for {name}, from {reviewer}.",
   previewTitle: "Annual Review of You", previewDescription: "Someone filed a review. Open it to read."
 };
+// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
+Object.assign(COPY, {
+  "overall": "Overall"
+});

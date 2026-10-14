@@ -25,7 +25,7 @@ if (typeof document !== 'undefined') (function () {
   var fill = function (s, v) { return s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; }); };
   Array.prototype.forEach.call(document.querySelectorAll('[data-c]'), function (n) { n.textContent = COPY[n.getAttribute('data-c')]; });
   [0, 1].forEach(function (i) { $('nl' + i).textContent = COPY.nameLabels[i]; $('n' + i).placeholder = COPY.namePlaceholders[i]; });
-  $('tl').setAttribute('aria-label', COPY.namePlaceholders[0] + ' (F)'); $('tr').setAttribute('aria-label', COPY.namePlaceholders[1] + ' (J)');
+  $('tl').setAttribute('aria-label', COPY.namePlaceholders[0] + ' (' + COPY.keyLeft + ')'); $('tr').setAttribute('aria-label', COPY.namePlaceholders[1] + ' (' + COPY.keyRight + ')');
   var stage = $('stage'), held = { l: false, r: false }, state = 'idle', t0 = 0, raf = 0, result = null, PULL = 2400;
   function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 2800); }
   function status(s) { $('status').textContent = s; }

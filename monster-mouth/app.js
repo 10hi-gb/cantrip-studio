@@ -61,7 +61,7 @@ if (typeof document !== 'undefined') (function () {
   }
   function render() {
     g.fillStyle = PAPER; g.fillRect(0, 0, W, H);
-    if (!alive) { drawStrokes(0); return; }
+    if (!alive) { drawStrokes(0); if (document.activeElement === cv) { g.save(); g.strokeStyle = INK; g.lineWidth = 3; g.setLineDash(kb.down ? [] : [6, 6]); g.beginPath(); g.arc(kb.x, kb.y, kb.down ? 9 : 14, 0, Math.PI * 2); g.stroke(); g.restore(); } return; }
     var jit = RM.matches ? 0 : 1.6, b = F.box, bw = Math.max(80, b[2] - b[0]), bh = Math.max(80, b[3] - b[1]);
     g.save(); g.translate(twitch, 0);
     // body: cut-paper magenta hull
@@ -90,12 +90,13 @@ if (typeof document !== 'undefined') (function () {
   });
   cv.addEventListener('pointermove', function (e) { if (!cur) return; var p = pos(e), q = cur[cur.length - 1]; if (Math.hypot(p[0] - q[0], p[1] - q[1]) > 3 && cur.length < 3000) { cur.push(p); render(); } });
   ['pointerup', 'pointercancel'].forEach(function (ev) { cv.addEventListener(ev, function () { cur = null; }); });
+  cv.addEventListener('focus', function () { if (!alive) render(); }); cv.addEventListener('blur', function () { if (!alive) render(); });
   cv.addEventListener('keydown', function (e) {
     if (alive) { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); poke(); } return; }
     var d = e.shiftKey ? 40 : 14;
-    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (kb.down) { kb.down = false; cur = null; } else { kb.down = true; cur = [[kb.x, kb.y]]; strokes.push(cur); render(); } return; }
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (kb.down) { kb.down = false; cur = null; } else { kb.down = true; cur = [[kb.x, kb.y]]; strokes.push(cur); } render(); return; }
     var mv = { ArrowLeft: [-d, 0], ArrowRight: [d, 0], ArrowUp: [0, -d], ArrowDown: [0, d] }[e.key]; if (!mv) return; e.preventDefault();
-    kb.x = Math.max(0, Math.min(W, kb.x + mv[0])); kb.y = Math.max(0, Math.min(H, kb.y + mv[1])); if (kb.down && cur) { cur.push([kb.x, kb.y]); render(); }
+    kb.x = Math.max(0, Math.min(W, kb.x + mv[0])); kb.y = Math.max(0, Math.min(H, kb.y + mv[1])); if (kb.down && cur) cur.push([kb.x, kb.y]); render();
   });
   $('undo').onclick = function () { strokes.pop(); render(); };
   $('clear').onclick = function () { strokes = []; render(); };
@@ -174,4 +175,7 @@ if (typeof document !== 'undefined') (function () {
   document.addEventListener('visibilitychange', function () { if (document.hidden) { stopVoice(); if (AC) AC.suspend(); } });
   window.__mm = { get V() { return V; } };
   render();
+
+  // Keyboard-drawing hint sits under the canvas and shows only while drawing is possible.
+  (function () { var pd = $('p-draw'), kh = $('kbhint'), sync = function () { kh.hidden = pd.hidden; }; new MutationObserver(sync).observe(pd, { attributes: true, attributeFilter: ['hidden'] }); sync(); cv.setAttribute('aria-label', COPY.title); })();
 })();

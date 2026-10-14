@@ -39,7 +39,7 @@
   <div id="moments"></div>
   <div class="ar-actions"><button class="ar-btn" type="button" id="add" data-c="addMoment"></button><span class="ar-warn" data-c="limit"></span></div>
   <div class="ar-entry">
-   <p class="ar-label">Overall</p><div id="closers" role="group" aria-label="Overall"></div>
+   <p class="ar-label" data-c="overall"></p><div id="closers" role="group"></div>
    <div class="ar-field"><label for="f-extra" data-c="closerExtraLabel"></label><input id="f-extra" maxlength="80" autocomplete="off"></div>
   </div>
   <div class="ar-meter" id="meter" aria-hidden="true"><i></i></div>
@@ -60,7 +60,7 @@
   <h1 class="ar-title" id="r-title"></h1>
   <div class="ar-grid"><div class="ar-field"><label data-c="periodLabel"></label><div class="v" id="r-period"></div></div><div class="ar-field"><label data-c="reviewerLabel"></label><div class="v" id="r-rev"></div></div></div>
   <div id="r-moments"></div>
-  <div class="ar-field ar-overall"><label>Overall</label><div class="v" id="r-overall"></div></div>
+  <div class="ar-field ar-overall"><label data-c="overall"></label><div class="v" id="r-overall"></div></div>
   <div class="ar-actions" id="sender-actions"><button class="ar-btn ar-btn--primary" id="share" data-c="send"></button><button class="ar-btn" id="save" data-c="save"></button><button class="ar-btn" id="edit" data-c="edit"></button></div>
   <p class="ar-fine" id="sender-fine"></p>
   <div class="ar-actions" id="recv-actions" hidden><a class="ar-btn ar-btn--primary" href="./" id="back" data-c="recipientEnd"></a><button class="ar-btn" id="save2" data-c="save"></button></div>

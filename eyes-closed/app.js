@@ -169,4 +169,7 @@ if (typeof document !== 'undefined') (function () {
   }
   window.addEventListener('hashchange', function () { location.reload(); });
   route();
+
+  // Keyboard-drawing hint sits under the canvas and shows only while drawing is possible.
+  (function () { var pd = $('p-draw'), kh = $('kbhint'), sync = function () { kh.hidden = pd.hidden; }; new MutationObserver(sync).observe(pd, { attributes: true, attributeFilter: ['hidden'] }); sync(); cv.setAttribute('aria-label', COPY.title); })();
 })();

@@ -110,7 +110,7 @@ if (typeof document !== 'undefined') (function () {
     });
     $('add').disabled = R.moments.length >= COPY.maxMoments;
     var ch = $('closers'); ch.textContent = '';
-    ch.appendChild(chipRow(AR.CLOSER_IDS.map(function (id) { return COPY.closers[id]; }), R.closer, function (k) { R.closer = k; renderMoments(); }, 'Overall'));
+    ch.appendChild(chipRow(AR.CLOSER_IDS.map(function (id) { return COPY.closers[id]; }), R.closer, function (k) { R.closer = k; renderMoments(); }, COPY.overall));
     meter();
   }
   function focusChip(i) { var b = $('moments').children[i] && $('moments').children[i].querySelector('[aria-pressed=true]'); if (b) b.focus(); }

@@ -16,7 +16,7 @@ const COPY = {
   "soundOn": "Sound is on. Volume starts low.",
   "tapForSound": "Tap once to turn on sound.",
   "mute": "Mute",
-  "unmute": "Sound on",
+  "unmute": "Unmute",
   "stop": "Stop",
   "redraw": "Draw a new one",
   "restartConfirm": "Start over? This monster won't be kept.",
@@ -28,3 +28,7 @@ const COPY = {
   "reducedMotion": "Motion is reduced, so it twitches instead of chomping.",
   "error": "Your monster got loose. Draw a new one."
 };
+// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
+Object.assign(COPY, {
+  "keyHint": "Arrow keys move. Space puts the pen down."
+});

@@ -39,3 +39,7 @@ const COPY = {
   "badLink": "This drawing didn't come through. Ask them to send it again.",
   "loading": "Finding a clean sheet…"
 };
+// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
+Object.assign(COPY, {
+  "keyHint": "Arrow keys move. Space puts the pen down."
+});

@@ -123,7 +123,7 @@ if (typeof document !== 'undefined') (function () {
     if (navigator.share) navigator.share({ title: COPY.title, url: link }).then(function () {}, function (e) { if (e && e.name === 'AbortError') toast(COPY.shareCancel); else cp(); }); else cp();
   };
   $('rescore').onclick = function () { locked = false; history.replaceState(null, '', location.pathname); $('rescore').hidden = true; $('share').hidden = false; $('play').textContent = COPY.primary; $('lede').textContent = COPY.invitation; refresh(); panels[0].board.querySelector('.st-chip').focus(); };
-  $('mute').onclick = function () { muted = !muted; if (master) master.gain.value = muted ? 0 : VOL; if (muted) stopAll(); $('mute').setAttribute('aria-pressed', muted ? 'true' : 'false'); };
+  $('mute').onclick = function () { muted = !muted; if (master) master.gain.value = muted ? 0 : VOL; if (muted) stopAll(); $('mute').setAttribute('aria-pressed', muted ? 'true' : 'false'); $('mute').textContent = muted ? COPY.unmute : COPY.mute; };
   $('stop').onclick = stopAll;
   document.addEventListener('visibilitychange', function () { if (document.hidden) stopAll(); });
 

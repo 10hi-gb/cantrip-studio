@@ -49,3 +49,7 @@ const COPY = {
   canvasFail: "This browser can't draw here. Try another browser.",
   error: "Something fell off the wall. Start over and try again."
 };
+// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
+Object.assign(COPY, {
+  "strokesLabel": "Strokes"
+});
