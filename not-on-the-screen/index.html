@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Not on the Screen · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="lib.js" defer></script>
+<script src="palette.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="nos">
+<header class="nos-top"><a href="../" class="nos-home" data-c="studioLabel" data-al="backLabel"></a></header>
+<main class="nos-main">
+ <h1 class="nos-title" data-c="title"></h1>
+ <p class="nos-lede" id="lede"></p>
+
+ <section id="v-pick" class="nos-card" hidden>
+  <h2 class="nos-h2" data-c="pickHeading"></h2>
+  <p class="nos-fine" data-c="pickHint"></p>
+  <div class="nos-grid" id="grid" role="group" data-al="pickHeading"></div>
+  <div class="nos-pickrow">
+   <svg class="nos-mini" id="mini" aria-hidden="true"></svg>
+   <div><p class="nos-pair" id="pair" aria-live="polite"></p><p class="nos-msg" id="pmsg" role="status"></p><div class="nos-clears" id="clears"></div></div>
+  </div>
+  <button class="nos-btn nos-btn--go" id="make" type="button" data-c="primary"></button>
+  <p class="nos-fine" data-c="privacy"></p>
+ </section>
+
+ <section id="v-recv" class="nos-card" hidden>
+  <div class="nos-pickrow"><svg class="nos-mini" id="rmini" aria-hidden="true"></svg><p class="nos-pair" id="rpair"></p></div>
+  <button class="nos-btn nos-btn--go" id="see" type="button" data-c="receiverPrimary"></button>
+  <button class="nos-btn" id="mine" type="button" data-c="receiverAgain"></button>
+ </section>
+
+ <section id="v-disc" hidden>
+  <h2 class="nos-h2 nos-dhead" id="dhead" tabindex="-1"></h2>
+  <div class="nos-turntable"><svg class="nos-disc" id="disc" role="img" tabindex="-1"></svg></div>
+  <p class="nos-fine nos-center" data-c="discHint"></p>
+  <div class="nos-card">
+   <h3 class="nos-h3" data-c="spinHeading"></h3>
+   <p data-c="spinHow"></p>
+   <p class="nos-fine" data-c="noAuto"></p>
+   <p class="nos-fine" id="spinReduce" data-c="spinReduce" hidden></p>
+   <p class="nos-warn" data-c="resultUnverified"></p>
+   <div class="nos-acts"><button class="nos-btn nos-btn--go" id="share" type="button" data-c="share"></button><button class="nos-btn" id="again" type="button" data-c="spinAgain"></button></div>
+   <div class="nos-linkbox" id="linkbox" hidden><input readonly data-al="copyFail"></div>
+  </div>
+  <details class="nos-card nos-details"><summary data-c="noMix"></summary><p data-c="noMixBody"></p>
+   <h3 class="nos-h3" data-c="paperHeading"></h3><p class="nos-steps" data-c="paperSteps"></p><p id="paperColors"></p><p class="nos-fine" data-c="paperNote"></p></details>
+  <p class="nos-fine" data-c="screenshotHonesty"></p>
+  <div class="nos-acts"><button class="nos-btn" id="change" type="button" data-c="changePair"></button><button class="nos-btn" id="reset" type="button" data-c="reset"></button></div>
+  <p class="nos-fine" data-c="privacy"></p>
+ </section>
+ <p class="nos-foot"><button class="nos-link" id="reset2" type="button" data-c="reset"></button></p>
+ <p class="nos-fine" id="rm" hidden></p><p class="nos-msg" id="err" hidden></p>
+</main>
+<div class="nos-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

@@ -20,6 +20,7 @@ const G = {
   'until-then': `[UT.encode('Alpha lamp',Date.now()+864e5),UT.encode('Bravo lamp',Date.now()+2*864e5)]`,
   'permission-slip': `[PS.encode({id:'p1',to:'Ann',from:'Alpha',why:'Alpha reason'}),PS.encode({id:'p2',to:'Bob',from:'Bravo',why:'Bravo reason'})]`,
   'dont-mention-it': `[DM.encode('m1','Alpha'),DM.encode('m2','Bravo')]`,
+  'not-on-the-screen': `[NOS.encode('c1','c4'),NOS.encode('c6','c3')]`,
   'ask-me-at-four': `[AM.encode('Alpha promise','Ann',Date.now()+36e5),AM.encode('Bravo promise','Bob',Date.now()+72e5)]`,
 };
 const norm = t => t.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();

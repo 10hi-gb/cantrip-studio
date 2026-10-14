@@ -4,7 +4,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 PROJECT="${PROJECT:-cantrip-oct13-review}"
 case "$PROJECT" in cantrip-studio|cantrip-studio-review|cantrip-two-versions-review) echo "Refusing $PROJECT" >&2; exit 1;; esac
-SLUGS="bad-on-purpose one-across annual-review here-it-comes monster-mouth our-knock eyes-closed score-this this-light wishbone cheers where-you-paused a-plant-from-this wear-this fogged-over catch-this-yawn taste-like-this until-then permission-slip dont-mention-it ask-me-at-four broken-telephone"
+SLUGS="bad-on-purpose one-across annual-review here-it-comes monster-mouth our-knock eyes-closed score-this this-light wishbone cheers where-you-paused a-plant-from-this wear-this fogged-over catch-this-yawn taste-like-this until-then permission-slip dont-mention-it ask-me-at-four broken-telephone not-on-the-screen"
 STAGE="${STAGE:-/tmp/oct13-stage}"
 rm -rf "$STAGE"; mkdir -p "$STAGE"
 git -C "$REPO" show HEAD:oct13/_headers > "$STAGE/_headers"; git -C "$REPO" show HEAD:oct13/index.html > "$STAGE/index.html"; git -C "$REPO" show HEAD:oct13/oct13.css > "$STAGE/oct13.css"

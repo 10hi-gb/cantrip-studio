@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-14 7:54 AM PT",
+ "updated": "2026-10-14 8:18 AM PT",
  "items": [
   {
    "id": "C148",
@@ -359,6 +359,25 @@
     "untested": [
      "Read-aloud unheard; keyboard and reload unconfirmed."
     ]
+   }
+  },
+  {
+   "id": "C205",
+   "batch": "C",
+   "name": "Not on the Screen",
+   "description": "Pick two colors; a striped disc spins so the eye can mix them — a screenshot cannot.",
+   "status": "Engineer self-check passed",
+   "note": "Engineer self-check (build checks, not QA). Owner-selected add-on (item 23).",
+   "url": "../not-on-the-screen/",
+   "limitations": [
+    "Physical spin / perceived mix not yet validated on a real device.",
+    "Mill: screening PASS; red-team PENDING (invalid Mill reviewer outputs). No scores."
+   ],
+   "qa": {
+    "verdict": null,
+    "label": "Playable · no QA verdict",
+    "pin": null,
+    "untested": []
    }
   }
  ]

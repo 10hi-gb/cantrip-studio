@@ -1,7 +1,7 @@
 // Every piece's h1 at 320/390/768/1024/1440: no word split across lines, no horizontal overflow. Optional 3rd arg: piece; 4th: hash.
 const { open } = require('./qa-lib');
 const H = process.argv[2], only = process.argv[3], hash = process.argv[4] || '';
-const SL = 'bad-on-purpose one-across annual-review here-it-comes monster-mouth our-knock eyes-closed score-this this-light wishbone cheers where-you-paused a-plant-from-this wear-this fogged-over catch-this-yawn taste-like-this until-then permission-slip dont-mention-it ask-me-at-four broken-telephone'.split(' ');
+const SL = 'bad-on-purpose one-across annual-review here-it-comes monster-mouth our-knock eyes-closed score-this this-light wishbone cheers where-you-paused a-plant-from-this wear-this fogged-over catch-this-yawn taste-like-this until-then permission-slip dont-mention-it ask-me-at-four broken-telephone not-on-the-screen'.split(' ');
 (async () => { const { b, p } = await open(H, '172.66.45.46'); const out = []; p.on('dialog', d => d.dismiss().catch(() => {}));
   for (const s of SL) { if (only && s !== only) continue;
     for (const w of (process.env.WS ? process.env.WS.split(',').map(Number) : [320, 390, 768, 1024, 1440])) { await p.setViewport({ width: w, height: 900 }); await p.goto('about:blank'); await p.goto('https://' + H + '/' + s + '/' + (hash ? '#' + hash : ''), { waitUntil: 'networkidle0' }); await new Promise(r => setTimeout(r, 400));
