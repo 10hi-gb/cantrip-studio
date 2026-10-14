@@ -5,10 +5,6 @@ const COPY = {
   "invitation": "Send someone a yawn. See if they catch it.",
   "captionLabel": "Add a word (optional)",
   "captionPlaceholder": "Your turn.",
-  "captionTooLong": {
-    "one": "1 character over.",
-    "other": "{n} characters over."
-  },
   "primary": "Pass the yawn",
   "share": "Pass the yawn",
   "shareText": "Don't yawn.",
@@ -36,5 +32,7 @@ const COPY = {
   "home": "Cantrip Studio",
   "backLabel": "Back to Cantrip Studio",
   "reducedMotion": "Motion is reduced. Everything still works.",
-  "error": "Something went wrong. Reload the page and try again."
+  "error": "Something went wrong. Reload the page and try again.",
+  "captionMax": 40,
+  "captionCounter": "{n} left"
 };

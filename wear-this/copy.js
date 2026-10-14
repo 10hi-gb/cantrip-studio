@@ -187,5 +187,13 @@ const COPY = {
     "k4": "Skin tone 4 of 6, medium deep",
     "k5": "Skin tone 5 of 6, deep",
     "k6": "Skin tone 6 of 6, deepest"
+  },
+  "toneSkin": {
+    "k1": "lightest",
+    "k2": "light",
+    "k3": "medium",
+    "k4": "medium-deep",
+    "k5": "deep",
+    "k6": "deepest"
   }
 };

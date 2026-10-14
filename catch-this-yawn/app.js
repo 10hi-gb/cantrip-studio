@@ -1,7 +1,7 @@
 'use strict';
 // C092 Catch This Yawn — link carries only the optional caption: ["y1", caption]; the voluntary return link is ["y1r", ""].
 var CY = (function (L) {
-  var CMAX = 40, FRAG = 400;
+  var CMAX = (typeof COPY !== 'undefined' && COPY.captionMax) || 40, FRAG = 400;
   function encode(c) { return L.seal(['y1', L.clean(c, CMAX)]); }
   function encodeReturn() { return L.seal(['y1r', '']); }
   function decode(f) { var a = L.unseal(f, FRAG); if (!a || a.length !== 2) return null; var c = L.clean(a[1], CMAX);
@@ -17,8 +17,11 @@ if (typeof document !== 'undefined') (function () {
   function pp(btn) { var p = !ch.classList.contains('is-paused'); ch.classList.toggle('is-paused', p); btn.textContent = p ? COPY.resume : COPY.pause; btn.setAttribute('aria-pressed', String(p)); }
   $('pp').onclick = function () { pp($('pp')); }; $('pp2').onclick = function () { pp($('pp2')); };
   if (L.reduce) { $('pp').hidden = true; }
-  function over() { return L.len(L.clean($('caption').value)) - CY.CMAX; }
-  $('caption').addEventListener('input', function () { var o = over(); $('cmsg').textContent = o > 0 ? L.plural(COPY.captionTooLong, o) : ''; $('cap').textContent = L.clean($('caption').value, CY.CMAX); $('linkbox').hidden = true; });
+  // Soft cap: typing stops at CMAX code points (no error); a visible counter shows what's left.
+  function over() { return 0; }
+  function capIn() { var i = $('caption'), a = Array.from(i.value); if (a.length > CY.CMAX) { i.value = a.slice(0, CY.CMAX).join(''); }
+    $('ccount').textContent = L.fill(COPY.captionCounter, { n: CY.CMAX - Array.from(i.value).length }); $('cap').textContent = L.clean(i.value, CY.CMAX); $('linkbox').hidden = true; }
+  $('caption').addEventListener('input', capIn); capIn();
   $('send').onclick = function () { if (over() > 0) { $('caption').focus(); return; } L.share(L.link(CY.encode($('caption').value)), COPY.title, COPY.shareText); };
   function toMaker() { L.clearHash(); clearTimeout(askT); ['acts-recv', 'ask', 'acts-after'].forEach(function (i) { $(i).hidden = true; }); $('maker').hidden = false; $('acts-make').hidden = false;
     $('lede').textContent = COPY.invitation; $('msg').textContent = ''; $('caption').value = ''; $('cap').textContent = ''; play(true); }

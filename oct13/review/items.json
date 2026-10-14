@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-13 10:30 PM PT",
+ "updated": "2026-10-13 10:45 PM PT",
  "items": [
   {
    "id": "C148",
@@ -183,9 +183,9 @@
    "batch": "B",
    "name": "Taste Like This",
    "description": "Sweet, salt and heat sliders make a taste shape to share.",
-   "status": "Not built yet",
-   "note": "Being prepared; link added when pinned.",
-   "url": null,
+   "status": "Playable",
+   "note": "Engineer self-check only; waiting for Cantrip QA.",
+   "url": "../taste-like-this/",
    "limitations": []
   },
   {
@@ -193,9 +193,9 @@
    "batch": "B",
    "name": "Until Then",
    "description": "A lamp stays lit until a moment you choose.",
-   "status": "Not built yet",
-   "note": "Being prepared; link added when pinned.",
-   "url": null,
+   "status": "Playable",
+   "note": "Engineer self-check only; waiting for Cantrip QA.",
+   "url": "../until-then/",
    "limitations": []
   },
   {

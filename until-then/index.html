@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Until Then · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="lib.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="ut" id="root">
+<div class="ut-room" id="room" role="img"><div class="ut-pool"></div><div class="ut-studio"><a href="../" data-c="studioLabel" data-al="backLabel"></a><span></span></div><div class="ut-lamp" aria-hidden="true"><svg viewBox="0 0 150 230">
+<rect class=table x=-30 y=196 width=210 height=10 rx=2 /><rect class=table x=-18 y=206 width=8 height=24 /><rect class=table x=160 y=206 width=8 height=24 />
+<ellipse class=metal cx=75 cy=192 rx=30 ry=6 /><rect class=metal x=72 y=90 width=6 height=102 />
+<ellipse class=spill cx=75 cy=196 rx=60 ry=5 /><path class="spill cone" d="M30 100 L120 100 L150 196 L0 196 Z" /><circle class=bulb cx=75 cy=86 r=15 />
+<path class=shade-in d="M36 98 L114 98 L110 104 L40 104 Z" />
+<path class=shade d="M48 20 L102 20 L122 98 L28 98 Z" /></svg></div>
+<div class="ut-words">
+ <p class="ut-intro" id="intro" data-c="invitation"></p>
+ <h1 class="ut-label" id="label" hidden></h1>
+ <p class="ut-date" id="date" hidden></p>
+ <div class="ut-form" id="form">
+  <div><label for="lab" data-c="labelLabel"></label><input class="ut-labelin" id="lab" autocomplete="off" data-ph="labelPlaceholder" aria-describedby="lmsg"></div>
+  <p class="ut-msg" id="lmsg" aria-live="polite"></p>
+  <div><label data-c="whenLabel"></label><div class="ut-row"><input type="date" id="d" data-al="dateLabel"><input type="time" id="t" data-al="timeLabel"></div><p class="ut-fine" id="zone"></p></div>
+  <p class="ut-msg" id="wmsg" aria-live="polite"></p>
+ </div>
+ <p class="ut-msg" id="msg" role="status" aria-live="polite"></p>
+ <div class="ut-actions"><button class="ut-btn ut-btn--primary" id="light" data-c="primary"></button><button class="ut-btn ut-btn--primary" id="send" data-c="share" hidden></button><button class="ut-btn" id="again" data-c="receiverAgain" hidden></button></div>
+ <div class="ut-linkbox" id="linkbox" hidden><input readonly data-al="copyFail"></div>
+ <p class="ut-fine" data-c="clockNote"></p>
+ <p class="ut-fine" data-c="privacy"></p>
+ <p class="ut-fine" id="rm" hidden></p><p class="ut-msg" id="err" hidden></p>
+</div></div>
+<div class="ut-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

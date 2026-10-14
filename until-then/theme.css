@@ -1,0 +1,67 @@
+/* C049 Until Then — "Lamp Left On": a dark room, one warm practical lamp, the label set in its light. Self-hosted OFL fonts in fonts/. No countdown digits. */
+@font-face{font-family:"Gloock";src:url(fonts/gloock-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Figtree";src:url(fonts/figtree-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Figtree";src:url(fonts/figtree-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
+:root{
+  --ut-room:#15100C; --ut-wall:#2B1E15; --ut-amber:#FFB547; --ut-glow:#FFD58A; --ut-shade:#EADBC0; --ut-out:#6B625A; --ut-text:#F3E6CF; --ut-dim:#A8957C;
+  --ut-serif:"Gloock",Georgia,serif; --ut-sans:"Figtree",system-ui,sans-serif;
+  --ut-lamp-x:28%;   /* lamp position; the light pool and label anchor to it */
+}
+.ut{margin:0;min-height:100dvh;color:var(--ut-text);font-family:var(--ut-sans);background:var(--ut-room);overflow-x:hidden}
+.ut-room{position:relative;min-height:100dvh;overflow:hidden;background:var(--ut-wall)}
+/* floor: the bottom band is the darker room colour */
+.ut-room::after{content:"";position:absolute;left:0;right:0;bottom:0;height:22%;background:var(--ut-room);border-top:1px solid #0D0906}
+/* the light pool the lamp throws on the wall (a practical light falloff, not decoration) */
+.ut-pool{position:absolute;left:calc(var(--ut-lamp-x) - 70vmax);top:calc(56% - 70vmax);width:140vmax;height:140vmax;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(255,213,138,.42),rgba(255,181,71,.16) 38%,rgba(255,181,71,0) 70%);transition:opacity 2s ease}
+.ut-studio{position:absolute;top:16px;left:20px;right:20px;z-index:3;display:flex;justify-content:space-between;font:600 11px var(--ut-sans);letter-spacing:.16em;text-transform:uppercase;color:var(--ut-dim)}
+.ut-studio a{color:inherit;text-decoration:none}
+/* lamp */
+.ut-lamp{position:absolute;z-index:2;left:var(--ut-lamp-x);bottom:22%;width:150px;transform:translateX(-50%)}
+.ut-lamp svg{display:block;width:100%;overflow:visible}
+.ut-lamp .shade{fill:var(--ut-shade)}
+.ut-lamp .shade-in{fill:#C9B48F}
+.ut-lamp .bulb{fill:var(--ut-glow);animation:ut-breathe 6s ease-in-out infinite}
+.ut-lamp .metal{fill:#0F0B08}
+.ut-lamp .table{fill:#0F0B08}
+@keyframes ut-breathe{0%,100%{opacity:1}50%{opacity:.92}}
+.ut-pool{animation:ut-breathe-pool 6s ease-in-out infinite}
+@keyframes ut-breathe-pool{0%,100%{opacity:1}50%{opacity:.96}}
+.ut-lamp .spill{fill:var(--ut-glow);opacity:.35}
+.ut-lamp .cone{opacity:.08}.ut.is-out .ut-lamp .spill{opacity:0}
+/* label set in the light */
+.ut-words{position:relative;z-index:3;box-sizing:border-box;padding:14vh 22px 0 calc(var(--ut-lamp-x) + 90px);max-width:1100px}
+.ut-label{font:400 clamp(34px,5.6vw,72px)/1.05 var(--ut-serif);color:var(--ut-glow);margin:0;text-shadow:0 0 24px rgba(255,181,71,.25);overflow-wrap:anywhere}
+.ut-date{font:400 15px/1.4 var(--ut-sans);color:var(--ut-text);margin:12px 0 0;opacity:.85}
+.ut-intro{font:400 16px var(--ut-sans);color:var(--ut-dim);margin:0 0 14px}
+.ut-fine{font:400 13px/1.5 var(--ut-sans);color:var(--ut-dim);max-width:44ch;margin:10px 0 0}
+.ut-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.ut-btn{font:600 15px var(--ut-sans);padding:13px 22px;border-radius:999px;border:1.5px solid var(--ut-glow);background:transparent;color:var(--ut-glow);cursor:pointer}
+.ut-btn--primary{background:var(--ut-amber);border-color:var(--ut-amber);color:var(--ut-room)}
+.ut-btn:focus-visible{outline:3px solid var(--ut-text);outline-offset:3px}
+/* maker form sits in the lit area */
+.ut-form{display:grid;gap:14px;max-width:420px;margin-top:8px}
+.ut-form label{display:block;font:600 12px var(--ut-sans);letter-spacing:.1em;text-transform:uppercase;color:var(--ut-dim);margin-bottom:6px}
+.ut-form input{width:100%;box-sizing:border-box;background:rgba(21,16,12,.55);border:0;border-bottom:1.5px solid var(--ut-amber);color:var(--ut-text);font:400 18px var(--ut-sans);padding:11px 12px;color-scheme:dark}
+.ut-form input.ut-labelin{font:400 26px var(--ut-serif);color:var(--ut-glow)}
+.ut-form input:focus{outline:2px solid var(--ut-glow);outline-offset:2px}
+.ut-row{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
+/* off state */
+.ut.is-out .ut-pool{opacity:0;animation:none}.ut.is-out .ut-spill{opacity:0}
+.ut.is-out .bulb{fill:var(--ut-out);animation:none}
+.ut.is-out .shade{fill:#4A423A}.ut.is-out .shade-in{fill:#3A332D}
+.ut.is-out .ut-label{color:var(--ut-out);text-shadow:none}
+.ut.is-going-out .ut-pool,.ut.is-going-out .bulb{transition:opacity 2s ease,fill 2s ease}
+@media(max-width:700px){
+  :root{--ut-lamp-x:26%}
+  .ut-lamp{width:104px;bottom:18%}.ut-room::after{height:18%}
+  .ut-words{padding:72px 22px 0 22px}
+  .ut-pool{top:calc(52% - 70vmax)}
+}
+@media(prefers-reduced-motion:reduce){.ut-lamp .bulb,.ut-pool{animation:none}.ut-pool,.ut .bulb{transition:none}}
+/* Engineer additions (CSP-safe) */
+[hidden]{display:none!important}
+.ut-msg{font-size:14px;margin:0;min-height:1em;color:#F3C98B}
+.ut-linkbox input{width:100%;padding:8px;font:13px "Figtree",sans-serif}
+.ut-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#F3E6CF;color:#1b1612;padding:10px 16px;border-radius:999px;font-weight:600;z-index:9}
+.ut-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}

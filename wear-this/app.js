@@ -33,7 +33,7 @@ if (typeof document !== 'undefined') (function () {
     var q = { skin: 'k' + o.k }; WTM.SLOTS.forEach(function (s) { q[s] = o[s] ? [sid(s, o[s]), 'c' + o[s].c] : null; });
     var d = $('doll'); d.innerHTML = '<rect x="0" y="376" width="200" height="6" rx="3" fill="rgba(29,27,38,.15)"/>' + wtDoll(q).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, ''); // Creative doll.js: fixed shapes + validated IDs only, never visitor text
     if (drop) { var g = d.querySelector('.wt-wear'); if (g && !L.reduce) g.classList.add('drop'); }
-    d.setAttribute('aria-label', L.fill(COPY.dollAlt, { skin: COPY.skinTones['k' + o.k], head: itemName('head', o.head), top: itemName('top', o.top), bottom: itemName('bottom', o.bottom), shoes: itemName('shoes', o.shoes) }));
+    d.setAttribute('aria-label', L.fill(COPY.dollAlt, { skin: COPY.toneSkin['k' + o.k], head: itemName('head', o.head), top: itemName('top', o.top), bottom: itemName('bottom', o.bottom), shoes: itemName('shoes', o.shoes) }));
     syncControls();
   }
   // ---- controls: per slot a radiogroup of shapes + a radiogroup of colors; roving tabindex; arrows move, Enter/Space puts on ----

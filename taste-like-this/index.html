@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Taste Like This · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="lib.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="tt" id="root">
+<main class="tt-page">
+ <a class="tt-studio" href="../" data-c="studioLabel" data-al="backLabel"></a>
+ <h1 class="tt-title" data-c="title"></h1>
+ <p class="tt-lede" id="lede" data-c="invitation"></p>
+ <div class="tt-grid">
+  <div class="tt-slab">
+   <svg class="tt-shape" id="shape" viewBox="0 0 400 340" role="img"></svg>
+   <p class="tt-menu" id="menu" hidden><b id="dishShow"></b></p>
+  </div>
+  <div class="tt-stack">
+   <p class="tt-quip" id="quip" aria-live="polite"></p>
+      <p class="tt-hint" id="legendText" data-c="compareLegend" hidden></p>
+   <div class="tt-sliders" id="sliders"></div>
+   <p class="tt-hint" data-c="sliderHint"></p>
+   <div class="tt-field" id="dishf"><label for="dish" data-c="dishLabel"></label><input id="dish" autocomplete="off" data-ph="dishPlaceholder" aria-describedby="dmsg"></div>
+   <p class="tt-msg" id="dmsg" aria-live="polite"></p>
+   <div class="tt-actions"><button class="tt-btn tt-btn--primary" id="send" data-c="primary"></button><button class="tt-btn" id="mine" data-c="receiverPrimary" hidden></button></div>
+   <div class="tt-linkbox" id="linkbox" hidden><input readonly data-al="copyFail"></div>
+   <p class="tt-fine" data-c="disclaimer"></p>
+   <p class="tt-fine" data-c="privacy"></p>
+   <p class="tt-fine" id="rm" hidden></p><p class="tt-msg" id="err" hidden></p>
+  </div>
+ </div>
+</main>
+<div class="tt-toast" id="toast" role="status" hidden></div>
+</body>
+</html>
