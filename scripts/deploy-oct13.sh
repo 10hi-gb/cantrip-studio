@@ -8,7 +8,7 @@ SLUGS="bad-on-purpose one-across annual-review here-it-comes monster-mouth our-k
 STAGE="${STAGE:-/tmp/oct13-stage}"
 rm -rf "$STAGE"; mkdir -p "$STAGE"
 git -C "$REPO" show HEAD:oct13/_headers > "$STAGE/_headers"; git -C "$REPO" show HEAD:oct13/index.html > "$STAGE/index.html"; git -C "$REPO" show HEAD:oct13/oct13.css > "$STAGE/oct13.css"
-mkdir -p "$STAGE/review"; git -C "$REPO" show HEAD:oct13/review/index.html > "$STAGE/review/index.html"; git -C "$REPO" show HEAD:oct13/review/hub.css > "$STAGE/review/hub.css"
+mkdir -p "$STAGE/review"; git -C "$REPO" show HEAD:oct13/review/index.html > "$STAGE/review/index.html"; git -C "$REPO" show HEAD:oct13/review/items.json > "$STAGE/review/items.json"
 # stage from the committed tree only (git archive HEAD), so the deploy matches the commit exactly
 TMP=$(mktemp -d); git -C "$REPO" archive HEAD | tar -x -C "$TMP"
 for s in $SLUGS; do if [ -d "$TMP/$s" ]; then cp -a "$TMP/$s" "$STAGE/"; fi; done; rm -rf "$TMP"
