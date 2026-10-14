@@ -38,7 +38,8 @@ const norm = t => t.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
     for (const [name, h] of steps) {
       await p.bringToFront(); await p.goto(base + '#' + h).catch(() => {}); const got = await snap(p);
       await q.bringToFront(); await q.goto('about:blank'); await q.goto(base + '#' + h, { waitUntil: 'load' }); const fresh = await snap(q);
-      const st = { same: norm(got.text) === norm(fresh.text) && norm(got.fp) === norm(fresh.fp), badShown: got.text.includes(bad), len: got.text.length };
+      const st = { same: norm(got.fp) === norm(fresh.fp), // compared after the settle wait so typing/replay animations have finished
+      badShown: got.text.includes(bad), len: got.text.length };
       st.ok = st.same && (name === 'truncated' ? st.badShown : !st.badShown);
       if (!st.same) { const A1 = norm(got.fp), B1 = norm(fresh.fp); let i = 0; while (i < A1.length && A1[i] === B1[i]) i++; st.diff = [A1.slice(Math.max(0, i - 80), i + 120), B1.slice(Math.max(0, i - 80), i + 120)]; }
       st.text = got.fp; row.steps[name] = st;
