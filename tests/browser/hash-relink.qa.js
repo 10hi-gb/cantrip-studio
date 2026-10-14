@@ -25,10 +25,11 @@ const G = {
 const norm = t => t.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
 (async () => {
   const { b, p } = await open(H, '172.66.45.46'); const errs = []; p.on('pageerror', e => errs.push(String(e))); p.on('dialog', d => d.dismiss().catch(() => {}));
-  const q = await b.newPage(); await q.setRequestInterception?.(false); const out = [];
+  const q = await b.newPage(); q.on('dialog', d => d.dismiss().catch(() => {})); q.on('pageerror', e => errs.push('fresh: ' + e)); p.setDefaultTimeout(20000); q.setDefaultTimeout(20000); await q.setRequestInterception?.(false); const out = [];
   await p.setViewport({ width: 390, height: 844 }); await q.setViewport({ width: 390, height: 844 });
   const snap = async pg => { await new Promise(r => setTimeout(r, 1500)); const pre = await pg.evaluate(() => document.body.innerText); for (const id of ['read', 'reveal']) await pg.$eval('#' + id, e => e.offsetParent && e.click()).catch(() => {}); await new Promise(r => setTimeout(r, 2500)); const o = await pg.evaluate(() => ({ text: document.body.innerText, url: location.href, fp: document.body.innerText + [...document.querySelectorAll('svg')].map(e => e.outerHTML).join('') + [...document.querySelectorAll('canvas')].map(c => { try { return c.toDataURL(); } catch (e) { return ''; } }).join('') + [...document.querySelectorAll('[style]')].map(e => e.getAttribute('style')).join('') })); o.text = pre; return o; };
   for (const s of Object.keys(G)) { if (only && s !== only) continue;
+    try {
     const base = 'https://' + H + '/' + s + '/';
     await p.goto('about:blank'); await p.goto(base, { waitUntil: 'load' }); await new Promise(r => setTimeout(r, 400));
     const [A, B] = await p.evaluate(`(async()=>await (${G[s]}))()`); const bad = await p.evaluate(() => COPY.badLink);
@@ -44,6 +45,7 @@ const norm = t => t.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
     }
     row.distinct = row.steps.full.text !== row.steps.other.text && row.steps.full.text !== row.steps.empty.text; for (const v of Object.values(row.steps)) delete v.text; row.ok = Object.values(row.steps).every(x => x.ok) && row.distinct;
     out.push(row); console.error(s, row.ok ? 'OK' : JSON.stringify(row.steps));
+    } catch (e) { out.push({ s, ok: false, steps: {}, error: String(e).slice(0, 200) }); console.error(s, 'ERROR', String(e).slice(0, 200)); }
   }
   // full vs other must differ (content actually swapped) — recheck in one tab
   console.log(JSON.stringify({ fails: out.filter(r => !r.ok), pieces: out.length, summary: out.map(r => r.s + ': ' + Object.entries(r.steps).map(([k, v]) => k + '=' + (v.ok ? 'ok' : 'FAIL')).join(' ')), errs }, null, 1));
