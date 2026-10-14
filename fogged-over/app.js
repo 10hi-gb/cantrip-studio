@@ -1,9 +1,9 @@
 'use strict';
-// C102 Fogged Over — drawing travels as simplified, capped polylines in the fragment: ["f1", "aabb ccdd.eeff…"] (base36 pairs, 0..1295 grid).
+// C102 Fogged Over — drawing travels as simplified, capped polylines in the fragment: ["f1", "aabb ccdd.eeff…"] (2 hex chars per axis, 0..255 grid, normalized to the 4:3 box).
 var FO = (function (L) {
-  var MAX = 300, MAXLINES = 120, RAWMAX = 6000, FRAG = 2400, Q = 1295, VER = 'f1';
+  var MAX = 300, MAXLINES = 120, RAWMAX = 6000, FRAG = 2400, Q = 255, VER = 'f1';
   function q(v) { return Math.max(0, Math.min(Q, Math.round(v * Q))); }
-  function p2(n) { var s = n.toString(36); return s.length < 2 ? '0' + s : s; }
+  function p2(n) { var s = n.toString(16); return s.length < 2 ? '0' + s : s; }
   function count(lines) { return lines.reduce(function (a, l) { return a + l.length; }, 0); }
   function rdp(pts, eps) {
     if (pts.length < 3) return pts.slice();
@@ -23,8 +23,8 @@ var FO = (function (L) {
   function enc(lines) { return lines.map(function (l) { return l.map(function (p) { return p2(q(p[0])) + p2(q(p[1])); }).join(''); }).join('.'); }
   function encode(lines) { return L.seal([VER, enc(lines)]); }
   function decode(f) {
-    var a = L.unseal(f, FRAG); if (!a || a.length !== 2 || a[0] !== VER || !/^([0-9a-z]{4})+(\.([0-9a-z]{4})+)*$/.test(a[1])) return null;
-    var lines = a[1].split('.').map(function (s) { var o = []; for (var i = 0; i < s.length; i += 4) { var x = parseInt(s.substr(i, 2), 36), y = parseInt(s.substr(i + 2, 2), 36); if (x > Q || y > Q) return null; o.push([x / Q, y / Q]); } return o; });
+    var a = L.unseal(f, FRAG); if (!a || a.length !== 2 || a[0] !== VER || !/^([0-9a-f]{4})+(\.([0-9a-f]{4})+)*$/.test(a[1])) return null;
+    var lines = a[1].split('.').map(function (s) { var o = []; for (var i = 0; i < s.length; i += 4) { var x = parseInt(s.substr(i, 2), 16), y = parseInt(s.substr(i + 2, 2), 16); if (x > Q || y > Q) return null; o.push([x / Q, y / Q]); } return o; });
     if (lines.some(function (l) { return !l || l.length < 2; }) || count(lines) > MAX || lines.length > MAXLINES) return null;
     return lines;
   }
@@ -42,17 +42,10 @@ if (typeof document !== 'undefined') (function () {
     hi: [[[.2, .15], [.2, .85]], [[.2, .5], [.55, .5]], [[.55, .15], [.55, .85]], [[.8, .4], [.8, .85]], [[.8, .2], [.8, .24]]],
     arrow: [[[.1, .5], [.88, .5]], [[.62, .25], [.88, .5], [.62, .75]]],
     wave: [[[.06, .55], [.2, .35], [.35, .55], [.5, .35], [.65, .55], [.8, .35], [.94, .55]]] };
-  function maskOf(ls, sw) {
-    var r = pane.getBoundingClientRect(), W = Math.max(1, r.width), H = Math.max(1, r.height);
-    if (!ls.length) return 'none';
-    var d = ls.map(function (l) { return 'M' + l.map(function (p) { return (p[0] * W).toFixed(1) + ' ' + (p[1] * H).toFixed(1); }).join(' L'); }).join(' ');
-    var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='" + W.toFixed(0) + "' height='" + H.toFixed(0) + "'><path d='" + d + "' fill='none' stroke='black' stroke-width='" + sw + "' stroke-linecap='round' stroke-linejoin='round'/></svg>";
-    return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
-  }
   function sw() { return Math.max(14, pane.getBoundingClientRect().width * .022); }
+  // Creative fog.js foMask(el, lines, width) builds the SVG mask; throttled to rAF, and re-run on resize.
   var raf = 0; function paint() { if (raf) return; raf = requestAnimationFrame(function () { raf = 0;
-    if (mode === 'make') { fog.style.setProperty('--fo-wipe', maskOf(lines, sw())); }
-    else { ghost.style.setProperty('--fo-draw', maskOf(sent, sw())); fog.style.setProperty('--fo-wipe', maskOf(wipe, sw() * 3)); } }); }
+    if (mode === 'make') foMask(fog, lines, sw()); else { foMask(ghost, sent, sw()); foMask(fog, wipe, 48); } }); }
   function meter() { var n = FO.count(lines); $('meter').textContent = n ? L.fill(n === 1 ? COPY.pointCount.one : COPY.pointCount.other, { n: n, max: FO.MAX }) : ''; }
   function msg(t) { $('msg').textContent = t || ''; }
   function full() { return FO.count(lines) >= FO.RAWMAX || lines.length >= FO.MAXLINES; }

@@ -12,8 +12,8 @@ if (typeof module !== 'undefined') module.exports = CY;
 
 if (typeof document !== 'undefined') (function () {
   var $ = L.$; L.bind(); L.chrome();
-  var ch = $('char'), CYCLE = 6400, askT = 0;
-  function play(on) { ch.classList.remove('is-paused'); if (L.reduce) { ch.classList.add('is-still'); ch.classList.remove('is-play'); $('still').hidden = false; return; } ch.classList.toggle('is-play', on); }
+  var ch = $('char'), CYCLE = 4600, askT = 0;
+  function play(on) { ch.classList.remove('is-paused'); if (L.reduce) { ch.classList.add('cy-still'); ch.classList.remove('cy-idle', 'is-yawning'); $('still').hidden = false; return; } ch.classList.toggle('is-yawning', on); ch.classList.toggle('cy-idle', !on); }
   function pp(btn) { var p = !ch.classList.contains('is-paused'); ch.classList.toggle('is-paused', p); btn.textContent = p ? COPY.resume : COPY.pause; btn.setAttribute('aria-pressed', String(p)); }
   $('pp').onclick = function () { pp($('pp')); }; $('pp2').onclick = function () { pp($('pp2')); };
   if (L.reduce) { $('pp').hidden = true; }

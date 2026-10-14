@@ -1,46 +1,52 @@
-/* C092 Catch This Yawn — map row 16: one oversized sticker character (~80% of viewport, cropped), tiny caption line, saturated tangerine backdrop. Titan One + Nunito. */
+/* C092 Catch This Yawn: "Giant Sticker Yawn". Fonts self-hosted in fonts/. */
 @font-face{font-family:"Titan One";src:url(fonts/titan-one-latin-400-normal.woff2) format("woff2");font-display:swap}
 @font-face{font-family:"Nunito";src:url(fonts/nunito-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Nunito";src:url(fonts/nunito-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
 @font-face{font-family:"Nunito";src:url(fonts/nunito-latin-800-normal.woff2) format("woff2");font-weight:800;font-display:swap}
-:root{--y-bg:#FF7A1A;--y-lilac:#B9A4FF;--y-lilac-d:#9C83F2;--y-mouth:#5A1F3A;--y-tongue:#FF8FA3;--y-cheek:#FFB3C7;--y-ink:#2B1630;--y-cream:#FFF4E8}
-*{box-sizing:border-box}[hidden]{display:none!important}
-body.y{margin:0;min-height:100dvh;background:var(--y-bg);color:var(--y-ink);font:400 16px/1.4 "Nunito",system-ui,sans-serif;overflow-x:hidden;display:grid;grid-template-rows:auto 1fr auto}
-.y-top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;position:relative;z-index:2}
-.y-top a{color:var(--y-ink);text-decoration:none}.y-top h1{font:400 18px "Titan One",sans-serif;letter-spacing:0;text-transform:none;margin:0}
-.y-stage{position:relative;overflow:hidden;min-height:58dvh}
-.y-char{position:absolute;left:50%;bottom:-14%;width:min(118vw,880px);transform:translateX(-50%);height:auto}
-@media(min-width:900px){.y-char{width:min(70vw,980px);bottom:-30%}}
-.y-cap{position:absolute;left:0;right:0;bottom:10px;text-align:center;font:400 clamp(18px,3.6vw,30px) "Titan One",sans-serif;color:var(--y-cream);text-shadow:0 2px 0 var(--y-ink);margin:0;padding:0 16px;overflow-wrap:anywhere;z-index:2}
-.y-panel{background:var(--y-cream);border-top:4px solid var(--y-ink);padding:14px 16px 20px;display:grid;gap:10px;position:relative;z-index:2}
-@media(min-width:900px){.y-panel{grid-template-columns:1.2fr 1fr;padding:18px 40px 24px;align-items:start}}
-.y-lede{font:400 clamp(20px,2.6vw,28px)/1.2 "Titan One",sans-serif;margin:0}
-.y-fine{font-size:13px;color:#5b4660;margin:0}
-.y-field{display:grid;gap:4px;font-weight:700;font-size:14px}
-.y-field input{font:400 17px "Nunito",sans-serif;padding:11px 12px;border:2px solid var(--y-ink);border-radius:12px;background:#fff;color:var(--y-ink)}
-.y-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.y-btn{font:800 15px "Nunito",sans-serif;min-height:46px;padding:11px 18px;border-radius:999px;border:2.5px solid var(--y-ink);background:#fff;color:var(--y-ink);cursor:pointer}
-.y-btn--go{background:var(--y-ink);color:var(--y-cream)}
-.y-btn:focus-visible,.y-field input:focus-visible,.y-top a:focus-visible{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 6px var(--y-ink)}
-.y-msg{font-weight:700;margin:0;min-height:1.2em}
-.y-linkbox input{width:100%;padding:8px;font:13px "Nunito",sans-serif}
-.y-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--y-ink);color:var(--y-cream);padding:10px 16px;border-radius:999px;font-weight:700;z-index:9}
-/* character parts: slow yawn (~4.5s) then a blink */
-.y-char *{transform-box:fill-box}
-.y-eye{transform-origin:50% 50%}.y-mouth{transform-origin:50% 0}.y-arm{transform-origin:50% 100%}.y-head{transform-origin:50% 100%}.y-tear{opacity:0}.y-pupil{transform-origin:50% 50%}
-.is-play .y-eye{animation:y-eye 6.4s ease-in-out infinite}
-.is-play .y-mouth{animation:y-mouth 6.4s ease-in-out infinite}
-.is-play .y-arm--l{animation:y-arml 6.4s ease-in-out infinite}.is-play .y-arm--r{animation:y-armr 6.4s ease-in-out infinite}
-.is-play .y-head{animation:y-head 6.4s ease-in-out infinite}
-.is-play .y-tear{animation:y-tear 6.4s ease-in infinite}
+:root{--cy-bg:#FF7A1A;--cy-bg-2:#FF9440;--cy-body:#B9A4FF;--cy-body-dk:#8E74F0;--cy-mouth:#5A1F3A;--cy-tongue:#FF8FA3;--cy-cheek:#FFB3C7;--cy-ink:#2B1630;--cy-cream:#FFF4E6;
+ --cy-display:"Titan One","Arial Rounded MT Bold",system-ui,sans-serif;--cy-sans:"Nunito",system-ui,sans-serif;--cy-yawn:4.5s}
+.cy{margin:0;min-height:100dvh;overflow:hidden;position:relative;background:var(--cy-bg);color:var(--cy-ink);font-family:var(--cy-sans);
+ background-image:radial-gradient(circle at 50% 120%,var(--cy-bg-2) 0 45%,transparent 45.2%)}
+.cy-top{position:relative;z-index:3;display:flex;justify-content:space-between;padding:12px 16px;font:800 12px var(--cy-sans);letter-spacing:.12em;text-transform:uppercase}
+/* oversized character, cropped by the viewport edges */
+.cy-char{position:absolute;left:50%;top:7%;width:min(122vw,96vh);transform:translateX(-50%);z-index:1}
+@media(min-width:900px){.cy-char{left:38%;top:auto;bottom:-30%;width:min(70vw,112vh)}}
+.cy-char svg{width:100%;height:auto;display:block}
+.cy-ui{position:absolute;z-index:3;left:0;right:0;bottom:0;padding:16px;display:grid;gap:10px;justify-items:center;text-align:center}
+@media(min-width:900px){.cy-ui{left:auto;right:40px;bottom:40px;width:360px;justify-items:start;text-align:left}}
+.cy-call{font:400 clamp(30px,4.6vw,56px)/1 var(--cy-display);color:var(--cy-cream);margin:0;text-shadow:0 4px 0 var(--cy-ink)}
+.cy-caption{font:400 15px var(--cy-display);background:var(--cy-cream);border:3px solid var(--cy-ink);border-radius:999px;padding:6px 14px;margin:0}
+.cy-card{background:var(--cy-cream);border:3px solid var(--cy-ink);border-radius:22px;padding:14px;box-shadow:0 6px 0 var(--cy-ink);display:grid;gap:10px;width:100%;box-sizing:border-box}
+.cy-field{font:700 18px var(--cy-sans);border:2.5px solid var(--cy-ink);border-radius:14px;padding:10px 12px;width:100%;box-sizing:border-box;background:#fff}
+.cy-lbl{font:800 13px var(--cy-sans);text-align:left}
+.cy-btn{font:400 18px var(--cy-display);padding:13px 22px;min-height:50px;border:3px solid var(--cy-ink);border-radius:999px;background:var(--cy-body);color:var(--cy-ink);box-shadow:0 4px 0 var(--cy-ink);cursor:pointer}
+.cy-btn--alt{background:var(--cy-cream)}
+.cy-btn:focus-visible,.cy-field:focus-visible{outline:4px solid var(--cy-cream);outline-offset:3px}
+.cy-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+@media(min-width:900px){.cy-row{justify-content:flex-start}}
+.cy-fine{font:700 13px/1.4 var(--cy-sans);color:var(--cy-ink);max-width:40ch;margin:0}
+/* the yawn (slow): JS/CSS adds .is-yawning; .is-paused pauses; .cy-still = mid-yawn frame for reduced motion */
+.cy-mouth,.cy-eye,.cy-head,.cy-tear,.cy-arm{transform-box:fill-box}
+.cy-mouth{transform-origin:50% 0}.cy-eye{transform-origin:50% 50%}.cy-head{transform-origin:50% 100%}
+.is-yawning .cy-mouth{animation:cy-mouth var(--cy-yawn) ease-in-out infinite}
+.is-yawning .cy-eye{animation:cy-eye var(--cy-yawn) ease-in-out infinite}
+.is-yawning .cy-head{animation:cy-head var(--cy-yawn) ease-in-out infinite}
+.is-yawning .cy-tear{animation:cy-tear var(--cy-yawn) ease-in infinite}
 .is-paused *{animation-play-state:paused!important}
-@keyframes y-eye{0%,8%{transform:scaleY(1)}22%,62%{transform:scaleY(.12)}72%{transform:scaleY(1)}84%{transform:scaleY(1)}87%{transform:scaleY(.08)}90%,100%{transform:scaleY(1)}}
-@keyframes y-mouth{0%,6%{transform:scale(.35,.18)}30%,56%{transform:scale(1,1)}70%,100%{transform:scale(.35,.18)}}
-@keyframes y-arml{0%,10%{transform:rotate(0)}34%,56%{transform:rotate(-38deg)}72%,100%{transform:rotate(0)}}
-@keyframes y-armr{0%,10%{transform:rotate(0)}34%,56%{transform:rotate(38deg)}72%,100%{transform:rotate(0)}}
-@keyframes y-head{0%,8%{transform:rotate(0) translateY(0)}36%,56%{transform:rotate(-4deg) translateY(-3%)}72%,100%{transform:rotate(0) translateY(0)}}
-@keyframes y-tear{0%,48%{opacity:0;transform:translateY(0)}54%{opacity:1}70%{opacity:1;transform:translateY(40%)}78%,100%{opacity:0;transform:translateY(60%)}}
-/* still frame: mid-yawn */
-.is-still .y-eye{transform:scaleY(.12)}.is-still .y-mouth{transform:none}.is-still .y-arm--l{transform:rotate(-38deg)}.is-still .y-arm--r{transform:rotate(38deg)}.is-still .y-tear{opacity:1}
-.y-char:not(.is-play):not(.is-still) .y-mouth{transform:scale(.35,.18)}
-@media(prefers-reduced-motion:reduce){.y-char *{animation:none!important}}
+@keyframes cy-mouth{0%,8%{transform:scaleY(.12)}40%,62%{transform:scaleY(1)}80%,100%{transform:scaleY(.12)}}
+@keyframes cy-eye{0%,10%{transform:scaleY(1)}35%,66%{transform:scaleY(.12)}82%{transform:scaleY(1)}88%{transform:scaleY(.1)}92%,100%{transform:scaleY(1)}}
+@keyframes cy-head{0%,8%{transform:none}45%,60%{transform:scale(1.04,.97) rotate(-3deg)}85%,100%{transform:none}}
+@keyframes cy-tear{0%,50%{opacity:0;transform:translateY(0)}58%{opacity:1}80%{opacity:1;transform:translateY(26px)}90%,100%{opacity:0}}
+.cy-still .cy-mouth{transform:scaleY(1)}.cy-still .cy-eye{transform:scaleY(.12)}.cy-still .cy-head{transform:scale(1.04,.97) rotate(-3deg)}
+.cy-idle .cy-mouth{transform:scaleY(.12)}
+@media(prefers-reduced-motion:reduce){.is-yawning .cy-mouth,.is-yawning .cy-eye,.is-yawning .cy-head,.is-yawning .cy-tear{animation:none}}
+/* Engineer additions (CSP-safe) */
+[hidden]{display:none!important}
+.cy-top a{color:inherit;text-decoration:none}.cy-top a:focus-visible{outline:3px solid var(--cy-cream)}
+.cy-top h1{font:inherit;margin:0}
+.cy{overflow-y:auto}.cy-ui{max-height:70dvh;overflow:auto}
+.cy-card--ink .cy-call{color:var(--cy-ink);text-shadow:none;font-size:30px}
+.cy-msg{font:800 15px var(--cy-sans);margin:0;min-height:1em}
+.cy-caption:empty{display:none}
+.cy-linkbox input{width:100%;padding:8px;font:13px var(--cy-sans)}
+.cy-toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:var(--cy-ink);color:var(--cy-cream);padding:10px 16px;border-radius:999px;font-weight:800;z-index:9}

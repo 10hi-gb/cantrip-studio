@@ -1,4 +1,4 @@
-// Wear This reference shape library (Creative). IDs match SHAPES.md. viewBox 0 0 200 400.
+// Wear This shape library (Creative). viewBox 0 0 200 400.
 const WT_C={c1:'#2346D8',c2:'#F2492A',c3:'#FFC02E',c4:'#3FBF97',c5:'#6B2D7A',c6:'#1D1B26'};
 const WT_SKIN={k1:'#F6D7C3',k2:'#E8B896',k3:'#C98E66',k4:'#9C6644',k5:'#6E4630',k6:'#43291C'};
 const K='stroke="#1D1B26" stroke-width="3" stroke-linejoin="round"';
