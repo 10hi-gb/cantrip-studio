@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-14 1:38 PM PT",
+ "updated": "2026-10-14 4:22 PM PT",
  "items": [
   {
    "id": "C148",
@@ -12,8 +12,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -30,8 +30,8 @@
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -46,8 +46,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -62,8 +62,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -80,8 +80,8 @@
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -91,17 +91,19 @@
    "name": "Our Knock",
    "description": "Call and answer: the door is the knock pad and a brass rail shows each knock. Classic \"shave and a haircut… two bits\", our own knock, or copy me; knock the answer and the door opens onto the note.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA). Reworked 2026-10-14 (commit 3105b1b); earlier QA fail (door covered the note) fixed, retest pending.",
+   "note": "Engineer self-check (build checks, not QA). QA: no defects on 4eb01625.",
    "url": "../our-knock/",
    "limitations": [
-    "Sound needs a heard check on a real phone (headless tests confirm audio runs and knocks are scheduled, not that they are audible).",
+    "Heard sound needs a real-phone check.",
     "It's a playful game, not a lock."
    ],
    "qa": {
-    "verdict": null,
-    "label": "QA retest pending",
-    "pin": null,
-    "untested": []
+    "verdict": "QA passed",
+    "pin": "4eb01625",
+    "ledger": "pin 4eb01625, commit a3b29465, QA 2026-10-14 ~2:20 PM PT",
+    "untested": [
+     "Heard sound not tested by QA: needs a real-phone check."
+    ]
    }
   },
   {
@@ -115,8 +117,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -133,8 +135,8 @@
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -152,8 +154,8 @@
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -170,8 +172,8 @@
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -188,8 +190,8 @@
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -206,8 +208,8 @@
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -222,8 +224,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -238,8 +240,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -254,8 +256,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -270,8 +272,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -286,8 +288,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -302,8 +304,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -318,8 +320,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -334,8 +336,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -350,8 +352,8 @@
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -368,8 +370,8 @@
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": null,
-    "ledger": "8:03 AM PT",
+    "pin": "2e668c5f",
+    "ledger": "QA ledger 8:03 AM PT, carried forward at 2e668c5f; files unchanged since",
     "untested": []
    }
   },
@@ -379,18 +381,21 @@
    "name": "Not on the Screen",
    "description": "Pick two colors; spin a striped disc and see what your eye does.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA). Build 1666ddc4 (commit 94ee82d, QA r527 fixes); C205 files unchanged since.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../not-on-the-screen/",
    "limitations": [
     "Physical colour mix unverified: whether a spin shows a mix has not been tested with people.",
     "36-wedge count untested; it may change (with a link version bump).",
+    "QA concern (non-blocking): colour labels render at 9px at 320px wide.",
     "Mill: screening PASS; red-team PENDING. No scores."
    ],
    "qa": {
-    "verdict": null,
-    "label": "Playable · no QA verdict",
-    "pin": null,
-    "untested": []
+    "verdict": "QA passed",
+    "pin": "1666ddc4",
+    "ledger": "pin 1666ddc4, commit 94ee82d7, QA 2026-10-14 ~1:25 PM PT",
+    "untested": [
+     "QA not tested: physical spin perception on real devices, drag/flick, reduced motion, screen reader."
+    ]
    }
   }
  ]
