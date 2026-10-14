@@ -1,0 +1,73 @@
+/* C201 Broken Telephone — "Party Line": zig-zag speech bubbles linked by a bright cream/red coiled cord. Self-hosted OFL fonts in fonts/. Never a dark string. */
+@font-face{font-family:"Lilita One";src:url(fonts/lilita-one-400-normal.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Mulish";src:url(fonts/mulish-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Mulish";src:url(fonts/mulish-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Mulish";src:url(fonts/mulish-800-normal.woff2) format("woff2");font-weight:800;font-display:swap}
+:root{
+  --bt-lav:#E7E0FF; --bt-red:#D7263D; --bt-cord:#FFF3D6; --bt-white:#FFFFFF; --bt-sky:#7CC6FE; --bt-ink:#22223B;
+  --bt-display:"Lilita One",system-ui,sans-serif; --bt-sans:"Mulish",system-ui,sans-serif;
+}
+.bt{margin:0;min-height:100dvh;background:var(--bt-lav);color:var(--bt-ink);font-family:var(--bt-sans);overflow-x:hidden}
+.bt-page{max-width:1180px;margin:0 auto;padding:16px 20px 36px;box-sizing:border-box}
+.bt-studio{font:800 11px var(--bt-sans);letter-spacing:.14em;text-transform:uppercase;color:#6A64A0}
+.bt-title{font:400 clamp(38px,6vw,72px)/.95 var(--bt-display);color:var(--bt-red);margin:10px 0 8px;letter-spacing:.01em}
+.bt-lede{font:700 17px/1.45 var(--bt-sans);margin:0 0 12px;max-width:34ch}
+.bt-grid{display:grid;gap:18px}
+@media(min-width:900px){.bt-grid{grid-template-columns:1fr 1fr;gap:56px;align-items:start}}
+/* handset */
+.bt-handset{width:150px;display:block}
+.bt-handset .hs{fill:var(--bt-red)}
+.bt-handset .hs-hi{fill:none;stroke:rgba(255,255,255,.45);stroke-width:4;stroke-linecap:round}
+/* chain */
+.bt-chain{width:min(100%,380px);margin:0 auto;display:flex;flex-direction:column}
+.bt-bubble{position:relative;max-width:250px;background:var(--bt-white);border:3px solid var(--bt-ink);border-radius:22px;padding:10px 14px 12px;font:400 19px/1.2 var(--bt-display);box-shadow:4px 4px 0 var(--bt-ink);animation:bt-pop 420ms cubic-bezier(.3,1.7,.5,1) both;animation-delay:calc(var(--i,0)*110ms)}
+.bt-bubble small{display:block;font:800 10px var(--bt-sans);letter-spacing:.12em;text-transform:uppercase;color:#6A64A0;margin-bottom:3px}
+.bt-bubble--l{align-self:flex-start}.bt-bubble--r{align-self:flex-end}
+.bt-bubble--start{background:var(--bt-sky)}
+.bt-bubble--end{background:var(--bt-red);color:var(--bt-white)}.bt-bubble--end small{color:var(--bt-cord)}
+.bt-bubble mark{background:none;color:inherit;text-decoration:underline 3px var(--bt-red);text-underline-offset:3px}
+.bt-bubble--end mark{text-decoration-color:var(--bt-cord)}
+@keyframes bt-pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+.bt-cord{display:block;width:100%;height:66px;overflow:visible;margin:-3px 0;position:relative;z-index:0}.bt-bubble{z-index:1}
+.bt-cord .c-out{fill:none;stroke:var(--bt-red);stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
+.bt-cord .c-in{fill:none;stroke:var(--bt-cord);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+.bt-cord.is-new{animation:bt-spring 700ms cubic-bezier(.3,1.8,.5,1)}
+@keyframes bt-spring{0%{transform:scaleY(.5)}60%{transform:scaleY(1.12)}100%{transform:scaleY(1)}}
+/* controls */
+.bt-stepper{display:flex;align-items:center;gap:12px}
+.bt-stepper button{width:48px;height:48px;border-radius:50%;border:3px solid var(--bt-ink);background:var(--bt-white);font:400 26px/1 var(--bt-display);color:var(--bt-ink);cursor:pointer}
+.bt-stepper output{font:400 30px var(--bt-display);min-width:5.5ch;text-align:center}
+.bt-label{display:block;font:800 12px var(--bt-sans);letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px}
+.bt-btn{font:800 16px var(--bt-sans);padding:14px 24px;border-radius:999px;border:3px solid var(--bt-ink);background:var(--bt-white);color:var(--bt-ink);cursor:pointer;box-shadow:3px 3px 0 var(--bt-ink)}
+.bt-btn--primary{background:var(--bt-red);color:var(--bt-white)}
+.bt-btn:focus-visible{outline:3px solid var(--bt-sky);outline-offset:3px}
+.bt-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.bt-fine{font:400 13px/1.5 var(--bt-sans);max-width:46ch;margin:10px 0 0;color:#46466A}
+/* handoff cover sheet: slides up from the bottom and fills the screen */
+.bt-cover{position:fixed;inset:0;z-index:10;background:var(--bt-sky);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box;animation:bt-slide 480ms cubic-bezier(.2,1,.3,1) both;
+  background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.18) 0 18px,transparent 18px 36px)}
+.bt-cover h2{font:400 clamp(32px,6vw,64px)/1.02 var(--bt-display);color:var(--bt-ink);margin:14px 0 8px;max-width:14ch}
+.bt-cover p{font:700 16px var(--bt-sans);margin:0 0 22px}
+.bt-cover .bt-big{font:400 clamp(110px,22vw,220px)/.9 var(--bt-display);color:var(--bt-red);-webkit-text-stroke:4px var(--bt-ink)}
+@keyframes bt-slide{from{transform:translateY(100%)}to{transform:translateY(0)}}
+/* finale */
+.bt-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bt-pair .bt-bubble{max-width:none}
+.bt-score{font:400 clamp(24px,3vw,34px)/1.1 var(--bt-display);margin:14px 0 4px}
+.bt-score b{color:var(--bt-red);font-weight:400}
+.bt-solo{display:inline-block;background:var(--bt-ink);color:var(--bt-cord);font:800 12px var(--bt-sans);padding:6px 12px;border-radius:99px;margin:8px 0 0}
+@media(prefers-reduced-motion:reduce){.bt-bubble,.bt-cord.is-new,.bt-cover{animation:none}}
+/* Engineer additions (CSP-safe) */
+[hidden]{display:none!important}
+.bt-studio{text-decoration:none;display:inline-block}.bt-studio:focus-visible{outline:3px solid var(--bt-sky)}
+.bt-field{width:100%;box-sizing:border-box;font:400 22px var(--bt-display);padding:12px 14px;border:3px solid var(--bt-ink);border-radius:16px;background:var(--bt-white);color:var(--bt-ink)}
+.bt-field:focus-visible{outline:3px solid var(--bt-sky);outline-offset:2px}
+.bt-msg{font:800 14px var(--bt-sans);color:var(--bt-red);margin:6px 0 0;min-height:1em}
+.bt-reveal{font:400 clamp(26px,5vw,44px)/1.15 var(--bt-display);background:var(--bt-white);border:3px solid var(--bt-ink);border-radius:22px;padding:16px 18px;margin:10px 0}
+.bt-count{font:800 16px var(--bt-sans)}
+.bt-cover .bt-btn{font-size:18px}
+.bt-cord.is-flip{transform:scaleX(-1)}
+.bt-cover:focus{outline:none}
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

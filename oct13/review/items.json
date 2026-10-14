@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-13 10:12 PM PT",
+ "updated": "2026-10-13 10:14 PM PT",
  "items": [
   {
    "id": "C148",
@@ -224,9 +224,9 @@
    "batch": "B",
    "name": "Ask Me At Four",
    "description": "One promise, one friend, one check-in time.",
-   "status": "Not built yet",
-   "note": "Being prepared; link added when pinned.",
-   "url": null,
+   "status": "Playable",
+   "note": "Engineer self-check only; waiting for Cantrip QA.",
+   "url": "../ask-me-at-four/",
    "limitations": []
   },
   {
@@ -234,9 +234,9 @@
    "batch": "B",
    "name": "Broken Telephone",
    "description": "Pass one phone around and watch a phrase drift.",
-   "status": "Not built yet",
-   "note": "Being prepared; link added when pinned.",
-   "url": null,
+   "status": "Playable",
+   "note": "Engineer self-check only; waiting for Cantrip QA.",
+   "url": "../broken-telephone/",
    "limitations": []
   }
  ]

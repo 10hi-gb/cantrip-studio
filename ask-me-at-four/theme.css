@@ -1,0 +1,65 @@
+/* C200 Ask Me At Four — "Enamel Timer": one wind-up kitchen timer, one red appointment pointer. Self-hosted OFL fonts in fonts/. */
+@font-face{font-family:"Bungee";src:url(fonts/bungee-400-normal.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Work Sans";src:url(fonts/work-sans-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Work Sans";src:url(fonts/work-sans-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Work Sans";src:url(fonts/work-sans-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
+:root{
+  --am-mint:#9ED9C4; --am-mint-deep:#6FBFA6; --am-cream:#FFF8EA; --am-chrome:#C9CED3; --am-chrome-dk:#8E959B; --am-red:#E0312B; --am-ink:#1F2A2E; --am-bg:#F3EFE4;
+  --am-display:"Bungee",system-ui,sans-serif; --am-sans:"Work Sans",system-ui,sans-serif;
+  --am-angle:120deg; /* pointer angle: (hours%12 + min/60) * 30deg */
+}
+.am{margin:0;min-height:100dvh;background:var(--am-bg);color:var(--am-ink);font-family:var(--am-sans)}
+/* kitchen counter: a plain tile-grout grid on the wall, very faint */
+.am{background-image:linear-gradient(rgba(31,42,46,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(31,42,46,.05) 1px,transparent 1px);background-size:56px 56px}
+.am-page{max-width:1180px;margin:0 auto;padding:16px 20px 32px;box-sizing:border-box}
+.am-studio{font:400 11px var(--am-display);letter-spacing:.08em;color:var(--am-chrome-dk)}
+.am-title{font:400 clamp(28px,4.6vw,52px)/1 var(--am-display);margin:10px 0 6px;color:var(--am-ink)}
+.am-lede{font:400 17px/1.45 var(--am-sans);margin:0 0 10px;max-width:36ch}
+.am-grid{display:grid;gap:12px;align-items:center}
+@media(min-width:900px){.am-grid{grid-template-columns:minmax(420px,1fr) minmax(320px,.9fr);gap:56px}}
+/* the timer object */
+.am-timer{position:relative;width:min(84vw,470px);margin:6px auto 0}
+.am-timer svg{display:block;width:100%;overflow:visible}
+.am-timer .body{fill:var(--am-mint)}
+.am-timer .body-shade{fill:var(--am-mint-deep)}
+.am-timer .chrome{fill:var(--am-chrome)}
+.am-timer .chrome-dk{fill:var(--am-chrome-dk)}
+.am-timer .face{fill:var(--am-cream);stroke:var(--am-chrome);stroke-width:8}
+.am-timer .tick{stroke:var(--am-ink);stroke-width:2}
+.am-timer .tick.min{stroke-width:1;opacity:.5}
+.am-timer .num{font:400 26px var(--am-display);fill:var(--am-ink)}
+.am-pointer{transform-origin:200px 216px;transform:rotate(var(--am-angle));transition:transform 1.4s steps(8,end)}
+.am-pointer .ptr{fill:var(--am-red)}
+.am-timer .hub{fill:var(--am-red);stroke:var(--am-cream);stroke-width:3}
+/* centre label: the promise sits on the dial */
+.am-label{position:absolute;left:50%;top:35.5%;transform:translate(-50%,0);width:34%;background:var(--am-cream);border:2px solid var(--am-chrome);border-radius:10px;padding:5px 6px;box-sizing:border-box;text-align:center;pointer-events:none}
+.am-label .pr{display:block;font:400 clamp(11px,2.6vw,14px)/1.15 var(--am-display);color:var(--am-red);overflow-wrap:anywhere}
+.am-label .t{display:block;font:600 12px var(--am-sans);margin-top:2px}
+.am-expiry{text-align:center;font:500 14px var(--am-sans);margin:8px 0 0}
+.am-expiry b{font-weight:600}
+.am-field label{display:block;font:600 12px var(--am-sans);letter-spacing:.08em;text-transform:uppercase;margin:0 0 6px}
+.am-field input{width:100%;box-sizing:border-box;padding:12px 14px;border:2px solid var(--am-ink);border-radius:12px;background:var(--am-cream);font:500 18px var(--am-sans);color:var(--am-ink)}
+.am-field input:focus{outline:3px solid var(--am-red);outline-offset:2px}
+.am-stack{display:grid;gap:14px}
+.am-hint{font:400 13px/1.45 var(--am-sans);color:#4F5B5F;margin:6px 0 0}
+.am-btn{font:600 16px var(--am-sans);padding:14px 22px;border-radius:14px;border:2px solid var(--am-ink);background:var(--am-cream);color:var(--am-ink);cursor:pointer;box-shadow:0 3px 0 var(--am-ink)}
+.am-btn--primary{background:var(--am-red);border-color:var(--am-ink);color:var(--am-cream)}
+.am-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--am-ink)}
+.am-btn:focus-visible{outline:3px solid var(--am-ink);outline-offset:3px}
+.am-actions{display:flex;gap:10px;flex-wrap:wrap}
+.am-fine{font:400 13px/1.5 var(--am-sans);color:#4F5B5F;max-width:46ch;margin:0}
+.am-ask{font:400 clamp(20px,2.6vw,28px)/1.2 var(--am-display);margin:0}
+.am-ding{font:400 clamp(40px,7vw,80px)/1 var(--am-display);color:var(--am-red);margin:0}
+.am-timer.is-ding{animation:am-wobble 900ms cubic-bezier(.3,1.6,.5,1) 1}
+@keyframes am-wobble{0%{transform:rotate(0)}20%{transform:rotate(-4deg)}40%{transform:rotate(3deg)}60%{transform:rotate(-2deg)}80%{transform:rotate(1deg)}100%{transform:rotate(0)}}
+@media(prefers-reduced-motion:reduce){.am-pointer{transition:none}.am-timer.is-ding{animation:none}}
+@media(max-width:600px){.am-label{top:32%;width:40%;padding:3px 4px}.am-label .pr{font-size:10.5px}.am-label .t{font-size:11px;margin-top:1px}}
+/* Engineer additions (CSP-safe) */
+[hidden]{display:none!important}
+.am-studio{text-decoration:none;display:inline-block}.am-studio:focus-visible{outline:3px solid var(--am-red)}
+.am-msg{font:600 14px var(--am-sans);color:var(--am-red);margin:4px 0 0;min-height:1em}
+.am-linkbox input{width:100%;padding:8px;font:13px var(--am-sans)}
+.am-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--am-ink);color:var(--am-cream);padding:10px 16px;border-radius:12px;font-weight:600;z-index:9}
+/* visitor-text wrap: long unbroken words never widen the page */
+body{overflow-wrap:anywhere}
+input,textarea{min-width:0;max-width:100%}

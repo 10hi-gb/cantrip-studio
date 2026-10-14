@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Broken Telephone · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="lib.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="bt">
+<div class="bt-page">
+ <a class="bt-studio" href="../" data-c="studioLabel" data-al="backLabel"></a>
+ <div class="bt-grid">
+  <div>
+   <svg class="bt-handset" viewBox="0 0 160 70" aria-hidden="true"><path class="hs" d="M10 30 Q10 8 34 8 L126 8 Q150 8 150 30 L150 44 Q150 54 138 54 L116 54 Q106 54 106 44 L106 34 L54 34 L54 44 Q54 54 44 54 L22 54 Q10 54 10 44 Z"/><path class="hs-hi" d="M30 16 L120 16"/></svg>
+   <h1 class="bt-title" data-c="title"></h1>
+   <p class="bt-solo" id="solo" data-c="soloBanner" hidden></p>
+   <section id="setup">
+    <p class="bt-lede" data-c="invitation"></p>
+    <span class="bt-label" id="plab" data-c="playersLabel"></span>
+    <div class="bt-stepper" role="group" aria-labelledby="plab"><button type="button" id="minus">−</button><output id="pcount" aria-live="polite"></output><button type="button" id="plus">+</button></div>
+    <p class="bt-fine" data-c="playersRange"></p>
+    <div class="bt-actions"><button class="bt-btn bt-btn--primary" id="start" data-c="primary"></button><button class="bt-btn" id="demo" data-c="soloDemo"></button></div>
+   </section>
+   <section id="type" hidden>
+    <p class="bt-lede" id="tprompt"></p>
+    <div class="bt-reveal" id="reveal" aria-live="polite" hidden></div>
+    <p class="bt-count" id="rcount" aria-live="off"></p>
+    <input class="bt-field" id="sentence" autocomplete="off" spellcheck="false" aria-describedby="smsg">
+    <p class="bt-msg" id="smsg" aria-live="polite"></p>
+    <div class="bt-actions"><button class="bt-btn bt-btn--primary" id="pass" data-c="submit"></button><button class="bt-btn" id="end1" data-c="reset"></button></div>
+   </section>
+   <section id="finale" hidden>
+    <h2 class="bt-score" data-c="finaleHeading"></h2>
+    <div class="bt-pair"><div class="bt-bubble bt-bubble--start"><small data-c="original"></small><span id="forig"></span></div><div class="bt-bubble bt-bubble--end"><small data-c="final"></small><span id="ffinal"></span></div></div>
+    <p class="bt-score" id="score"></p>
+    <p class="bt-fine" data-c="diffNote"></p>
+    <div class="bt-actions"><button class="bt-btn" id="speak" data-c="readAloud" hidden></button><button class="bt-btn bt-btn--primary" id="again" data-c="again"></button><button class="bt-btn" id="end2" data-c="reset"></button></div>
+    <p class="bt-fine" id="novoice" hidden></p>
+   </section>
+   <p class="bt-msg" id="msg" role="status" aria-live="polite"></p>
+   <p class="bt-fine" data-c="privacy"></p>
+   <p class="bt-fine" id="rm" hidden></p><p class="bt-msg" id="err" hidden></p>
+  </div>
+  <div><p class="bt-label" id="driftlab" data-c="drift" hidden></p><div class="bt-chain" id="chain"></div></div>
+ </div>
+</div>
+<div class="bt-cover" id="cover" role="dialog" aria-modal="true" tabindex="-1" hidden><div class="bt-big" id="cbig" aria-hidden="true"></div><h2 id="chead"></h2><p data-c="hiddenAria"></p><button class="bt-btn bt-btn--primary" id="ready"></button></div>
+</body>
+</html>

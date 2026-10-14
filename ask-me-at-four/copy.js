@@ -1,0 +1,57 @@
+// C200-ask-me-at-four — final visitor copy (Writing Bot, 2026-10-13). Every visitor/state/a11y string; app reads all text from COPY.
+const COPY = {
+  "title": "Ask Me At Four",
+  "studioLabel": "Cantrip Studio · Timer 200",
+  "invitation": "Make one small promise. Set a time for a friend to ask you about it.",
+  "promiseLabel": "I promise to…",
+  "promisePlaceholder": "call the dentist",
+  "promiseTooLong": {
+    "one": "1 character over.",
+    "other": "{n} characters over."
+  },
+  "promiseEmpty": "What's the promise?",
+  "whenLabel": "Ask me at",
+  "whenHint": "Within the next 48 hours.",
+  "tooLate": "That's more than 48 hours away. Keep it close.",
+  "pastTime": "That time has passed. Pick a time ahead.",
+  "hoursAway": {
+    "one": "In about 1 hour.",
+    "other": "In about {n} hours."
+  },
+  "minutesAway": {
+    "one": "In 1 minute.",
+    "other": "In {n} minutes."
+  },
+  "primary": "Wind the timer",
+  "share": "Ask a friend to ask",
+  "shareText": "Ask me at {localTime}?",
+  "honest": "No one gets a reminder. If you want one, save it to your calendar.",
+  "ics": "Save to my calendar (.ics)",
+  "icsSaved": "Calendar file saved to your device.",
+  "icsTitle": "Ask {name} about: {promise}",
+  "icsTitleAnon": "Ask about: {promise}",
+  "privacy": "The promise and time live in the link. Nothing is uploaded, and nobody gets reminded. Anyone with the link can read it.",
+  "receiverIntro": "{name} wants you to ask them something at {localTime}.",
+  "receiverIntroAnon": "Someone wants you to ask them something at {localTime}.",
+  "nameLabel": "Your first name (optional)",
+  "receiverPromise": "Ask: “Did you {promise}?”",
+  "beforeTime": "Not yet. Ask at {localTime}, your time.",
+  "atTime": "It's time. Ask them.",
+  "expired": "This one expired at {localTime}. It's still fine to ask.",
+  "willAsk": "I'll ask",
+  "willAskShare": "Send “I'll ask”",
+  "willAskText": "I'll ask you at {localTime}.",
+  "willAskIntro": "They said they'll ask.",
+  "timezoneLine": "Times shown in your time zone ({zone}).",
+  "badLink": "This timer didn't come through. Ask them to send it again.",
+  "loading": "Winding…",
+  "copied": "Link copied.",
+  "copyFail": "Couldn't copy. Select the link below and copy it yourself.",
+  "shareCancel": "Not sent. The promise is still here.",
+  "home": "Cantrip Studio",
+  "backLabel": "Back to Cantrip Studio",
+  "reducedMotion": "Motion is reduced. Everything still works.",
+  "error": "Something went wrong. Reload the page and try again.",
+  "dialAria": "Timer dial set to {localTime}.",
+  "ding": "Ding."
+};
