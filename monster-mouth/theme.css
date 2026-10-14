@@ -1,0 +1,46 @@
+/* C203 Monster Mouth: "Cut-Paper Creature". Self-host fonts in fonts/. */
+@font-face{font-family:"Rubik Mono One";src:local("Rubik Mono One"),url(fonts/RubikMonoOne-Regular.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Gloria Hallelujah";src:local("Gloria Hallelujah"),url(fonts/GloriaHallelujah-Regular.woff2) format("woff2");font-display:swap}
+:root{--mm-teal:#1F8A8A;--mm-teal-dark:#166A6A;--mm-magenta:#E2367A;--mm-lime:#B7E34B;--mm-black:#1C1C1C;--mm-paper:#FFF8E7;
+ --mm-display:"Rubik Mono One","Arial Black",Impact,sans-serif;--mm-hand:"Gloria Hallelujah","Comic Sans MS","Chalkboard SE",cursive;
+ --mm-boil:125ms;--mm-chomp:220ms}
+.mm{margin:0;min-height:100dvh;color:var(--mm-black);font-family:var(--mm-hand);
+ background-color:var(--mm-teal);background-image:radial-gradient(rgba(0,0,0,.08) 1px,transparent 1.5px),radial-gradient(rgba(255,255,255,.06) 1px,transparent 1.5px);background-size:7px 7px,11px 11px;background-position:0 0,3px 5px}
+.mm-wrap{max-width:1180px;margin:0 auto;padding:18px 16px 28px;display:grid;gap:16px}
+@media(min-width:900px){.mm-wrap{grid-template-columns:1fr 340px;padding:40px 48px;gap:36px;align-items:start}}
+.mm-title{font:400 clamp(30px,6vw,64px)/.95 var(--mm-display);color:var(--mm-lime);margin:0;text-shadow:4px 4px 0 var(--mm-black);transform:rotate(-2deg)}
+/* the drawing board: jagged tooth edge top and bottom = jaws */
+.mm-jaw{position:relative;background:var(--mm-paper);border:4px solid var(--mm-black);box-shadow:8px 8px 0 var(--mm-black)}
+.mm-jaw::before,.mm-jaw::after{content:"";position:absolute;left:-4px;right:-4px;height:22px;background:conic-gradient(from -45deg at 50% 100%,var(--mm-paper) 90deg,transparent 0) 0 0/28px 22px repeat-x;z-index:2}
+.mm-jaw::before{top:-22px;filter:drop-shadow(0 -4px 0 var(--mm-black))}
+.mm-jaw::after{bottom:-22px;transform:scaleY(-1);filter:drop-shadow(0 -4px 0 var(--mm-black))}
+.mm-jaw canvas,.mm-jaw svg{display:block;width:100%;aspect-ratio:1/1;touch-action:none}
+@media(min-width:900px){.mm-jaw canvas,.mm-jaw svg{aspect-ratio:4/3}}
+.mm-side{display:grid;gap:12px;align-content:start}
+.mm-note{background:var(--mm-paper);border:3px solid var(--mm-black);padding:12px 14px;font-size:16px;line-height:1.4;transform:rotate(.8deg)}
+.mm-bubble{background:var(--mm-lime);border:3px solid var(--mm-black);padding:10px 14px;font-size:20px;border-radius:18px 18px 18px 4px;width:max-content;max-width:100%}
+.mm-btn{font:400 15px/1 var(--mm-display);text-transform:uppercase;padding:14px 18px;min-height:48px;border:3px solid var(--mm-black);background:var(--mm-paper);color:var(--mm-black);box-shadow:4px 4px 0 var(--mm-black);cursor:pointer}
+.mm-btn--go{background:var(--mm-magenta);color:#fff}
+.mm-btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--mm-black)}
+.mm-btn:focus-visible{outline:4px dashed var(--mm-lime);outline-offset:4px}
+.mm-btn[aria-pressed=true]{background:var(--mm-black);color:var(--mm-lime)}
+.mm-row{display:flex;flex-wrap:wrap;gap:10px}
+.mm-fine{font-size:13px;color:#E8FFF7}
+/* motion: line boil + chomp */
+.mm-boil{animation:mm-boil calc(var(--mm-boil)*3) steps(1) infinite}
+@keyframes mm-boil{0%{transform:translate(0,0) rotate(0)}33%{transform:translate(.6px,-.5px) rotate(.4deg)}66%{transform:translate(-.5px,.6px) rotate(-.3deg)}}
+.mm-mouth.is-chomp{animation:mm-chomp var(--mm-chomp) cubic-bezier(.5,0,.5,1.6)}
+@keyframes mm-chomp{50%{transform:scaleY(.25)}}
+.mm-creature.is-twitch{animation:mm-twitch 160ms steps(2)}
+@keyframes mm-twitch{50%{transform:translateX(2px)}}
+@media(prefers-reduced-motion:reduce){.mm-boil{animation:none}.mm-mouth.is-chomp{animation:none}.mm-creature.is-twitch{animation:mm-fade 150ms}@keyframes mm-fade{50%{opacity:.7}}}
+/* --- build additions (Engineer) --- */
+*{box-sizing:border-box}[hidden]{display:none!important}
+.mm-nav{color:var(--mm-paper);font:400 11px var(--mm-display);text-decoration:none;letter-spacing:.06em}
+.mm-nav:focus-visible{outline:3px dashed var(--mm-lime)}
+.mm-jaw{margin-top:34px;margin-bottom:26px}
+.mm-jaw canvas{cursor:crosshair}
+.mm-jaw.is-alive canvas{cursor:pointer}
+.mm-lede{font-size:18px;color:var(--mm-paper);margin:6px 0 0}
+.mm-bubble:empty{display:none}
+.mm-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--mm-black);color:var(--mm-lime);padding:10px 16px;font-size:15px;z-index:9}

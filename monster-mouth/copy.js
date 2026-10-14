@@ -1,0 +1,30 @@
+// C203-monster-mouth — final visitor copy (Writing Bot, 2026-10-13).
+const COPY = {
+  "title": "Monster Mouth",
+  "invitation": "Draw a monster. Then poke it and hear what it sounds like.",
+  "canvasHint": "Big shapes make big voices. Spiky lines growl rougher.",
+  "emptyCanvas": "Nothing to wake up yet. Draw something with a mouth, or don't, it'll grow one.",
+  "primary": "Wake it up",
+  "waking": "It's waking up…",
+  "pokeHint": "Tap or click it. Press Space to poke with the keyboard.",
+  "pokeReplies": [
+    "It noticed you.",
+    "It's thinking about it.",
+    "That was a warning growl.",
+    "It likes that, probably."
+  ],
+  "soundOn": "Sound is on. Volume starts low.",
+  "tapForSound": "Tap once to turn on sound.",
+  "mute": "Mute",
+  "unmute": "Sound on",
+  "stop": "Stop",
+  "redraw": "Draw a new one",
+  "restartConfirm": "Start over? This monster won't be kept.",
+  "save": "Save as image",
+  "saved": "Saved to your device. The image is silent.",
+  "saveFail": "Couldn't save the image. A screenshot works too.",
+  "privacy": "Your monster lives only on this page. Nothing is uploaded, and it's gone when you start over or close the tab. No microphone, no camera.",
+  "audioFail": "This browser won't make sounds here. Your monster still moves.",
+  "reducedMotion": "Motion is reduced, so it twitches instead of chomping.",
+  "error": "Your monster got loose. Draw a new one."
+};

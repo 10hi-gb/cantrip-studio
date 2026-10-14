@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Monster Mouth · Cantrip Studio</title>
+<meta name="description" content="A small drawing toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="mm">
+<main class="mm-wrap">
+ <div>
+  <a class="mm-nav" href="../">Cantrip Studio</a>
+  <h1 class="mm-title" data-c="title"></h1>
+  <p class="mm-lede" data-c="invitation"></p>
+  <div class="mm-jaw" id="jaw"><canvas id="cv" width="800" height="800" tabindex="0" aria-label="Drawing board. Keyboard: arrows move the crayon, space puts it down or lifts it."></canvas></div>
+ </div>
+ <div class="mm-side">
+  <div class="mm-bubble" id="bubble" role="status" aria-live="polite"></div>
+  <div id="p-draw">
+   <p class="mm-note" id="draw-note" data-c="canvasHint"></p>
+   <div class="mm-row"><button class="mm-btn" id="undo">↶</button><button class="mm-btn" id="clear">✕</button></div>
+   <p></p>
+   <button class="mm-btn mm-btn--go" id="wake" data-c="primary"></button>
+  </div>
+  <div id="p-alive" hidden>
+   <p class="mm-note"><span data-c="pokeHint"></span><br><small id="sound-state"></small></p>
+   <div class="mm-row"><button class="mm-btn" id="mute" aria-pressed="false" data-c="mute"></button><button class="mm-btn" id="stop" data-c="stop"></button><button class="mm-btn" id="redraw" data-c="redraw"></button><button class="mm-btn" id="save" data-c="save"></button></div>
+  </div>
+  <p class="mm-fine" data-c="privacy"></p>
+ </div>
+</main>
+<div class="mm-toast" id="toast" role="status" hidden></div>
+</body>
+</html>
