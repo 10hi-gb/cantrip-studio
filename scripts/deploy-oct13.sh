@@ -7,8 +7,10 @@ case "$PROJECT" in cantrip-studio|cantrip-studio-review|cantrip-two-versions-rev
 SLUGS="bad-on-purpose one-across annual-review here-it-comes monster-mouth our-knock eyes-closed score-this this-light wishbone cheers where-you-paused"
 STAGE="${STAGE:-/tmp/oct13-stage}"
 rm -rf "$STAGE"; mkdir -p "$STAGE"
-cp "$REPO/oct13/_headers" "$REPO/oct13/index.html" "$REPO/oct13/oct13.css" "$STAGE/"
-for s in $SLUGS; do if [ -d "$REPO/$s" ]; then cp -a "$REPO/$s" "$STAGE/"; fi; done
+git -C "$REPO" show HEAD:oct13/_headers > "$STAGE/_headers"; git -C "$REPO" show HEAD:oct13/index.html > "$STAGE/index.html"; git -C "$REPO" show HEAD:oct13/oct13.css > "$STAGE/oct13.css"
+# stage from the committed tree only (git archive HEAD), so the deploy matches the commit exactly
+TMP=$(mktemp -d); git -C "$REPO" archive HEAD | tar -x -C "$TMP"
+for s in $SLUGS; do if [ -d "$TMP/$s" ]; then cp -a "$TMP/$s" "$STAGE/"; fi; done; rm -rf "$TMP"
 cd "$STAGE"
 find . \( -name '.git' -o -name 'node_modules' -o -name 'tests' -o -name 'test' -o -name 'notes' -o -name 'writer' -o -name 'qa' -o -name 'creative' \) -prune -exec rm -rf {} +
 find . -type f \( -name '*.md' -o -name '*.test.*' -o -name '*.spec.*' -o -name '*.sh' -o -name '*.txt' -o -name '.DS_Store' -o -name 'NOTES*' \) -delete
