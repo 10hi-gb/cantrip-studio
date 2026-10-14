@@ -153,7 +153,7 @@ if (typeof document !== 'undefined') (function () {
     T = OK.decode(h); if (!T) { state = 'bad'; mode = 'idle'; $('h').textContent = COPY.title; $('lede').textContent = COPY.badLink; $('hint').textContent = ''; panel('p-bad'); return; }
     receiver();
   }
-  window.addEventListener('hashchange', route);
+  window.addEventListener('hashchange', function () { location.reload(); });
   route();
 })();
 

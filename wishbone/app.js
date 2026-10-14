@@ -90,3 +90,5 @@ if (typeof document !== 'undefined') (function () {
   var h = location.hash;
   if (h && h !== '#') { var r = WB.decode(h); if (r) snap(r.side, r.names); else status(COPY.badLink); }
 })();
+// A new link opened in this tab (hash change) re-reads it from scratch: same state as a fresh open, no stacked timers/audio. replaceState never fires this.
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('hashchange', function () { location.reload(); });

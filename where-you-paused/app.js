@@ -145,3 +145,5 @@ if (typeof document !== 'undefined') (function () {
     } else { showEdit(); note(COPY.badLink); }
   } else showEdit();
 })();
+// A new link opened in this tab (hash change) re-reads it from scratch: same state as a fresh open, no stacked timers/audio. replaceState never fires this.
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('hashchange', function () { location.reload(); });

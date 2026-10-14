@@ -121,6 +121,6 @@ if (typeof document !== 'undefined') (function () {
     if (!T) { state = 'bad'; rest(); text(COPY.missed, COPY.badLink); return actions('a-bad'); }
     readyScreen();
   }
-  window.addEventListener('hashchange', route);
+  window.addEventListener('hashchange', function () { location.reload(); });
   route();
 })();

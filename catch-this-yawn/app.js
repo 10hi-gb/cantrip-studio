@@ -40,3 +40,5 @@ if (typeof document !== 'undefined') (function () {
     else { $('lede').textContent = COPY.badLink; $('acts-after').hidden = false; }
   } else play(true);
 })();
+// A new link opened in this tab (hash change) re-reads it from scratch: same state as a fresh open, no stacked timers/audio. replaceState never fires this.
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('hashchange', function () { location.reload(); });

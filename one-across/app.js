@@ -147,7 +147,7 @@ if (typeof document !== 'undefined') (function () {
     if (!h || h === '#') { show('s-make'); validate(); return; }
     var p = OA.decode(h); if (p) startSolve(p); else show('s-bad');
   }
-  window.addEventListener('hashchange', route);
+  window.addEventListener('hashchange', function () { location.reload(); });
   route();
 })();
 

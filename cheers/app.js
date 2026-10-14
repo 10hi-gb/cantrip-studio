@@ -99,3 +99,5 @@ if (typeof document !== 'undefined') (function () {
   if (h && h !== '#') { var r = CH.decode(h); if (r) receiver(r); else { maker(); $('lede').textContent = COPY.badLink; history.replaceState(null, '', location.pathname + h); } }
   else maker();
 })();
+// A new link opened in this tab (hash change) re-reads it from scratch: same state as a fresh open, no stacked timers/audio. replaceState never fires this.
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('hashchange', function () { location.reload(); });

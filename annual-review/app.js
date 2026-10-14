@@ -216,6 +216,6 @@ if (typeof document !== 'undefined') (function () {
     show('loading');
     AR.decode(h).then(function (Rv) { if (!Rv) return show('s-bad'); recvR = Rv; $('recv-body').textContent = fill(COPY.recipientBody, { reviewer: Rv.rev || '—' }); show('s-recv'); });
   }
-  window.addEventListener('hashchange', route);
+  window.addEventListener('hashchange', function () { location.reload(); });
   route();
 })();
