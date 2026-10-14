@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-14 8:45 AM PT",
+ "updated": "2026-10-14 8:51 AM PT",
  "items": [
   {
    "id": "C148",
@@ -379,7 +379,7 @@
    "id": "C205",
    "batch": "C",
    "name": "Not on the Screen",
-   "description": "Pick two colors; a striped disc spins so the eye can mix them — a screenshot cannot.",
+   "description": "Pick two colors; spin a striped disc and see what your eye does.",
    "status": "Engineer self-check passed",
    "note": "Engineer self-check (build checks, not QA).",
    "url": "../not-on-the-screen/",
