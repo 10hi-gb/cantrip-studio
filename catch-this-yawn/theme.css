@@ -54,3 +54,4 @@
 /* visitor-text wrap: long unbroken words never widen the page */
 body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
+.cy-stage{position:absolute;inset:0;overflow:hidden;z-index:1;pointer-events:none}
