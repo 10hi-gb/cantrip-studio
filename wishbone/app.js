@@ -66,7 +66,7 @@ if (typeof document !== 'undefined') (function () {
     $('again').hidden = true; $('share').hidden = true; $('honesty').hidden = true; $('tl').hidden = false; $('tr').hidden = false; sync();
     if (location.hash) history.replaceState(null, '', location.pathname);
   }
-  function arm() { if (state === 'idle') { state = 'armed'; status(COPY.howTo); $('go').hidden = true; } }
+  function arm() { if (state === 'idle') { state = 'armed'; $('go').hidden = true; } }
   $('go').onclick = function () { arm(); $('tl').focus(); };
   $('again').onclick = function () { reset(); };
   // Touch/pen: hold while pressed (multi-touch for two people). Mouse: a click latches a side, so one person can hold both.
