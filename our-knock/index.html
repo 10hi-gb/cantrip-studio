@@ -16,41 +16,60 @@
 </head>
 <body class="ok">
 <main class="ok-stage">
- <div class="ok-side">
-  <a class="ok-nav" href="../" data-c="studioName"></a>
-  <h1 class="ok-title" id="h"></h1>
+ <div>
+  <p class="ok-studio"><a class="ok-nav" href="../" data-c="studioName"></a></p>
+  <p class="ok-phrase" id="phrase" hidden></p>
+  <p class="ok-status" id="status" aria-live="polite"></p>
+  <h1 class="ok-title" id="h" tabindex="-1"></h1>
   <p class="ok-copy" id="lede"></p>
-  <div class="ok-taps" id="taps" aria-hidden="true"></div>
-  <p class="ok-msg" id="msg" role="status" aria-live="polite"></p>
-  <p class="ok-fine" id="hint"></p>
+  <div class="ok-modes" id="modes" role="radiogroup" data-al="modeLabel" hidden></div>
  </div>
- <div class="ok-frame">
-  <div class="ok-behind" id="behind"></div>
-  <div class="ok-door" id="door" tabindex="0" role="button" data-al="doorAria">
-   <div class="ok-panel"></div><div class="ok-panel"></div>
-   <span class="ok-peep"></span><span class="ok-knocker"></span><span class="ok-knob"></span>
+ <div class="ok-door-wrap">
+  <div class="ok-frame">
+   <div class="ok-behind" id="behind"><span class="lamp"></span><span class="note" id="note-out"></span></div>
+   <div class="ok-door" id="door" tabindex="0" role="button" data-al="doorAria"><div class="ok-panel"></div><div class="ok-panel"></div><span class="ok-peep"></span><span class="ok-knocker"></span><span class="ok-knob"></span>
+    <div class="ok-plate" id="plate" hidden><b id="plate-b"></b><small id="plate-s"></small></div></div>
+   <div class="ok-step"></div>
   </div>
-  <div class="ok-step"></div>
+  <div class="ok-rail" id="rail" role="img"></div>
+  <div class="ok-rail-legend" aria-hidden="true"><span data-c="railCall"></span><span data-c="railAnswer"></span></div>
  </div>
  <div class="ok-side">
-  <div id="p-make" hidden>
-   <div class="ok-row"><button class="ok-btn" id="replay" data-c="replay"></button><button class="ok-btn" id="redo" data-c="redo"></button></div>
-   <p></p>
-   <label class="ok-field-wrap"><span data-c="noteLabel"></span><input class="ok-field" id="note" maxlength="200" autocomplete="off"></label>
-   <p class="ok-fine" id="note-msg" role="status"></p>
-   <button class="ok-btn ok-btn--brass" id="closeDoor" data-c="primary"></button>
-  </div>
-  <div id="p-share" hidden>
-   <button class="ok-btn ok-btn--brass" id="share" data-c="share"></button>
-   <p class="ok-fine" data-c="privacy"></p>
-  </div>
-  <div id="p-recv" hidden>
-   <button class="ok-btn" id="teach" data-c="teach"></button>
-   <p class="ok-fine" data-c="teachHint"></p>
-  </div>
-  <div id="p-open" hidden><a class="ok-btn ok-btn--brass" id="back" href="./" data-c="knockBack"></a></div>
-  <div id="p-bad" hidden><a class="ok-btn ok-btn--brass" href="./" data-c="knockBack"></a></div>
-  <p class="ok-fine"><span data-c="soundHint"></span> <button class="ok-mute" id="mute" aria-pressed="false" data-c="mute"></button></p>
+  <section class="ok-flow" id="f-make" hidden>
+   <p class="ok-fine" id="hint"></p>
+   <p class="ok-msg" id="msg" role="status"></p>
+   <div class="ok-row"><button class="ok-btn ok-btn--door" id="done" type="button" data-c="done" hidden></button><button class="ok-btn" id="replay" type="button" data-c="replay"></button><button class="ok-btn" id="redo" type="button" data-c="redo"></button></div>
+   <label class="ok-label" for="note" data-c="noteLabel"></label><input class="ok-field" id="note" maxlength="400" autocomplete="off">
+   <p class="ok-msg" id="note-msg" role="status"></p>
+   <div class="ok-row"><button class="ok-btn ok-btn--brass" id="closeDoor" type="button" data-c="primary"></button></div>
+  </section>
+  <section class="ok-flow" id="f-share" hidden>
+   <div class="ok-row"><button class="ok-btn ok-btn--brass" id="share" type="button" data-c="share"></button><button class="ok-btn" id="again" type="button" data-c="redo"></button></div>
+   <input class="ok-link" id="linkbox" readonly hidden>
+  </section>
+  <section class="ok-flow" id="f-gate" hidden>
+   <button class="ok-gate" id="gate" type="button"><b data-c="gate"></b><span data-c="gateHint"></span></button>
+  </section>
+  <section class="ok-flow" id="f-ans" hidden>
+   <p class="ok-fine" data-c="tolerance"></p>
+   <p class="ok-msg" id="amsg"></p>
+   <div class="ok-row"><button class="ok-btn" id="hear" type="button" data-c="hearAgain"></button></div>
+  </section>
+  <section class="ok-flow" id="f-miss" hidden>
+   <div class="ok-row"><button class="ok-btn ok-btn--door" id="hear2" type="button" data-c="hearAgain"></button></div>
+   <p class="ok-fine" data-c="missTicks"></p>
+  </section>
+  <section class="ok-flow" id="f-open" hidden>
+   <div class="ok-row"><button class="ok-btn ok-btn--brass" id="oneBack" type="button" data-c="knockOneBack"></button><button class="ok-btn" id="mine" type="button" data-c="knockBack"></button></div>
+   <p class="ok-fine" data-c="noReceipt"></p>
+  </section>
+  <section class="ok-flow" id="f-bad" hidden>
+   <div class="ok-row"><button class="ok-btn ok-btn--brass" id="mine2" type="button" data-c="knockBack"></button></div>
+  </section>
+  <p class="ok-msg" id="blocked" hidden></p>
+  <button class="ok-sound" id="sound" type="button"></button>
+  <p class="ok-fine"><span data-c="soundHint"></span> <span data-c="silentNote"></span></p>
+  <p class="ok-fine" data-c="privacy"></p>
  </div>
 </main>
 <div class="ok-toast" id="toast" role="status" hidden></div>

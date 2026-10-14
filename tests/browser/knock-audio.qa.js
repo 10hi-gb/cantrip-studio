@@ -13,7 +13,7 @@ const puppeteer = require('/workspace/oct13tools/node_modules/puppeteer-core'); 
     const door = await p.$('#door, .ok-door'); const bb = await door.boundingBox(); const x = bb.x + bb.width / 2, y = bb.y + bb.height / 2;
     if (w < 600) await p.touchscreen.tap(x, y); else await p.mouse.click(x, y);
     await new Promise(r => setTimeout(r, 600));
-    const after = await p.evaluate(() => Object.assign(window.__okAudio(), { dot: !!document.querySelector('.ok-fine.is-sound-on') }));
+    const after = await p.evaluate(() => Object.assign(window.__okAudio(), { dot: !!document.querySelector('.ok-fine.is-sound-on, .ok-sound.is-live') }));
     const ul = reqs.find(r => /audio-unlock\.js$/.test(r.u)); const media = reqs.filter(r => /^audio\/|^video\//.test(r.t) || /\.(wav|mp3|ogg|m4a|aac)(\?|$)/.test(r.u)); const off = reqs.filter(r => !r.u.startsWith('https://' + host) && !r.u.startsWith(base) && !r.u.startsWith('data:') && !r.u.startsWith('blob:'));
     const r = { before: before.state, after, unlockJs: ul ? ul.s + ' ' + ul.t : 'missing', mediaRequests: media.length, offsite: off.map(o => o.u) }; out.res[w] = r;
     if (after.state !== 'running') out.fails.push(w + ' ctx not running'); if (!(after.scheduled >= 0)) out.fails.push(w + ' no knock scheduled'); if (!after.dot) out.fails.push(w + ' no sound-on dot');
