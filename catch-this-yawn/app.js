@@ -6,7 +6,7 @@ var CY = (function (L) {
   function encodeReturn() { return L.seal(['y1r', '']); }
   function decode(f) { var a = L.unseal(f, FRAG); if (!a || a.length !== 2) return null; var c = L.clean(a[1], CMAX);
     if (a[0] === 'y1' && c === a[1]) return { kind: 'yawn', caption: c }; if (a[0] === 'y1r' && a[1] === '') return { kind: 'return' }; return null; }
-  return { CMAX: CMAX, encode: encode, encodeReturn: encodeReturn, decode: decode };
+  return { FRAG: FRAG, CMAX: CMAX, encode: encode, encodeReturn: encodeReturn, decode: decode };
 })(typeof L !== 'undefined' ? L : require('./lib.js'));
 if (typeof module !== 'undefined') module.exports = CY;
 

@@ -16,7 +16,7 @@ var AM = (function (L) {
   function ics(o, title) { // local file only; DTSTART in UTC, 15 minutes, no alarm
     var z = function (t) { return new Date(t).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }, esc = function (s) { return s.replace(/[\\;,]/g, function (c) { return '\\' + c; }).replace(/\n/g, '\\n'); };
     return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Cantrip Studio//Ask Me At Four//EN', 'BEGIN:VEVENT', 'UID:' + o.t + '-' + Math.random().toString(36).slice(2) + '@cantrip.local', 'DTSTAMP:' + z(Date.now()), 'DTSTART:' + z(o.t), 'DTEND:' + z(o.t + 15 * 6e4), 'SUMMARY:' + esc(title), 'END:VEVENT', 'END:VCALENDAR', ''].join('\r\n'); }
-  return { PMAX: PMAX, NMAX: NMAX, instant: instant, check: check, state: state, encode: encode, encodeWill: encodeWill, decode: decode, fmt: fmt, angle: angle, ics: ics };
+  return { FRAG: FRAG, PMAX: PMAX, NMAX: NMAX, instant: instant, check: check, state: state, encode: encode, encodeWill: encodeWill, decode: decode, fmt: fmt, angle: angle, ics: ics };
 })(typeof L !== 'undefined' ? L : require('./lib.js'));
 if (typeof module !== 'undefined') module.exports = AM;
 

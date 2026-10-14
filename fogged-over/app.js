@@ -28,7 +28,7 @@ var FO = (function (L) {
     if (lines.some(function (l) { return !l || l.length < 2; }) || count(lines) > MAX || lines.length > MAXLINES) return null;
     return lines;
   }
-  return { MAX: MAX, MAXLINES: MAXLINES, RAWMAX: RAWMAX, count: count, simplify: simplify, encode: encode, decode: decode };
+  return { FRAG: FRAG, MAX: MAX, MAXLINES: MAXLINES, RAWMAX: RAWMAX, count: count, simplify: simplify, encode: encode, decode: decode };
 })(typeof L !== 'undefined' ? L : require('./lib.js'));
 if (typeof module !== 'undefined') module.exports = FO;
 

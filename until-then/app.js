@@ -11,8 +11,11 @@ var UT = (function (L) {
   function encode(label, t) { return L.seal(['u1', L.clean(label, LMAX), String(t)]); }
   function decode(f) { var a = L.unseal(f, FRAG); if (!a || a.length !== 3 || a[0] !== 'u1' || !/^\d{13}$/.test(a[2])) return null;
     var lab = L.clean(a[1], LMAX), t = +a[2]; if (!lab || lab !== a[1] || t < MIN_T || t > MAX_T) return null; return { label: lab, t: t }; }
-  function fmt(t) { return new Date(t).toLocaleString(undefined, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
-  return { LMAX: LMAX, instant: instant, check: check, encode: encode, decode: decode, fmt: fmt };
+  // Opener's locale and zone; the year is added whenever the moment is not in the opener's current year.
+  function fmt(t, now, loc, tz) { var o = { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }; if (tz) o.timeZone = tz;
+    var y = new Intl.DateTimeFormat('en', { year: 'numeric', timeZone: tz }); if (y.format(new Date(t)) !== y.format(new Date(now == null ? Date.now() : now))) o.year = 'numeric';
+    return new Intl.DateTimeFormat(loc, o).format(new Date(t)); }
+  return { FRAG: FRAG, LMAX: LMAX, instant: instant, check: check, encode: encode, decode: decode, fmt: fmt };
 })(typeof L !== 'undefined' ? L : require('./lib.js'));
 if (typeof module !== 'undefined') module.exports = UT;
 

@@ -11,7 +11,7 @@ var TT = (function (L) {
   function lobes(v) { var P = AX.map(function (a) { return pt(a, v[a]); }), C = [CX, CY];
     return AX.map(function (a, i) { var p = P[i], pr = P[(i + 2) % 3], nx = P[(i + 1) % 3]; return 'M' + f(C) + ' L' + f(mid(p, pr)) + ' L' + f(p) + ' L' + f(mid(p, nx)) + 'Z'; }); }
   function rim(v) { return 'M' + AX.map(function (a) { return f(pt(a, v[a])); }).join(' L') + 'Z'; }
-  return { AX: AX, DMAX: DMAX, ANG: ANG, CX: CX, CY: CY, R: R, encode: encode, decode: decode, pt: pt, lobes: lobes, rim: rim };
+  return { FRAG: FRAG, AX: AX, DMAX: DMAX, ANG: ANG, CX: CX, CY: CY, R: R, encode: encode, decode: decode, pt: pt, lobes: lobes, rim: rim };
 })(typeof L !== 'undefined' ? L : require('./lib.js'));
 if (typeof module !== 'undefined') module.exports = TT;
 

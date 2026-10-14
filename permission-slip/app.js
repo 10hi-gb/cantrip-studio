@@ -1,13 +1,15 @@
 'use strict';
 // C137 Permission Slip — ["s1", id, to, from, reason]; the serial is a local hash of the payload (decorative).
 var PS = (function (L) {
-  var NMAX = 24, RMAX = 80, FRAG = 700, IDS = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10'];
+  var NMAX = 24, RMAX = 80, FRAG = 900, IDS = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10'];
   function encode(o) { return L.seal(['s1', o.id, L.clean(o.to, NMAX), L.clean(o.from, NMAX), L.clean(o.why, RMAX)]); }
   function decode(f) { var a = L.unseal(f, FRAG); if (!a || a.length !== 5 || a[0] !== 's1' || !/^p\d{1,2}$/.test(a[1])) return null;
     var o = { id: a[1], to: L.clean(a[2], NMAX), from: L.clean(a[3], NMAX), why: L.clean(a[4], RMAX) }; if (o.to !== a[2] || o.from !== a[3] || o.why !== a[4]) return null;
     o.known = IDS.indexOf(o.id) >= 0; return o; }
   function serial(o) { var s = [o.id, o.to, o.from, o.why].join('|'), h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return String(h % 1000000).padStart(6, '0'); }
-  return { IDS: IDS, NMAX: NMAX, RMAX: RMAX, encode: encode, decode: decode, serial: serial };
+  // Pre-share guard (C088 approach): how many reason code points must go for the encoded link to fit FRAG. 0 = fits.
+  function overBy(o) { var w = Array.from(L.clean(o.why, RMAX)), n = 0; while (n < w.length && encode({ id: o.id, to: o.to, from: o.from, why: w.slice(0, w.length - n).join('') }).length > FRAG) n++; return encode({ id: o.id, to: o.to, from: o.from, why: w.slice(0, w.length - n).join('') }).length > FRAG ? w.length + 1 : n; }
+  return { overBy: overBy, FRAG: FRAG, IDS: IDS, NMAX: NMAX, RMAX: RMAX, encode: encode, decode: decode, serial: serial };
 })(typeof L !== 'undefined' ? L : require('./lib.js'));
 if (typeof module !== 'undefined') module.exports = PS;
 
@@ -30,6 +32,7 @@ if (typeof document !== 'undefined') (function () {
   // tear: button, Enter/Space on the ticket, or a downward drag past a threshold
   function tear() {
     if (torn || recv) return; if (L.len(L.clean($('why').value)) > PS.RMAX) { $('why').focus(); return; }
+    read(); var ob = PS.overBy(cur); if (ob > 0) { $('wmsg').textContent = L.plural(COPY.reasonTooLong, ob); $('why').focus(); return; }
     torn = true; var t = $('ticket'); if (!L.reduce) t.classList.add('is-tearing');
     setTimeout(function () { t.classList.remove('is-tearing'); t.classList.add('ps-torn');
       var n1 = $('next1'); n1.classList.remove('is-ghost'); n1.classList.add('ps-torn', 'ps-stub'); n1.textContent = ''; var s = document.createElement('p'); s.className = 'ps-stubtxt'; s.textContent = COPY.stub; n1.appendChild(s);
@@ -42,7 +45,7 @@ if (typeof document !== 'undefined') (function () {
   $('ticket').addEventListener('pointerdown', function (e) { if (torn || recv) return; e.preventDefault(); y0 = e.clientY; try { $('ticket').setPointerCapture(e.pointerId); } catch (x) {} });
   $('ticket').addEventListener('pointermove', dragEnd);
   $('ticket').addEventListener('pointerup', function (e) { dragEnd(e); y0 = null; }); $('ticket').addEventListener('pointercancel', function () { y0 = null; });
-  $('share').onclick = function () { L.share(L.link(PS.encode(cur)), COPY.title, COPY.shareText); };
+  $('share').onclick = function () { var ob = PS.overBy(cur); if (ob > 0) { untear(); $('wmsg').textContent = L.plural(COPY.reasonTooLong, ob); $('why').focus(); return; } L.share(L.link(PS.encode(cur)), COPY.title, COPY.shareText); };
   // local image: draw the ticket on a canvas
   function save() {
     try { var o = recv || cur, P = COPY.permissions[o.id], c = document.createElement('canvas'), W = 900, Hh = 600; c.width = W; c.height = Hh; var x = c.getContext('2d');

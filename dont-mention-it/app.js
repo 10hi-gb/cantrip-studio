@@ -8,7 +8,7 @@ var DM = (function (L) {
     if (a[0] === 'd1r' && a.length === 2 && (a[1] === 'done' || a[1] === 'dontAsk')) return { card: a[1] };
     if (a[0] !== 'd1' || a.length !== 3 || !/^m\d{1,2}$/.test(a[1])) return null; var n = L.clean(a[2], NMAX); if (!n || n !== a[2]) return null;
     return { id: a[1], name: n, known: IDS.indexOf(a[1]) >= 0 }; }
-  return { IDS: IDS, NMAX: NMAX, encode: encode, encodeCard: encodeCard, decode: decode };
+  return { FRAG: FRAG, IDS: IDS, NMAX: NMAX, encode: encode, encodeCard: encodeCard, decode: decode };
 })(typeof L !== 'undefined' ? L : require('./lib.js'));
 if (typeof module !== 'undefined') module.exports = DM;
 

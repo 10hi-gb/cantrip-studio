@@ -2,7 +2,8 @@
 // C201 Broken Telephone — one phone, 2–8 players, memory only (no links, no storage). Survivors = LCS of normalized word tokens (repeat-aware).
 var BT = (function () {
   var SMAX = 80, REVEAL = 4;
-  function tokens(s) { return String(s || '').normalize('NFC').toLowerCase().replace(/[^\p{L}\p{N}\s'’-]/gu, ' ').replace(/['’-]/g, '').split(/\s+/).filter(Boolean); }
+  // Words = letter/number runs (apostrophes and hyphens joined); every emoji (with its modifiers/ZWJ sequence), flag or symbol is its own word. VS16 ignored.
+  function tokens(s) { return (String(s || '').normalize('NFC').toLowerCase().replace(/['’-]/g, '').match(/[\p{L}\p{N}\p{M}]+|\p{Extended_Pictographic}(?:[\u{1F3FB}-\u{1F3FF}\uFE0F\u20E3]|\u200D\p{Extended_Pictographic})*|\p{Regional_Indicator}{2}|\p{S}/gu) || []).map(function (t) { return t.replace(/\uFE0F/g, ''); }); }
   // LCS over word tokens: order matters; each occurrence matches at most once. Returns count + matched indices for <mark>.
   function lcs(a, b) { var n = a.length, m = b.length, T = []; for (var i = 0; i <= n; i++) { T.push(new Array(m + 1).fill(0)); }
     for (i = n - 1; i >= 0; i--) for (var j = m - 1; j >= 0; j--) T[i][j] = a[i] === b[j] ? T[i + 1][j + 1] + 1 : Math.max(T[i + 1][j], T[i][j + 1]);
