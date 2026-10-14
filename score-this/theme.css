@@ -51,3 +51,5 @@
 .st-board.is-locked .st-chip{opacity:.55;cursor:default}
 .st-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--st-k);color:var(--st-y);padding:10px 16px;font:700 14px var(--st-sans);z-index:9}
 .st-btn:disabled{opacity:.5}
+.st-hear{grid-column:1/-1;justify-self:start;font:700 12.5px var(--st-sans);padding:6px 10px;min-height:36px;border:2px solid var(--st-k);background:transparent;color:var(--st-k);cursor:pointer}
+.st-hear:disabled{opacity:.4;cursor:default}.st-hear:focus-visible{outline:3px solid var(--st-m);outline-offset:2px}

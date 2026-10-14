@@ -89,7 +89,7 @@ if (typeof document !== 'undefined') (function () {
     times.push(performance.now()); clearTimeout(idle);
     if (times.length === 1 && state === 'make') $('msg').textContent = COPY.recording;
     if (state === 'recv') bars(T.gaps, times.length);
-    if (times.length >= OK.MAX) return finish();
+    if (times.length >= OK.MAX) { if (state === 'make') $('msg').textContent = COPY.tooMany; return finish(); }
     idle = setTimeout(finish, 1600);
   }
   function finish() { clearTimeout(idle); mode = 'idle'; var t = times.slice(); times = []; if (cb) cb(t); }

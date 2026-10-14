@@ -133,7 +133,7 @@ if (typeof document !== 'undefined') (function () {
     var cls = []; for (var i = 0; i < P.answer.length; i++) cls[i] = v[i] ? (v[i] === P.answer[i] ? 'is-ok' : 'is-wrong') : '';
     cells($('row'), P.answer.length, v.split(''), cls);
     $('row').classList.remove('is-shake'); void $('row').offsetWidth; $('row').classList.add('is-shake');
-    $('solve-msg').textContent = COPY.wrong;
+    $('solve-msg').textContent = cls.indexOf('is-ok') >= 0 ? COPY.wrong : COPY.wrongNoHints;
   };
   $('reveal').onclick = function () {
     if (!window.confirm(COPY.revealConfirm)) return;

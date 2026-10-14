@@ -96,7 +96,9 @@ if (typeof document !== 'undefined') (function () {
         c.onclick = function () { if (locked) return; picks[i] = s.id; link = ''; refresh(); play(s.id); pop(i); $('msg').textContent = ''; };
         board.appendChild(c);
       });
-      pn.appendChild(board); host.appendChild(pn); panels.push({ el: pn, burst: b, board: board });
+      var hear = document.createElement('button'); hear.type = 'button'; hear.className = 'st-hear'; hear.textContent = COPY.preview; hear.disabled = true;
+      hear.onclick = function () { if (picks[i]) { play(picks[i]); pop(i); } }; board.appendChild(hear);
+      pn.appendChild(board); host.appendChild(pn); panels.push({ el: pn, burst: b, board: board, hear: hear });
     })(i);
   }
   function refresh() {
@@ -104,7 +106,7 @@ if (typeof document !== 'undefined') (function () {
       var s = picks[i] && soundById(picks[i]);
       P.burst.textContent = s ? s.sfx : COPY.emptySlot; P.burst.classList.toggle('is-empty', !s); if (BURST[i].big) P.burst.classList.toggle('is-big', !!s);
       Array.prototype.forEach.call(P.board.querySelectorAll('.st-chip'), function (c) { c.setAttribute('aria-pressed', c.dataset.id === picks[i] ? 'true' : 'false'); c.disabled = locked; });
-      P.board.classList.toggle('is-locked', locked);
+      P.board.classList.toggle('is-locked', locked); P.hear.disabled = !s;
     });
   }
   function pop(i) { var el = panels[i].el; el.classList.remove('is-playing'); void el.offsetWidth; el.classList.add('is-playing'); }
