@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-14 4:39 PM PT",
+ "updated": "2026-10-14 4:58 PM PT",
  "items": [
   {
    "id": "C148",
@@ -218,15 +218,20 @@
    "batch": "B",
    "name": "A Plant From This",
    "description": "A phrase grows a unique invented plant; a friend gets the same plant.",
-   "status": "Fix awaiting QA retest",
-   "note": "design-check fixes in 77faa78; last QA pass was on 2e668c5f",
+   "status": "Engineer self-check passed",
+   "note": "QA passed on d797f8cd (commit 40300d77), QA-d797f8cd.md",
    "url": "../a-plant-from-this/",
-   "limitations": [],
+   "limitations": [
+    "Share sheet / real clipboard on a device not tested (headless only)",
+    "Non-blocking QA notes: at 320x640 the recipient's \"See it grow\" is just below the first screen; at 320/390 the specimen label covers some right-hand branches; after \"Grow it\" on mobile the page doesn't scroll to the plant"
+   ],
    "qa": {
-    "verdict": "Fix awaiting QA retest",
-    "pin": "fdbc3526",
-    "ledger": "design-check fixes in 77faa78; last QA pass was on 2e668c5f",
-    "untested": []
+    "verdict": "QA passed",
+    "pin": "d797f8cd",
+    "ledger": "QA-d797f8cd.md, commit 40300d77",
+    "untested": [
+     "Share sheet / real clipboard on a device not tested (headless only)"
+    ]
    }
   },
   {
@@ -235,13 +240,13 @@
    "name": "Wear This",
    "description": "Dress a paper doll in four slots and send the outfit.",
    "status": "Fix awaiting QA retest",
-   "note": "design-check fixes in 77faa78; last QA pass was on 2e668c5f",
+   "note": "design-check fixes in 77faa78 + QA d797f8cd fixes (320x640 slot fold, skin-tone message) in the new commit; last QA pass was on 2e668c5f",
    "url": "../wear-this/",
    "limitations": [],
    "qa": {
     "verdict": "Fix awaiting QA retest",
     "pin": "fdbc3526",
-    "ledger": "design-check fixes in 77faa78; last QA pass was on 2e668c5f",
+    "ledger": "design-check fixes in 77faa78 + QA d797f8cd fixes (320x640 slot fold, skin-tone message) in the new commit; last QA pass was on 2e668c5f",
     "untested": []
    }
   },

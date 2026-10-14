@@ -37,4 +37,11 @@ const puppeteer = require('/workspace/oct13tools/node_modules/puppeteer-core');
     await go(base + 'wear-this/#' + wh); const r = await p.evaluate(() => ({ recv: document.getElementById('root').classList.contains('is-recv'), sw: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth, ...[...document.querySelectorAll('main, main *')].filter(e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden').map(e => Math.ceil(e.getBoundingClientRect().right))),
       doll: Math.round(document.querySelector('.wt-dollwrap').getBoundingClientRect().width) }));
     R.wearRecv = r; if (!r.recv) F(w + ' recipient state not reached'); if (r.sw > w) F(w + ' wear recipient sideways'); if (w < 900 && r.doll < 0.8 * Math.min(w - 40, 330)) F(w + ' recipient card shrunk'); }
+  // C087 QA d797f8cd: on phones the tabs and the WHOLE active slot (options, labels, swatches, Take it off) sit on the first screen with >= 8px to spare, for every tab
+  for (const [w, h] of [[320, 640], [390, 844]]) { await p.setViewport({ width: w, height: h }); await go(base + 'wear-this/'); const n = await p.evaluate(() => document.querySelectorAll('.wt-tabs button').length);
+    for (let i = 0; i < n; i++) { await p.evaluate(i => { scrollTo(0, 0); document.querySelectorAll('.wt-tabs button')[i].click(); scrollTo(0, 0); }, i); await new Promise(r => setTimeout(r, 150));
+      const f = await p.evaluate(() => { const t = document.querySelector('.wt-tabs').getBoundingClientRect(), a = document.querySelector('.wt-slot.is-active'), r = a.getBoundingClientRect();
+        const kids = [...a.querySelectorAll('.wt-opt, .wt-sw button, .wt-off')].map(e => e.getBoundingClientRect().bottom); return { slot: a.dataset.slot, tabs: [Math.round(t.top), Math.round(t.bottom)], slotTop: Math.round(r.top), slotBottom: Math.round(r.bottom), lowestChild: Math.round(Math.max(...kids)), sy: scrollY }; });
+      (out.res['fold' + w] = out.res['fold' + w] || []).push(f);
+      if (f.sy !== 0 || f.tabs[1] > h - 8 || f.slotBottom > h - 8 || f.lowestChild > h - 8) F(w + 'x' + h + ' ' + f.slot + ' slot not fully on first screen (bottom ' + f.slotBottom + ')'); } }
   console.log(JSON.stringify(out, null, 1)); await b.close(); process.exit(out.fails.length ? 1 : 0); })();

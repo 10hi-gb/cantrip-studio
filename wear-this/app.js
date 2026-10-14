@@ -15,8 +15,9 @@ var WTM = (function (L) {
       var m = /^[a-z]([1-6])c([1-6])$/.exec(p);
       if (p === LET[k] + '0') o[k] = null; else if (m) o[k] = { s: +m[1], c: +m[2] }; else { o[k] = null; unknown = true; }
     }
-    var km = /^k([1-6])$/.exec(parts[4]); o.k = km ? +km[1] : 3; if (!km) unknown = true;
-    return { o: o, unknown: unknown };
+    var km = /^k([1-6])$/.exec(parts[4]); o.k = km ? +km[1] : 3;
+    // a bad skin tone falls back to the default; no slot is empty, so it is not 'unknown' (no Writer line for this yet)
+    return { o: o, unknown: unknown, skinFallback: !km };
   }
   return { SLOTS: SLOTS, LET: LET, blank: blank, encode: encode, decode: decode };
 })(typeof L !== 'undefined' ? L : require('./lib.js'));
