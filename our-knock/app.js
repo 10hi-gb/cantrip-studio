@@ -8,15 +8,19 @@ var OK = (function () {
   var TOL = { each: 0.10, mean: 0.06 };
   function b64u(u8) { var s = ''; for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   function unb64u(s) { if (!/^[A-Za-z0-9_-]*$/.test(s)) throw 0; s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
-  function clean(s) { return String(s || '').replace(/[\u0000-\u0009\u000b-\u001f\u007f\u2028\u2029]/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); }
+  function clean(s) { return String(s || '').replace(/[\u202A-\u202E\u2066-\u2069]/g, '').replace(/[\u0000-\u0009\u000b-\u001f\u007f\u2028\u2029]/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); }
+  function ck(s) { var h = 0x811c9dc5; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return ('00000' + (h & 0xffffff).toString(16)).slice(-6); }
+  function seal(f) { return f + '.' + ck(f); }
+  function unseal(f) { var i = f.lastIndexOf('.'); if (i < 0) return null; var body = f.slice(0, i); return /^[0-9a-f]{6}$/.test(f.slice(i + 1)) && ck(body) === f.slice(i + 1) ? body : null; }
   function gapsFromTimes(t) { var g = []; for (var i = 1; i < t.length; i++) g.push(Math.max(GAP_UNIT, Math.min(GAP_MAX, Math.round((t[i] - t[i - 1]) / GAP_UNIT) * GAP_UNIT))); return g; }
   function encode(gaps, note) {
     var f = '1.' + b64u(gaps.map(function (g) { return Math.round(g / GAP_UNIT); }));
     note = clean(note); if (note) f += '.' + b64u(new TextEncoder().encode(note));
-    return f;
+    return seal(f);
   }
   function decode(frag) {
     frag = String(frag || '').replace(/^#/, ''); if (!frag || frag.length > FRAG_MAX) return null;
+    frag = unseal(frag); if (!frag) return null;
     var p = frag.split('.'); if (p[0] !== '1' || p.length < 2 || p.length > 3) return null;
     try {
       var g = Array.from(unb64u(p[1])).map(function (x) { return x * GAP_UNIT; });

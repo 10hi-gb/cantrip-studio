@@ -6,12 +6,16 @@ var HIC = (function () {
   var FLIGHT = { lob: 1800, straight: 1500, curve: 1500, fast: 1200 };
   var NOTE_MAX = 60, FRAG_MAX = 340;
   function win(t) { var f = FLIGHT[t]; return [f - 500, f + 200]; }
-  function clean(s) { return String(s || '').replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function clean(s) { return String(s || '').replace(/[\u202A-\u202E\u2066-\u2069]/g, '').replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim(); }
   function b64u(str) { var u = new TextEncoder().encode(str), s = ''; for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   function unb64u(s) { if (!/^[A-Za-z0-9_-]*$/.test(s)) throw 0; s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return new TextDecoder('utf-8', { fatal: true }).decode(a); }
-  function encode(type, note) { note = clean(note); if (Array.from(note).length > NOTE_MAX) note = Array.from(note).slice(0, NOTE_MAX).join(''); return '1' + CODE[type] + (note ? '.' + b64u(note) : ''); }
+  function ck(s) { var h = 0x811c9dc5; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return ('00000' + (h & 0xffffff).toString(16)).slice(-6); }
+  function seal(f) { return f + '.' + ck(f); }
+  function unseal(f) { var i = f.lastIndexOf('.'); if (i < 0) return null; var body = f.slice(0, i); return /^[0-9a-f]{6}$/.test(f.slice(i + 1)) && ck(body) === f.slice(i + 1) ? body : null; }
+  function encode(type, note) { note = clean(note); if (Array.from(note).length > NOTE_MAX) note = Array.from(note).slice(0, NOTE_MAX).join(''); return seal('1' + CODE[type] + (note ? '.' + b64u(note) : '')); }
   function decode(frag) {
     frag = String(frag || '').replace(/^#/, ''); if (!frag || frag.length > FRAG_MAX) return null;
+    frag = unseal(frag); if (!frag) return null;
     var m = /^1([lscf])(?:\.([A-Za-z0-9_-]+))?$/.exec(frag); if (!m) return null;
     var type = TYPES.filter(function (t) { return CODE[t] === m[1]; })[0], note = '';
     if (m[2]) { try { note = clean(unb64u(m[2])); } catch (e) { return null; } if (Array.from(note).length > NOTE_MAX) return null; }

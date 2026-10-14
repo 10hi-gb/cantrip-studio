@@ -7,7 +7,7 @@ var AR = (function () {
   var CAP = { name: 60, period: 40, rev: 60, moment: 240, extra: 80, total: 1400, url: 2000 };
   var enc = new TextEncoder();
   function bytes(s) { return enc.encode(s).length; }
-  function clean(s, max) { s = String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim(); return s; }
+  function clean(s, max) { s = String(s == null ? '' : s).replace(/[\u202A-\u202E\u2066-\u2069]/g, '').replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim(); return s; }
   function cleanMoment(s) { return clean(s).replace(/[.\s]+$/, ''); }
   function b64u(u8) { var s = ''; for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   function unb64u(s) { if (!/^[A-Za-z0-9_-]*$/.test(s)) throw new Error('b64'); s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
@@ -46,7 +46,7 @@ var AR = (function () {
       return check(R).length ? null : R;
     }).catch(function () { return null; });
   }
-  function line(R, m) { return COPY_REF().categories[CAT_IDS[m.cat]].frames[m.frame].replace('{name}', R.name).replace('{moment}', m.text); }
+  function line(R, m) { return COPY_REF().categories[CAT_IDS[m.cat]].frames[m.frame].replace(/\{(name|moment)\}/g, function (_, k) { return k === 'name' ? R.name : m.text; }); }
   var COPY_REF = function () { return typeof COPY !== 'undefined' ? COPY : global.COPY; };
   return { CAT_IDS: CAT_IDS, CLOSER_IDS: CLOSER_IDS, CAP: CAP, bytes: bytes, clean: clean, cleanMoment: cleanMoment, payload: payload, check: check, encode: encode, decode: decode, line: line };
 })();

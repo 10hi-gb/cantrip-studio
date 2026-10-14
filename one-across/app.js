@@ -5,26 +5,30 @@ var OA = (function () {
   // Normalization: NFKD, strip combining marks, uppercase, keep A–Z only. Ligatures like Æ/ß are expanded by explicit map.
   var EXP = { 'Æ': 'AE', 'æ': 'AE', 'Œ': 'OE', 'œ': 'OE', 'ß': 'SS', 'Ø': 'O', 'ø': 'O', 'Ł': 'L', 'ł': 'L', 'Đ': 'D', 'đ': 'D', 'Þ': 'TH', 'þ': 'TH' };
   function norm(s) {
-    s = String(s || '').replace(/[ÆæŒœßØøŁłĐđÞþ]/g, function (c) { return EXP[c]; });
+    s = String(s || '').replace(/[\u202A-\u202E\u2066-\u2069]/g, '').replace(/[ÆæŒœßØøŁłĐđÞþ]/g, function (c) { return EXP[c]; });
     var n = s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
     var out = n.replace(/[^A-Z]/g, '');
     return { v: out, dropped: out.length !== n.replace(/\s/g, '').length, accents: n !== s.toUpperCase() };
   }
   function cpLen(s) { return Array.from(s).length; }
-  function cleanClue(s) { return String(s || '').replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function cleanClue(s) { return String(s || '').replace(/[\u202A-\u202E\u2066-\u2069]/g, '').replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim(); }
   function b64u(bytes) { var s = ''; bytes.forEach(function (b) { s += String.fromCharCode(b); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   function unb64u(s) { if (!/^[A-Za-z0-9_-]*$/.test(s)) throw 0; s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+  function ck(s) { var h = 0x811c9dc5; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return ('00000' + (h & 0xffffff).toString(16)).slice(-6); }
+  function seal(f) { return f + '.' + ck(f); }
+  function unseal(f) { var i = f.lastIndexOf('.'); if (i < 0) return null; var body = f.slice(0, i); return /^[0-9a-f]{6}$/.test(f.slice(i + 1)) && ck(body) === f.slice(i + 1) ? body : null; }
   function stream(seed, n) { var x = seed >>> 0 || 1, o = []; for (var i = 0; i < n; i++) { x ^= x << 13; x >>>= 0; x ^= x >>> 17; x ^= x << 5; x >>>= 0; o.push(x & 255); } return o; }
   // Scramble = spoiler friction only; anyone with the link can reverse it (and the copy says so).
   function encode(answer, clue, seed) {
     var ks = stream(seed, answer.length), bytes = [];
     for (var i = 0; i < answer.length; i++) bytes.push(answer.charCodeAt(i) ^ ks[i]);
     var frag = '1.' + (seed >>> 0).toString(16).padStart(8, '0') + '.' + b64u(bytes) + '.' + b64u(Array.from(new TextEncoder().encode(clue)));
-    return frag;
+    return seal(frag);
   }
   function decode(frag) {
     frag = String(frag || '').replace(/^#/, '');
     if (!frag || frag.length > FRAG_MAX) return null;
+    frag = unseal(frag); if (!frag) return null; // truncated/clipped links fail the checksum
     var p = frag.split('.'); if (p.length !== 4 || p[0] !== '1' || !/^[0-9a-f]{8}$/.test(p[1])) return null;
     try {
       var seed = parseInt(p[1], 16), sc = unb64u(p[2]), ks = stream(seed, sc.length), a = '';
