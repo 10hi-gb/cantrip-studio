@@ -60,3 +60,7 @@
 /* visitor-text wrap: long unbroken words never widen the page */
 body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
+
+/* Title: never break inside a word; size follows its own column. */
+:has(> .wb-title){container-type:inline-size}
+.wb-title{overflow-wrap:normal;word-break:normal;hyphens:none;font-size:clamp(30px,min(6vw,20cqi),64px)}

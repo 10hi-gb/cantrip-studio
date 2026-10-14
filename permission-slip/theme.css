@@ -62,3 +62,8 @@ body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
 .ps-ticket{user-select:none;-webkit-user-select:none}
 .ps-admit{font:700 13px var(--ps-mono);letter-spacing:.32em;color:var(--ps-red);margin:0 0 6px;border-block:1px dashed currentColor;display:inline-block;padding:2px 6px}
+
+/* Title: never break inside a word; size follows its own column. Visitor names inside it still wrap anywhere. */
+:has(> .ps-title){container-type:inline-size}
+.ps-title{overflow-wrap:normal;word-break:normal;hyphens:none;font-size:clamp(26px,min(10vw,11.5cqi),58px)}
+.ps-title .ps-vis{overflow-wrap:anywhere}

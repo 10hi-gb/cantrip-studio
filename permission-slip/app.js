@@ -16,6 +16,9 @@ if (typeof module !== 'undefined') module.exports = PS;
 if (typeof document !== 'undefined') (function () {
   var $ = L.$; L.bind(); L.chrome();
   var cur = { id: 'p5', to: '', from: '', why: '' }, torn = false, recv = null;
+  // Receiver heading: Writer's words never break mid-word; only the visitor's name (its own span) may wrap anywhere.
+  function headWith(from) { var h = $('head'); h.textContent = ''; if (!from) { h.textContent = COPY.receiverIntroAnon; return; }
+    String(COPY.receiverIntro).split(/(\{from\})/).forEach(function (part) { if (part === '{from}') { var v = document.createElement('span'); v.className = 'ps-vis'; v.textContent = from; h.appendChild(v); } else if (part) h.appendChild(document.createTextNode(part)); }); }
   function names(o) { var a = []; if (o.to) a.push(L.clean($('to').labels[0].textContent).replace(/\s*\(.*\)$/, '') + ': ' + o.to); if (o.from) a.push(L.clean($('from').labels[0].textContent).replace(/\s*\(.*\)$/, '') + ': ' + o.from); return a.join(' · '); }
   function paint(o) {
     var P = COPY.permissions[o.id]; $('perm').textContent = P ? P.title : ''; $('fine').textContent = P ? P.fine : COPY.unknownPermission;
@@ -66,7 +69,7 @@ if (typeof document !== 'undefined') (function () {
   var h = location.hash;
   if (h && h !== '#') {
     var r = PS.decode(h); $('maker').hidden = true; $('acts-make').hidden = true; $('hint').hidden = true; $('acts-recv').hidden = false; $('next1').hidden = true; $('next2').hidden = true;
-    if (r) { recv = r; $('head').textContent = r.from ? L.fill(COPY.receiverIntro, { from: r.from }) : COPY.receiverIntroAnon; $('lede').textContent = r.known ? '' : COPY.unknownPermission;
+    if (r) { recv = r; headWith(r.from); $('lede').textContent = r.known ? '' : COPY.unknownPermission;
       $('ticket').classList.add('ps-torn'); paint(r); if (r.known) { var g = document.createElement('span'); g.className = 'ps-given'; g.textContent = COPY.given; $('ticket').appendChild(g); } else { $('take').hidden = true; $('save2').hidden = true; } }
     else { $('head').textContent = COPY.badLink; $('lede').textContent = ''; $('roll').hidden = true; $('take').hidden = true; $('save2').hidden = true; }
   } else sync();
