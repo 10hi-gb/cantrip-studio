@@ -1,0 +1,70 @@
+/* C148 Bad on Purpose — "Permanent Collection" theme. Drop-in. Self-host fonts in /fonts. */
+@font-face{font-family:"Cormorant Garamond";src:local("Cormorant Garamond"),url(fonts/CormorantGaramond.woff2) format("woff2");font-weight:300 700;font-display:swap}
+@font-face{font-family:"Cormorant Garamond";src:local("Cormorant Garamond Italic"),url(fonts/CormorantGaramond-Italic.woff2) format("woff2");font-style:italic;font-display:swap}
+@font-face{font-family:"Libre Franklin";src:local("Libre Franklin"),url(fonts/LibreFranklin.woff2) format("woff2");font-weight:300 700;font-display:swap}
+:root{
+  --bop-wall:#ECE8E1; --bop-wall-shade:#DCD6CC; --bop-floor:#B9AF9F;
+  --bop-ink:#1B1A17; --bop-ink-soft:#5B574F; --bop-placard:#FBFAF6;
+  --bop-sold:#C8322B; --bop-brass:#A88A4A; --bop-frame:#141311;
+  --bop-serif:"Cormorant Garamond","Cormorant",Garamond,"Times New Roman",serif;
+  --bop-sans:"Libre Franklin","Franklin Gothic Book",Arial,sans-serif;
+  --bop-spot-dur:700ms; --bop-ease:cubic-bezier(.2,.7,.2,1);
+  --bop-frame-w:14px; --bop-mat:28px;
+}
+.bop{min-height:100dvh;margin:0;color:var(--bop-ink);font-family:var(--bop-sans);
+  background:
+   radial-gradient(ellipse 46% 52% at var(--bop-spot-x,42%) 38%,rgba(255,250,236,.75),transparent 70%),
+   linear-gradient(to bottom,var(--bop-wall) 0 82%,var(--bop-wall-shade) 82% 82.4%,var(--bop-floor) 82.4%);}
+.bop-room{display:grid;grid-template-columns:1fr;gap:28px;padding:56px 22px 40px;max-width:1280px;margin:0 auto}
+@media(min-width:900px){.bop-room{grid-template-columns:1.35fr .65fr;align-items:end;padding:96px 96px 120px;gap:72px}}
+.bop-frame{background:var(--bop-placard);padding:var(--bop-mat);border:var(--bop-frame-w) solid var(--bop-frame);
+  box-shadow:0 1px 0 #000,0 22px 30px -18px rgba(0,0,0,.45),inset 0 0 0 1px #d8d2c4;justify-self:center;width:min(100%,560px)}
+.bop-frame canvas,.bop-frame svg{display:block;width:100%;aspect-ratio:4/3;background:#fff;touch-action:none}
+.bop-frame.is-drawing{border-color:var(--bop-brass);cursor:crosshair}
+.bop-placard{background:var(--bop-placard);padding:18px 20px 16px;max-width:340px;box-shadow:0 2px 0 var(--bop-wall-shade),2px 6px 10px -6px rgba(0,0,0,.25);font-size:13px;line-height:1.45}
+.bop-placard .artist{font-weight:600;letter-spacing:.02em}
+.bop-placard .title{font-family:var(--bop-serif);font-style:italic;font-size:22px;line-height:1.15;margin:6px 0 2px}
+.bop-placard .meta{color:var(--bop-ink-soft);font-variant:all-small-caps;letter-spacing:.06em}
+.bop-placard .body{margin-top:10px;font-size:12.5px}
+.bop-placard .value{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--bop-ink-soft)}
+.bop-dot{width:12px;height:12px;border-radius:50%;background:var(--bop-sold);flex:none}
+.bop-h1{font-family:var(--bop-serif);font-weight:500;font-size:clamp(40px,7vw,88px);line-height:.95;margin:0;letter-spacing:-.01em}
+.bop-eyebrow{font-variant:all-small-caps;letter-spacing:.14em;font-size:13px;color:var(--bop-ink-soft)}
+.bop-btn{font:600 14px/1 var(--bop-sans);letter-spacing:.08em;text-transform:uppercase;padding:14px 22px;border:1.5px solid var(--bop-ink);background:transparent;color:var(--bop-ink);min-height:44px;cursor:pointer}
+.bop-btn--primary{background:var(--bop-ink);color:var(--bop-placard)}
+.bop-btn:focus-visible{outline:3px solid var(--bop-brass);outline-offset:3px}
+.bop-btn:disabled{opacity:.4;cursor:not-allowed}
+.bop-assignment{border-left:3px solid var(--bop-brass);padding:4px 0 4px 12px;font-family:var(--bop-serif);font-size:24px;font-style:italic}
+/* motion */
+.bop-lit{animation:bop-spot var(--bop-spot-dur) var(--bop-ease) both}
+@keyframes bop-spot{from{filter:brightness(.55)}to{filter:none}}
+.bop-placard.is-in{animation:bop-slide 520ms var(--bop-ease) 300ms both}
+@keyframes bop-slide{from{transform:translateX(18px);opacity:0}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.bop-lit,.bop-placard.is-in{animation:bop-fade 150ms linear both}@keyframes bop-fade{from{opacity:0}to{opacity:1}}}
+/* --- build additions (Engineer) --- */
+*{box-sizing:border-box}
+.bop[hidden],[hidden]{display:none!important}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.bop-nav{position:absolute;top:14px;left:22px;font-variant:all-small-caps;letter-spacing:.14em;font-size:13px;color:var(--bop-ink-soft);text-decoration:none}
+.bop-nav:focus-visible{outline:3px solid var(--bop-brass)}
+.bop-lede{max-width:34ch;font-size:17px;line-height:1.5}
+.bop-fine{color:var(--bop-ink-soft);font-size:12px;margin-top:14px;max-width:46ch;line-height:1.5}
+.bop-count{font-family:var(--bop-serif);font-size:44px;margin:0}
+.bop-field{font:15px var(--bop-sans);padding:10px 0;border:0;border-bottom:1.5px solid var(--bop-ink);background:transparent;width:100%;max-width:300px}
+.bop-field:focus{outline:none;border-bottom-color:var(--bop-brass)}
+.bop-label{display:block;margin-top:16px;font-variant:all-small-caps;letter-spacing:.1em;font-size:13px;color:var(--bop-ink-soft)}
+.bop-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--bop-ink);color:var(--bop-placard);padding:10px 16px;font-size:13px;letter-spacing:.04em}
+.bop-tour{display:grid;gap:40px 48px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));padding:0 22px 60px;max-width:1280px;margin:0 auto}
+.bop-tour figure{margin:0;display:grid;gap:14px}
+.bop-tour .bop-frame{--bop-frame-w:10px;--bop-mat:16px}
+.bop-tour .bop-placard{max-width:none}
+.bop-hdr{padding:56px 22px 20px;max-width:1280px;margin:0 auto}
+.bop-frame.settle{animation:bop-settle 380ms var(--bop-ease) 900ms both}
+@keyframes bop-settle{0%{transform:translateY(-2px)}100%{transform:none}}
+@media(prefers-reduced-motion:reduce){.bop-frame.settle{animation:none}}
+#hung-actions{justify-content:center;padding:0 22px 30px}
+.bop-pig{margin-top:12px}
+.bop-sw{width:36px;height:36px;border-radius:50%;border:2px solid var(--bop-placard);box-shadow:0 0 0 1.5px var(--bop-ink);cursor:pointer;padding:0}
+.bop-sw[aria-checked="true"]{box-shadow:0 0 0 3px var(--bop-brass)}
+.bop-sw:focus-visible{outline:3px solid var(--bop-brass);outline-offset:3px}
+.bop-hanging{font-family:var(--bop-serif);font-style:italic;font-size:22px}

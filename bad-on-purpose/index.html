@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Bad on Purpose · Cantrip Studio</title>
+<meta name="description" content="A small drawing toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="bop">
+<a class="bop-nav" href="../">Cantrip Studio</a>
+
+<section id="s-home" class="bop-room">
+ <div>
+  <p class="bop-eyebrow">Cantrip Studio · Permanent Collection</p>
+  <h1 class="bop-h1" data-c="title"></h1>
+  <p class="bop-lede" data-c="invitation"></p>
+  <div class="row"><button class="bop-btn bop-btn--primary" id="go" data-c="assignmentLabel"></button><button class="bop-btn" id="tour-btn" data-c="samplesHeading"></button></div>
+  <p class="bop-fine" data-c="privacy"></p>
+ </div>
+ <aside class="bop-placard" id="home-placard"></aside>
+</section>
+
+<section id="s-draw" class="bop-room" hidden>
+ <div>
+  <p class="bop-eyebrow" data-c="assignmentLabel"></p>
+  <div class="bop-assignment" id="assign"></div>
+  <div class="bop-frame is-drawing" id="draw-frame"><canvas id="cv" width="800" height="600" aria-label="Drawing surface. Keyboard: arrow keys move the pen, space puts it down or lifts it." tabindex="0"></canvas></div>
+  <div class="row bop-pig" id="pig" role="radiogroup" aria-label="Pigment"></div>
+  <div class="row"><button class="bop-btn" id="undo" data-c="undo"></button><button class="bop-btn" id="clear" data-c="clear"></button><button class="bop-btn" id="reroll" data-c="newAssignment"></button><button class="bop-btn bop-btn--primary" id="hang" data-c="primary"></button></div>
+  <p class="bop-fine" id="draw-msg" role="status"></p>
+ </div>
+ <aside class="bop-placard">
+  <p class="meta">Strokes</p><p class="bop-count" id="n-strokes">0</p>
+  <p class="meta" id="n-meta">0:00</p>
+  <p class="body" data-c="canvasHint"></p>
+ </aside>
+</section>
+
+<section id="s-hung" hidden>
+ <div class="bop-room">
+  <div class="bop-frame settle" id="hung-frame"><canvas id="cv-hung" width="800" height="600" aria-label="Your drawing, hung"></canvas></div>
+  <aside class="bop-placard" id="placard" aria-live="polite"></aside>
+ </div>
+ <div class="row" id="hung-actions"><button class="bop-btn bop-btn--primary" id="save" data-c="save"></button><button class="bop-btn" id="invite" data-c="share"></button><button class="bop-btn" id="again" data-c="again"></button><button class="bop-btn" id="home2" aria-label="Back to the entrance">←</button></div>
+</section>
+
+<section id="s-tour" hidden>
+ <div class="bop-hdr"><p class="bop-eyebrow">Cantrip Studio · Permanent Collection</p><h2 class="bop-h1" data-c="samplesHeading"></h2><div class="row"><button class="bop-btn bop-btn--primary" id="tour-go" data-c="primary"></button><button class="bop-btn" id="tour-home" aria-label="Back to the entrance">←</button></div></div>
+ <div class="bop-tour" id="tour"></div>
+</section>
+<div class="bop-toast" id="toast" role="status" hidden></div>
+</body>
+</html>
