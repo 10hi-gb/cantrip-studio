@@ -64,7 +64,7 @@ if (typeof document !== 'undefined') (function () {
   function clearRun() { cancelAnimationFrame(raf); timers.forEach(clearTimeout); timers = []; }
   function readyScreen(msg) {
     clearRun(); state = 'ready'; rest();
-    text(COPY.ready, msg || (T.note ? T.note : '')); $('board').textContent = COPY.receiverIntroAnon;
+    text(COPY.ready, msg || (T.note ? T.note : '')); $('board').textContent = COPY.receiverIntro;
     actions('a-ready'); $('callout').textContent = ''; $('ready').focus();
     if (RM.matches && !msg) $('sub').textContent = (T.note ? T.note + ' — ' : '') + COPY.reducedMotion;
   }

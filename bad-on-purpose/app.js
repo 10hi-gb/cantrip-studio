@@ -29,6 +29,8 @@
     for (var i = 0; i < COPY.labels.length; i++) { if (COPY.labels[i].when !== 'default' && test(COPY.labels[i].when, m)) { label = COPY.labels[i]; break; } }
     if (!label) { var d = COPY.labels.filter(function (l) { return l.when === 'default'; }); label = d[(m.strokes + m.seconds) % d.length]; }
     var v = { assignment: assignment, assignment_lower: assignment.toLowerCase(), strokes: m.strokes, seconds: m.seconds, colors: m.colors.join(', ') };
+    v.strokeCount = fill(m.strokes === 1 ? COPY.placard.strokeCount.one : COPY.placard.strokeCount.other, v);
+    v.secondCount = fill(m.seconds === 1 ? COPY.placard.secondCount.one : COPY.placard.secondCount.other, v);
     var value = (m.strokes * m.seconds * 137500 + 850000);
     v.value = '$' + value.toLocaleString('en-US');
     return { title: assignment, meta: fill(COPY.placard.metaLine, v), medium: m.colors.length > 1 ? COPY.placard.medium.many : COPY.placard.medium.one,

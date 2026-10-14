@@ -1,7 +1,7 @@
 'use strict';
 // Annual Review of You (A′ Formal Review). COPY from copy.js verbatim. Review lives only in the URL fragment / local export.
-// Ratings reused verbatim from /workspace/annual-review/writer/CONCEPT-COPY.md (+ADDENDUM rename); not present in copy.js.
-var RATINGS = ['Exceeds Expectations', 'Meets Expectations', 'Redefined Expectations', 'Expectations Recalibrated', 'Not Applicable, Somehow'];
+// Ratings, rating label and doc title come from COPY (Writing Bot).
+var RATINGS = (typeof COPY !== 'undefined' ? COPY : global.COPY).ratings;
 var AR = (function () {
   var CAT_IDS = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8'], CLOSER_IDS = ['c1', 'c2', 'c3', 'c4', 'c5'];
   var CAP = { name: 60, period: 40, rev: 60, moment: 240, extra: 80, total: 1400, url: 2000 };
@@ -93,8 +93,8 @@ if (typeof document !== 'undefined') (function () {
       var warn = el('p', 'ar-warn'); warn.setAttribute('role', 'status'); box.appendChild(warn);
       box.appendChild(el('p', 'ar-label', COPY.categoryLabel));
       box.appendChild(chipRow(AR.CAT_IDS.map(function (id) { return COPY.categories[id].heading; }), m.cat, function (k) { m.cat = k; m.frame = 0; renderMoments(); focusChip(i); }, COPY.categoryLabel));
-      box.appendChild(el('p', 'ar-label', 'Rating'));
-      box.appendChild(chipRow(RATINGS, m.rating, function (k) { m.rating = k; renderMoments(); }, 'Rating'));
+      box.appendChild(el('p', 'ar-label', COPY.ratingLabel.replace(/:$/, '')));
+      box.appendChild(chipRow(RATINGS, m.rating, function (k) { m.rating = k; renderMoments(); }, COPY.ratingLabel));
       var pv = el('div', 'ar-moment ar-preview'); pv.appendChild(el('div', 'no', '↳')); var pb = el('div', 'body'); pb.appendChild(el('div', 'cat', COPY.categories[AR.CAT_IDS[m.cat]].heading));
       var pl = el('p', 'line'); pb.appendChild(pl); var dw = el('button', 'ar-chip', COPY.differentWording); dw.type = 'button'; dw.onclick = function () { m.frame = (m.frame + 1) % 3; upd(); }; pb.appendChild(dw); pv.appendChild(pb); box.appendChild(pv);
       function upd() {
@@ -144,7 +144,7 @@ if (typeof document !== 'undefined') (function () {
     $('prev-h').hidden = !sender; $('sender-actions').hidden = !sender; $('recv-actions').hidden = sender;
     $('sender-fine').textContent = sender ? COPY.privacy + ' ' + COPY.saveHint : '';
     $('share').disabled = sender && !link; if (sender && !link) $('sender-fine').textContent = COPY.tooLongLink;
-    $('r-title').textContent = 'Annual review: ' + Rv.name; $('r-period').textContent = Rv.period; $('r-rev').textContent = Rv.rev || '—';
+    $('r-title').textContent = fill(COPY.docTitle, { name: Rv.name }); $('r-period').textContent = Rv.period; $('r-rev').textContent = Rv.rev || '—';
     var host = $('r-moments'); host.textContent = '';
     var old = $('review-form').querySelector('.ar-stamp'); if (old) old.remove();
     $('r-overall').textContent = '';
@@ -152,7 +152,7 @@ if (typeof document !== 'undefined') (function () {
       var d = el('div', 'ar-moment'); d.appendChild(el('div', 'no', String(i + 1))); var b = el('div', 'body');
       b.appendChild(el('div', 'cat', COPY.categories[AR.CAT_IDS[m.cat]].heading));
       var p = el('p', 'line', AR.line(Rv, m)); b.appendChild(p);
-      var lab = el('span', 'ar-label', 'Rating: '); lab.style.display = 'inline'; b.appendChild(lab); b.appendChild(el('span', 'ar-rate', RATINGS[m.rating]));
+      var lab = el('span', 'ar-label', COPY.ratingLabel + ' '); lab.style.display = 'inline'; b.appendChild(lab); b.appendChild(el('span', 'ar-rate', RATINGS[m.rating]));
       d.appendChild(b); host.appendChild(d); return p;
     });
     var tok = ++typingToken;
@@ -186,15 +186,15 @@ if (typeof document !== 'undefined') (function () {
       g.fillStyle = '#5E6B6A'; g.fillRect(0, 0, W, H); g.fillStyle = '#F3C9CF'; g.save(); g.translate(60, 50); g.rotate(0.02); g.fillRect(0, 0, 960, 1250); g.restore();
       g.fillStyle = '#F6E9A6'; g.fillRect(50, 40, 980, 1260);
       g.strokeStyle = 'rgba(46,74,138,.45)'; g.setLineDash([6, 6]); g.beginPath(); g.moveTo(90, 40); g.lineTo(90, 1300); g.stroke(); g.setLineDash([]);
-      g.fillStyle = '#2E4A8A'; g.font = '700 18px "Archivo Narrow",Arial'; g.fillText('FORM 193-R · ANNUAL REVIEW', 120, 90); g.fillText('CONFIDENTIAL', 860, 90); g.fillRect(120, 102, 880, 4);
-      g.font = '700 46px "Archivo Narrow",Arial'; var y = wrap(g, ('Annual review: ' + Rv.name).toUpperCase(), 120, 166, 880, 50);
+      g.fillStyle = '#2E4A8A'; g.font = '700 18px "Archivo Narrow",Arial'; g.fillText('FORM 193-R · ANNUAL REVIEW', 120, 90); g.fillText('PERSONNEL FILE', 840, 90); g.fillRect(120, 102, 880, 4);
+      g.font = '700 46px "Archivo Narrow",Arial'; var y = wrap(g, (fill(COPY.docTitle, { name: Rv.name })).toUpperCase(), 120, 166, 880, 50);
       g.font = '600 15px "Archivo Narrow",Arial'; g.fillText((COPY.periodLabel + ': ').toUpperCase(), 120, y + 14); g.fillText((COPY.reviewerLabel + ': ').toUpperCase(), 580, y + 14);
       g.fillStyle = '#26303F'; g.font = '22px "Courier Prime",monospace'; wrap(g, Rv.period, 120, y + 44, 440, 26); wrap(g, Rv.rev || '—', 580, y + 44, 420, 26); y += 90;
       Rv.moments.forEach(function (m, i) {
         var top = y; g.fillStyle = '#2E4A8A'; g.font = '700 30px "Archivo Narrow",Arial'; g.fillText(String(i + 1), 132, y + 40);
         g.font = '700 16px "Archivo Narrow",Arial'; g.fillText(COPY.categories[AR.CAT_IDS[m.cat]].heading.toUpperCase(), 186, y + 30);
         g.fillStyle = '#26303F'; g.font = '21px "Courier Prime",monospace'; var yy = wrap(g, AR.line(Rv, m), 186, y + 60, 800, 27);
-        g.font = '16px "Courier Prime",monospace'; g.fillText('Rating: ' + RATINGS[m.rating], 186, yy + 6); y = yy + 26;
+        g.font = '16px "Courier Prime",monospace'; g.fillText(COPY.ratingLabel + ' ' + RATINGS[m.rating], 186, yy + 6); y = yy + 26;
         g.strokeStyle = '#2E4A8A'; g.lineWidth = 2; g.strokeRect(120, top + 6, 880, y - top - 6); g.beginPath(); g.moveTo(170, top + 6); g.lineTo(170, y); g.stroke(); y += 10;
       });
       g.fillStyle = '#2E4A8A'; g.font = '600 15px "Archivo Narrow",Arial'; g.fillText('OVERALL', 120, y + 30);

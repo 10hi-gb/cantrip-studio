@@ -12,6 +12,9 @@ const COPY = {
   momentSoft: "Shorter lands better.", momentTooLong: "Keep it to one line. {n} over.",
   defaultMoments: 3, maxMoments: 5, addMoment: "Add another", limit: "Up to 5",
   tooFew: "Add at least three moments. Small ones count.",
+  ratingLabel: "Rating:",
+  ratings: ["Exceeds Expectations", "Meets Expectations", "Redefined Expectations", "Expectations Recalibrated", "Not Applicable, Somehow"],
+  docTitle: "Annual review: {name}",
   categoryLabel: "Category", differentWording: "Different wording",
   categories: {
     a1: { heading: "Facilities & Access", hint: "keys, doors, getting in or out", frames: ["{name} {moment}. Facilities has been notified.", "Incident report: {name} {moment}. Resolved without escalation.", "{name} {moment}. Access has not been revoked."] },

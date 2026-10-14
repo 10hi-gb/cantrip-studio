@@ -9,7 +9,7 @@ const COPY = {
   primary: "Throw it",
   share: "Send the throw", copied: "Link copied.", shareCancel: "Not thrown. The ball's still in your hand.",
   privacyMaker: "The throw lives in the link: the kind of throw and your note. Nothing is uploaded, and you won't hear whether they caught it. Anyone with the link can open it.",
-  receiverIntro: "{from} threw you something.", receiverIntroAnon: "Someone threw you something.",
+  receiverIntro: "Someone threw you something.",
   ready: "Ready?", readyButton: "I'm ready",
   readyHint: "Tap, click, or press Space when it gets close.",
   countdown: ["3", "2", "1"],

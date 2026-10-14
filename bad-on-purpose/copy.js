@@ -11,7 +11,9 @@ const COPY = {
   undo: "Undo", clear: "Start over",
   hanging: "Hanging the work…",
   placard: {
-    metaLine: "{assignment} · {strokes} strokes · {seconds} seconds · {colors}",
+    metaLine: "{assignment} · {strokeCount} · {secondCount} · {colors}",
+    strokeCount: { one: "1 stroke", other: "{strokes} strokes" },
+    secondCount: { one: "1 second", other: "{seconds} seconds" },
     medium: { one: "Single pigment on screen", many: "Mixed pigment on screen" },
     insurance: "Insured for {value} (not real, not money, not insurance)",
     acquisition: "Gift of the artist, who was asked to."
@@ -19,7 +21,7 @@ const COPY = {
   labels: [
     { id: "L1", when: "strokes <= 3", text: "The artist stopped at {strokes}. Critics call this restraint. The artist calls it done." },
     { id: "L2", when: "strokes >= 40", text: "{strokes} separate decisions, none of them load-bearing. Note the commitment." },
-    { id: "L3", when: "seconds < 5", text: "Completed in {seconds} seconds, which is roughly how long the subject would have sat still." },
+    { id: "L3", when: "seconds < 5", text: "Completed in {secondCount}, which is roughly how long the subject would have sat still." },
     { id: "L4", when: "seconds >= 60", text: "Over a minute of work. Scholars agree the first ten seconds were the strongest." },
     { id: "L5", when: "coverage < 0.05", text: "Mostly wall. The artist trusts you to imagine the rest of {assignment_lower}." },
     { id: "L6", when: "coverage > 0.4", text: "The artist did not so much draw {assignment_lower} as surround it." },
