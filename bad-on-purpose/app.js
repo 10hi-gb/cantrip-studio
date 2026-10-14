@@ -42,7 +42,7 @@
     if (P.acq) mk('p', 'meta', P.acq);
   }
   function redraw(c, ss, w, h) {
-    c.fillStyle = '#fff'; c.fillRect(0, 0, w, h); c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = 9 * (w / 800);
+    c.fillStyle = '#fff'; c.fillRect(0, 0, w, h); c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = 0.016 * w;
     ss.forEach(function (s) {
       if (!s.p.length) return; c.strokeStyle = PIG[s.c][1]; if (s.c === 5) { c.save(); c.shadowColor = '#999'; c.shadowBlur = 2; }
       c.beginPath(); c.moveTo(s.p[0][0] * w / 800, s.p[0][1] * h / 600);

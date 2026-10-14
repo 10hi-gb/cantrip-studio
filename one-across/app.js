@@ -103,7 +103,7 @@ if (typeof document !== 'undefined') (function () {
     $('solve-msg').textContent = '';
   }
   function startSolve(p) {
-    P = p; solved = false; show('s-solve');
+    P = p; solved = false; show('s-solve'); $('row').setAttribute('aria-label', '1 Across, ' + p.answer.length + ' letters');
     $('clue-text').textContent = p.clue; $('clue-side').textContent = p.clue + ' ' + fill(COPY.lengthShown, { n: p.answer.length });
     $('clue-len').textContent = fill(COPY.lengthShown, { n: p.answer.length });
     var el = $('entry'); el.value = ''; el.maxLength = 48; el.disabled = false;
