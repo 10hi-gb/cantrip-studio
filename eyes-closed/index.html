@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Eyes Closed · Cantrip Studio</title>
+<meta name="description" content="A small drawing toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="ec">
+<main class="ec-stage">
+ <div class="ec-side">
+  <a class="ec-nav" href="../">Cantrip Studio</a>
+  <h1 class="ec-title" data-c="title"></h1>
+  <p class="ec-lede" id="lede"></p>
+  <div id="p-pick" hidden>
+   <p class="ec-label" data-c="promptLabel"></p>
+   <div class="ec-row" id="prompts" role="group"></div>
+   <p></p>
+   <input class="ec-field" id="own" maxlength="80" autocomplete="off" hidden>
+   <p class="ec-fine" id="own-msg" role="status"></p>
+   <button class="ec-btn" id="cover" data-c="primary"></button>
+  </div>
+  <div id="p-draw" hidden>
+   <p class="ec-prompt" id="prompt-big"></p>
+   <p class="ec-fine" data-c="coveredHint"></p>
+   <div class="ec-row"><button class="ec-btn" id="done" data-c="done"></button><button class="ec-btn ec-btn--ghost" id="undo" data-c="undo"></button><button class="ec-btn ec-btn--ghost" id="clear" data-c="clear"></button></div>
+  </div>
+  <div id="p-reveal" hidden>
+   <p class="ec-prompt" id="prompt-rev"></p>
+   <button class="ec-btn" id="peek" data-c="reveal"></button>
+  </div>
+  <div id="p-after" hidden>
+   <p class="ec-prompt" id="prompt-after"></p>
+   <div class="ec-row"><button class="ec-btn" id="again" data-c="tryAgain"></button><button class="ec-btn ec-btn--ghost" id="share" data-c="share"></button><button class="ec-btn ec-btn--ghost" id="save" data-c="save"></button></div>
+   <p class="ec-fine" id="link-msg" role="status"></p>
+  </div>
+  <div id="p-recv-after" hidden><div class="ec-row"><button class="ec-btn" id="try" data-c="receiverTry"></button><button class="ec-btn ec-btn--ghost" id="save2" data-c="save"></button></div></div>
+  <div id="p-bad" hidden><a class="ec-btn" href="./" data-c="receiverTry"></a></div>
+  <p class="ec-msg" id="msg" role="status" aria-live="polite"></p>
+  <p class="ec-fine" data-c="privacy"></p>
+ </div>
+ <div>
+  <div class="ec-proscenium ec-board-tex">
+   <canvas id="cv" width="800" height="800" tabindex="0" aria-label="Drawing paper. Keyboard: arrows move the chalk, space puts it down or lifts it."></canvas>
+   <div class="ec-curtain" id="curtain"><span id="curtain-txt"></span></div>
+  </div>
+  <div id="attempts" hidden><p class="ec-label" data-c="compare"></p><div class="ec-strip" id="strip"></div></div>
+ </div>
+</main>
+<div class="ec-toast" id="toast" role="status" hidden></div>
+</body>
+</html>
