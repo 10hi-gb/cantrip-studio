@@ -57,7 +57,7 @@ if (typeof document !== 'undefined') (function () {
   $('again').onclick = function () { $('disc').scrollIntoView({ block: 'center', behavior: L.reduce ? 'auto' : 'smooth' }); $('disc').focus(); };
   $('change').onclick = function () { L.clearHash(); recv = false; show('v-pick'); paintPick(); $('lede').textContent = COPY.invitation; btns[0].focus(); };
   function reset() { L.clearHash(); recv = false; picks = []; $('lede').textContent = COPY.invitation; show('v-pick'); paintPick(); btns[0].focus(); }
-  $('reset').onclick = reset; $('reset2').onclick = reset; $('mine').onclick = reset;
+  $('reset').onclick = reset; $('mine').onclick = reset;
   var h = location.hash, r = h && h !== '#' ? NOS.decode(h) : undefined;
   if (r && r.a) { recv = true; picks = [r.a, r.b]; show('v-recv'); $('lede').textContent = COPY.receiverIntro; drawDisc($('rmini'), r.a, r.b, true);
     $('rpair').textContent = L.fill(COPY.pairLine, { a: name(r.a), b: name(r.b) }); $('see').onclick = function () { openDisc(r.a, r.b); }; }
