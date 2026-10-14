@@ -1,0 +1,52 @@
+/* C051 Our Knock: "The Green Door". Self-host fonts in fonts/. */
+@font-face{font-family:"DM Serif Display";src:local("DM Serif Display"),url(fonts/DMSerifDisplay-Regular.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Karla";src:local("Karla"),url(fonts/Karla-Variable.woff2) format("woff2");font-weight:300 800;font-display:swap}
+:root{--ok-door:#1E4D47;--ok-door-dark:#12302C;--ok-brass:#C9A04E;--ok-brass-hi:#F1D58C;--ok-frame:#EDE3CF;--ok-wall:#D9CDB4;--ok-ink:#1B211F;--ok-warm:#FFE7B0;
+ --ok-serif:"DM Serif Display",Georgia,serif;--ok-sans:"Karla",system-ui,sans-serif;--ok-swing:900ms}
+.ok{margin:0;min-height:100dvh;color:var(--ok-ink);font-family:var(--ok-sans);background:var(--ok-wall);
+ background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.04) 0 1px,transparent 1px 38px)}
+.ok-stage{display:grid;gap:18px;padding:18px 16px 24px;max-width:1200px;margin:0 auto}
+@media(min-width:900px){.ok-stage{grid-template-columns:1fr 520px 1fr;align-items:center;padding:32px 40px;min-height:100dvh;box-sizing:border-box}}
+.ok-title{font:400 clamp(36px,5vw,64px)/1 var(--ok-serif);margin:0}
+.ok-copy{font-size:17px;line-height:1.5;max-width:30ch}
+.ok-frame{background:var(--ok-frame);padding:16px 16px 0;border-radius:4px 4px 0 0;perspective:1400px;position:relative;box-shadow:inset 0 0 0 2px #CBBFA5,0 30px 40px -24px rgba(0,0,0,.5)}
+.ok-behind{position:absolute;inset:16px 16px 0;background:var(--ok-warm);display:grid;place-items:center;padding:24px;text-align:center;font:400 26px/1.2 var(--ok-serif)}
+.ok-door{position:relative;height:min(68dvh,640px);min-height:420px;background:
+  linear-gradient(90deg,rgba(255,255,255,.04),rgba(0,0,0,.12)),var(--ok-door);
+  transform-origin:left center;transition:transform var(--ok-swing) cubic-bezier(.3,.1,.2,1);cursor:pointer;touch-action:manipulation;
+  display:grid;grid-template-rows:1fr 1fr;gap:18px;padding:26px 24px;box-sizing:border-box}
+.ok-door:focus-visible{outline:4px solid var(--ok-brass-hi);outline-offset:4px}
+.ok-panel{border:3px solid var(--ok-door-dark);box-shadow:inset 0 0 0 6px rgba(255,255,255,.05),inset 4px 4px 0 6px rgba(0,0,0,.18)}
+.ok-knocker{position:absolute;left:50%;top:38%;width:64px;height:78px;transform:translate(-50%,-50%);border-radius:50%;border:9px solid var(--ok-brass);border-top-color:var(--ok-brass-hi);box-sizing:border-box}
+.ok-knocker::before{content:"";position:absolute;left:50%;top:-22px;width:26px;height:22px;transform:translateX(-50%);background:var(--ok-brass);border-radius:6px 6px 2px 2px}
+.ok-knob{position:absolute;right:28px;top:56%;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--ok-brass-hi),var(--ok-brass) 60%,#8a6a28)}
+.ok-peep{position:absolute;left:50%;top:16%;width:12px;height:12px;border-radius:50%;transform:translateX(-50%);background:#0b1513;box-shadow:0 0 0 4px var(--ok-brass)}
+.ok-step{height:18px;background:#B7A98B;margin:0 -24px}
+.ok-taps{display:flex;gap:6px;align-items:flex-end;height:44px;padding:6px 0}
+.ok-taps i{display:block;width:10px;border-radius:5px 5px 0 0;background:var(--ok-door);height:var(--h,60%)}
+.ok-taps i.is-hit{background:var(--ok-brass)}
+.ok-btn{font:700 15px var(--ok-sans);letter-spacing:.04em;padding:13px 20px;min-height:46px;border:2px solid var(--ok-ink);background:transparent;color:var(--ok-ink);border-radius:999px;cursor:pointer}
+.ok-btn--brass{background:var(--ok-brass);border-color:#8a6a28;color:var(--ok-ink)}
+.ok-btn:focus-visible{outline:3px solid var(--ok-door);outline-offset:3px}
+.ok-row{display:flex;flex-wrap:wrap;gap:10px}
+.ok-fine{font-size:13px;color:#5b5446;max-width:40ch}
+.ok-field{width:100%;box-sizing:border-box;font:16px var(--ok-sans);padding:12px;border:2px solid var(--ok-ink);background:var(--ok-frame);border-radius:6px}
+/* motion */
+.ok-door.is-knock{animation:ok-shudder 140ms ease-out}
+@keyframes ok-shudder{30%{transform:translateX(2px)}60%{transform:translateX(-1px)}}
+.ok-ring{position:absolute;left:50%;top:38%;width:30px;height:30px;margin:-15px;border-radius:50%;border:2px solid var(--ok-brass-hi);animation:ok-ring 600ms ease-out forwards;pointer-events:none}
+@keyframes ok-ring{to{transform:scale(5);opacity:0}}
+.ok-door.is-open{transform:rotateY(-72deg)}
+@media(prefers-reduced-motion:reduce){.ok-door{transition:opacity 150ms}.ok-door.is-open{transform:none;opacity:0}.ok-door.is-knock,.ok-ring{animation:none}.ok-ring{display:none}}
+/* --- build additions (Engineer) --- */
+*{box-sizing:border-box}[hidden]{display:none!important}
+.ok-nav{font:700 12px var(--ok-sans);letter-spacing:.12em;text-transform:uppercase;color:var(--ok-ink);text-decoration:none}
+.ok-nav:focus-visible{outline:3px solid var(--ok-door)}
+.ok-side{display:grid;gap:12px;align-content:start}
+.ok-msg{font:400 22px/1.2 var(--ok-serif);min-height:1.2em;margin:0}
+.ok-behind{white-space:pre-wrap;word-break:break-word}
+.ok-mute{background:none;border:0;padding:0;font:13px var(--ok-sans);color:#5b5446;text-decoration:underline;cursor:pointer;text-align:left}
+.ok-mute[aria-pressed=true]{text-decoration:line-through}
+.ok-mute:focus-visible{outline:3px solid var(--ok-door)}
+.ok-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ok-door);color:var(--ok-frame);padding:10px 16px;font:14px var(--ok-sans);z-index:9;border-radius:999px}
+.ok-field-wrap{display:grid;gap:6px;font-size:14px}
