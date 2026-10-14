@@ -1,0 +1,58 @@
+/* C083 One Across — "Late Edition" newsprint puzzle theme. Self-host fonts. */
+@font-face{font-family:"Libre Caslon Text";src:local("Libre Caslon Text"),url(fonts/LibreCaslonText-Regular.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Libre Caslon Text";src:local("Libre Caslon Text Bold"),url(fonts/LibreCaslonText-Bold.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:local("IBM Plex Mono"),url(fonts/IBMPlexMono-Regular.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:local("IBM Plex Mono SemiBold"),url(fonts/IBMPlexMono-SemiBold.woff2) format("woff2");font-weight:600;font-display:swap}
+:root{
+  --oa-paper:#F2EFE6; --oa-ink:#111; --oa-rule:#8E8A80; --oa-graphite:#4A4E57;
+  --oa-hi:#FFE14D; --oa-wrong:#B4321F; --oa-cell-bg:#FFFEF9;
+  --oa-serif:"Libre Caslon Text",Georgia,"Times New Roman",serif;
+  --oa-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --oa-len:12;
+}
+.oa{margin:0;min-height:100dvh;color:var(--oa-ink);font-family:var(--oa-serif);
+  background-color:var(--oa-paper);
+  background-image:radial-gradient(rgba(0,0,0,.055) .6px,transparent .7px);background-size:4px 4px}
+.oa-page{max-width:1180px;margin:0 auto;padding:18px 22px 40px}
+.oa-mast{display:flex;justify-content:space-between;align-items:baseline;border-top:4px double var(--oa-ink);border-bottom:1px solid var(--oa-ink);padding:6px 0;font:600 11px var(--oa-mono);letter-spacing:.12em;text-transform:uppercase}
+.oa-title{font-weight:700;font-size:clamp(34px,6vw,76px);letter-spacing:-.02em;margin:14px 0 4px;line-height:1}
+.oa-cols{display:grid;gap:22px;margin-top:18px}
+@media(min-width:900px){.oa-cols{grid-template-columns:2fr 1fr;gap:0}.oa-cols>*+*{border-left:1px solid var(--oa-rule);padding-left:28px;margin-left:28px}}
+.oa-row{--oa-cell:min(76px,calc((min(100vw,720px) - 50px)/var(--oa-len)));display:flex;width:max-content;max-width:100%;border:2.5px solid var(--oa-ink);background:var(--oa-ink);gap:1.5px}
+.oa-cell{position:relative;width:var(--oa-cell);height:var(--oa-cell);background:var(--oa-cell-bg);display:grid;place-items:center;
+  font:600 calc(var(--oa-cell)*.55)/1 var(--oa-mono);text-transform:uppercase;color:var(--oa-graphite)}
+.oa-cell .n{position:absolute;top:2px;left:3px;font-size:9px;font-weight:400;color:var(--oa-ink)}
+.oa-cell.is-active{box-shadow:inset 0 0 0 3px var(--oa-ink)}
+.oa-cell.is-wrong{color:var(--oa-wrong);text-decoration:line-through 2px}
+.oa-row.is-solved .oa-cell{background:linear-gradient(90deg,var(--oa-hi) 0 100%) no-repeat;background-size:100% 100%;color:var(--oa-ink)}
+.oa-input{position:absolute;opacity:0;pointer-events:none} /* single hidden input drives the row; IME-safe */
+.oa-clues h3{font:600 12px var(--oa-mono);letter-spacing:.14em;border-bottom:1px solid var(--oa-ink);padding-bottom:4px;margin:0 0 8px}
+.oa-clue{font-size:19px;line-height:1.4}.oa-clue b{font-family:var(--oa-mono);margin-right:8px}
+.oa-field{width:100%;box-sizing:border-box;font:18px var(--oa-serif);padding:10px 0;border:0;border-bottom:1.5px solid var(--oa-ink);background:transparent}
+.oa-field:focus{outline:none;border-bottom-color:var(--oa-graphite);box-shadow:0 2px 0 var(--oa-hi)}
+.oa-label{font:600 11px var(--oa-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--oa-graphite)}
+.oa-btn{font:600 13px var(--oa-mono);letter-spacing:.1em;text-transform:uppercase;border:1.5px solid var(--oa-ink);background:var(--oa-paper);padding:12px 18px;min-height:44px;cursor:pointer}
+.oa-btn--primary{background:var(--oa-ink);color:var(--oa-paper)}
+.oa-btn:focus-visible,.oa-row:focus-within{outline:3px solid var(--oa-hi);outline-offset:3px}
+.oa-fine{font-size:12.5px;color:var(--oa-graphite);font-style:italic}
+/* motion: pencil scratch per letter; highlighter sweep on solve */
+.oa-cell.just-typed{animation:oa-scratch 90ms steps(3) both}
+@keyframes oa-scratch{0%{transform:translate(1px,-1px) rotate(-3deg)}50%{transform:translate(-1px,1px) rotate(2deg)}100%{transform:none}}
+.oa-row.is-solved .oa-cell{animation:oa-sweep 600ms cubic-bezier(.3,.7,.3,1) both;animation-delay:calc(var(--i,0)*45ms)}
+@keyframes oa-sweep{from{background-size:0 100%}to{background-size:100% 100%}}
+.oa-row.is-shake{animation:oa-shake 280ms}@keyframes oa-shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+@media(prefers-reduced-motion:reduce){.oa-cell.just-typed,.oa-row.is-solved .oa-cell,.oa-row.is-shake{animation:none}}
+/* --- build additions (Engineer) --- */
+*{box-sizing:border-box}[hidden]{display:none!important}
+.oa-nav{color:inherit;text-decoration:none}.oa-nav:focus-visible{outline:3px solid var(--oa-hi)}
+.oa-lede{font-size:19px;max-width:40ch}
+.oa-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.oa-msg{min-height:1.4em;font-size:15px;margin:12px 0 0}
+.oa-msg.err{color:var(--oa-wrong)}
+.oa-rowwrap{position:relative;width:max-content;max-width:100%;margin-top:8px}
+.oa-rowwrap .oa-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;padding:0;color:transparent;background:transparent;caret-color:transparent;pointer-events:auto;z-index:2}
+.oa-cell.is-ok{box-shadow:inset 0 -4px 0 var(--oa-graphite)}
+.oa-big{font-size:20px;margin-top:18px}
+.oa-count{float:right;font:11px var(--oa-mono);color:var(--oa-graphite)}
+.oa-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--oa-ink);color:var(--oa-paper);padding:10px 16px;font:13px var(--oa-mono)}
+.oa-linkbox{width:100%;font:12px var(--oa-mono);padding:8px;border:1px dashed var(--oa-rule);background:var(--oa-cell-bg);margin-top:10px;word-break:break-all}

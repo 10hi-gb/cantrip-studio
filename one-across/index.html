@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>One Across · Cantrip Studio</title>
+<meta name="description" content="A small word toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="oa">
+<div class="oa-page">
+ <div class="oa-mast"><a class="oa-nav" href="../">Cantrip Studio · Late Edition</a><span>Puzzle No. 1 · <span data-c="title"></span></span></div>
+ <p id="loading" class="oa-fine" data-c="loading"></p>
+
+ <section id="s-make" hidden>
+  <h1 class="oa-title" data-c="title"></h1>
+  <p class="oa-lede" data-c="invitation"></p>
+  <div class="oa-cols"><div>
+   <label class="oa-label" for="ans"><span data-c="answerLabel"></span> · <span data-c="answerHint"></span></label>
+   <input class="oa-field" id="ans" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40">
+   <p class="oa-fine" id="ans-msg" role="status"></p>
+   <label class="oa-label" for="clue"><span data-c="clueLabel"></span><span class="oa-count" id="clue-n"></span></label>
+   <input class="oa-field" id="clue" autocomplete="off" maxlength="200">
+   <p class="oa-fine" id="clue-msg" role="status"></p>
+   <div class="oa-row" id="preview" aria-hidden="true"></div>
+   <div class="oa-actions"><button class="oa-btn oa-btn--primary" id="make" data-c="primary"></button></div>
+   <div id="made" hidden>
+    <p class="oa-clue" id="made-clue"></p>
+    <div class="oa-actions"><button class="oa-btn oa-btn--primary" id="share" data-c="share"></button><a class="oa-btn" id="try" href="#">▶</a></div>
+    <p class="oa-linkbox" id="linkbox"></p>
+   </div>
+  </div>
+  <div class="oa-clues"><h3>HOW IT WORKS</h3><p class="oa-fine" data-c="privacyMaker"></p><p class="oa-fine" data-c="normalized"></p></div></div>
+ </section>
+
+ <section id="s-solve" hidden>
+  <h1 class="oa-title" id="solve-h" data-c="receiverHeader"></h1>
+  <div class="oa-cols"><div>
+   <div class="oa-clue"><b>1A</b><span id="clue-text"></span> <span id="clue-len"></span></div>
+   <div class="oa-rowwrap"><div class="oa-row" id="row"></div><input class="oa-input" id="entry" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Answer"></div>
+   <p class="oa-fine" data-c="receiverHint"></p>
+   <div class="oa-actions" id="solve-actions"><button class="oa-btn oa-btn--primary" id="check" data-c="check"></button><button class="oa-btn" id="reveal" data-c="reveal"></button></div>
+   <p class="oa-msg" id="solve-msg" role="status" aria-live="polite"></p>
+   <div class="oa-actions" id="after" hidden><a class="oa-btn oa-btn--primary" id="back" href="./" data-c="makeYours"></a></div>
+  </div>
+  <div class="oa-clues"><h3>ACROSS</h3><p class="oa-clue"><b>1</b><span id="clue-side"></span></p><h3>NOTE</h3><p class="oa-fine" data-c="privacyMaker"></p></div></div>
+ </section>
+
+ <section id="s-bad" hidden><h1 class="oa-title" data-c="title"></h1><p class="oa-big" data-c="badLink"></p><div class="oa-actions"><a class="oa-btn oa-btn--primary" href="./" data-c="makeYours"></a></div></section>
+</div>
+<div class="oa-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

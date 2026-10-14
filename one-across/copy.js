@@ -1,0 +1,27 @@
+// C083 One Across — final visitor copy (Writing Bot, 2026-10-13).
+const COPY = {
+  title: "One Across",
+  invitation: "Write one clue. Someone you know gets one row to solve.",
+  answerLabel: "The answer", answerHint: "3 to 12 letters. Letters only.",
+  clueLabel: "Your clue", cluePlaceholder: "Breakfast for a sleepy wizard (6)",
+  clueHint: "Write it for them. Inside jokes allowed.",
+  lengthShown: "({n})",
+  primary: "Make the puzzle",
+  tooShort: "Needs at least 3 letters.", tooLong: "12 letters max. {n} over.",
+  badChars: "Letters only. Spaces, numbers and symbols are dropped.",
+  normalized: "Accents are ignored when solving, so É and E both count.",
+  clueEmpty: "Add a clue. Even a bad one.", clueTooLong: "Keep the clue to one line. {n} over.",
+  share: "Send the puzzle", copied: "Link copied.", shareCancel: "Not sent. The puzzle is still here.",
+  privacyMaker: "The puzzle lives in the link. Nothing is uploaded. The answer is scrambled so it won't spoil at a glance, but anyone with the link could work it out.",
+  receiverHeader: "1 Across",
+  receiverHint: "Type to fill the row. Tap a square to jump to it.",
+  check: "Check",
+  wrong: "Not quite. The squares that fit are marked.",
+  wrongNoHints: "Not quite. Try again.",
+  solved: "Solved.",
+  solvedSub: "That's the whole crossword. Well done.",
+  reveal: "Show the answer", revealConfirm: "Give up and show it?", revealed: "The answer was {answer}.",
+  makeYours: "Write one back",
+  badLink: "This puzzle didn't come through. Ask them to send it again.",
+  loading: "Setting the type…"
+};
