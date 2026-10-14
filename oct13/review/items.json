@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-14 10:00 AM PT",
+ "updated": "2026-10-14 1:38 PM PT",
  "items": [
   {
    "id": "C148",
@@ -89,21 +89,19 @@
    "id": "C051",
    "batch": "A",
    "name": "Our Knock",
-   "description": "Tap a secret knock; a friend knocks it back to open a tiny note.",
+   "description": "Call and answer: the door is the knock pad and a brass rail shows each knock. Classic \"shave and a haircut… two bits\", our own knock, or copy me; knock the answer and the door opens onto the note.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA).",
+   "note": "Engineer self-check (build checks, not QA). Reworked 2026-10-14 (commit 3105b1b); earlier QA fail (door covered the note) fixed, retest pending.",
    "url": "../our-knock/",
    "limitations": [
-    "It's a playful puzzle, not a real lock.",
-    "Audio not yet heard on a real device."
+    "Sound needs a heard check on a real phone (headless tests confirm audio runs and knocks are scheduled, not that they are audible).",
+    "It's a playful game, not a lock."
    ],
    "qa": {
-    "verdict": "QA failed",
+    "verdict": null,
+    "label": "QA retest pending",
     "pin": null,
-    "ledger": "8:03 AM PT",
-    "untested": [
-     "Door covered the end-state note. Fix in commit 2e1d2a2; QA retest pending."
-    ]
+    "untested": []
    }
   },
   {
@@ -381,7 +379,7 @@
    "name": "Not on the Screen",
    "description": "Pick two colors; spin a striped disc and see what your eye does.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA).",
+   "note": "Engineer self-check (build checks, not QA). Build 1666ddc4 (commit 94ee82d, QA r527 fixes); C205 files unchanged since.",
    "url": "../not-on-the-screen/",
    "limitations": [
     "Physical colour mix unverified: whether a spin shows a mix has not been tested with people.",
