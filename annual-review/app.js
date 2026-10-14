@@ -129,7 +129,7 @@ if (typeof document !== 'undefined') (function () {
     if (filled < 3) { $('m-msg').textContent = COPY.tooFew; return; }
     var keep = R.moments.filter(function (m) { return m.text; }); var errs = AR.check(Object.assign({}, R, { moments: keep }));
     if (errs.indexOf('total') >= 0) { $('m-msg').textContent = COPY.tooLongLink; return; }
-    if (errs.length) { $('m-msg').textContent = fill(COPY.momentTooLong, { n: '' }).replace(/\s+\.$/, '.'); return; }
+    if (errs.length) { var over = 0; keep.forEach(function (m) { over = Math.max(over, AR.bytes(m.text) - AR.CAP.moment); }); $('m-msg').textContent = over > 0 ? fill(COPY.momentTooLong, { n: over }) : COPY.tooLongLink; return; }
     R.moments = keep;
     AR.encode(R).then(function (f) {
       link = f.length <= AR.CAP.url ? location.origin + location.pathname + '#' + f : '';

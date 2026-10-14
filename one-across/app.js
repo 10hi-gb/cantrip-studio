@@ -76,7 +76,7 @@ if (typeof document !== 'undefined') (function () {
     if (!r.clue) { $('clue-msg').textContent = COPY.clueEmpty; $('clue').focus(); return; }
     var seed = crypto.getRandomValues(new Uint32Array(1))[0];
     var frag = OA.encode(r.a, r.clue, seed);
-    if (frag.length > OA.FRAG_MAX) { $('clue-msg').textContent = fill(COPY.clueTooLong, { n: '' }); return; }
+    if (frag.length > OA.FRAG_MAX) { $('clue-msg').textContent = fill(COPY.clueTooLong, { n: Math.max(1, Math.ceil((frag.length - OA.FRAG_MAX) * 3 / 4 / 4)) }); return; }
     link = location.origin + location.pathname + '#' + frag;
     $('made-clue').textContent = '';
     var b = document.createElement('b'); b.textContent = '1A'; $('made-clue').appendChild(b); $('made-clue').appendChild(document.createTextNode(r.clue + ' ' + fill(COPY.lengthShown, { n: r.a.length })));

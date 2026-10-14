@@ -117,7 +117,7 @@ if (typeof document !== 'undefined') (function () {
   $('note').addEventListener('input', noteCheck);
   $('closeDoor').onclick = function () {
     if (!G || !noteCheck()) return;
-    var f = OK.encode(G, $('note').value); if (f.length > OK.FRAG_MAX) { $('note-msg').textContent = fill(COPY.noteTooLong, { n: '' }); return; }
+    var f = OK.encode(G, $('note').value); if (f.length > OK.FRAG_MAX) { $('note-msg').textContent = fill(COPY.noteTooLong, { n: Math.max(1, Math.ceil((f.length - OK.FRAG_MAX) * 3 / 4 / 4)) }); return; }
     link = location.origin + location.pathname + '#' + f; panel('p-share'); $('share').focus();
   };
   $('share').onclick = function () {
