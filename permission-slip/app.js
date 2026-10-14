@@ -55,7 +55,7 @@ if (typeof document !== 'undefined') (function () {
       function wrap(t, y, lh, max) { var w = t.split(' '), line = ''; w.forEach(function (s) { var tt = line ? line + ' ' + s : s; if (x.measureText(tt).width > max && line) { x.fillText(line, 40, y); y += lh; line = s; } else line = tt; }); if (line) x.fillText(line, 40, y); return y + lh; }
       var y = wrap(P ? P.title : COPY.unknownPermission, 110, 46, W - 80); x.font = '22px "Space Mono", monospace'; y = wrap(P ? P.fine : '', y + 6, 30, W - 80);
       x.font = '700 22px "Space Mono", monospace'; if (names(o)) y = wrap(names(o), y + 10, 30, W - 80); x.font = 'italic 22px "Space Mono", monospace'; if (o.why) y = wrap(o.why, y, 30, W - 80);
-      x.font = '18px "Space Mono", monospace'; wrap(COPY.ticketFooter, Hh - 60, 24, W - 80);
+      x.font = '700 18px "Space Mono", monospace'; wrap(COPY.admitOne, Hh - 96, 24, W - 80); x.font = '18px "Space Mono", monospace'; wrap(COPY.ticketFooter, Hh - 60, 24, W - 80);
       if (recv) { x.save(); x.translate(W - 170, Hh - 120); x.rotate(-.18); x.strokeStyle = '#D7263D'; x.lineWidth = 6; x.strokeRect(-10, -42, 180, 60); x.fillStyle = '#D7263D'; x.font = '40px "Bowlby One SC", Impact, sans-serif'; x.fillText(COPY.given, 0, 0); x.restore(); }
       c.toBlob(function (bl) { if (!bl) return L.toast(COPY.saveFail); var u = URL.createObjectURL(bl), a = document.createElement('a'); a.href = u; a.download = 'permission-slip.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 4000); L.toast(COPY.saved); });
     } catch (e) { L.toast(COPY.saveFail); }

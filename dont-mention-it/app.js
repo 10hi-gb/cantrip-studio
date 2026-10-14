@@ -14,6 +14,9 @@ if (typeof module !== 'undefined') module.exports = DM;
 
 if (typeof document !== 'undefined') (function () {
   var $ = L.$; L.bind(); L.chrome();
+  // Panel labels (Writer): small numbered tab on each fold; announced as "Panel {n} of 3: {label}".
+  [1, 2, 3].forEach(function (n) { var p = $('p' + n), lab = COPY.panelLabels[n - 1], t = document.createElement('p'); t.className = 'dm-ptab'; t.setAttribute('aria-hidden', 'true'); t.textContent = n + ' · ' + lab;
+    p.insertBefore(t, p.firstChild); p.setAttribute('role', 'group'); p.setAttribute('aria-label', L.fill(COPY.panelAria, { n: n, label: lab })); });
   var sel = 'm2', state = null;
   var btns = DM.IDS.map(function (id, i) { var b = document.createElement('button'); b.type = 'button'; b.className = 'dm-mission'; b.setAttribute('role', 'radio'); b.textContent = COPY.missions[id]; b.dataset.id = id;
     b.onclick = function () { pick(id); };

@@ -62,3 +62,4 @@
 /* visitor-text wrap: long unbroken words never widen the page */
 body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
+.tl-list li{grid-template-columns:34px minmax(0,1fr) auto}.tl-list li .no{white-space:nowrap}

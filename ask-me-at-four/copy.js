@@ -38,7 +38,6 @@ const COPY = {
   "beforeTime": "Not yet. Ask at {localTime}, your time.",
   "atTime": "It's time. Ask them.",
   "expired": "This one expired at {localTime}. It's still fine to ask.",
-  "willAsk": "I'll ask",
   "willAskShare": "Send “I'll ask”",
   "willAskText": "I'll ask you at {localTime}.",
   "willAskIntro": "They said they'll ask.",

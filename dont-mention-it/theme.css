@@ -62,3 +62,4 @@
 /* visitor-text wrap: long unbroken words never widen the page */
 body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
+.dm-ptab{font:600 11px var(--dm-serif);letter-spacing:.14em;text-transform:uppercase;color:var(--dm-graphite);opacity:.7;margin:0 0 10px;border-bottom:1px dotted rgba(74,74,79,.35);padding-bottom:4px}

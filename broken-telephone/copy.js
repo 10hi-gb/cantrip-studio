@@ -57,5 +57,7 @@ const COPY = {
   "backLabel": "Back to Cantrip Studio",
   "reducedMotion": "Motion is reduced. Everything still works.",
   "error": "Something went wrong. Reload the page and try again.",
-  "coverAria": "Cover sheet. Hand the phone over."
+  "coverAria": "Cover sheet. Hand the phone over.",
+  "playerBubble": "Player {n}",
+  "demoBubble": "Turn {n}"
 };

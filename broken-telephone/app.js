@@ -52,7 +52,7 @@ if (typeof document !== 'undefined') (function () {
     $('forig').textContent = ''; $('ffinal').textContent = ''; paintMarks($('forig'), o, M.a); paintMarks($('ffinal'), f, M.b);
     $('score').textContent = M.n === 0 ? COPY.survivorsNone : M.n === A.length ? COPY.survivorsAll : L.fill(M.n === 1 ? COPY.survivors.one : COPY.survivors.other, { n: M.n, total: A.length });
     var ch = $('chain'); ch.textContent = ''; $('driftlab').hidden = false;
-    R.lines.forEach(function (s, i) { if (i) ch.appendChild(cord(i % 2 === 0)); ch.appendChild(bubble(s, i % 2 ? 'r' : 'l', i === 0 ? 'bt-bubble--start' : i === R.lines.length - 1 ? 'bt-bubble--end' : '', i === 0 ? COPY.original : i === R.lines.length - 1 ? COPY.final : String(i + 1), i === 0 ? M.a : i === R.lines.length - 1 ? M.b : null)); });
+    R.lines.forEach(function (s, i) { if (i) ch.appendChild(cord(i % 2 === 0)); ch.appendChild(bubble(s, i % 2 ? 'r' : 'l', i === 0 ? 'bt-bubble--start' : i === R.lines.length - 1 ? 'bt-bubble--end' : '', i === 0 ? COPY.original : i === R.lines.length - 1 ? COPY.final : L.fill(R.solo ? COPY.demoBubble : COPY.playerBubble, { n: i + 1 }), i === 0 ? M.a : i === R.lines.length - 1 ? M.b : null)); });
     voiceCheck();
   }
   // read-aloud: only with a voice that runs on this device (localService); never a remote voice, never the mic

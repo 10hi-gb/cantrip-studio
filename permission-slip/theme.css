@@ -61,3 +61,4 @@
 body{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
 .ps-ticket{user-select:none;-webkit-user-select:none}
+.ps-admit{font:700 13px var(--ps-mono);letter-spacing:.32em;color:var(--ps-red);margin:0 0 6px;border-block:1px dashed currentColor;display:inline-block;padding:2px 6px}

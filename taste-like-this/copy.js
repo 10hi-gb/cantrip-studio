@@ -23,8 +23,8 @@ const COPY = {
     "other": "{n} characters over."
   },
   "primary": "Plate it",
-  "shapeAlt": "Taste shape for {dish}: sweet {sweet}, salty {salt}, heat {heat}, out of 3.",
-  "shapeAltNoDish": "Taste shape: sweet {sweet}, salty {salt}, heat {heat}, out of 3.",
+  "shapeAlt": "Taste shape for {dish}: sweet {sweet}, salt {salt}, heat {heat}, out of 3.",
+  "shapeAltNoDish": "Taste shape: sweet {sweet}, salt {salt}, heat {heat}, out of 3.",
   "allZero": "Plain. Respect.",
   "allMax": "All three, all the way. Brave.",
   "share": "Send your taste",

@@ -59,7 +59,7 @@ const COPY = {
   "primary": "Tear it off",
   "tearHint": "Drag the ticket down to tear it off, or press Enter.",
   "torn": "Rrrip.",
-  "ticketFooter": "Admit one. Not valid with any actual school, job, or doctor.",
+  "ticketFooter": "Not valid with any actual school, job, or doctor.",
   "validLine": "Issued by a friend. Good until you use it.",
   "share": "Hand it over",
   "shareText": "You have permission.",
@@ -87,5 +87,6 @@ const COPY = {
   "stub": "Stub. Keep for your records, if you keep records.",
   "given": "GIVEN",
   "serial": "No. {serial}",
-  "serialNote": "The serial number is decorative."
+  "serialNote": "The serial number is decorative.",
+  "admitOne": "ADMIT ONE"
 };

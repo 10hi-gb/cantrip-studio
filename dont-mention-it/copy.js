@@ -60,5 +60,11 @@ const COPY = {
   "reducedMotion": "Motion is reduced. Everything still works.",
   "error": "Something went wrong. Reload the page and try again.",
   "unfoldAria": "Unfold the next panel",
-  "shh": "Shh."
+  "shh": "Shh.",
+  "panelLabels": [
+    "The mission",
+    "How to do it",
+    "Afterward"
+  ],
+  "panelAria": "Panel {n} of 3: {label}"
 };
