@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Wishbone · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="wb">
+<div class="wb-page">
+ <div class="wb-side">
+  <h1 class="wb-title" id="title"></h1>
+  <p class="wb-lede" id="lede" data-c="invitation"></p>
+  <p class="wb-result" id="result" hidden></p>
+  <p class="wb-status" id="status" role="status" aria-live="polite"></p>
+  <div class="wb-names" id="names"><label><span id="nl0"></span><input id="n0" maxlength="40" autocomplete="off"></label><label><span id="nl1"></span><input id="n1" maxlength="40" autocomplete="off"></label></div>
+ </div>
+ <div class="wb-stage" id="stage"><svg class="wb-plate" viewBox="0 0 400 400" aria-hidden="true"><circle class="rim" cx="200" cy="200" r="196"/><circle cx="200" cy="200" r="184" fill="none" stroke="#1F3E8C" stroke-width="10" stroke-dasharray="3 9"/><circle cx="200" cy="200" r="174" fill="none" stroke="#1F3E8C" stroke-width="1.5"/><circle class="well" cx="200" cy="200" r="138"/><circle cx="200" cy="200" r="132" fill="none" stroke="#1F3E8C" stroke-width=".8" stroke-dasharray="1 4"/><g class="willow"><path d="M120 300 q40 -26 80 0 q40 26 80 0"/><path d="M150 290 l0 -14 M175 284 l0 -14 M200 284 l0 -14 M225 284 l0 -14 M250 290 l0 -14"/><path d="M96 250 l40 0 l-6 -14 l-28 0 z M104 236 l0 -16 l24 0 l0 16 M98 220 l36 0 l-18 -16 z"/><path d="M300 250 q-6 -60 -2 -110 M298 150 q-30 20 -36 64 M298 150 q30 18 34 70 M298 175 q-24 14 -30 50 M298 175 q22 14 28 48"/><path d="M170 120 q8 -8 16 0 q8 -8 16 0 M214 104 q8 -8 16 0 q8 -8 16 0"/><path d="M110 320 q90 22 180 0"/></g><circle class="solid" cx="116" cy="200" r="3"/></svg><div class="wb-bone"><svg viewBox="0 0 400 180" aria-hidden="true">
+<g class="wb-half half-l" id="hl"><path d="M206 26 Q120 44 34 96" fill="none" stroke="#C9B48C" stroke-width="26" stroke-linecap="round"/><path d="M206 26 Q120 44 34 96" fill="none" stroke="#E9DCC0" stroke-width="21" stroke-linecap="round"/><circle class="b" cx="32" cy="98" r="15"/></g>
+<g class="wb-half half-r" id="hr"><path d="M214 30 Q280 44 366 96" fill="none" stroke="#C9B48C" stroke-width="26" stroke-linecap="round"/><path d="M214 30 Q280 44 366 96" fill="none" stroke="#E9DCC0" stroke-width="21" stroke-linecap="round"/><circle class="b" cx="368" cy="98" r="15"/></g>
+<circle class="b" id="knob" cx="210" cy="24" r="18"/><path class="crack" d="M214 8 l-4 8 l6 6 l-5 9 l5 7 l-3 10"/></svg></div>
+  <button class="wb-thumb wb-thumb--l" id="tl" aria-pressed="false"><kbd>F</kbd></button><button class="wb-thumb wb-thumb--r" id="tr" aria-pressed="false"><kbd>J</kbd></button></div>
+ <div class="wb-aside">
+  <div class="wb-actions"><button class="wb-btn wb-btn--primary" id="go" data-c="primary"></button><button class="wb-btn wb-btn--primary" id="again" data-c="again" hidden></button><button class="wb-btn" id="share" data-c="share" hidden></button></div>
+  <p class="wb-fine" id="howto" data-c="howTo"></p>
+  <p class="wb-fine" id="solo" data-c="soloHint"></p>
+  <p class="wb-fine" id="honesty" data-c="honesty" hidden></p>
+  <p class="wb-fine" data-c="privacy"></p>
+ </div>
+</div>
+<div class="wb-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

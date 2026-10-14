@@ -1,0 +1,57 @@
+/* C104 Wishbone — "Sunday Plate": top-down blue-willow plate on linen. Self-host fonts. */
+@font-face{font-family:"Fraunces";src:local("Fraunces"),url(fonts/Fraunces-Variable.woff2) format("woff2");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Libre Franklin";src:local("Libre Franklin"),url(fonts/LibreFranklin-Variable.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{
+  --wb-porcelain:#F7F7F2; --wb-cobalt:#1F3E8C; --wb-bone:#E9DCC0; --wb-bone-edge:#C9B48C; --wb-linen:#D9D2C3; --wb-ink:#1B2238;
+  --wb-serif:"Fraunces",Georgia,serif; --wb-sans:"Libre Franklin",system-ui,sans-serif;
+  --wb-tension:0; /* 0..1 while both held, set inline */
+}
+.wb{margin:0;min-height:100dvh;color:var(--wb-ink);font-family:var(--wb-sans);background-color:var(--wb-linen);
+  /* linen weave: two fine crossing line textures, no color gradient */
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.18) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(80,60,30,.07) 0 1px,transparent 1px 4px)}
+.wb-page{max-width:1200px;margin:0 auto;padding:18px 18px 32px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.wb-title{font:600 clamp(34px,6vw,64px)/1 var(--wb-serif);font-variation-settings:"opsz" 9,"SOFT" 100;color:var(--wb-cobalt);margin:8px 0 4px;letter-spacing:-.01em}
+.wb-lede{font:400 17px/1.4 var(--wb-sans);max-width:34ch;margin:0 0 10px}
+.wb-stage{position:relative;width:min(92vw,560px);aspect-ratio:1;margin:6px auto}
+.wb-plate{position:absolute;inset:0;width:100%;height:100%}
+.wb-plate .rim{fill:var(--wb-porcelain);stroke:var(--wb-cobalt);stroke-width:2}
+.wb-plate .well{fill:var(--wb-porcelain);stroke:var(--wb-cobalt);stroke-width:1}
+.wb-plate .willow{fill:none;stroke:var(--wb-cobalt);stroke-width:1.6;stroke-linecap:round}
+.wb-plate .solid{fill:var(--wb-cobalt)}
+.wb-bone{position:absolute;left:8%;right:8%;top:30%;height:44%;transform-origin:50% 50%}
+.wb-bone svg{width:100%;height:100%;overflow:visible}
+.wb-bone .b{fill:var(--wb-bone);stroke:var(--wb-bone-edge);stroke-width:2;stroke-linejoin:round}
+.wb-bone .crack{fill:none;stroke:var(--wb-ink);stroke-width:2;stroke-dasharray:60;stroke-dashoffset:60}
+.wb-stage.is-holding .wb-bone{animation:wb-shake calc(260ms - var(--wb-tension)*180ms) linear infinite}
+@keyframes wb-shake{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(calc(var(--wb-tension)*2px),-1px) rotate(calc(var(--wb-tension)*.6deg))}75%{transform:translate(calc(var(--wb-tension)*-2px),1px) rotate(calc(var(--wb-tension)*-.6deg))}}
+.wb-stage.is-snapped .crack{animation:wb-crack 120ms ease-out forwards}
+@keyframes wb-crack{to{stroke-dashoffset:0}}
+.wb-stage.is-snapped .half-l{animation:wb-split-l 520ms cubic-bezier(.2,1.6,.4,1) 120ms forwards}
+.wb-stage.is-snapped .half-r{animation:wb-split-r 520ms cubic-bezier(.2,1.6,.4,1) 120ms forwards}
+@keyframes wb-split-l{to{transform:translate(-14px,6px) rotate(-7deg)}}
+@keyframes wb-split-r{to{transform:translate(14px,6px) rotate(7deg)}}
+.wb-half.is-big{filter:drop-shadow(0 14px 10px rgba(27,34,56,.25))}
+/* thumb targets */
+.wb-thumb{position:absolute;top:50%;width:84px;height:84px;margin-top:-42px;border-radius:50%;border:2.5px dashed var(--wb-cobalt);background:rgba(247,247,242,.85);
+  font:700 12px var(--wb-sans);letter-spacing:.12em;text-transform:uppercase;color:var(--wb-cobalt);display:grid;place-items:center;cursor:pointer;touch-action:none;user-select:none}
+.wb-thumb--l{left:-6px}.wb-thumb--r{right:-6px}
+.wb-thumb kbd{display:block;font:600 11px var(--wb-sans);opacity:.7}
+.wb-thumb.is-down{border-style:solid;background:var(--wb-cobalt);color:var(--wb-porcelain);transform:scale(.94)}
+.wb-status{font:500 italic 22px var(--wb-serif);font-variation-settings:"opsz" 9;color:var(--wb-cobalt);min-height:1.4em;margin:6px 0}
+.wb-names{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:6px 0}
+.wb-names label{font:600 11px var(--wb-sans);letter-spacing:.1em;text-transform:uppercase;text-align:left}
+.wb-names input{display:block;margin-top:4px;width:150px;padding:10px;border:1.5px solid var(--wb-cobalt);background:var(--wb-porcelain);font:400 16px var(--wb-sans);border-radius:2px}
+.wb-btn{font:600 16px var(--wb-sans);padding:13px 22px;border-radius:999px;border:2px solid var(--wb-cobalt);background:var(--wb-porcelain);color:var(--wb-cobalt);cursor:pointer}
+.wb-btn--primary{background:var(--wb-cobalt);color:var(--wb-porcelain)}
+.wb-btn:focus-visible,.wb-thumb:focus-visible{outline:3px solid var(--wb-ink);outline-offset:3px}
+.wb-fine{font:400 13px/1.45 var(--wb-sans);max-width:46ch;opacity:.85}
+.wb-result{font:600 clamp(24px,3.4vw,36px)/1.15 var(--wb-serif);font-variation-settings:"opsz" 9,"SOFT" 100;max-width:22ch;margin:4px 0}
+.wb-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+@media(min-width:900px){.wb-page{display:grid;grid-template-columns:1fr minmax(480px,560px) 1fr;column-gap:32px;align-items:center;align-content:center;min-height:100dvh;box-sizing:border-box;text-align:left}.wb-actions{justify-content:flex-start}.wb-side{grid-column:1}.wb-stage{grid-column:2;grid-row:1/span 3}.wb-aside{grid-column:3}}
+@media(prefers-reduced-motion:reduce){.wb-stage.is-holding .wb-bone{animation:none}.wb-stage.is-snapped .half-l,.wb-stage.is-snapped .half-r{animation-duration:1ms}.wb-stage.is-snapped .crack{animation-duration:1ms}}
+/* --- build additions (Engineer) --- */
+[hidden]{display:none!important}
+.wb-half.half-l{transform-box:fill-box;transform-origin:100% 0}.wb-half.half-r{transform-box:fill-box;transform-origin:0 0}
+.wb-thumb{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.wb-thumb kbd{font-size:20px;opacity:1}
+.wb-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--wb-cobalt);color:var(--wb-porcelain);padding:10px 16px;font:14px var(--wb-sans);z-index:9}
