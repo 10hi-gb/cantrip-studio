@@ -10,7 +10,7 @@ var WP = (function () {
     map[text.length] = out.length;
     var arr = Array.from(out); if (arr.length > MAXC) out = arr.slice(0, MAXC).join('');
     var seen = {}, ms = [];
-    (marks || []).forEach(function (m) { var j = map[m[0]]; if (j == null || j <= 0 || j > out.length || seen[j]) return; if (/[\uDC00-\uDFFF]/.test(out[j] || '')) return; seen[j] = 1; ms.push([j, Math.max(10, Math.min(MAXDS, m[1] | 0))]); });
+    (marks || []).forEach(function (m) { var j = map[m[0]]; if (j == null || j <= 0 || j > out.length || seen[j]) return; if (/[\uDC00-\uDFFF]/.test(out[j] || '')) return; seen[j] = 1; ms.push([j, Math.max(10, Math.min(MAXDS, m[1] | 0)), m[0]]); });
     ms.sort(function (a, b) { return a[0] - b[0]; });
     return { text: out, marks: ms.slice(0, MAXM) };
   }
@@ -91,7 +91,7 @@ if (typeof document !== 'undefined') (function () {
       line.appendChild(document.createTextNode(d.text.slice(p, m[0]))); p = m[0];
       var c = document.createElement('span'); c.className = 'wp-caret'; line.appendChild(c);
       var mg = document.createElement('span'); mg.className = 'wp-margin'; mg.appendChild(document.createTextNode(fmt(m[1])));
-      if (opts.edit) { var b = document.createElement('button'); b.textContent = COPY.removeMark; b.setAttribute('aria-label', COPY.removeMark); b.onclick = function () { doc.marks = doc.marks.filter(function (x) { return x !== m; }); tr.marks = tr.marks.filter(function (x) { return x[0] !== m[0]; }); render(doc, opts); }; mg.appendChild(b); }
+      if (opts.edit) { var b = document.createElement('button'); b.textContent = COPY.removeMark; b.setAttribute('aria-label', COPY.removeMark); b.onclick = function () { doc.marks = doc.marks.filter(function (x) { return x !== m; }); tr.marks = tr.marks.filter(function (x) { return x[0] !== m[2]; }); render(doc, opts); }; mg.appendChild(b); }
       proof.appendChild(mg); nodes.push([c, mg]);
     });
     line.appendChild(document.createTextNode(d.text.slice(p)));
