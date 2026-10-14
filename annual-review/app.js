@@ -197,7 +197,7 @@ if (typeof document !== 'undefined') (function () {
         g.font = '16px "Courier Prime",monospace'; g.fillText(COPY.ratingLabel + ' ' + RATINGS[m.rating], 186, yy + 6); y = yy + 26;
         g.strokeStyle = '#2E4A8A'; g.lineWidth = 2; g.strokeRect(120, top + 6, 880, y - top - 6); g.beginPath(); g.moveTo(170, top + 6); g.lineTo(170, y); g.stroke(); y += 10;
       });
-      g.fillStyle = '#2E4A8A'; g.font = '600 15px "Archivo Narrow",Arial'; g.fillText('OVERALL', 120, y + 30);
+      g.fillStyle = '#2E4A8A'; g.font = '600 15px "Archivo Narrow",Arial'; g.fillText(COPY.overall.toUpperCase(), 120, y + 30);
       g.fillStyle = '#26303F'; g.font = '700 22px "Courier Prime",monospace'; y = wrap(g, COPY.closers[AR.CLOSER_IDS[Rv.closer]] + (Rv.extra ? ' ' + Rv.extra : ''), 120, y + 60, 880, 28);
       g.save(); g.translate(820, Math.min(1220, y + 60)); g.rotate(-0.16); g.strokeStyle = '#C42B1C'; g.lineWidth = 6; g.strokeRect(-130, -50, 260, 80); g.fillStyle = '#C42B1C'; g.font = '700 56px "Archivo Narrow",Arial'; g.textAlign = 'center'; g.fillText(COPY.stamp, 0, 10); g.restore();
       c.toBlob(function (b) {

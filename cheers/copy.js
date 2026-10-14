@@ -17,10 +17,7 @@ const COPY = {
   "soundHint": "Clinks make a soft sound.",
   "mute": "Mute",
   "badLink": "This glass didn't make it. Ask them to send another.",
-  "loading": "Pouring…"
-};
-// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
-Object.assign(COPY, {
+  "loading": "Pouring…",
   "barNo": "Bar No. 088",
   "unmute": "Unmute"
-});
+};

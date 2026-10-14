@@ -37,9 +37,6 @@ const COPY = {
   "privacy": "Your drawing and prompt live in the link, simplified. Nothing is uploaded. Anyone with the link can see it.",
   "tooLong": "Too many lines to fit in a link. Save it as an image instead.",
   "badLink": "This drawing didn't come through. Ask them to send it again.",
-  "loading": "Finding a clean sheet…"
+  "loading": "Finding a clean sheet…",
+  "keyboardHint": "Arrow keys move. Space puts the pen down."
 };
-// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
-Object.assign(COPY, {
-  "keyHint": "Arrow keys move. Space puts the pen down."
-});

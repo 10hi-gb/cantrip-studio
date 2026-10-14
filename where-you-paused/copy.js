@@ -23,9 +23,6 @@ const COPY = {
   "receiverPrimary": "Write one back",
   "empty": "Type something first.",
   "badLink": "This message didn't come through. Ask them to send it again.",
-  "loading": "Opening…"
-};
-// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
-Object.assign(COPY, {
+  "loading": "Opening…",
   "galley": "GALLEY 198"
-});
+};

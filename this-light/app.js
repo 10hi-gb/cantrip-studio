@@ -49,6 +49,7 @@ if (typeof document !== 'undefined') (function () {
   var fill = function (s, v) { return s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; }); };
   Array.prototype.forEach.call(document.querySelectorAll('[data-c]'), function (n) { n.textContent = COPY[n.getAttribute('data-c')]; });
   $('search').placeholder = COPY.citySearch;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-dial]'), function (n) { n.textContent = COPY.dial[n.getAttribute('data-dial')]; });
   function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 2800); }
   var sel = null, timer = 0, shown = false;
   function norm(s) { return String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/ø/g, 'o').replace(/æ/g, 'ae').replace(/ß/g, 'ss').replace(/[łı]/g, function (c) { return c === 'ł' ? 'l' : 'i'; }).replace(/đ/g, 'd'); }
@@ -71,9 +72,9 @@ if (typeof document !== 'undefined') (function () {
     if (!sel) { $('search').focus(); return; }
     shown = true; var now = new Date(), s = TL.sun(now, sel[3], sel[4]), r = TL.dayRange(now, sel[3], sel[4]), ph = TL.phase(s.elev, r), hex = TL.color(s.elev);
     document.documentElement.style.setProperty('--tl-chip', hex); $('card').classList.remove('tl-card--empty');
-    $('phase').textContent = COPY.phases[ph]; $('hex').textContent = hex; $('alt').textContent = 'ALT ' + (s.elev < 0 ? '−' : '') + Math.abs(Math.round(s.elev)) + '°';
-    var t = new Intl.DateTimeFormat(undefined, { timeZone: sel[5], hour: 'numeric', minute: '2-digit' }).format(now);
-    $('time').textContent = fill(COPY.localTime, { time: t, city: sel[1] });
+    $('phase').textContent = COPY.phases[ph]; $('hex').textContent = hex; $('alt').textContent = fill(COPY.dial.alt, { deg: (Math.round(s.elev) < 0 ? '−' : '') + Math.abs(Math.round(s.elev)) });
+    var t = new Intl.DateTimeFormat(undefined, { timeZone: sel[5], hour: 'numeric', minute: '2-digit' }).format(now), day = new Intl.DateTimeFormat(undefined, { timeZone: sel[5], weekday: 'long' }).format(now);
+    $('time').textContent = fill(COPY.localTime, { day: day, time: t, city: sel[1] });
     $('chip').setAttribute('aria-label', COPY.phases[ph] + ', ' + hex);
     $('dial-label').textContent = sel[1];
     var x = 180 + Math.max(-1, Math.min(1, s.ha / 180)) * 160, y = 170 - Math.max(-12, s.elev) / 90 * 150;

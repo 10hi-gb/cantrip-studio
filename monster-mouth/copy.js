@@ -26,9 +26,6 @@ const COPY = {
   "privacy": "Your monster lives only on this page. Nothing is uploaded, and it's gone when you start over or close the tab. No microphone, no camera.",
   "audioFail": "This browser won't make sounds here. Your monster still moves.",
   "reducedMotion": "Motion is reduced, so it twitches instead of chomping.",
-  "error": "Your monster got loose. Draw a new one."
+  "error": "Your monster got loose. Draw a new one.",
+  "keyboardHint": "Arrow keys move. Space puts the pen down."
 };
-// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
-Object.assign(COPY, {
-  "keyHint": "Arrow keys move. Space puts the pen down."
-});

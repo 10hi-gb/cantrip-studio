@@ -28,11 +28,6 @@ const COPY = {
   "copied": "Link copied.",
   "shareCancel": "Not sent.",
   "badLink": "This wishbone didn't come through. Snap a new one.",
-  "loading": "Drying the wishbone…"
+  "loading": "Drying the wishbone…",
+  "holdLabel": "Hold"
 };
-// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
-Object.assign(COPY, {
-  "hold": "Hold",
-  "keyLeft": "F",
-  "keyRight": "J"
-});

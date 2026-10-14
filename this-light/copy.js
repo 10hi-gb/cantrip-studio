@@ -13,10 +13,10 @@ const COPY = {
     "civilTwilight": "Twilight",
     "golden": "Golden hour",
     "day": "Daylight",
-    "polarDay": "The sun isn't setting today",
-    "polarNight": "The sun isn't rising today"
+    "polarDay": "Midnight sun. The sun stays up all day here.",
+    "polarNight": "Polar night. The sun stays below the horizon all day here."
   },
-  "localTime": "{time} in {city}",
+  "localTime": "{day}, {time} in {city}",
   "disclaimer": "Computed from the sun's position for a clear sky. Not a photo, not the weather.",
   "share": "Send them this light",
   "shareText": "This is roughly the light in {city} right now.",
@@ -26,13 +26,13 @@ const COPY = {
   "compare": "Try another city",
   "privacy": "We never ask where you are. The city you pick is the only thing in the link, and nothing is uploaded.",
   "badLink": "That city didn't come through. Pick one below.",
-  "loading": "Working out where the sun is…"
-};
-// Approved by Writing Bot copy ruling, 2026-10-13 21:37 PT (moved out of markup / new strings).
-Object.assign(COPY, {
-  "brandLine": "Cantrip Studio · Light Specimen",
+  "loading": "Working out where the sun is…",
+  "specimenLabel": "Light Specimen",
   "specimenNo": "No. 042",
-  "dialRise": "E · rise",
-  "dialSet": "set · W",
-  "dialNoon": "noon"
-});
+  "dial": {
+    "rise": "E · rise",
+    "noon": "noon",
+    "set": "set · W",
+    "alt": "ALT {deg}°"
+  }
+};
