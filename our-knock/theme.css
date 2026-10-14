@@ -45,6 +45,10 @@
 .ok-side{display:grid;gap:12px;align-content:start}
 .ok-msg{font:400 22px/1.2 var(--ok-serif);min-height:1.2em;margin:0}
 .ok-behind{white-space:pre-wrap;word-break:break-word}
+/* The swung door projects over the left ~27% of the opening (perspective): keep the note in the clear part, with a safe margin. */
+@media(prefers-reduced-motion:no-preference){.ok-behind{padding:24px 16px 24px calc(30% + 14px)}}
+.ok-behind{overflow-wrap:anywhere;min-width:0}
+.ok-behind>*{min-width:0}
 .ok-mute{background:none;border:0;padding:0;font:13px var(--ok-sans);color:#5b5446;text-decoration:underline;cursor:pointer;text-align:left}
 .ok-mute[aria-pressed=true]{text-decoration:line-through}
 .ok-mute:focus-visible{outline:3px solid var(--ok-door)}
