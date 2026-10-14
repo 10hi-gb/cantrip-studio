@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-14 8:20 AM PT",
+ "updated": "2026-10-14 8:45 AM PT",
  "items": [
   {
    "id": "C148",
@@ -7,12 +7,13 @@
    "name": "Bad on Purpose",
    "description": "Draw something badly on purpose; it gets a serious museum placard.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../bad-on-purpose/",
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -22,14 +23,15 @@
    "name": "One Across",
    "description": "Write one crossword clue; a friend fills in the single row.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../one-across/",
    "limitations": [
     "The answer check only slows down spoilers; it is not a secret."
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -39,12 +41,13 @@
    "name": "Annual Review of You",
    "description": "A deadpan formal annual review of a friend, built from three real moments.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../annual-review/",
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -54,12 +57,13 @@
    "name": "Here It Comes",
    "description": "A ball is incoming: catch it, then throw it back.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../here-it-comes/",
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -69,14 +73,15 @@
    "name": "Monster Mouth",
    "description": "Your drawing becomes a touchable monster with its own growl.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../monster-mouth/",
    "limitations": [
     "Audio not yet heard on a real device."
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -86,17 +91,18 @@
    "name": "Our Knock",
    "description": "Tap a secret knock; a friend knocks it back to open a tiny note.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../our-knock/",
    "limitations": [
     "It's a playful puzzle, not a real lock.",
     "Audio not yet heard on a real device."
    ],
    "qa": {
-    "verdict": "Playable",
-    "pin": "2e668c5f",
+    "verdict": "QA failed",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": [
-     "Mouse and touch untested."
+     "Door covered the end-state note. Fix in commit 2e1d2a2; QA retest pending."
     ]
    }
   },
@@ -106,12 +112,13 @@
    "name": "Eyes Closed",
    "description": "Draw a prompt without seeing the canvas, then reveal the wobble.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../eyes-closed/",
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -121,14 +128,15 @@
    "name": "Score This",
    "description": "Pick the sound effects for a three-panel comic; a friend can rescore it.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../score-this/",
    "limitations": [
     "Audio not yet heard on a real device."
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -138,7 +146,7 @@
    "name": "This Light",
    "description": "Pick a city and see a computed impression of its sky right now.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../this-light/",
    "limitations": [
     "A computed clear-sky impression, not real weather.",
@@ -146,7 +154,8 @@
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -156,14 +165,15 @@
    "name": "Wishbone",
    "description": "Two people, one device: pull the wishbone and see who gets the bigger half.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../wishbone/",
    "limitations": [
     "Reloading starts a fresh round (no anti-cheat)."
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -173,14 +183,15 @@
    "name": "Cheers",
    "description": "Send a raised glass; your friend taps to clink and can send one back.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../cheers/",
    "limitations": [
     "Audio not yet heard on a real device."
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -190,14 +201,15 @@
    "name": "Where You Paused",
    "description": "A short message that shows where you paused while writing it.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../where-you-paused/",
    "limitations": [
     "Pauses are an authored presentation, not a reading of mood."
    ],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -207,12 +219,13 @@
    "name": "A Plant From This",
    "description": "A phrase grows a unique invented plant; a friend gets the same plant.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../a-plant-from-this/",
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -222,15 +235,14 @@
    "name": "Wear This",
    "description": "Dress a paper doll in four slots and send the outfit.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../wear-this/",
    "limitations": [],
    "qa": {
-    "verdict": "Playable",
-    "pin": "2e668c5f",
-    "untested": [
-     "Network screenshot and invalid-ID test pending."
-    ]
+    "verdict": "QA passed",
+    "pin": null,
+    "ledger": "8:03 AM PT",
+    "untested": []
    }
   },
   {
@@ -239,12 +251,13 @@
    "name": "Fogged Over",
    "description": "Doodle on a fogged window; a friend wipes it to reveal.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../fogged-over/",
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -254,12 +267,13 @@
    "name": "Catch This Yawn",
    "description": "A cartoon yawn dares a friend not to catch it.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../catch-this-yawn/",
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -269,12 +283,13 @@
    "name": "Taste Like This",
    "description": "Sweet, salt and heat sliders make a taste shape to share.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../taste-like-this/",
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -284,15 +299,14 @@
    "name": "Until Then",
    "description": "A lamp stays lit until a moment you choose.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../until-then/",
    "limitations": [],
    "qa": {
-    "verdict": "Playable",
-    "pin": "2e668c5f",
-    "untested": [
-     "The screen after the set time is untested."
-    ]
+    "verdict": "QA passed",
+    "pin": null,
+    "ledger": "8:03 AM PT",
+    "untested": []
    }
   },
   {
@@ -301,12 +315,13 @@
    "name": "Permission Slip",
    "description": "Tear off a funny permission slip for a friend.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../permission-slip/",
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -316,12 +331,13 @@
    "name": "Don't Mention It",
    "description": "A small secret kindness mission for a friend to carry out.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../dont-mention-it/",
    "limitations": [],
    "qa": {
     "verdict": "QA passed",
-    "pin": "2e668c5f",
+    "pin": null,
+    "ledger": "8:03 AM PT",
     "untested": []
    }
   },
@@ -331,15 +347,14 @@
    "name": "Ask Me At Four",
    "description": "One promise, one friend, one check-in time.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../ask-me-at-four/",
    "limitations": [],
    "qa": {
-    "verdict": "Playable",
-    "pin": "2e668c5f",
-    "untested": [
-     "The screen after the set time and the .ics download are untested."
-    ]
+    "verdict": "QA passed",
+    "pin": null,
+    "ledger": "8:03 AM PT",
+    "untested": []
    }
   },
   {
@@ -348,17 +363,16 @@
    "name": "Broken Telephone",
    "description": "Pass one phone around and watch a phrase drift.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA): pin 2e668c5f.",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../broken-telephone/",
    "limitations": [
     "Audio not yet heard on a real device."
    ],
    "qa": {
-    "verdict": "Playable",
-    "pin": "2e668c5f",
-    "untested": [
-     "Read-aloud unheard; keyboard and reload unconfirmed."
-    ]
+    "verdict": "QA passed",
+    "pin": null,
+    "ledger": "8:03 AM PT",
+    "untested": []
    }
   },
   {
@@ -367,11 +381,12 @@
    "name": "Not on the Screen",
    "description": "Pick two colors; a striped disc spins so the eye can mix them — a screenshot cannot.",
    "status": "Engineer self-check passed",
-   "note": "Engineer self-check (build checks, not QA). Owner-selected add-on (item 23).",
+   "note": "Engineer self-check (build checks, not QA).",
    "url": "../not-on-the-screen/",
    "limitations": [
-    "Physical spin / perceived mix not yet validated on a real device.",
-    "Mill: screening PASS; red-team PENDING (invalid Mill reviewer outputs). No scores."
+    "Physical colour mix unverified: whether a spin shows a mix has not been tested with people.",
+    "36-wedge count untested; it may change (with a link version bump).",
+    "Mill: screening PASS; red-team PENDING. No scores."
    ],
    "qa": {
     "verdict": null,

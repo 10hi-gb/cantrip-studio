@@ -1,50 +1,90 @@
-/* C205 Not on the Screen — "lab turntable": matte black bench, hairline guide rings, white type; the only color is the disc. */
-@font-face{font-family:"Syne";src:url(fonts/syne-800-normal.woff2) format("woff2");font-weight:800;font-display:swap}
+/* C205 Not on the Screen — "Exhibit Bench": a science-museum optics exhibit panel with a rubber turntable and eight enamel push-keys. Self-hosted OFL fonts. NEVER paint a mixed swatch. */
 @font-face{font-family:"Syne";src:url(fonts/syne-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Syne";src:url(fonts/syne-800-normal.woff2) format("woff2");font-weight:800;font-display:swap}
 @font-face{font-family:"Public Sans";src:url(fonts/public-sans-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Public Sans";src:url(fonts/public-sans-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
 @font-face{font-family:"Public Sans";src:url(fonts/public-sans-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
-:root{--nos-bench:#0F0F12;--nos-panel:#18181D;--nos-line:#2C2C33;--nos-ink:#F3F1EC;--nos-dim:#A6A3A0;--nos-warn:#FFD66B;
- --nos-display:"Syne",system-ui,sans-serif;--nos-sans:"Public Sans",system-ui,sans-serif;color-scheme:dark}
-*{box-sizing:border-box}
-html{background:var(--nos-bench)}
-body.nos{margin:0;min-height:100vh;color:var(--nos-ink);font:400 17px/1.5 var(--nos-sans);overflow-wrap:anywhere;
- background:radial-gradient(circle at 50% 38%,transparent 0 31%,rgba(255,255,255,.035) 31.2% 31.4%,transparent 31.6% 45%,rgba(255,255,255,.03) 45.2% 45.4%,transparent 45.6%),var(--nos-bench)}
+:root{
+  /* exhibit panel (neutral so it never biases the perceived mix) */
+  --ns-panel:#D9D6CF; --ns-panel-lo:#C4C0B7; --ns-panel-edge:#A9A59C; --ns-plate:#EEF0F1; --ns-plate-edge:#B8BDC2; --ns-rubber:#1E1E1E; --ns-rubber-hi:#3A3A3A; --ns-ink:#1B1B1B; --ns-mute:#5C5952; --ns-screw:#9DA2A7;
+  /* the eight locked disc colors (PALETTE.md) */
+  /* disc colors: palette.js is the single table (CSS has no color tokens for them) */
+  --ns-display:"Syne",system-ui,sans-serif; --ns-sans:"Public Sans",system-ui,sans-serif;
+}
+.ns{margin:0;min-height:100dvh;background:var(--ns-panel);color:var(--ns-ink);font-family:var(--ns-sans);
+  /* fine enamel stipple, neutral grey only */
+  background-image:radial-gradient(rgba(0,0,0,.05) .7px,transparent .8px);background-size:5px 5px}
+.ns-page{max-width:1240px;margin:0 auto;padding:16px 20px 36px;box-sizing:border-box}
+.ns-studio{display:flex;justify-content:space-between;font:600 11px var(--ns-sans);letter-spacing:.16em;text-transform:uppercase;color:var(--ns-mute)}
+/* exhibit header plate */
+.ns-plate{background:var(--ns-plate);border:1px solid var(--ns-plate-edge);border-radius:4px;box-shadow:inset 0 1px 0 #fff,0 1px 0 var(--ns-panel-edge);position:relative;padding:12px 30px}
+.ns-plate::before,.ns-plate::after{content:"";position:absolute;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--ns-screw);box-shadow:inset 0 0 0 1px #7E8388;background-image:linear-gradient(45deg,transparent 45%,#6E7378 45% 55%,transparent 55%)}
+.ns-plate::before{left:10px}.ns-plate::after{right:10px}
+.ns-title{font:800 clamp(26px,4.6vw,56px)/1 var(--ns-display);letter-spacing:-.01em;text-transform:uppercase;margin:0}
+.ns-sub{font:400 16px/1.45 var(--ns-sans);margin:6px 0 0;max-width:46ch}
+.ns-grid{display:grid;gap:18px;margin-top:16px}
+@media(min-width:900px){.ns-grid{grid-template-columns:minmax(460px,1.1fr) minmax(340px,.9fr);gap:44px;align-items:center}}
+/* turntable: rubber platter ring with knurled edge, disc inside */
+.ns-table{position:relative;width:min(76vw,480px);aspect-ratio:1;margin:0 auto;border-radius:50%;background:var(--ns-panel-lo);box-shadow:inset 0 3px 8px rgba(0,0,0,.25),0 1px 0 #fff}
+.ns-platter{position:absolute;inset:4%;border-radius:50%;background:var(--ns-rubber);
+  background-image:repeating-conic-gradient(var(--ns-rubber) 0 2deg,var(--ns-rubber-hi) 2deg 3deg);box-shadow:0 6px 14px rgba(0,0,0,.35)}
+.ns-disc{position:absolute;inset:8.5%;border-radius:50%;touch-action:none;cursor:grab;
+  /* 36 equal 10deg sectors: 18 of A alternating with 18 of B (hard edges, no blending) */
+  background:var(--ns-rubber);overflow:hidden;
+  transform:rotate(var(--ns-rot,0deg));will-change:transform}
+.ns-disc:focus-visible{outline:4px solid var(--ns-ink);outline-offset:6px}
+.ns-hub{position:absolute;left:50%;top:50%;width:13%;height:13%;transform:translate(-50%,-50%);border-radius:50%;background:var(--ns-plate);border:2px solid var(--ns-ink);pointer-events:none}
+.ns-hub::after{content:"";position:absolute;left:50%;top:50%;width:18%;height:18%;transform:translate(-50%,-50%);border-radius:50%;background:var(--ns-ink)}
+/* static index pointer on the panel (doesn't move): shows rotation without needing the mix */
+.ns-index{position:absolute;left:50%;top:-2%;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid var(--ns-ink);transform:translateX(-50%)}
+.ns-caption{text-align:center;font:600 13px var(--ns-sans);color:var(--ns-mute);margin:10px auto 0;max-width:40ch}
+/* eight enamel push-keys */
+.ns-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 10px}
+.ns-key{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit}
+.ns-key .cap{position:relative;width:58px;height:58px;border-radius:50%;background:var(--k);box-shadow:0 5px 0 rgba(0,0,0,.35),inset 0 -4px 0 rgba(0,0,0,.18),inset 0 3px 0 rgba(255,255,255,.35);border:2px solid var(--ns-ink);transition:transform 80ms,box-shadow 80ms}
+.ns-key .lbl{background:var(--ns-plate);border:1px solid var(--ns-plate-edge);border-radius:3px;padding:2px 7px;font:700 11px var(--ns-sans);letter-spacing:.08em;text-transform:uppercase}
+.ns-key[aria-pressed=true] .cap{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.35),inset 0 3px 6px rgba(0,0,0,.35)}
+.ns-key[aria-pressed=true] .cap::after{content:attr(data-n);position:absolute;right:-8px;top:-8px;width:22px;height:22px;border-radius:50%;background:var(--ns-ink);color:var(--ns-plate);font:800 12px/22px var(--ns-display);text-align:center}
+.ns-key:focus-visible .cap{outline:3px solid var(--ns-ink);outline-offset:4px}
+.ns-h{font:800 15px var(--ns-display);letter-spacing:.06em;text-transform:uppercase;margin:0 0 10px}
+.ns-hint{font:400 13px/1.45 var(--ns-sans);color:var(--ns-mute);margin:6px 0 0}
+.ns-btn{font:700 15px var(--ns-sans);padding:13px 20px;border-radius:6px;border:2px solid var(--ns-ink);background:var(--ns-plate);color:var(--ns-ink);cursor:pointer;box-shadow:0 3px 0 var(--ns-ink)}
+.ns-btn--primary{background:var(--ns-ink);color:var(--ns-plate)}
+.ns-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ns-ink)}
+.ns-btn:focus-visible{outline:3px solid var(--ns-ink);outline-offset:3px}
+.ns-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.ns-fine{font:400 13px/1.5 var(--ns-sans);color:var(--ns-mute);max-width:48ch;margin:10px 0 0}
+.ns-note{background:var(--ns-plate);border:1px solid var(--ns-plate-edge);border-left:5px solid var(--ns-ink);padding:10px 12px;font:400 14px/1.45 var(--ns-sans);margin:12px 0 0}
+.ns-note b{display:block;font:800 12px var(--ns-display);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+.ns-steps{margin:6px 0 0;padding-left:20px;font:400 14px/1.5 var(--ns-sans)}
+.ns-pair{font:800 clamp(20px,2.6vw,30px)/1.1 var(--ns-display);text-transform:uppercase;margin:0}
+.ns-chipline{display:flex;gap:8px;align-items:center;font:600 13px var(--ns-sans);margin-top:6px}
+.ns-chipline i{display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ns-ink)}
+@media(max-width:600px){.ns-key .cap{width:52px;height:52px}.ns-plate{padding:10px 26px}}
+/* no autoplay: the disc only moves while/after a finger or key drives it (see handoff speed cap) */
+@media(prefers-reduced-motion:reduce){.ns-disc{transform:none!important;transition:none}}
+
+/* Engineer additions (2026-10-14) */
+html{background:var(--ns-panel)}
+body.ns{overflow-wrap:anywhere}
 input,textarea{min-width:0;max-width:100%}
-.nos-top{padding:16px 20px}
-.nos-home{color:var(--nos-dim);text-decoration:none;font:600 12px var(--nos-sans);letter-spacing:.18em;text-transform:uppercase}
-.nos-home:focus-visible,.nos-btn:focus-visible,.nos-chip:focus-visible,.nos-link:focus-visible,summary:focus-visible{outline:3px solid var(--nos-ink);outline-offset:3px}
-.nos-main{max-width:680px;margin:0 auto;padding:4px 20px 64px}
-.nos-title{font:800 clamp(40px,11vw,92px)/.92 var(--nos-display);letter-spacing:-.03em;margin:8px 0 12px;overflow-wrap:normal;word-break:normal;hyphens:none}
-.nos-lede{font-size:19px;color:var(--nos-ink);max-width:36ch;margin:0 0 22px}
-.nos-card{background:var(--nos-panel);border:1px solid var(--nos-line);border-radius:22px;padding:20px;margin:0 0 18px}
-.nos-h2{font:700 24px/1.15 var(--nos-display);margin:0 0 6px}.nos-h3{font:700 19px var(--nos-display);margin:14px 0 6px}
-.nos-fine{color:var(--nos-dim);font-size:14px;margin:8px 0}.nos-center{text-align:center}
-.nos-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
-@media(min-width:560px){.nos-grid{grid-template-columns:repeat(8,minmax(0,1fr))}}
-.nos-chip{display:flex;flex-direction:column;align-items:center;gap:6px;min-height:76px;padding:8px 2px;border-radius:16px;border:2px solid transparent;background:transparent;color:var(--nos-ink);font:600 13px var(--nos-sans);cursor:pointer;min-width:0}
-.nos-chip .nos-sw{width:44px;height:44px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
-.nos-chip.is-on{border-color:var(--nos-ink);background:rgba(255,255,255,.06)}
-.nos-chip-name{overflow-wrap:anywhere;text-align:center}
-.nos-pickrow{display:flex;gap:16px;align-items:center;margin:6px 0 14px}
-.nos-mini{width:88px;height:88px;flex:none}
-.nos-pair{font:700 20px var(--nos-display);margin:0}.nos-msg{color:var(--nos-dim);margin:2px 0;font-size:14px;min-height:1.2em}
-.nos-clears{display:flex;flex-wrap:wrap;gap:4px 14px}
-.nos-link{background:none;border:0;padding:4px 0;color:var(--nos-ink);text-decoration:underline;font:400 14px var(--nos-sans);cursor:pointer}
-.nos-btn{font:700 16px var(--nos-sans);padding:14px 22px;border-radius:999px;border:2px solid var(--nos-ink);background:transparent;color:var(--nos-ink);cursor:pointer;margin:6px 8px 6px 0;min-height:48px}
-.nos-btn--go{background:var(--nos-ink);color:var(--nos-bench)}
-.nos-btn:disabled{opacity:.4;cursor:not-allowed}
-.nos-acts{display:flex;flex-wrap:wrap;margin:10px 0}
-.nos-turntable{width:min(86vw,440px);aspect-ratio:1;margin:18px auto 8px;border-radius:50%;padding:12px;background:#000;box-shadow:0 0 0 1px var(--nos-line),0 30px 60px -20px rgba(0,0,0,.8)}
-.nos-disc{width:100%;height:100%;display:block}
-.nos-disc:focus-visible{outline:3px solid var(--nos-ink);outline-offset:6px;border-radius:50%}
-.nos-rim{fill:#050506}.nos-hub{fill:#0F0F12;stroke:var(--nos-ink);stroke-width:.012}
-.nos-dhead{text-align:center;margin-top:8px}
-.nos-warn{border-left:3px solid var(--nos-warn);padding-left:12px;color:var(--nos-ink);font-size:15px}
-.nos-details summary{cursor:pointer;font:700 17px var(--nos-display)}
-.nos-steps{white-space:pre-line}
-.nos-linkbox input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--nos-line);background:#000;color:var(--nos-ink);font:14px var(--nos-sans)}
-.nos-foot{text-align:center;margin-top:28px}
-.nos-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--nos-ink);color:var(--nos-bench);padding:10px 16px;border-radius:999px;font:600 14px var(--nos-sans);z-index:9}
-@media print{html,body.nos{background:#fff;color:#000}.nos-top,.nos-card,.nos-acts,.nos-foot,.nos-lede,.nos-title,.nos-fine,#v-pick,#v-recv,.nos-toast{display:none!important}
- .nos-turntable{width:16cm;background:#fff;box-shadow:none;border:1px dashed #000}.nos-rim{fill:#fff}}
+.ns-disc svg{display:block;width:100%;height:100%}
+.ns-disc.is-drag{cursor:grabbing}
+.ns-title{overflow-wrap:normal;word-break:normal;hyphens:none}
+.ns-studio a{color:inherit;text-decoration:none}.ns-studio a:focus-visible{outline:3px solid var(--ns-ink);outline-offset:3px}
+.ns-key .cap{background:var(--k,#888)}
+.ns-btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.ns-link{background:none;border:0;padding:4px 0;font:600 13px var(--ns-sans);color:var(--ns-ink);text-decoration:underline;cursor:pointer}
+.ns-link:focus-visible{outline:3px solid var(--ns-ink);outline-offset:2px}
+.ns-clears{display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:8px}
+.ns-msg{font:600 13px var(--ns-sans);color:var(--ns-ink);min-height:1.2em;margin:8px 0 0}
+.ns-note--warn{border-left-color:#8A6D00}
+.ns-details summary{cursor:pointer;font:800 12px var(--ns-display);letter-spacing:.08em;text-transform:uppercase}
+.ns-details summary:focus-visible{outline:3px solid var(--ns-ink);outline-offset:2px}
+.ns-linkbox input{width:100%;box-sizing:border-box;padding:10px;border:2px solid var(--ns-ink);border-radius:6px;background:var(--ns-plate);font:14px var(--ns-sans);margin-top:10px}
+.ns-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ns-ink);color:var(--ns-plate);padding:10px 16px;border-radius:6px;font:600 14px var(--ns-sans);z-index:9}
+.ns-foot{margin-top:18px}
+@media print{.ns{background:#fff}.ns-studio,.ns-plate,.ns-actions,.ns-keys,.ns-hint,.ns-fine,.ns-note,.ns-msg,.ns-clears,.ns-toast,.ns-chipline,.ns-pair,.ns-h,.ns-caption,.ns-foot,.ns-index,.ns-platter{display:none!important}
+ .ns-table{width:200mm;background:#fff;box-shadow:none}.ns-disc{inset:0;transform:none!important}}
+.ns-plate{margin-top:10px}.ns-h--gap{margin-top:18px}.ns-block{display:block}
+.ns-spin{margin:0;font-size:16px;line-height:1.45}

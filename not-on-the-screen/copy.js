@@ -68,5 +68,6 @@ const COPY = {
   "home": "Cantrip Studio",
   "backLabel": "Back to Cantrip Studio",
   "reducedMotion": "Motion is reduced. The disc stays still; you still spin the phone.",
-  "error": "Something went wrong. Reload the page and try again."
+  "error": "Something went wrong. Reload the page and try again.",
+  "flickerCaution": "Heads up: the disc flickers as it speeds up and slows down. If flicker bothers you, skip the phone and use the paper version."
 };
