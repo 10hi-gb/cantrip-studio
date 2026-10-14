@@ -108,6 +108,6 @@ if (typeof document !== 'undefined') (function () {
       $('maker').hidden = true; $('recv').hidden = false; $('lede').textContent = COPY.receiverIntro;
       if (r.note) { $('rnote').textContent = r.note; $('rnote').hidden = false; }
       $('see').onclick = function () { draw(r.phrase, true); $('see').hidden = true; $('save2').hidden = false; };
-    } else { $('lede').textContent = COPY.badLink; }
+    } else { var raw = L.unseal(h, PL.FRAG); $('lede').textContent = raw && /^p\d+$/.test(raw[0]) && raw[0] !== 'p1' ? COPY.oldVersion : COPY.badLink; }
   }
 })();

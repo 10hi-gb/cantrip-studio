@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Fogged Over · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="lib.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="fo" id="root">
+<div class="fo-top"><a href="../" data-c="studioLabel" data-al="backLabel"></a><span id="tag" data-c="home"></span></div>
+<div class="fo-pane is-maker" id="pane" tabindex="0" role="application" data-al="drawHint"><div class="fo-room"></div><div class="fo-ghost" id="ghost"></div><div class="fo-fog" id="fog"></div><div class="fo-drops"></div><span class="fo-drip fo-drip--a"></span><span class="fo-drip fo-drip--b"></span><span class="fo-drip fo-drip--c"></span><span class="fo-cursor" id="cur" hidden></span><p class="fo-sr" id="alt"></p></div>
+<div class="fo-sill">
+ <div>
+  <p class="fo-line" id="lede" data-c="invitation"></p>
+  <p class="fo-hint" id="hint"><span data-c="drawHint"></span> <span data-c="keyboardHint"></span></p>
+  <div class="fo-row" id="stamps"><span class="fo-hint" data-c="stampsLabel"></span></div>
+  <p class="fo-meter" id="meter" aria-live="polite"></p>
+  <p class="fo-msg fo-warn" id="msg" role="status" aria-live="polite"></p>
+  <div class="fo-linkbox" id="linkbox" hidden><input readonly data-al="copyFail"></div>
+  <p class="fo-hint" data-c="privacy"></p>
+  <p class="fo-hint" id="rm" hidden></p><p class="fo-warn" id="err" hidden></p>
+ </div>
+ <div class="fo-row" id="acts-make"><button class="fo-btn" id="undo" data-c="undo"></button><button class="fo-btn" id="clear" data-c="clear"></button><button class="fo-btn" id="prev" data-c="preview"></button><button class="fo-btn fo-btn--go" id="go" data-c="primary"></button></div>
+ <div class="fo-row" id="acts-prev" hidden><button class="fo-btn" id="back" data-c="backToDraw"></button><button class="fo-btn" id="reveal1" data-c="revealButton" data-al="revealAria"></button><button class="fo-btn fo-btn--go" id="share" data-c="share"></button></div>
+ <div class="fo-row" id="acts-recv" hidden><button class="fo-btn" id="reveal" data-c="revealButton" data-al="revealAria"></button><button class="fo-btn fo-btn--go" id="again" data-c="receiverAgain"></button></div>
+</div>
+<div class="fo-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

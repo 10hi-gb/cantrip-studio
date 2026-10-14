@@ -1,0 +1,46 @@
+/* C092 Catch This Yawn — map row 16: one oversized sticker character (~80% of viewport, cropped), tiny caption line, saturated tangerine backdrop. Titan One + Nunito. */
+@font-face{font-family:"Titan One";src:url(fonts/titan-one-latin-400-normal.woff2) format("woff2");font-display:swap}
+@font-face{font-family:"Nunito";src:url(fonts/nunito-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Nunito";src:url(fonts/nunito-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Nunito";src:url(fonts/nunito-latin-800-normal.woff2) format("woff2");font-weight:800;font-display:swap}
+:root{--y-bg:#FF7A1A;--y-lilac:#B9A4FF;--y-lilac-d:#9C83F2;--y-mouth:#5A1F3A;--y-tongue:#FF8FA3;--y-cheek:#FFB3C7;--y-ink:#2B1630;--y-cream:#FFF4E8}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body.y{margin:0;min-height:100dvh;background:var(--y-bg);color:var(--y-ink);font:400 16px/1.4 "Nunito",system-ui,sans-serif;overflow-x:hidden;display:grid;grid-template-rows:auto 1fr auto}
+.y-top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;position:relative;z-index:2}
+.y-top a{color:var(--y-ink);text-decoration:none}.y-top h1{font:400 18px "Titan One",sans-serif;letter-spacing:0;text-transform:none;margin:0}
+.y-stage{position:relative;overflow:hidden;min-height:58dvh}
+.y-char{position:absolute;left:50%;bottom:-14%;width:min(118vw,880px);transform:translateX(-50%);height:auto}
+@media(min-width:900px){.y-char{width:min(70vw,980px);bottom:-30%}}
+.y-cap{position:absolute;left:0;right:0;bottom:10px;text-align:center;font:400 clamp(18px,3.6vw,30px) "Titan One",sans-serif;color:var(--y-cream);text-shadow:0 2px 0 var(--y-ink);margin:0;padding:0 16px;overflow-wrap:anywhere;z-index:2}
+.y-panel{background:var(--y-cream);border-top:4px solid var(--y-ink);padding:14px 16px 20px;display:grid;gap:10px;position:relative;z-index:2}
+@media(min-width:900px){.y-panel{grid-template-columns:1.2fr 1fr;padding:18px 40px 24px;align-items:start}}
+.y-lede{font:400 clamp(20px,2.6vw,28px)/1.2 "Titan One",sans-serif;margin:0}
+.y-fine{font-size:13px;color:#5b4660;margin:0}
+.y-field{display:grid;gap:4px;font-weight:700;font-size:14px}
+.y-field input{font:400 17px "Nunito",sans-serif;padding:11px 12px;border:2px solid var(--y-ink);border-radius:12px;background:#fff;color:var(--y-ink)}
+.y-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.y-btn{font:800 15px "Nunito",sans-serif;min-height:46px;padding:11px 18px;border-radius:999px;border:2.5px solid var(--y-ink);background:#fff;color:var(--y-ink);cursor:pointer}
+.y-btn--go{background:var(--y-ink);color:var(--y-cream)}
+.y-btn:focus-visible,.y-field input:focus-visible,.y-top a:focus-visible{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 6px var(--y-ink)}
+.y-msg{font-weight:700;margin:0;min-height:1.2em}
+.y-linkbox input{width:100%;padding:8px;font:13px "Nunito",sans-serif}
+.y-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--y-ink);color:var(--y-cream);padding:10px 16px;border-radius:999px;font-weight:700;z-index:9}
+/* character parts: slow yawn (~4.5s) then a blink */
+.y-char *{transform-box:fill-box}
+.y-eye{transform-origin:50% 50%}.y-mouth{transform-origin:50% 0}.y-arm{transform-origin:50% 100%}.y-head{transform-origin:50% 100%}.y-tear{opacity:0}.y-pupil{transform-origin:50% 50%}
+.is-play .y-eye{animation:y-eye 6.4s ease-in-out infinite}
+.is-play .y-mouth{animation:y-mouth 6.4s ease-in-out infinite}
+.is-play .y-arm--l{animation:y-arml 6.4s ease-in-out infinite}.is-play .y-arm--r{animation:y-armr 6.4s ease-in-out infinite}
+.is-play .y-head{animation:y-head 6.4s ease-in-out infinite}
+.is-play .y-tear{animation:y-tear 6.4s ease-in infinite}
+.is-paused *{animation-play-state:paused!important}
+@keyframes y-eye{0%,8%{transform:scaleY(1)}22%,62%{transform:scaleY(.12)}72%{transform:scaleY(1)}84%{transform:scaleY(1)}87%{transform:scaleY(.08)}90%,100%{transform:scaleY(1)}}
+@keyframes y-mouth{0%,6%{transform:scale(.35,.18)}30%,56%{transform:scale(1,1)}70%,100%{transform:scale(.35,.18)}}
+@keyframes y-arml{0%,10%{transform:rotate(0)}34%,56%{transform:rotate(-38deg)}72%,100%{transform:rotate(0)}}
+@keyframes y-armr{0%,10%{transform:rotate(0)}34%,56%{transform:rotate(38deg)}72%,100%{transform:rotate(0)}}
+@keyframes y-head{0%,8%{transform:rotate(0) translateY(0)}36%,56%{transform:rotate(-4deg) translateY(-3%)}72%,100%{transform:rotate(0) translateY(0)}}
+@keyframes y-tear{0%,48%{opacity:0;transform:translateY(0)}54%{opacity:1}70%{opacity:1;transform:translateY(40%)}78%,100%{opacity:0;transform:translateY(60%)}}
+/* still frame: mid-yawn */
+.is-still .y-eye{transform:scaleY(.12)}.is-still .y-mouth{transform:none}.is-still .y-arm--l{transform:rotate(-38deg)}.is-still .y-arm--r{transform:rotate(38deg)}.is-still .y-tear{opacity:1}
+.y-char:not(.is-play):not(.is-still) .y-mouth{transform:scale(.35,.18)}
+@media(prefers-reduced-motion:reduce){.y-char *{animation:none!important}}

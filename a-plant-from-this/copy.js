@@ -1,7 +1,7 @@
 // C050-a-plant-from-this — final visitor copy (Writing Bot, 2026-10-13). Every visitor/state/a11y string; app reads all text from COPY.
 const COPY = {
   "title": "A Plant From This",
-  "studioLabel": "Cantrip Studio · Greenhouse 050",
+  "studioLabel": "Cantrip Studio · Herbarium Sheet 050",
   "invitation": "Type a few words. They grow into a plant no one has seen before.",
   "phraseLabel": "Your words",
   "phrasePlaceholder": "the kitchen on Sunday mornings",
@@ -18,7 +18,7 @@ const COPY = {
     "other": "{n} characters over."
   },
   "primary": "Grow it",
-  "growing": "Growing…",
+  "growing": "Growing: stems, then leaves, then the bloom…",
   "grownCaption": "Grown from: “{phrase}”",
   "disclaimer": "An invented plant, drawn from your words. Not a real species, and not a care guide.",
   "regrow": "Change the words",
@@ -42,5 +42,6 @@ const COPY = {
   "home": "Cantrip Studio",
   "backLabel": "Back to Cantrip Studio",
   "reducedMotion": "Motion is reduced. Everything still works.",
-  "error": "Something went wrong. Reload the page and try again."
+  "error": "Something went wrong. Reload the page and try again.",
+  "specimenLabelHeading": "Specimen"
 };

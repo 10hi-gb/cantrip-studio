@@ -30,8 +30,8 @@ html,body{margin:0;min-height:100dvh;color:var(--ink);font:400 16px/1.45 var(--u
 button:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
 .wt-dollwrap{grid-area:doll;position:relative;background:#fff;border:2.5px dashed rgba(29,27,38,.5);border-radius:22px;padding:10px;align-self:start}
 .wt-doll{width:100%;height:auto;display:block}
-.wt-doll .pc{transition:transform 240ms cubic-bezier(.3,1.5,.5,1)}
-.wt-doll .pc.drop{animation:wt-drop 320ms cubic-bezier(.3,1.5,.5,1)}
+.wt-doll .wt-wear{transition:transform 240ms cubic-bezier(.3,1.5,.5,1)}
+.wt-doll .wt-wear.drop{animation:wt-drop 320ms cubic-bezier(.3,1.5,.5,1)}
 @keyframes wt-drop{0%{transform:translateY(-10px);opacity:.3}70%{transform:translateY(4px);opacity:1}100%{transform:none}}
 .wt-skin{display:flex;gap:6px;justify-content:center;margin-top:8px;align-items:center;font:700 12px var(--ui)}
 .wt-skin button{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);cursor:pointer}
@@ -46,7 +46,7 @@ button:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
 .wt-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font:700 14px var(--ui);z-index:9}
 .wt.is-recv .wt-rail{display:none}.wt.is-recv{grid-template-areas:"top top top" ". doll ." "foot foot foot"}
 @media(max-width:900px){.wt{grid-template-columns:1fr;grid-template-areas:"top" "doll" "l" "r" "foot";padding:12px 12px 24px}.wt-dollwrap{max-width:330px;margin:0 auto;width:100%}.wt.is-recv{grid-template-areas:"top" "doll" "foot"}}
-@media(prefers-reduced-motion:reduce){.wt-doll .pc,.wt-doll .pc.drop{transition:none;animation:none}}
+@media(prefers-reduced-motion:reduce){.wt-doll .wt-wear,.wt-doll .wt-wear.drop{transition:none;animation:none}}
 .wt-tabs{display:none}
 @media(max-width:900px){.wt-tabs{grid-area:l;display:flex;gap:4px;position:sticky;bottom:0}.wt-tabs button{flex:1;font:600 14px var(--disp);padding:10px 4px;border:2.5px solid var(--ink);border-bottom:0;border-radius:12px 12px 0 0;background:#fff;color:var(--ink)}.wt-tabs button[aria-selected=true]{background:var(--cobalt);color:#fff}
  .wt{grid-template-areas:"top" "doll" "l" "r" "foot"}.wt-rail--l{grid-area:r}.wt-rail--r{grid-area:r}.wt-slot{display:none}.wt-slot.is-active{display:block}.wt-rail{gap:0}}
