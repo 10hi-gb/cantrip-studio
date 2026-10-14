@@ -4,7 +4,7 @@ const H = process.argv[2], only = process.argv[3];
 const G = {
   'annual-review': `Promise.all(['Alpha','Bravo'].map(n=>AR.encode({name:n,period:'2026',rev:'',extra:'',closer:0,moments:[0,1,2].map(i=>({cat:i,frame:0,rating:0,text:n+' moment '+i}))})))`,
   'here-it-comes': `[HIC.encode('lob','Alpha note'),HIC.encode('lob','Bravo note')]`,
-  'our-knock': `[OK.encode([300,300,300],'Alpha note'),OK.encode([200,500,200,500],'Bravo note')]`,
+  'our-knock': `[OK.encode({mode:'s'},'Alpha note'),OK.encode({mode:'r',call:[200,500,200,500]},'Bravo note')]`,
   'cheers': `[CH.encode('Alpha toast'),CH.encode('Bravo toast')]`,
   'one-across': `[OA.encode('KITCHEN','Alpha clue',12345),OA.encode('GARDEN','Bravo clue',999)]`,
   'eyes-closed': `[EC.encode([[[100,100],[400,400],[700,120]]],{t:'Alpha cat'}),EC.encode([[[100,700],[400,100]]],{t:'Bravo dog'})]`,
