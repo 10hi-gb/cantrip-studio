@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Score This · Cantrip Studio</title>
+<meta name="description" content="A small comic toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="st">
+<main class="st-page">
+ <header class="st-mast"><h1 class="st-title" data-c="title"></h1><p class="st-lede" id="lede"></p><a class="st-nav" href="../">Cantrip Studio</a></header>
+ <p class="st-msg" id="msg" role="status" aria-live="polite"></p>
+ <div class="st-strip" id="strip"></div>
+ <div class="st-bar">
+  <button class="st-btn st-btn--m" id="play" data-c="primary"></button>
+  <button class="st-btn" id="share" data-c="share"></button>
+  <button class="st-btn" id="rescore" data-c="receiverRescore" hidden></button>
+  <button class="st-btn" id="mute" aria-pressed="false" data-c="mute"></button>
+  <button class="st-btn" id="stop" data-c="stop"></button>
+ </div>
+ <p class="st-fine" id="sound-note"></p>
+ <p class="st-fine" data-c="privacy"></p>
+</main>
+<div class="st-toast" id="toast" role="status" hidden></div>
+</body>
+</html>
