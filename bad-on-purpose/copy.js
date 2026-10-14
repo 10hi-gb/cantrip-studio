@@ -123,5 +123,12 @@ const COPY = {
   "privacy": "Your drawing stays on this device. Nothing you draw is uploaded. The invite link is the same for everyone and doesn't include your drawing.",
   "canvasFail": "This browser can't draw here. Try another browser.",
   "error": "Something fell off the wall. Start over and try again.",
-  "strokesCounter": "Strokes"
+  "strokesCounter": "Strokes",
+  "studioName": "Cantrip Studio",
+  "collectionLabel": "Permanent Collection",
+  "studioHeader": "Cantrip Studio · Permanent Collection",
+  "pigmentLabel": "Pigment",
+  "canvasAria": "Drawing surface. Keyboard: arrow keys move the pen, space puts it down or lifts it.",
+  "hungAria": "Your drawing, hung",
+  "backAria": "Back to the entrance"
 };

@@ -86,7 +86,7 @@ if (typeof document !== 'undefined') (function () {
     var host = $('moments'); host.textContent = '';
     R.moments.forEach(function (m, i) {
       var box = el('div', 'ar-entry');
-      if (R.moments.length > COPY.defaultMoments) { var x = el('button', 'ar-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Remove moment ' + (i + 1)); x.onclick = function () { R.moments.splice(i, 1); renderMoments(); }; box.appendChild(x); }
+      if (R.moments.length > COPY.defaultMoments) { var x = el('button', 'ar-x', '×'); x.type = 'button'; x.setAttribute('aria-label', fill(COPY.removeMoment, { n: i + 1 })); x.onclick = function () { R.moments.splice(i, 1); renderMoments(); }; box.appendChild(x); }
       var f = el('div', 'ar-field'); var lab = el('label', null, (i + 1) + ' · ' + COPY.momentHint); lab.htmlFor = 'm' + i; f.appendChild(lab);
       var inp = el('input'); inp.id = 'm' + i; inp.maxLength = 300; inp.autocomplete = 'off'; inp.value = m.text; inp.placeholder = COPY.momentPrompts[i % COPY.momentPrompts.length];
       f.appendChild(inp); box.appendChild(f);

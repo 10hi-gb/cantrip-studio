@@ -150,5 +150,6 @@ const COPY = {
   "audioFail": "This browser won't play sounds here. The comic still works, silently.",
   "badLink": "This scene didn't come through. Ask them to send it again.",
   "loading": "Setting up the stage…",
-  "unmute": "Unmute"
+  "unmute": "Unmute",
+  "studioName": "Cantrip Studio"
 };

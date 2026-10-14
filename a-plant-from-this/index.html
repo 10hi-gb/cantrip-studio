@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>A Plant From This · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="lib.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<main class="pv">
+ <div class="pv-top"><a href="../" data-c="studioLabel" data-al="backLabel"></a><span id="code"></span></div>
+ <div class="pv-intro"><h1 data-c="title"></h1><p class="pv-lede" id="lede" data-c="invitation"></p><p class="pv-fine" id="rm" hidden></p></div>
+ <div class="pv-stage">
+  <div class="pv-sheet"></div><div class="pv-vel pv-vel--a"></div>
+  <svg class="pv-svg" id="svg" viewBox="0 0 300 420" role="img"></svg>
+  <div class="pv-soil"></div><div class="pv-vel pv-vel--b"></div>
+  <div class="pv-label" id="label" hidden><b data-c="title"></b><p id="caption"></p></div>
+ </div>
+ <section class="pv-side">
+  <div id="maker">
+   <label class="pv-field"><span data-c="phraseLabel"></span><input id="phrase" autocomplete="off" spellcheck="true" data-ph="phrasePlaceholder" aria-describedby="phint pmsg"></label>
+   <p class="pv-msg" id="pmsg" aria-live="polite"></p>
+   <label class="pv-field"><span data-c="noteLabel"></span><input id="note" autocomplete="off" data-ph="notePlaceholder"></label>
+   <p class="pv-msg" id="nmsg" aria-live="polite"></p>
+   <p class="pv-hint" id="phint" data-c="phraseHint"></p>
+   <div class="pv-actions"><button class="pv-btn pv-btn--primary" id="grow" data-c="primary"></button><button class="pv-btn" id="share" data-c="share" hidden></button><button class="pv-btn" id="save" data-c="save" hidden></button><button class="pv-btn" id="regrow" data-c="regrow" hidden></button></div>
+  </div>
+  <div id="recv" hidden>
+   <p class="pv-note" id="rnote" hidden></p>
+   <div class="pv-actions"><button class="pv-btn pv-btn--primary" id="see" data-c="receiverPrimary"></button><button class="pv-btn" id="back" data-c="receiverAgain"></button><button class="pv-btn" id="save2" data-c="save" hidden></button></div>
+  </div>
+  <p class="pv-status" id="status" role="status" aria-live="polite"></p>
+  <div class="pv-linkbox" id="linkbox" hidden><input readonly data-al="copyFail"></div>
+  <p class="pv-fine" data-c="disclaimer"></p>
+  <p class="pv-fine" data-c="privacy"></p>
+  <p class="pv-msg" id="err" hidden></p>
+ </section>
+</main>
+<div class="pv-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

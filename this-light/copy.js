@@ -34,5 +34,7 @@ const COPY = {
     "noon": "noon",
     "set": "set · W",
     "alt": "ALT {deg}°"
-  }
+  },
+  "studioName": "Cantrip Studio",
+  "studioHeader": "Cantrip Studio · Light Specimen"
 };

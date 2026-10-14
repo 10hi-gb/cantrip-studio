@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Wear This · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="items-pending.js" defer></script>
+<script src="lib.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<main class="wt" id="root">
+ <div class="wt-top"><div><a href="../" data-c="studioLabel" data-al="backLabel"></a><h1 data-c="title"></h1></div><p class="wt-fine wt-lede" id="lede" data-c="invitation"></p></div>
+ <div class="wt-tabs" role="tablist" id="tabs"></div>
+ <div class="wt-rail wt-rail--l" id="rail-l"></div>
+ <div class="wt-dollwrap"><svg class="wt-doll" id="doll" viewBox="0 0 200 400" role="img"></svg><div class="wt-skin" id="skin" role="radiogroup"></div></div>
+ <div class="wt-rail wt-rail--r" id="rail-r"></div>
+ <div class="wt-foot">
+  <p class="wt-fine" id="hint" data-c="slotHint"></p>
+  <p class="wt-msg" id="msg" role="status" aria-live="polite"></p>
+  <div class="wt-actions" id="make-actions"><button class="wt-btn" id="shuffle" data-c="shuffle"></button><button class="wt-btn wt-btn--primary" id="send" data-c="primary"></button><button class="wt-btn" id="save" data-c="save"></button></div>
+  <div class="wt-actions" id="recv-actions" hidden><button class="wt-btn wt-btn--primary" id="mine" data-c="receiverPrimary"></button><button class="wt-btn" id="edit" data-c="receiverEdit"></button><button class="wt-btn" id="save2" data-c="save"></button></div>
+  <div class="wt-linkbox" id="linkbox" hidden><input readonly data-al="copyFail"></div>
+  <p class="wt-fine" id="meet" data-c="meetHint"></p>
+  <p class="wt-fine" data-c="privacy"></p>
+  <p class="wt-fine" id="rm" hidden></p><p class="wt-msg" id="err" hidden></p>
+ </div>
+</main>
+<div class="wt-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

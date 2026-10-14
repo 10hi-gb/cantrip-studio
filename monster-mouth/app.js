@@ -43,7 +43,7 @@ if (typeof document !== 'undefined') (function () {
   var $ = function (id) { return document.getElementById(id); };
   var RM = matchMedia('(prefers-reduced-motion: reduce)');
   Array.prototype.forEach.call(document.querySelectorAll('[data-c]'), function (n) { n.textContent = COPY[n.getAttribute('data-c')]; });
-  $('undo').setAttribute('aria-label', COPY.undo || 'Undo'); $('clear').setAttribute('aria-label', COPY.clear || 'Clear'); // COPY.undo/clear not yet in Writer copy.js; fallback until added
+  
   function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 2800); }
   var cv = $('cv'), g = cv.getContext('2d'), W = 800, H = 800;
   var strokes = [], cur = null, alive = false, F = null, V = null, hullPts = null, frame = 0, mouth = 0, twitch = 0, replyI = 0, loop = 0;
@@ -177,5 +177,8 @@ if (typeof document !== 'undefined') (function () {
   render();
 
   // Keyboard-drawing hint sits under the canvas and shows only while drawing is possible.
-  (function () { var pd = $('p-draw'), kh = $('kbhint'), sync = function () { kh.hidden = pd.hidden; }; new MutationObserver(sync).observe(pd, { attributes: true, attributeFilter: ['hidden'] }); sync(); cv.setAttribute('aria-label', COPY.title); })();
+  (function () { var pd = $('p-draw'), kh = $('kbhint'), sync = function () { kh.hidden = pd.hidden; }; new MutationObserver(sync).observe(pd, { attributes: true, attributeFilter: ['hidden'] }); sync();  })();
 })();
+
+// Accessible labels from COPY (data-al).
+if (typeof document !== 'undefined') Array.prototype.forEach.call(document.querySelectorAll('[data-al]'), function (n) { n.setAttribute('aria-label', COPY[n.getAttribute('data-al')]); });

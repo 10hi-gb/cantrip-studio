@@ -29,5 +29,6 @@ const COPY = {
   "shareCancel": "Not sent.",
   "badLink": "This wishbone didn't come through. Snap a new one.",
   "loading": "Drying the wishbone…",
-  "holdLabel": "Hold"
+  "holdLabel": "Hold",
+  "studioName": "Cantrip Studio"
 };

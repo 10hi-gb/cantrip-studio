@@ -103,7 +103,7 @@
       g.fillStyle = '#1B1A17'; g.font = '15px "Libre Franklin",Arial'; y = wrap(g, lastP.label, 1104, y + 12, 372, 21);
       g.fillStyle = '#C8322B'; g.beginPath(); g.arc(1110, y + 10, 7, 0, 7); g.fill(); g.fillStyle = '#5B574F'; g.font = '12px "Libre Franklin",Arial'; y = wrap(g, lastP.insurance, 1124, y + 14, 360, 16);
       wrap(g, lastP.acq, 1104, y + 10, 372, 16);
-      g.font = '14px "Libre Franklin",Arial'; g.fillText(COPY.title + ' · Cantrip Studio', 120, 940);
+      g.font = '14px "Libre Franklin",Arial'; g.fillText(COPY.title + ' · ' + COPY.studioName, 120, 940);
       c.toBlob(function (b) {
         if (!b) { toast(COPY.saveFail); return; }
         var u = URL.createObjectURL(b), a = document.createElement('a'); a.href = u; a.download = 'bad-on-purpose.png'; document.body.appendChild(a); a.click(); a.remove();
@@ -162,3 +162,6 @@
   $('hang').onclick = hang; $('save').onclick = exportPNG; $('invite').onclick = invite;
   window.__bop = { placard: placard, metrics: metrics, DRAW: DRAW };
 })();
+
+// Accessible labels from COPY (data-al).
+if (typeof document !== 'undefined') Array.prototype.forEach.call(document.querySelectorAll('[data-al]'), function (n) { n.setAttribute('aria-label', COPY[n.getAttribute('data-al')]); });

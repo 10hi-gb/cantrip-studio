@@ -38,5 +38,7 @@ const COPY = {
   "tooLong": "Too many lines to fit in a link. Save it as an image instead.",
   "badLink": "This drawing didn't come through. Ask them to send it again.",
   "loading": "Finding a clean sheet…",
-  "keyboardHint": "Arrow keys move. Space puts the pen down."
+  "keyboardHint": "Arrow keys move. Space puts the pen down.",
+  "studioName": "Cantrip Studio",
+  "canvasAria": "Drawing paper. Keyboard: arrows move the chalk, space puts it down or lifts it."
 };

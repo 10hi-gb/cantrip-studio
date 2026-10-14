@@ -24,5 +24,7 @@ const COPY = {
   "empty": "Type something first.",
   "badLink": "This message didn't come through. Ask them to send it again.",
   "loading": "Opening…",
-  "galley": "GALLEY 198"
+  "galley": "GALLEY 198",
+  "studioName": "Cantrip Studio",
+  "studioNameCaps": "CANTRIP STUDIO"
 };

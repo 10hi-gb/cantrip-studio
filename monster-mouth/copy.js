@@ -27,5 +27,9 @@ const COPY = {
   "audioFail": "This browser won't make sounds here. Your monster still moves.",
   "reducedMotion": "Motion is reduced, so it twitches instead of chomping.",
   "error": "Your monster got loose. Draw a new one.",
-  "keyboardHint": "Arrow keys move. Space puts the pen down."
+  "keyboardHint": "Arrow keys move. Space puts the pen down.",
+  "studioName": "Cantrip Studio",
+  "undo": "Undo",
+  "clear": "Start over",
+  "canvasAria": "Drawing board. Keyboard: arrows move the crayon, space puts it down or lifts it."
 };

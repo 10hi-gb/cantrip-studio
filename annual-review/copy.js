@@ -141,5 +141,12 @@ const COPY = {
   "altExport": "Annual performance review for {name}, from {reviewer}.",
   "previewTitle": "Annual Review of You",
   "previewDescription": "Someone filed a review. Open it to read.",
-  "overall": "Overall"
+  "overall": "Overall",
+  "studioName": "Cantrip Studio",
+  "formNo": "Form 193-R",
+  "formHeader": "Form 193-R · Annual Review",
+  "formCopy": "Copy 1 of 3 · Employee",
+  "formFile": "Personnel File",
+  "formReturned": "Returned",
+  "removeMoment": "Remove moment {n}"
 };

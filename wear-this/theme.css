@@ -1,0 +1,52 @@
+/* C087 Wear This — Creative map row 14: paper doll on a dotted dressing board, four binder tabs (rails at 1440, drawer at 390). Fredoka + Atkinson Hyperlegible. */
+@font-face{font-family:"Fredoka";src:url(fonts/fredoka-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Fredoka";src:url(fonts/fredoka-latin-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Atkinson";src:url(fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Atkinson";src:url(fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+:root{--board:#FFF6E5;--cobalt:#2346D8;--tomato:#F2492A;--sun:#FFC02E;--mint:#3FBF97;--plum:#6B2D7A;--ink:#1D1B26;--disp:"Fredoka",system-ui,sans-serif;--ui:"Atkinson",system-ui,sans-serif}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{margin:0;min-height:100dvh;color:var(--ink);font:400 16px/1.45 var(--ui);background:var(--board) radial-gradient(circle,rgba(29,27,38,.13) 1.2px,transparent 1.6px) 0 0/18px 18px}
+.wt{max-width:1280px;margin:0 auto;padding:16px 20px 28px;display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,420px) minmax(0,1fr);grid-template-areas:"top top top" "l doll r" "foot foot foot";gap:18px 26px}
+.wt-top{grid-area:top;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px}
+.wt-top a{font:600 12px var(--disp);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);text-decoration:none}
+.wt-top h1{font:600 clamp(36px,5vw,58px)/1 var(--disp);margin:0;color:var(--cobalt)}
+.wt-lede{grid-area:top;align-self:end}
+.wt-rail{display:flex;flex-direction:column;gap:14px}
+.wt-rail--l{grid-area:l}.wt-rail--r{grid-area:r}
+/* binder tab panel: die-cut card, fold-over white tab */
+.wt-slot{position:relative;background:#fff;border:2.5px solid var(--ink);border-radius:14px;padding:30px 12px 12px;box-shadow:4px 4px 0 var(--ink)}
+.wt-tab{position:absolute;top:-16px;left:14px;background:var(--c,var(--cobalt));color:#fff;border:2.5px solid var(--ink);border-radius:10px 10px 4px 4px;padding:3px 14px;font:600 15px var(--disp);letter-spacing:.02em}
+.wt-slot[data-slot=top] .wt-tab{--c:var(--tomato)}.wt-slot[data-slot=bottom] .wt-tab{--c:var(--plum)}.wt-slot[data-slot=shoes] .wt-tab{--c:#0E7A5C}
+.wt-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.wt-opt{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;background:var(--board);border:2px dashed rgba(29,27,38,.45);border-radius:10px;font:700 12px/1.15 var(--ui);color:var(--ink);cursor:pointer;min-height:64px;text-align:center}
+.wt-opt svg{width:40px;height:34px}
+.wt-opt[aria-checked=true]{border-style:solid;border-color:var(--ink);background:#fff;box-shadow:2px 2px 0 var(--ink)}
+.wt-opt[aria-checked=true]::after{content:attr(data-on);font:600 10px var(--disp);text-transform:uppercase;letter-spacing:.1em;color:var(--cobalt)}
+.wt-sw{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
+.wt-sw button{width:34px;height:34px;border-radius:50%;border:2.5px solid var(--ink);cursor:pointer;position:relative}
+.wt-sw button[aria-checked=true]{outline:3px solid var(--ink);outline-offset:2px}
+.wt-sw button[aria-checked=true]::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;font:700 16px var(--ui);color:#fff;text-shadow:0 0 2px #000}
+.wt-off{margin-left:auto;font:700 12px var(--ui);background:none;border:0;text-decoration:underline;color:var(--ink);cursor:pointer;padding:6px}
+button:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
+.wt-dollwrap{grid-area:doll;position:relative;background:#fff;border:2.5px dashed rgba(29,27,38,.5);border-radius:22px;padding:10px;align-self:start}
+.wt-doll{width:100%;height:auto;display:block}
+.wt-doll .pc{transition:transform 240ms cubic-bezier(.3,1.5,.5,1)}
+.wt-doll .pc.drop{animation:wt-drop 320ms cubic-bezier(.3,1.5,.5,1)}
+@keyframes wt-drop{0%{transform:translateY(-10px);opacity:.3}70%{transform:translateY(4px);opacity:1}100%{transform:none}}
+.wt-skin{display:flex;gap:6px;justify-content:center;margin-top:8px;align-items:center;font:700 12px var(--ui)}
+.wt-skin button{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);cursor:pointer}
+.wt-skin button[aria-checked=true]{outline:3px solid var(--ink);outline-offset:2px}
+.wt-foot{grid-area:foot;display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center}
+.wt-btn{font:600 17px var(--disp);padding:12px 22px;border:2.5px solid var(--ink);border-radius:999px;background:#fff;color:var(--ink);cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+.wt-btn--primary{background:var(--cobalt);color:#fff}
+.wt-actions{display:flex;flex-wrap:wrap;gap:10px}
+.wt-fine{font:400 14px/1.45 var(--ui);max-width:62ch;margin:4px 0}
+.wt-msg{font:700 15px var(--ui);color:#B3260E;min-height:1.3em;margin:0}
+.wt-linkbox input{width:min(100%,520px);font:14px var(--ui);padding:8px;border:2px solid var(--ink)}
+.wt-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font:700 14px var(--ui);z-index:9}
+.wt.is-recv .wt-rail{display:none}.wt.is-recv{grid-template-areas:"top top top" ". doll ." "foot foot foot"}
+@media(max-width:900px){.wt{grid-template-columns:1fr;grid-template-areas:"top" "doll" "l" "r" "foot";padding:12px 12px 24px}.wt-dollwrap{max-width:330px;margin:0 auto;width:100%}.wt.is-recv{grid-template-areas:"top" "doll" "foot"}}
+@media(prefers-reduced-motion:reduce){.wt-doll .pc,.wt-doll .pc.drop{transition:none;animation:none}}
+.wt-tabs{display:none}
+@media(max-width:900px){.wt-tabs{grid-area:l;display:flex;gap:4px;position:sticky;bottom:0}.wt-tabs button{flex:1;font:600 14px var(--disp);padding:10px 4px;border:2.5px solid var(--ink);border-bottom:0;border-radius:12px 12px 0 0;background:#fff;color:var(--ink)}.wt-tabs button[aria-selected=true]{background:var(--cobalt);color:#fff}
+ .wt{grid-template-areas:"top" "doll" "l" "r" "foot"}.wt-rail--l{grid-area:r}.wt-rail--r{grid-area:r}.wt-slot{display:none}.wt-slot.is-active{display:block}.wt-rail{gap:0}}

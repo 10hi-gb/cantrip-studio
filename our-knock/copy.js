@@ -29,5 +29,7 @@ const COPY = {
   "soundHint": "Knocks make a soft sound.",
   "loading": "Hanging the door…",
   "mute": "Mute",
-  "unmute": "Unmute"
+  "unmute": "Unmute",
+  "studioName": "Cantrip Studio",
+  "doorAria": "The door. Tap it or press Space to knock."
 };

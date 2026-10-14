@@ -15,7 +15,7 @@
 </head>
 <body class="oa">
 <div class="oa-page">
- <div class="oa-mast"><a class="oa-nav" href="../">Cantrip Studio · Late Edition</a><span>Puzzle No. 1 · <span data-c="title"></span></span></div>
+ <div class="oa-mast"><a class="oa-nav" href="../" data-c="studioHeader"></a><span><span data-c="puzzleNo"></span> · <span data-c="title"></span></span></div>
  <p id="loading" class="oa-fine" data-c="loading"></p>
 
  <section id="s-make" hidden>
@@ -36,20 +36,20 @@
     <p class="oa-linkbox" id="linkbox"></p>
    </div>
   </div>
-  <div class="oa-clues"><h3>HOW IT WORKS</h3><p class="oa-fine" data-c="privacyMaker"></p><p class="oa-fine" data-c="normalized"></p></div></div>
+  <div class="oa-clues"><h3 data-c="howItWorks"></h3><p class="oa-fine" data-c="privacyMaker"></p><p class="oa-fine" data-c="normalized"></p></div></div>
  </section>
 
  <section id="s-solve" hidden>
   <h1 class="oa-title" id="solve-h" data-c="receiverHeader"></h1>
   <div class="oa-cols"><div>
-   <div class="oa-clue"><b>1A</b><span id="clue-text"></span> <span id="clue-len"></span></div>
-   <div class="oa-rowwrap"><div class="oa-row" id="row" role="group"></div><input class="oa-input" id="entry" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Answer"></div>
+   <div class="oa-clue"><b data-c="clueNumber"></b><span id="clue-text"></span> <span id="clue-len"></span></div>
+   <div class="oa-rowwrap"><div class="oa-row" id="row" role="group"></div><input class="oa-input" id="entry" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" data-al="answerAria"></div>
    <p class="oa-fine" data-c="receiverHint"></p>
    <div class="oa-actions" id="solve-actions"><button class="oa-btn oa-btn--primary" id="check" data-c="check"></button><button class="oa-btn" id="reveal" data-c="reveal"></button></div>
    <p class="oa-msg" id="solve-msg" role="status" aria-live="polite"></p>
    <div class="oa-actions" id="after" hidden><a class="oa-btn oa-btn--primary" id="back" href="./" data-c="makeYours"></a></div>
   </div>
-  <div class="oa-clues"><h3>ACROSS</h3><p class="oa-clue"><b>1</b><span id="clue-side"></span></p><h3>NOTE</h3><p class="oa-fine" data-c="privacyMaker"></p></div></div>
+  <div class="oa-clues"><h3 data-c="acrossHeading"></h3><p class="oa-clue"><b>1</b><span id="clue-side"></span></p><h3 data-c="noteHeading"></h3><p class="oa-fine" data-c="privacyMaker"></p></div></div>
  </section>
 
  <section id="s-bad" hidden><h1 class="oa-title" data-c="title"></h1><p class="oa-big" data-c="badLink"></p><div class="oa-actions"><a class="oa-btn oa-btn--primary" href="./" data-c="makeYours"></a></div></section>

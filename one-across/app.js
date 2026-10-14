@@ -150,3 +150,6 @@ if (typeof document !== 'undefined') (function () {
   window.addEventListener('hashchange', route);
   route();
 })();
+
+// Accessible labels from COPY (data-al).
+if (typeof document !== 'undefined') Array.prototype.forEach.call(document.querySelectorAll('[data-al]'), function (n) { n.setAttribute('aria-label', COPY[n.getAttribute('data-al')]); });

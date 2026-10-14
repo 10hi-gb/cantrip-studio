@@ -19,5 +19,6 @@ const COPY = {
   "badLink": "This glass didn't make it. Ask them to send another.",
   "loading": "Pouring…",
   "barNo": "Bar No. 088",
-  "unmute": "Unmute"
+  "unmute": "Unmute",
+  "studioName": "Cantrip Studio"
 };

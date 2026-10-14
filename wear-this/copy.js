@@ -1,0 +1,45 @@
+// C087-wear-this — final visitor copy (Writing Bot, 2026-10-13). Every visitor/state/a11y string; app reads all text from COPY.
+const COPY = {
+  "title": "Wear This",
+  "studioLabel": "Cantrip Studio · Dressing Board",
+  "invitation": "Dress the paper doll. Send it so they can spot you, or just for fun.",
+  "slots": {
+    "head": "Hair & hat",
+    "top": "Top",
+    "bottom": "Bottom",
+    "shoes": "Shoes"
+  },
+  "slotHint": "Pick one for each tab. Arrow keys move through choices, Enter puts it on.",
+  "choiceAria": "{slot}: {item}",
+  "selected": "On",
+  "shuffle": "Surprise me",
+  "clearSlot": "Take it off",
+  "empty": "The doll is waiting. Pick anything.",
+  "primary": "Send the outfit",
+  "partial": {
+    "one": "1 slot is empty. That's allowed.",
+    "other": "{n} slots are empty. That's allowed."
+  },
+  "meetHint": "Meeting up? Send what you're wearing so they can find you.",
+  "share": "Send the outfit",
+  "shareText": "This is what I'm wearing. Look for me.",
+  "save": "Save as image",
+  "saved": "Saved to your device.",
+  "saveFail": "Couldn't save the image. A screenshot works too.",
+  "privacy": "Only your picks ride in the link: no photo, no body, no location. Nothing is uploaded. Anyone with the link can see the outfit.",
+  "receiverIntro": "Someone sent you an outfit.",
+  "receiverPrimary": "Make one yours",
+  "receiverEdit": "Change something",
+  "unknownItem": "One piece didn't come through, so that slot is empty.",
+  "badLink": "This outfit didn't come through. Ask them to send it again.",
+  "loading": "Laying out the clothes…",
+  "dollAlt": "Paper doll wearing {head}, {top}, {bottom}, and {shoes}.",
+  "nothing": "nothing",
+  "copied": "Link copied.",
+  "copyFail": "Couldn't copy. Select the link below and copy it yourself.",
+  "shareCancel": "Not sent. The outfit is still on.",
+  "home": "Cantrip Studio",
+  "backLabel": "Back to Cantrip Studio",
+  "reducedMotion": "Motion is reduced. Everything still works.",
+  "error": "Something went wrong. Reload the page and try again."
+};

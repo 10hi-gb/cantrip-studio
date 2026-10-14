@@ -148,7 +148,7 @@ if (typeof document !== 'undefined') (function () {
       var c = document.createElement('canvas'); c.width = 1080; c.height = 1200; var x = c.getContext('2d');
       x.fillStyle = '#0E0B10'; x.fillRect(0, 0, 1080, 1200); x.fillStyle = BOARD; x.fillRect(60, 60, 960, 960); var t = document.createElement('canvas'); t.width = 960; t.height = 960; paintBoard(t.getContext('2d'), 960); chalk(t.getContext('2d'), ss, 960); x.drawImage(t, 60, 60);
       x.strokeStyle = '#D9B26A'; x.lineWidth = 3; x.strokeRect(50, 50, 980, 980);
-      x.fillStyle = CHALK; x.font = 'italic 54px "Instrument Serif",serif'; x.fillText(promptText(p), 60, 1110); x.fillStyle = '#A9A39A'; x.font = '22px "Space Grotesk",sans-serif'; x.fillText(COPY.title + ' · Cantrip Studio', 60, 1160);
+      x.fillStyle = CHALK; x.font = 'italic 54px "Instrument Serif",serif'; x.fillText(promptText(p), 60, 1110); x.fillStyle = '#A9A39A'; x.font = '22px "Space Grotesk",sans-serif'; x.fillText(COPY.title + ' · ' + COPY.studioName, 60, 1160);
       c.toBlob(function (b) { if (!b) return toast(COPY.saveFail); var u = URL.createObjectURL(b), a = document.createElement('a'); a.href = u; a.download = 'eyes-closed.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 4000); toast(COPY.saved); }, 'image/png');
     } catch (e) { toast(COPY.saveFail); }
   }
@@ -171,5 +171,8 @@ if (typeof document !== 'undefined') (function () {
   route();
 
   // Keyboard-drawing hint sits under the canvas and shows only while drawing is possible.
-  (function () { var pd = $('p-draw'), kh = $('kbhint'), sync = function () { kh.hidden = pd.hidden; }; new MutationObserver(sync).observe(pd, { attributes: true, attributeFilter: ['hidden'] }); sync(); cv.setAttribute('aria-label', COPY.title); })();
+  (function () { var pd = $('p-draw'), kh = $('kbhint'), sync = function () { kh.hidden = pd.hidden; }; new MutationObserver(sync).observe(pd, { attributes: true, attributeFilter: ['hidden'] }); sync();  })();
 })();
+
+// Accessible labels from COPY (data-al).
+if (typeof document !== 'undefined') Array.prototype.forEach.call(document.querySelectorAll('[data-al]'), function (n) { n.setAttribute('aria-label', COPY[n.getAttribute('data-al')]); });

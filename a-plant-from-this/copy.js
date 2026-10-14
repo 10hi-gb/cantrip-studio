@@ -1,0 +1,46 @@
+// C050-a-plant-from-this — final visitor copy (Writing Bot, 2026-10-13). Every visitor/state/a11y string; app reads all text from COPY.
+const COPY = {
+  "title": "A Plant From This",
+  "studioLabel": "Cantrip Studio · Greenhouse 050",
+  "invitation": "Type a few words. They grow into a plant no one has seen before.",
+  "phraseLabel": "Your words",
+  "phrasePlaceholder": "the kitchen on Sunday mornings",
+  "phraseHint": "Same words, same plant. Change one letter and it grows differently.",
+  "phraseEmpty": "Plant something. Even one word grows.",
+  "phraseTooLong": {
+    "one": "1 character over.",
+    "other": "{n} characters over."
+  },
+  "noteLabel": "A note to go with it (optional)",
+  "notePlaceholder": "Water it with compliments.",
+  "noteTooLong": {
+    "one": "1 character over.",
+    "other": "{n} characters over."
+  },
+  "primary": "Grow it",
+  "growing": "Growing…",
+  "grownCaption": "Grown from: “{phrase}”",
+  "disclaimer": "An invented plant, drawn from your words. Not a real species, and not a care guide.",
+  "regrow": "Change the words",
+  "share": "Give them this plant",
+  "shareText": "I grew you a plant.",
+  "save": "Save as image",
+  "saved": "Saved to your device.",
+  "saveFail": "Couldn't save the image. A screenshot works too.",
+  "privacy": "Your words and note live in the link. Nothing is uploaded. Anyone with the link can read them.",
+  "tooLongLink": "That's too long to fit in a link. Trim the words or the note.",
+  "receiverIntro": "Someone grew you a plant.",
+  "receiverPrimary": "See it grow",
+  "receiverAgain": "Grow one back",
+  "badLink": "This plant didn't take. Ask them to send it again.",
+  "oldVersion": "This plant was grown with an older recipe, so it may look a little different.",
+  "loading": "Preparing the soil…",
+  "plantAlt": "An invented plant grown from the words “{phrase}”.",
+  "copied": "Link copied.",
+  "copyFail": "Couldn't copy. Select the link below and copy it yourself.",
+  "shareCancel": "Not sent. Your plant is still here.",
+  "home": "Cantrip Studio",
+  "backLabel": "Back to Cantrip Studio",
+  "reducedMotion": "Motion is reduced. Everything still works.",
+  "error": "Something went wrong. Reload the page and try again."
+};

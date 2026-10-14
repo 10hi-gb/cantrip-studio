@@ -16,17 +16,17 @@
 <body class="mm">
 <main class="mm-wrap">
  <div>
-  <a class="mm-nav" href="../">Cantrip Studio</a>
+  <a class="mm-nav" href="../" data-c="studioName"></a>
   <h1 class="mm-title" data-c="title"></h1>
   <p class="mm-lede" data-c="invitation"></p>
-  <div class="mm-jaw" id="jaw"><canvas id="cv" width="800" height="800" tabindex="0" aria-describedby="kbhint"></canvas></div>
+  <div class="mm-jaw" id="jaw"><canvas id="cv" width="800" height="800" tabindex="0" data-al="canvasAria" aria-describedby="kbhint"></canvas></div>
   <p class="mm-note mm-kbhint" id="kbhint" data-c="keyboardHint"></p>
  </div>
  <div class="mm-side">
   <div class="mm-bubble" id="bubble" role="status" aria-live="polite"></div>
   <div id="p-draw">
    <p class="mm-note" id="draw-note" data-c="canvasHint"></p>
-   <div class="mm-row"><button class="mm-btn" id="undo">↶</button><button class="mm-btn" id="clear">✕</button></div>
+   <div class="mm-row"><button class="mm-btn" id="undo" data-c="undo"></button><button class="mm-btn" id="clear" data-c="clear"></button></div>
    <p></p>
    <button class="mm-btn mm-btn--go" id="wake" data-c="primary"></button>
   </div>
