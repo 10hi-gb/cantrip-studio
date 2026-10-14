@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Here It Comes · Cantrip Studio</title>
+<meta name="description" content="A small toy from Cantrip Studio.">
+<meta property="og:title" content="Cantrip Studio">
+<meta property="og:description" content="A small toy from Cantrip Studio.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="hic">
+<div class="hic-court"><i></i></div><div class="hic-net"></div>
+<div class="hic-scene" id="scene" aria-hidden="true"></div>
+<div class="hic-hud"><a href="../">Cantrip Studio</a><span class="hic-board" id="board" data-c="title"></span></div>
+<h1 class="hic-big" id="big"></h1>
+<p class="hic-sub" id="sub" role="status" aria-live="polite"></p>
+<div class="hic-ring" id="ring" hidden></div>
+<div class="hic-ball" id="ball"></div>
+<div class="hic-callout" id="callout" aria-live="assertive"></div>
+
+<div class="hic-actions" id="a-make" hidden>
+ <div class="hic-throws" id="throws" role="group"></div>
+ <label class="hic-note"><span data-c="noteLabel"></span><input id="note" maxlength="60" autocomplete="off"></label>
+ <button class="hic-btn hic-btn--go" id="throw" data-c="primary"></button>
+</div>
+<div class="hic-actions" id="a-share" hidden>
+ <p class="hic-fine" data-c="privacyMaker"></p>
+ <div class="hic-row"><button class="hic-btn hic-btn--go" id="share" data-c="share"></button><button class="hic-btn" id="rethrow">←</button></div>
+</div>
+<div class="hic-actions" id="a-ready" hidden>
+ <p class="hic-fine" data-c="readyHint"></p>
+ <button class="hic-btn hic-btn--go" id="ready" data-c="readyButton"></button>
+</div>
+<div class="hic-actions" id="a-done" hidden>
+ <p class="hic-fine" data-c="retryNote"></p>
+ <div class="hic-row"><button class="hic-btn hic-btn--go" id="back" data-c="throwBack"></button><button class="hic-btn" id="again" data-c="retry"></button></div>
+</div>
+<div class="hic-actions" id="a-bad" hidden><a class="hic-btn hic-btn--go" href="./" data-c="primary"></a></div>
+<div class="hic-toast" id="toast" role="status" hidden></div>
+</body>
+</html>
