@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-14 4:58 PM PT",
+ "updated": "2026-10-14 5:56 PM PT",
  "items": [
   {
    "id": "C148",
@@ -239,15 +239,20 @@
    "batch": "B",
    "name": "Wear This",
    "description": "Dress a paper doll in four slots and send the outfit.",
-   "status": "Fix awaiting QA retest",
-   "note": "design-check fixes in 77faa78 + QA d797f8cd fixes (320x640 slot fold, skin-tone message) in the new commit; last QA pass was on 2e668c5f",
+   "status": "Engineer self-check passed",
+   "note": "QA passed on 4555c09d (commit 5e23775b), QA-4555c09d.md: defects none found",
    "url": "../wear-this/",
-   "limitations": [],
+   "limitations": [
+    "Real device share sheet / clipboard not tested (headless)",
+    "QA note (not a defect): on short phones the doll is small, about 118x120 px at 320x640"
+   ],
    "qa": {
-    "verdict": "Fix awaiting QA retest",
-    "pin": "fdbc3526",
-    "ledger": "design-check fixes in 77faa78 + QA d797f8cd fixes (320x640 slot fold, skin-tone message) in the new commit; last QA pass was on 2e668c5f",
-    "untested": []
+    "verdict": "QA passed",
+    "pin": "4555c09d",
+    "ledger": "QA-4555c09d.md, commit 5e23775b",
+    "untested": [
+     "Real device share sheet / clipboard not tested (headless)"
+    ]
    }
   },
   {
