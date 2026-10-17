@@ -244,6 +244,47 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     t = await p.evaluate(() => ({ bn: document.getElementById('banner-n').textContent, hid: document.getElementById('banner-n').hidden })); ck(w + ' QA E3: own copy -> hidden receiverNote emptied', t.hid && !t.bn, t);
     ck(w + ' QA a695196 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
   }
+  // ---------- QA local-7cf462f E2r (names break at spaces, then hyphens; mid-word only for a word wider than the column) and E9 (no visible text under 10px)
+  const EIGHT = { e: 'Cap', c: 0, p: ['Maximiliana Wolfeschlege', 'Bartholomew-Fitzgerald J', 'W'.repeat(24), 'Ngozi Okonkwo-Adeyemi', 'Ade', 'Zoë', 'M'.repeat(24), 'Cy'], x: Array.from({ length: 20 }, (_, i) => ['x' + i, 10000000 - i * 77, i % 3, 0, [0, 1, 2, 3, 4, 5, 6, 7]]) };
+  const THREE = { e: 'Cabin weekend', c: 0, p: ['Ade', 'Ben', 'Cy'], x: [['Firewood', 3000, 0, 0, [0, 1, 2]]] };
+  const openFrag = async (p, o, own) => { const f = await p.evaluate(o => MILL.pack('e', 1, o), o); await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(350); if (own) { await press(p, '#own-copy'); await sleep(250); } };
+  { const s = await session(H, IP); const p = s.p; await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    for (const w of [700, 760, 850, 930, 999, 1000, 1280]) { await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await openFrag(p, EIGHT);
+      const t = await p.evaluate(() => [...document.querySelectorAll('#rods .eu-name')].map(nm => { const e = nm.querySelector('.mill-typed'); if (!e) return null; const cs = getComputedStyle(nm), cv = document.createElement('canvas').getContext('2d'); cv.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+        const room = nm.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), txt = e.textContent, tops = [], rg = document.createRange(), walk = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); let node;
+        while ((node = walk.nextNode())) for (let i = 0; i < node.length; i++) { rg.setStart(node, i); rg.setEnd(node, i + 1); const rc = rg.getClientRects()[0]; tops.push(rc ? Math.round(rc.top) : null); }
+        const breaks = []; for (let i = 1; i < tops.length; i++) if (tops[i] > tops[i - 1] + 2) breaks.push(i);
+        const segs = []; const re = /[^ \-]+-?/g; let m; while ((m = re.exec(txt))) segs.push({ seg: m[0], a: m.index, b: m.index + m[0].length, wd: cv.measureText(m[0]).width });
+        const bad = segs.filter(g => g.wd <= room + 0.5 && breaks.some(i => i > g.a && i < g.b)).map(g => g.seg);
+        return { txt, room: Math.round(room), breaks, bad }; }).filter(Boolean));
+      const bad = t.filter(r => r.bad.length);
+      ck(w + ' QA E2r: names break at spaces, then hyphens; no mid-word break in any part that fits the column (e.g. “Bartholomew- stays whole)', !bad.length && t.some(r => r.txt.startsWith('“Bartholomew')), bad.length ? bad : t.map(r => r.txt + '@' + r.breaks.join('/')).join(' | ') + ' room ' + t[0].room); }
+    await s.b.close(); }
+  for (const w of [320, 390, 1280]) {
+    const s = await session(H, IP); const p = s.p; await p.setViewport({ width: w, height: 900 }); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]); await p.goto(BASE, { waitUntil: 'load' });
+    const floor = () => p.evaluate(() => { const out = [], walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
+      const hiddenSr = e => { for (let x = e; x && x !== document.body; x = x.parentElement) { const cs = getComputedStyle(x); if (cs.clipPath === 'inset(50%)' || (cs.position === 'absolute' && x.getBoundingClientRect().width <= 1)) return true; } return false; };
+      while ((n = walk.nextNode())) { if (!n.textContent.trim()) continue; const e = n.parentElement; if (!e || !e.getClientRects().length || getComputedStyle(e).visibility !== 'visible' || hiddenSr(e)) continue; const rg = document.createRange(); rg.selectNodeContents(n); if (!rg.getClientRects().length) continue;
+        const fs = parseFloat(getComputedStyle(e).fontSize); if (fs < 10) out.push(fs + 'px ' + (e.id || e.className || e.tagName) + ': ' + n.textContent.trim().slice(0, 30)); } return out; });
+    const axis = () => p.evaluate(() => { const sc = document.querySelector('.eu-scale'), is = sc.querySelectorAll('span:nth-child(2) i'), rod = document.querySelector('#rods .eu-rod').getBoundingClientRect(), post = rod.left + rod.width / 2, r = [...is].map(i => i.getBoundingClientRect()), cs = getComputedStyle(sc);
+      return { d: cs.display, h: sc.getBoundingClientRect().height, txt: [...is].map(i => i.textContent), zero: Math.abs(r[1].left + r[1].width / 2 - post), left: r[0].right <= post, right: r[2].left >= post, size: cs.fontSize, weight: cs.fontWeight, pos: cs.position, ah: sc.getAttribute('aria-hidden') }; });
+    const tags = () => p.evaluate(() => { const fr = document.getElementById('frame'); return { notags: fr.classList.contains('eu-notags'), rows: [...document.querySelectorAll('#rods .eu-rod-row')].map(r => { const sm = r.querySelector('.eu-token small'), b = sm.getBoundingClientRect(), cs = getComputedStyle(sm);
+      return { txt: r.textContent, tag: sm.textContent, shown: b.width > 1 && b.height > 1 && cs.clipPath !== 'inset(50%)', size: cs.fontSize, ah: !!r.closest('[aria-hidden]') || !!r.querySelector('[aria-hidden]'), fig: parseFloat(getComputedStyle(r.querySelector('.eu-fig')).fontSize) }; }) }; });
+    // 8 people, large balances: own copy (editors visible) and recipient view
+    for (const own of [true, false]) { await openFrag(p, EIGHT, own); const bad = await floor();
+      ck(w + ` QA E9: 8 people at the cap (${own ? 'own copy' : 'recipient'}): every visible text node is at least 10px`, !bad.length, bad.slice(0, 12)); }
+    let a = await axis(); ck(w + ' QA E9: axis header visible ("← Owes", "0" over the post, "Gets back →"), 11px Lexend 500, sticky', a.d !== 'none' && a.h > 8 && a.txt.join('|') === '← ' + C.tagOwes + '|0|' + C.tagOwed + ' →' && a.zero <= 3 && a.left && a.right && a.size === '11px' && a.weight === '500' && a.pos === 'sticky', a);
+    let tg = await tags(); const tight = w <= 360 || tg.rows.some(r => r.fig <= 11);
+    ck(w + ` QA E9: tight frame -> ${tight ? 'every visible tag dropped' : 'tags shown at 10px'}; figures >= 10px; accessible text still "“name” $x Owes/Gets back", nothing aria-hidden`, (tight ? tg.notags && tg.rows.every(r => !r.shown) : !tg.notags && tg.rows.every(r => r.shown && r.size === '10px')) && tg.rows.every(r => r.fig >= 10 && !r.ah && [C.tagOwes, C.tagOwed, C.tagEven].includes(r.tag) && r.txt.endsWith(r.tag) && /^“.+”\$[\d,]+\.\d\d/.test(r.txt)), { notags: tg.notags, rows: tg.rows.map(r => r.txt + ' fig ' + r.fig + (r.shown ? ' shown' : ' hid')) });
+    if (w <= 390) { const ax = await p.accessibility.snapshot({ interestingOnly: false }), names = []; (function walk(n) { if (n.name) names.push(n.name); (n.children || []).forEach(walk); })(ax);
+      const nOwes = tg.rows.filter(r => r.tag === C.tagOwes).length, nOwed = tg.rows.filter(r => r.tag === C.tagOwed).length;
+      ck(w + ' QA E9: the accessibility tree still reads every tag (Owes / Gets back) with tags dropped on screen', names.filter(x => x.toUpperCase() === C.tagOwes.toUpperCase()).length >= nOwes && names.filter(x => x.toUpperCase() === C.tagOwed.toUpperCase()).length >= nOwed && nOwes > 0 && nOwed > 0, { nOwes, nOwed, found: names.filter(x => [C.tagOwes, C.tagOwed].map(y => y.toUpperCase()).includes(x.toUpperCase())).length }); }
+    await p.emulateMediaType('print'); tg = await tags(); await p.emulateMediaType('screen');
+    ck(w + ' QA E9: print shows every tag at 10px', tg.rows.every(r => r.shown && r.size === '10px'), tg.rows.map(r => r.tag + ' ' + r.size + (r.shown ? '' : ' HIDDEN')));
+    if (w === 390) { await openFrag(p, THREE, true); tg = await tags(); a = await axis(); const bad = await floor();
+      ck('390 QA E9 control: 3 people -> tags shown (10px), axis header shown, nothing under 10px', !tg.notags && tg.rows.every(r => r.shown && r.size === '10px') && a.d !== 'none' && !bad.length, { tg: tg.rows.map(r => r.txt), bad }); }
+    ck(w + ' QA 7cf462f block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
+  }
   // E4: whole-URL cap on the receiving side, from a 64-character origin: 2,000 opens, 2,001 is refused as damaged
   { const port = (H.split(':')[1] || ''), tail = port ? ':' + port : '', hn = 'x'.repeat(64 - (SCHEME + '://').length - tail.length - '.eu-cap.test'.length) + '.eu-cap.test', O = SCHEME + '://' + hn + tail;
     const s = await session(hn, IP); const p = s.p; await p.setViewport({ width: 390, height: 900 }); await p.goto(O + '/mill/even-up/', { waitUntil: 'load' }); await sleep(200);

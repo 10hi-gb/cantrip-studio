@@ -9,8 +9,9 @@
 .eu-meta{font:400 13px/1.4 var(--eu-sans);color:var(--eu-mute);margin:0 0 6px}
 .eu-unnamed{opacity:.55}
 /* frame: each rod row carries its own name (no separate aria-hidden name column), rows grow with long names */
-.eu-board{grid-template-columns:minmax(0,1fr) var(--eu-settle);--eu-name:112px}
-.eu-scale{grid-template-columns:112px minmax(0,1fr) var(--eu-settle)}
+.eu-frame{--eu-name:112px}
+.eu-board{grid-template-columns:minmax(0,1fr) var(--eu-settle)}
+.eu-scale{grid-template-columns:var(--eu-name) minmax(0,1fr) var(--eu-settle)}
 .eu-rods{list-style:none;margin:0;padding:0;grid-auto-rows:auto;min-width:0}
 .eu-rods::before{left:calc(var(--eu-name) + (100% - var(--eu-name)) / 2)}
 .eu-rod-row{display:grid;grid-template-columns:var(--eu-name) minmax(0,1fr);align-items:center;min-height:var(--eu-row);min-width:0}
@@ -62,7 +63,7 @@
 /* recipient: read-only (MILLVIEW.readOnly disables controls; editors hidden) */
 .is-recv .eu-xacts{display:none}
 @media(max-width:699px){
-  .eu-board{--eu-name:0px}
+  .eu-frame{--eu-name:0px}
   .eu-rods::before{display:none} /* names sit above their rods on phones: the zero post is drawn per rod so it never crosses a name */
   .eu-rod::after{content:"";position:absolute;left:50%;top:-5px;bottom:-5px;width:6px;transform:translateX(-50%);background:var(--eu-post);border-radius:3px}
   .eu-rod-row{grid-template-columns:minmax(0,1fr);align-content:center;padding:4px 0}
@@ -87,13 +88,11 @@
 .eu-token .eu-fig,.eu-token small{white-space:nowrap}
 .eu-token.is-tight{font-size:12px;padding-left:5px;padding-right:5px;min-width:0}
 .eu-token.is-tighter{font-size:11px;padding-left:4px;padding-right:4px;letter-spacing:-.01em}
-.eu-token.is-tighter small{font-size:8px;letter-spacing:.04em}
 .eu-token.is-tightest{font-size:10px;padding-left:3px;padding-right:3px;letter-spacing:-.02em}
-.eu-token.is-tightest small{font-size:7.5px;letter-spacing:.02em}
-/* QA E2: a wider name column on wide screens; names wrap between words; a single over-long word may break, but the
+/* QA E2 / E2r: a wider name column on wide screens (172px at 700–999 so a hyphenated part like "“Bartholomew-" fits whole); names wrap between words; a single over-long word may break, but the
    closing quote stays with the end of the last word (.eu-nobr, app.js frameName) */
-@media(min-width:700px){.eu-board{--eu-name:150px}.eu-scale{grid-template-columns:150px minmax(0,1fr) var(--eu-settle)}}
-@media(min-width:1000px){.eu-board{--eu-name:200px}.eu-scale{grid-template-columns:200px minmax(0,1fr) var(--eu-settle)}}
+@media(min-width:700px){.eu-frame{--eu-name:172px}}
+@media(min-width:1000px){.eu-frame{--eu-name:200px}}
 .eu-rods .eu-name{overflow-wrap:break-word;word-break:normal;hyphens:manual}
 .eu-nobr{white-space:nowrap}
 /* QA E8: the people cap is a neutral hint (muted, no error colour, icon or aria-invalid) */
@@ -119,3 +118,18 @@
   .eu-x dd .eu-amt,.eu-x dd .eu-rmark{display:block;text-align:right}
   .eu-x dd .eu-rmark:empty{display:none}
 }
+
+/* QA E9 (Creative): no visible text under 10px.
+   1) token tag 10px Lexend 500 uppercase .06em, never smaller; */
+.eu-frame .eu-token small{font:500 10px/1 var(--eu-sans);letter-spacing:.06em;text-transform:uppercase}
+/* 2) the axis header shows at every width: "← Owes" left, "0" over the post, "Gets back →" right; 11px Lexend 500, sticky over the rods */
+.eu-frame .eu-scale{display:grid;font:500 11px/1.3 var(--eu-sans);letter-spacing:.06em;text-transform:uppercase;color:var(--eu-mute);position:sticky;top:0;z-index:3;background:var(--eu-board);padding:3px 0}
+.eu-frame .eu-scale span:nth-child(2){display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:baseline;padding:0;min-width:0}
+.eu-frame .eu-scale span:nth-child(2) i{font-style:normal;min-width:0}
+.eu-frame .eu-scale span:nth-child(2) i:first-child{justify-self:start;padding-right:6px}
+.eu-frame .eu-scale span:nth-child(2) i:nth-child(2){padding:0 2px}
+.eu-frame .eu-scale span:nth-child(2) i:last-child{justify-self:end;text-align:right;padding-left:6px} /* wraps at its space on narrow rods, never across the post */
+.eu-frame.is-empty .eu-scale{display:none}
+/* 3) tight frames (a token would step to 11px, or <=360px with more than 4 people): the tag leaves the screen on every token
+   but stays in the accessible text (visually hidden, never aria-hidden); the figure keeps a 10px minimum. 5) Print keeps the tags. */
+@media screen{.eu-frame.eu-notags .eu-token small{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}}

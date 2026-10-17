@@ -182,13 +182,12 @@ window.MILL_HUB = {
     "A received link is a snapshot of what the sender entered; nobody has agreed to anything by opening it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 7cf462f82d14e9ff2ab6f5c5d689e2c2ca1d2f3e: unit 21 (incl. 5000-case settlement property test); browser 260/260 at 320/390/1280/1440. Not QA.",
-   "status": "NOT READY (retest pending at 7cf462f)",
+   "status": "NOT READY",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "a69519680ab47bbe976516247f3bd3de984ce0f4",
-    "report": "qa/even-up/local-a695196/QA-local-a695196.md",
-    "note": "retest pending at 7cf462f"
+    "sha": "7cf462f82d14e9ff2ab6f5c5d689e2c2ca1d2f3e",
+    "report": "qa/even-up/local-7cf462f/QA-local-7cf462f.md"
    }
   },
   {

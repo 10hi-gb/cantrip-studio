@@ -26,8 +26,8 @@
   // (or, for one very long word, to its last two letters) with a no-wrap span, so it can never sit alone on a line.
   function frameName(id) {
     var n = pname(id); if (!n) return el('span', 'eu-unnamed', '?');
-    var q = V.quote(n), cut = q.lastIndexOf(' ') + 1; if (q.length - cut > 12 || cut <= 0) cut = Math.max(1, q.length - 3);
-    var s = el('span', 'mill-typed'); s.appendChild(document.createTextNode(q.slice(0, cut))); s.appendChild(el('span', 'eu-nobr', q.slice(cut))); return s;
+    var q = V.quote(n), cut = q.lastIndexOf(' ') + 1; if (q.length - cut > 14) cut = Math.max(1, q.length - 3);
+    var s = el('span', 'mill-typed'); if (cut) s.appendChild(document.createTextNode(q.slice(0, cut))); s.appendChild(el('span', 'eu-nobr', q.slice(cut))); return s;
   }
   function listNodes(ids) { var f = document.createDocumentFragment(); ids.forEach(function (id, i) { if (i) f.appendChild(document.createTextNode(', ')); f.appendChild(nameNode(id)); }); return f; }
   function toast(m) { V.toast(m, 3200); }
@@ -142,10 +142,16 @@
     var narrow = window.matchMedia && window.matchMedia('(max-width: 699px)').matches, gap = narrow ? (tracks.length > 4 ? 12 : 19) : 26;
     $('frame').style.setProperty('--eu-settle', T.length ? (16 + 8 + Math.max(0, tracks.length - 1) * gap + 24) + 'px' : (narrow ? '12px' : '24px'));
     box.style.setProperty('--gap', gap + 'px');
-    // QA E1 (measured after the margin width is set, so the rod is at its final size): the figure never wraps (white-space:nowrap); if a token is wider than its half of the rod, step the type down.
-    rows.forEach(function (R) { R.tok.classList.remove('is-tight', 'is-tighter', 'is-tightest'); var room = R.rod.clientWidth / 2 - 6;
-      if (R.tok.offsetWidth > room) R.tok.classList.add('is-tight'); if (R.tok.offsetWidth > room) R.tok.classList.add('is-tighter'); if (R.tok.offsetWidth > room) R.tok.classList.add('is-tightest');
-      R.rod.style.setProperty('--half', Math.ceil(R.tok.offsetWidth / 2) + 'px'); });
+    // QA E1 (measured after the margin width is set, so the rod is at its final size): the figure never wraps (white-space:nowrap);
+    // a token wider than its half of the rod steps its figure 13 -> 12 -> 11 -> 10px. QA E9 (Creative): if any token would need 11px or
+    // less, or the screen is <=360px with more than 4 people, every token drops its visible tag (eu-notags; still in the accessible text).
+    var fr = $('frame'), tiers = ['is-tight', 'is-tighter', 'is-tightest'];
+    function fit(R) { var room = R.rod.clientWidth / 2 - 6, k = 0; R.tok.classList.remove.apply(R.tok.classList, tiers); while (k < tiers.length && R.tok.offsetWidth > room) R.tok.classList.add(tiers[k++]); return k; }
+    fr.classList.remove('eu-notags');
+    var deep = st.x.length && (window.matchMedia && window.matchMedia('(max-width: 360px)').matches && st.p.length > 4);
+    rows.forEach(function (R) { if (fit(R) >= 2) deep = true; });
+    if (deep) { fr.classList.add('eu-notags'); rows.forEach(fit); }
+    rows.forEach(function (R) { R.rod.style.setProperty('--half', Math.ceil(R.tok.offsetWidth / 2) + 'px'); });
     var bTop = box.getBoundingClientRect().top, cy = rows.map(function (R) { var r = R.rod.getBoundingClientRect(); return r.top + r.height / 2 - bTop; });
     T.forEach(function (t) {
       var ln = el('div', 'eu-link'); ln.setAttribute('data-dir', t.dir); ln.style.setProperty('--k', String(t.k)); ln.style.top = cy[t.top] + 'px'; ln.style.height = Math.max(2, cy[t.bot] - cy[t.top]) + 'px'; box.appendChild(ln);
