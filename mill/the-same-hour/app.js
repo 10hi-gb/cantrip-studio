@@ -181,7 +181,7 @@
     }
     if (!found && !none) lastText = '';
   }
-  // Recipient view is read-only in the DOM (shared helper): the form is disabled + inert, both Start over buttons are gone.
+  // Recipient view is read-only in the DOM (shared helper): the form controls are disabled (never inert: names and times stay readable), both Start over buttons are gone.
   function applyMode() { var r = mode === 'recv'; V.readOnly($('form'), r); ['b-reset', 'b-nreset'].forEach(function (id) { $(id).hidden = r; $(id).disabled = r; }); }
   function refresh() { refresh0(); applyMode(); }
   function refresh0() {
