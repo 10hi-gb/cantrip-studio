@@ -13,30 +13,33 @@
 <script src="copy.js" defer></script>
 <script src="copy-extra.js" defer></script>
 <script src="../shared/core.js" defer></script>
+<script src="../shared/view.js" defer></script>
 <script src="byg.js" defer></script>
 <script src="app.js" defer></script>
 </head>
 <body class="byg">
 <div class="byg-page">
  <div class="byg-top"><a href="../" id="home"></a></div>
- <div class="byg-banner" id="banner" role="status" hidden><p id="banner-t"></p><p id="banner-n"></p><button type="button" class="byg-btn" id="own-copy" hidden></button></div>
+ <div class="byg-banner" id="banner" role="status" hidden><p id="banner-t"></p><p id="banner-y" hidden></p><p id="banner-n"></p><button type="button" class="byg-btn" id="own-copy" hidden></button></div>
  <div class="byg-plate"><div class="byg-kicker" id="kicker"></div><h1 class="byg-title" id="title"></h1><p class="byg-what" id="what"></p></div>
  <div class="byg-ready is-open" id="ready" role="status"><span class="n" id="ready-n"></span><span><span id="ready-h"></span><small id="ready-s"></small></span></div>
- <div class="byg-fieldrow"><label for="pickup" id="pickup-l"></label><input class="byg-in" id="pickup" autocomplete="off"><span class="byg-err" id="pickup-e" aria-live="polite"></span></div>
+ <div class="byg-fieldrow" id="pickup-row"><label for="pickup" id="pickup-l"></label><input class="byg-in" id="pickup" autocomplete="off" aria-describedby="pickup-c pickup-e"><span class="byg-count" id="pickup-c"></span><span class="byg-err" id="pickup-e" aria-live="polite"></span></div>
+ <p class="byg-fine byg-hintline" id="room-note"></p>
  <ol class="byg-list" id="list"></ol>
  <h2 class="byg-section" id="opt-h"></h2>
  <ol class="byg-list" id="optlist"></ol>
  <h2 class="byg-section" id="q-h"></h2>
  <ol class="byg-script" id="script"></ol>
- <div class="byg-own"><input class="byg-in" id="own-in" autocomplete="off"><button type="button" class="byg-btn" id="own-add"></button></div>
+ <div class="byg-print-only byg-printq-wrap"><h2 id="printq-h"></h2><ol id="printq"></ol></div>
+ <div class="byg-own" id="own-row"><input class="byg-in" id="own-in" autocomplete="off" aria-describedby="own-c own-e2 own-max"><button type="button" class="byg-btn" id="own-add"></button><span class="byg-count" id="own-c"></span><span class="byg-err" id="own-e2" aria-live="polite"></span><span class="byg-err" id="own-max" aria-live="polite"></span></div>
  <span class="byg-err" id="own-e" aria-live="polite"></span>
- <div class="byg-fieldrow"><label for="by" id="by-l"></label><input class="byg-in" id="by" autocomplete="off"></div>
+ <div class="byg-fieldrow" id="by-row"><label for="by" id="by-l"></label><input class="byg-in" id="by" autocomplete="off" aria-describedby="by-c by-e"><span class="byg-count" id="by-c"></span><span class="byg-err" id="by-e" aria-live="polite"></span></div>
  <div class="byg-actions">
-  <button type="button" class="byg-btn byg-btn--go" id="b-link"></button>
+  <span id="edit-actions" class="byg-edit-actions"><button type="button" class="byg-btn byg-btn--go" id="b-link"></button>
   <button type="button" class="byg-btn" id="b-share"></button>
   <button type="button" class="byg-btn" id="b-text"></button>
   <button type="button" class="byg-btn" id="b-print"></button>
-  <button type="button" class="byg-btn" id="b-reset"></button>
+  <button type="button" class="byg-btn" id="b-reset"></button></span>
  </div>
  <p class="byg-fine" id="fine"></p>
  <div class="byg-linkbox" id="linkbox" hidden><div class="byg-fieldrow"><label for="link" id="link-l"></label><textarea id="link" readonly rows="3"></textarea></div></div>

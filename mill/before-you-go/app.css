@@ -29,3 +29,20 @@
 .byg-said{overflow-wrap:anywhere}
 #banner-t,#banner-h{overflow-wrap:anywhere;min-width:0}
 .byg-astyped{font:700 12px var(--byg-font);color:var(--byg-mute);margin-right:2px}.byg-typed{overflow-wrap:anywhere;unicode-bidi:plaintext}
+/* QA 83a2ebcd: read-only value lines, counters, hints, Not sure, date + time When, print of typed values and questions */
+.byg-line{margin-top:4px;font:600 17px/1.35 var(--byg-font);overflow-wrap:anywhere;unicode-bidi:plaintext;white-space:normal}
+.byg-line .byg-none{font-weight:400;font-style:italic;color:var(--byg-mute)}
+.byg-count{display:block;font:400 12px var(--byg-font);color:var(--byg-mute);margin-top:2px}
+.byg-hintline{font:400 13px/1.4 var(--byg-font);color:var(--byg-mute);margin:6px 0 0}
+.byg-past,.byg-nsl,.byg-callnote{grid-column:2/-1;font:600 13px var(--byg-font);margin-top:4px}
+.byg-nsl,.byg-callnote{color:var(--byg-mute)}
+.byg-when{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:4px}
+.byg-when label{display:block;font:700 11px var(--byg-font);letter-spacing:.08em;text-transform:uppercase}
+.byg-when .byg-in{width:100%}
+.byg-ns[aria-pressed=true]{background:#111;color:#fff}
+.byg-edit-actions{display:contents}
+.byg-own{grid-template-columns:minmax(0,1fr) auto}
+.byg-own .byg-count,.byg-own .byg-err{grid-column:1/-1}
+.byg-print-only{display:none}
+@media print{.byg-print-only:not([hidden]){display:block!important}.byg-line{display:block}.byg-printq-wrap h2{font:800 13pt var(--byg-font);margin:12px 0 4px}.byg-count,.byg-hintline,.byg-ns{display:none!important}}
+.byg-chip{white-space:normal;max-width:100%;min-width:0;overflow-wrap:anywhere}
