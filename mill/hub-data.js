@@ -327,22 +327,23 @@ window.MILL_HUB = {
     "Proposal only: every card, the copied text and the sheet say “Nobody has agreed to this yet.”",
     "The optional link holds only task names, minutes and helper names. Anyone with the link can read it.",
     "History (superseded by the address-bar pass at 11d8017): QA all-9 NOT TESTED: the address-bar strip at f893087 was informational only; Five Hands has no strip commit yet.",
-    "QA local-11d8017 NOT TESTED: real devices, Safari/Firefox and any engine other than Chrome 155 headless; screen readers (only ax-tree text was checked) and real clipboard permission prompts; physical printing (only the Chrome PDF for Letter, and A4 only for the suggest/check PDFs); widths other than those listed, high-contrast or forced-colors mode, and browser zoom above 100%; the 12.45 and 16.14 ring pairs as separate figures; production; experience and design calls (Creative); whether H16 is present at d68094a."
+    "History (superseded by QA local-82c4667): QA local-11d8017 NOT TESTED: real devices, Safari/Firefox and any engine other than Chrome 155 headless; screen readers (only ax-tree text was checked) and real clipboard permission prompts; physical printing (only the Chrome PDF for Letter, and A4 only for the suggest/check PDFs); widths other than those listed, high-contrast or forced-colors mode, and browser zoom above 100%; the 12.45 and 16.14 ring pairs as separate figures; production; experience and design calls (Creative); whether H16 is present at d68094a.",
+    "QA local-82c4667 NOT TESTED: Firefox, Safari and any engine other than Chrome 155 headless; real devices, touch, OS-level text scaling, browser zoom above 100%, forced colours / high contrast; screen readers (only Chrome's ax tree was compared; the emoji-word text split was not judged); real clipboard permission prompts; physical printing, and the H12 print sweep and Chrome PDF at 641–800 (not re-run); frames between the sampled times (0–500 ms by seek, not continuous capture) and real devices' frame timing; widths other than 320/390/640/641/800/1024/1280/1440, and H17 beyond 320/390/641; a dedicated math sweep (fh.js unchanged; covered indirectly); the other pieces changed in 11d8017..82c4667, the hub, and production; experience and design calls (Creative)."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview d68094ade9c8d49edd528b278dcf2583711c78c0: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 247/247 at 320/360/390/641/1024/1280/1440 (incl. Creative check 5f127ab items 1–6; QA local-8206084 H1–H3; QA local-08b466c/2a02a48 H5 tiny and huge sticks in Suggest and Check, H6 tip and capacity-bar contrast and H7 over-text contrast sampled on the rendered page, H8 rolled-up label on phones). Not QA.",
-   "status": "NOT READY (H9–H13 fixed; open H14 (holds only under reduced motion), H15 High, H16 Low, H17 Low; all-9 recheck W-8, W-9 PASS at 11d8017)",
+   "status": "NOT READY (H9–H16 fixed; open H17 Low (partial), H18 Low)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "11d8017894af21f7658b4ba751c3ab585d276219",
-    "report": "qa/five-hands/local-11d8017/QA-local-11d8017.md",
-    "note": "H9–H13 fixed; open H14 (holds only under reduced motion), H15 High, H16 Low, H17 Low"
+    "sha": "82c466783e637c9016718ace7067f9000adfd41e",
+    "report": "qa/five-hands/local-82c4667/QA-local-82c4667.md",
+    "note": "H9–H16 fixed; open H17 Low (partial), H18 Low"
    },
    "qaPrevious": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "d68094ade9c8d49edd528b278dcf2583711c78c0",
-    "report": "qa/five-hands/local-d68094a/QA-local-d68094a.md (H13–H14 per a later QA message, not yet in this file)"
+    "sha": "11d8017894af21f7658b4ba751c3ab585d276219",
+    "report": "qa/five-hands/local-11d8017/QA-local-11d8017.md (earlier: qa/five-hands/local-d68094a/QA-local-d68094a.md (H13–H14 per a later QA message, not yet in this file): d68094ade9c8d49edd528b278dcf2583711c78c0 NOT READY)"
    }
   }
  ]
