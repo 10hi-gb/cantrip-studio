@@ -25,7 +25,7 @@ window.MILL_HUB = {
     "Not tested: Change my amount link at the 2,000-character boundary."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 134da28501527078776b63b0ffdc973de96b110e: unit 21+8; browser sack 410/410 at 305/320/390/600/1280 (incl. QA D7r received origin+path+fragment cap at 1999/2000/2001/2040, normal and long path; D10-r5 at-cap names in full, no ellipsis, sender/recipient/change/print + Letter PDF; D2 kept); quote-spoof 63/63, recipient-a11y 87/87, sender-typed 12/12. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL; shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
@@ -66,7 +66,7 @@ window.MILL_HUB = {
     "tree": "1f37ffe0ce0236ea213816e7f4cdf74961bf59c9",
     "result": "unit tests 9 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL; shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
@@ -106,7 +106,7 @@ window.MILL_HUB = {
     "tree": "f83c650c08b683a712f9d700e4ff76e66f756316",
     "result": "unit tests 11 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL; shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
@@ -144,7 +144,7 @@ window.MILL_HUB = {
     "tree": "b436439c6fafa24c13bf8e20dc5a3f34a660b771",
     "result": "unit tests 15 pass; live browser check 84/84 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL; shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
@@ -178,7 +178,7 @@ window.MILL_HUB = {
     "Nothing is sent or booked. A proposal is a suggestion worked out from what the sender typed; nobody has replied to it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 715aa3a: unit 19 incl. DST; browser 116/116 at 320/390/1280. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW (hardening afb31b8, untested)",
+   "status": "READY ON LOCALHOST-PREVIEW (hardening afb31b8, untested; shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
@@ -210,12 +210,13 @@ window.MILL_HUB = {
     "A received link is a snapshot of what the sender entered; nobody has agreed to anything by opening it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 6f5f5435f607b901a8fae6cd674e704af77f1324: unit 21 (incl. 5000-case settlement property test); browser 312/312 at 320/360/390/700–999/1280/1440. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW (also READY at 5ad5c277f48e52f1864513b3bfca3782b25fe79f)",
+   "status": "READY ON LOCALHOST-PREVIEW (also READY at 5ad5c277f48e52f1864513b3bfca3782b25fe79f; wrap prep b5b0d60, untested; shared wrap f893087, recheck pending; receive cap: Engineer self-check only; independent QA check pending)",
    "qaLocal": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "6f5f5435f607b901a8fae6cd674e704af77f1324",
-    "report": "qa/even-up/local-6f5f543/QA-local-6f5f543.md"
+    "report": "qa/even-up/local-6f5f543/QA-local-6f5f543.md",
+    "note": "wrap prep b5b0d60, untested; receive cap: Engineer self-check only; independent QA check pending"
    }
   },
   {
@@ -236,7 +237,7 @@ window.MILL_HUB = {
     "A link carries the questions and the choosing method, never the answers; anyone with the link can read them."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview f66fb8e70ba60af04aa9e1dd0ad3ac4f8db7301c: unit 35/35; browser 487/487 at 320/390/1280 plus a classic-scrollbar sweep at 320/360/390/700/1280/1440 (synthetic keys and mouse only; greedy-wrap reference, flag runs, every quote-mark location, rendered focus-ring pixels, no-?query checks). Not QA, and not a switch or dwell check.",
-   "status": "NOT READY (L5–L7 fixed; open L8 (Low), L9 (Med), L10 (Low); L5 single-word interim)",
+   "status": "NOT READY (L5–L7 fixed; open L8 (Low), L9 (Med), L10 (Low); L5 single-word interim; shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
@@ -270,7 +271,7 @@ window.MILL_HUB = {
     "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview cde64e3b02ca689ee7442fa3bc5bf48434c79c1c: unit 24/24 (every proto r1d assert, QA C3/C4/C7/C10, PM C9 as narrowed 04:38, regression names, codec agreement, 6,000-case reference sweep; QA 400 reference cases 400/400); browser 189/189 at 305/320/390/1280/1440. Not QA.",
-   "status": "NOT READY (QA open: C11–C13; PM-added: C14; retest pending at 83edf87)",
+   "status": "NOT READY (QA open: C11–C13; PM-added: C14; retest pending at 83edf87; shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
@@ -298,7 +299,7 @@ window.MILL_HUB = {
     "The optional link holds only task names, minutes and helper names. Anyone with the link can read it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview d68094ade9c8d49edd528b278dcf2583711c78c0: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 247/247 at 320/360/390/641/1024/1280/1440 (incl. Creative check 5f127ab items 1–6; QA local-8206084 H1–H3; QA local-08b466c/2a02a48 H5 tiny and huge sticks in Suggest and Check, H6 tip and capacity-bar contrast and H7 over-text contrast sampled on the rendered page, H8 rolled-up label on phones). Not QA.",
-   "status": "NOT READY (QA open: H9–H14)",
+   "status": "NOT READY (QA open: H9–H14; shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
