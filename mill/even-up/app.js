@@ -20,6 +20,8 @@
     while ((m = re.exec(t))) { if (m.index > last) f.appendChild(document.createTextNode(t.slice(last, m.index))); var v = map[m[1]]; f.appendChild(v == null ? document.createTextNode(m[0]) : typeof v === 'string' ? document.createTextNode(v) : v); last = re.lastIndex; }
     if (last < t.length) f.appendChild(document.createTextNode(t.slice(last))); return f;
   }
+  // the event: typed -> quoted; left blank -> Writer's title as the default (unquoted product text)
+  function eventNode() { var e = M.strip(st.ev); return e ? V.typed(e) : document.createTextNode(C.title); }
   function listNodes(ids) { var f = document.createDocumentFragment(); ids.forEach(function (id, i) { if (i) f.appendChild(document.createTextNode(', ')); f.appendChild(nameNode(id)); }); return f; }
   function toast(m) { V.toast(m, 3200); }
   function clearHash() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); }
@@ -46,8 +48,8 @@
       inp.setAttribute('aria-invalid', show ? 'true' : 'false'); if (show) inp.setAttribute('aria-describedby', out.id); else inp.removeAttribute('aria-describedby');
       var rm = $('pr-' + p.id); rm.setAttribute('aria-label', M.fill(C.removePerson, { name: M.raw(nameText(p.id, i)) })); rm.disabled = st.p.length <= E.LIM.pMin;
     });
-    var ev = errs.filter(function (e) { return e.why === 'eventEmpty' || e.why === 'eventLong'; })[0], sh = ev && (showAll || touched.ev);
-    $('e-ev').textContent = !sh ? '' : ev.why === 'eventEmpty' ? C.eventEmpty : M.plural(C.eventTooLong, ev.over);
+    var ev = errs.filter(function (e) { return e.why === 'eventLong'; })[0], sh = ev && (showAll || touched.ev);
+    $('e-ev').textContent = !sh ? '' : M.plural(C.eventTooLong, ev.over);
     $('ev').setAttribute('aria-invalid', sh ? 'true' : 'false'); if (sh) $('ev').setAttribute('aria-describedby', 'e-ev'); else $('ev').removeAttribute('aria-describedby');
     $('p-meta').textContent = M.plural(C.personCount, st.p.length);
     $('p-add').disabled = st.p.length >= E.LIM.pMax; $('p-e').textContent = st.p.length >= E.LIM.pMax ? C.tooManyPeople : '';
@@ -115,8 +117,9 @@
       R.rod.setAttribute('data-side', side); R.rod.style.setProperty('--p', max ? (Math.abs(b.net) / max).toFixed(3) : '0');
       R.tok.textContent = ''; R.tok.appendChild(el('span', 'eu-fig', money(Math.abs(b.net)))); R.tok.appendChild(el('small', null, side === 'owes' ? C.tagOwes : side === 'owed' ? C.tagOwed : C.tagEven));
       if (prevSide[b.id] != null && prevSide[b.id] !== b.net) { R.tok.classList.remove('is-arriving'); void R.tok.offsetWidth; R.tok.classList.add('is-arriving'); }
-      prevSide[b.id] = b.net;
+      prevSide[b.id] = b.net; R.tok.hidden = !st.x.length; // s5: before anything is on the tape the rods are bare
     });
+    $('frame').classList.toggle('is-empty', !st.x.length);
     $('empty').textContent = st.x.length ? '' : C.emptyState; $('empty').hidden = !!st.x.length;
     layoutLines(c);
   }
@@ -209,14 +212,15 @@
   function refresh() {
     var c = E.compute(st), ok = E.canShare(st, c);
     paintPeople(c);
-    var line = $('event-line'); line.textContent = ''; line.appendChild(document.createTextNode(C.eventLabel + ': ')); if (M.strip(st.ev)) line.appendChild(V.typed(M.strip(st.ev))); else line.appendChild(el('span', 'eu-unnamed', '?')); line.appendChild(document.createTextNode(' \u00B7 ' + sym()));
+    var line = $('event-line'); line.textContent = ''; line.appendChild(document.createTextNode(C.eventLabel + ': ')); line.appendChild(eventNode()); line.appendChild(document.createTextNode(' \u00B7 ' + sym()));
+    document.title = (M.strip(st.ev) ? qt(M.strip(st.ev)) + ' \u00B7 ' + C.title : C.title) + ' \u00B7 ' + C.studioName;
     drawFrame(c); drawSettle(c, ok); drawTape(c); drawFix(c);
     $('x-meta').textContent = M.plural(C.expenseCount, st.x.length) + (st.x.length >= E.LIM.xMax ? ' \u00B7 ' + C.tooManyExpenses : '');
     $('f-add').disabled = !editing && st.x.length >= E.LIM.xMax;
     $('l-amt').textContent = M.fill(C.amountLabelCurrency, { currency: sym() });
     ['b-copy', 'b-print', 'b-share'].forEach(function (id) { $(id).disabled = !ok; $(id).hidden = !st.x.length; });
     // empty event (no expenses yet): no tape, no payments heading; the card keeps only Clear and the privacy line
-    var none = !st.x.length; $('tape').hidden = none; $('settle-h').hidden = none; $('nomoney').hidden = none; $('event-line').hidden = !M.strip(st.ev);
+    var none = !st.x.length; $('tape').hidden = none; $('settle-h').hidden = none; $('nomoney').hidden = none; $('event-line').hidden = none && !M.strip(st.ev);
     $('fallback').value = ok ? E.summary(st, C, c) : '';
     var f = ok ? E.rawFragment(st) : null, lr = $('linkroom');
     if (f == null || mode !== 'own') { lr.textContent = ''; lr.classList.remove('is-over'); }
@@ -263,7 +267,7 @@
     $('b-copy').addEventListener('click', function () { var t = E.summary(st, C); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { toast(C.copied); }, function () { toast(C.copyFail); showFallback(); }); else { toast(C.copyFail); showFallback(); } });
     $('b-print').addEventListener('click', function () { window.print(); });
     $('b-share').addEventListener('click', function () { var u = makeLink(); if (!u) return; showLink(u);
-      if (navigator.share) navigator.share({ title: C.title, text: M.fill(C.shareText, { event: qt(M.strip(st.ev)) }), url: u }).then(function () {}, function () { toast(C.shareCancel); showLink(u); });
+      if (navigator.share) navigator.share({ title: C.title, text: M.fill(C.shareText, { event: M.raw(E.eventText(st, C)) }), url: u }).then(function () {}, function () { toast(C.shareCancel); showLink(u); });
       else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(function () { toast(C.copied); }, function () { toast(C.copyFail); showLink(u); });
       else { toast(C.copyFail); showLink(u); } });
     $('b-reset').addEventListener('click', function () { if (!window.confirm(C.resetConfirm)) return; clearHash(); load(''); toast(C.resetDone); $('ev').focus(); });
@@ -279,7 +283,7 @@
     $('linkbox').hidden = true; $('link').value = ''; $('fbwrap').hidden = true; $('fallback').value = ''; $('rods').textContent = ''; rodKey = ''; rodEls = {};
     if (h) {
       var d = E.decode(h), bt = $('banner-t');
-      if (d.ok) { st = d.data; mode = 'recv'; $('banner').hidden = false; bt.textContent = ''; bt.appendChild(tpl(C.receiverIntro, { event: V.typed(st.ev) })); $('banner-n').textContent = C.receiverNote; $('banner-n').hidden = false; $('own-copy').hidden = false; }
+      if (d.ok) { st = d.data; mode = 'recv'; $('banner').hidden = false; bt.textContent = ''; bt.appendChild(tpl(C.receiverIntro, { event: eventNode() })); $('banner-n').textContent = C.receiverNote; $('banner-n').hidden = false; $('own-copy').hidden = false; }
       else if (d.why !== 'empty') { $('banner').hidden = false; bt.textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; }
     }
     $('ev').value = st.ev; $('cur').value = String(st.cur);

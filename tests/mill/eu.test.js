@@ -54,7 +54,7 @@ t('invalid totals: weights all zero, a zero/invalid weight, nobody in the split,
   st.x[0].payer = null; st.x[0].gone = ''; assert.equal(E.expenseErrors(st, st.x[0]).payer, 'none');
   assert.equal(E.parseWeight('0').why, 'zero'); assert.equal(E.parseWeight('-1').why, 'nan'); assert.equal(E.parseWeight('1000').v, 100000); assert.equal(E.parseWeight('1000.01').why, 'big'); assert.equal(E.parseWeight('2.5').v, 250); assert.equal(E.fmtWeight(250), '2.5'); assert.equal(E.fmtWeight(105), '1.05'); });
 t('people/event validation: 2–8, unique names (case and spacing folded), lengths, event required', () => {
-  const st = E.blank(); assert.deepEqual(E.peopleErrors(st).map(e => e.why), ['eventEmpty', 'empty', 'empty']);
+  const st = E.blank(); assert.deepEqual(E.peopleErrors(st).map(e => e.why), ['empty', 'empty'], 'event name optional (Creative 8)');
   st.ev = 'x'.repeat(61); st.p = [{ id: 1, name: 'Ana' }, { id: 2, name: ' an a ' }]; assert.deepEqual(E.peopleErrors(st).map(e => e.why + (e.over || '')), ['eventLong1', 'dup']);
   st.ev = 'Trip'; st.p = [{ id: 1, name: 'x'.repeat(25) }]; assert.deepEqual(E.peopleErrors(st).map(e => e.why + (e.over || '')), ['tooFew', 'long1']);
   st.p = Array.from({ length: 9 }, (_, i) => ({ id: i + 1, name: 'P' + i })); assert.deepEqual(E.peopleErrors(st).map(e => e.why), ['tooMany']);
@@ -79,7 +79,7 @@ t('link: round trip of a valid event; versioned; tag e1', () => {
 t('link: malformed input fully rejected', () => {
   const ok = { e: 'Trip', c: 0, p: ['A', 'B'], x: [['Food', 1000, 0, 0, [0, 1]]] }; assert.ok(E.decode(M.pack('e', 1, ok)).ok);
   const mut = [
-    o => { o.z = 1; }, o => { delete o.c; }, o => { o.c = 3; }, o => { o.c = 0.5; }, o => { o.e = ''; }, o => { o.e = ' Trip'; }, o => { o.e = 5; }, o => { o.p = ['A']; }, o => { o.p = ['A', 'a']; },
+    o => { o.z = 1; }, o => { delete o.c; }, o => { o.c = 3; }, o => { o.c = 0.5; }, o => { o.e = 'x'.repeat(61); }, o => { o.e = ' Trip'; }, o => { o.e = 5; }, o => { o.p = ['A']; }, o => { o.p = ['A', 'a']; },
     o => { o.p = Array.from({ length: 9 }, (_, i) => 'P' + i); }, o => { o.p = ['A', 'B\u202E']; }, o => { o.p = ['A', 'x'.repeat(25)]; }, o => { o.x = []; }, o => { o.x = Array.from({ length: 21 }, () => ['F', 1, 0, 0, [0]]); },
     o => { o.x[0][1] = -1; }, o => { o.x[0][1] = 1.5; }, o => { o.x[0][1] = '1000'; }, o => { o.x[0][1] = 10000001; }, o => { o.x[0][2] = 2; }, o => { o.x[0][2] = -1; }, o => { o.x[0][3] = 2; },
     o => { o.x[0][4] = []; }, o => { o.x[0][4] = [1, 0]; }, o => { o.x[0][4] = [0, 0]; }, o => { o.x[0][4] = [0, 5]; }, o => { o.x[0][4] = [[0, 100]]; }, o => { o.x[0][3] = 1; },
@@ -116,6 +116,11 @@ t('property: 5000 random events — shares add up per expense, cents conserved, 
     const again = E.compute(JSON.parse(JSON.stringify(st))); assert.deepEqual(again.transfers, c.transfers, 'deterministic');
     if (k % 50 === 0) { const f = E.encode(st, 0); if (f) { const d = E.decode(f); assert.ok(d.ok); assert.deepEqual(E.compute(d.data).transfers.map(x => x.c), c.transfers.map(x => x.c)); } }
   } });
+t('Creative 8: blank event is valid; summary/link use Writer title (unquoted) as the default', () => {
+  const st = mk(['A', 'B', 'C'], [['Firewood', '30', 0, 'e', [0, 1, 2]]], '   '); assert.deepEqual(E.peopleErrors(st), []); assert.ok(E.canShare(st));
+  assert.equal(E.eventText(st, C), 'Even Up'); assert.ok(E.summary(st, C).startsWith('Even Up ($)\n\u201CB\u201D pays \u201CA\u201D $10.00\n'));
+  const d = E.decode(E.encode(st, 30)); assert.ok(d.ok); assert.equal(d.data.ev, ''); assert.equal(E.summary(d.data, C), E.summary(st, C));
+  st.ev = 'Trip'; assert.equal(E.eventText(st, C), '\u201CTrip\u201D'); });
 t('Writer finals (N11): every COPY key the app uses is in Writer copy.js; no copy-extra.js fallback remains', () => {
   const fs = require('fs'), dir = __dirname + '/../../mill/even-up/'; const app = fs.readFileSync(dir + 'app.js', 'utf8') + fs.readFileSync(dir + 'eu.js', 'utf8');
   const used = [...new Set([...app.matchAll(/\bC\.([A-Za-z]\w*)/g)].map(m => m[1]))]; assert.deepEqual(used.filter(k => !(k in C)), []);

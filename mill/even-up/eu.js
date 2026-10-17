@@ -65,10 +65,10 @@
   //        gone: name of a removed payer or '', mode: 'e'|'w', inc: [personId...], w: {personId: hundredths|NaN|0}}], next }
   function blank() { return { ev: '', cur: 0, p: [{ id: 1, name: '' }, { id: 2, name: '' }], x: [], next: 3 }; }
   function person(st, id) { for (var i = 0; i < st.p.length; i++) if (st.p[i].id === id) return st.p[i]; return null; }
-  // Event/people problems. [{why: 'eventEmpty'|'eventLong'|'tooFew'|'tooMany'|'empty'|'long'|'dup', id?, over?}]
+  // Event/people problems. The event name is optional (blank -> Writer's title as the default). [{why: 'eventLong'|'tooFew'|'tooMany'|'empty'|'long'|'dup', id?, over?}]
   function peopleErrors(st) {
     var out = [], seen = {}, el = M.len(clean(st.ev));
-    if (!el) out.push({ why: 'eventEmpty' }); else if (el > LIM.event) out.push({ why: 'eventLong', over: el - LIM.event });
+    if (el > LIM.event) out.push({ why: 'eventLong', over: el - LIM.event });
     if (st.p.length < LIM.pMin) out.push({ why: 'tooFew' }); if (st.p.length > LIM.pMax) out.push({ why: 'tooMany' });
     st.p.forEach(function (p) { var k = fold(p.name), n = M.len(clean(p.name)); if (!k) out.push({ id: p.id, why: 'empty' }); else if (n > LIM.name) out.push({ id: p.id, why: 'long', over: n - LIM.name }); else if (seen[k]) out.push({ id: p.id, why: 'dup' }); if (k) seen[k] = 1; });
     if (!(st.cur >= 0 && st.cur < CUR.length && st.cur % 1 === 0)) out.push({ why: 'currency' });
@@ -131,11 +131,13 @@
     return true;
   }
   function removeExpense(st, id) { var n = st.x.length; st.x = st.x.filter(function (x) { return x.id !== id; }); return st.x.length < n; }
+  // Event as shown in plain text: the typed name quoted, or Writer's title (unquoted product text) when it was left blank.
+  function eventText(st, C) { var e = clean(st.ev); return e ? M.quote(e) : C.title; }
   // ---- plain-text summary (Writer summaryText); every typed value quoted
   function summary(st, C, c) {
     c = c || compute(st); var sym = CUR[st.cur], nm = function (id) { var p = person(st, id); return M.quote(clean(p ? p.name : '')); };
     var lines = c.transfers.length ? c.transfers.map(function (t) { return M.fill(C.summaryTransferLine, { from: nm(t.from), to: nm(t.to), amount: fmt(t.c, sym) }); }).join('') + M.fill(C.summaryAfter, { zero: fmt(0, sym) }) : C.summaryEven;
-    return M.fill(C.summaryText, { event: M.quote(clean(st.ev)), currency: sym, lines: lines, policy: C.residualPolicy });
+    return M.fill(C.summaryText, { event: eventText(st, C), currency: sym, lines: lines, policy: C.residualPolicy });
   }
   // ---- link: "#e1.<base64url JSON>.<6-hex checksum>", readable by anyone holding it.
   // JSON {e: event, c: currency index, p: [names], x: [[what, cents, payerIndex, 0|1 (equal|weighted), parts]]}
@@ -172,5 +174,5 @@
     st.next = id; if (!canShare(st)) return bad;
     return { ok: true, data: st };
   }
-  return { LIM: LIM, URL_MAX: URL_MAX, VER: VER, TAG: TAG, CUR: CUR, fold: fold, parseAmount: parseAmount, fmt: fmt, parseWeight: parseWeight, fmtWeight: fmtWeight, split: split, blank: blank, person: person, parts: parts, peopleErrors: peopleErrors, expenseErrors: expenseErrors, compute: compute, settle: settle, after: after, canShare: canShare, removePerson: removePerson, removeExpense: removeExpense, summary: summary, rawFragment: rawFragment, encode: encode, decode: decode };
+  return { LIM: LIM, URL_MAX: URL_MAX, VER: VER, TAG: TAG, CUR: CUR, fold: fold, parseAmount: parseAmount, fmt: fmt, parseWeight: parseWeight, fmtWeight: fmtWeight, split: split, blank: blank, person: person, parts: parts, peopleErrors: peopleErrors, expenseErrors: expenseErrors, compute: compute, settle: settle, after: after, canShare: canShare, removePerson: removePerson, removeExpense: removeExpense, summary: summary, eventText: eventText, rawFragment: rawFragment, encode: encode, decode: decode };
 });

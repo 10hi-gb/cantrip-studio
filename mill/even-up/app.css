@@ -78,3 +78,7 @@
   .eu-toast,.eu-xacts,#linkroom,.eu-linkbox,#fix,#banner .eu-btn{display:none!important}
   .eu-link-num{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+/* s5 empty state: the frame stays, two bare "?" rods (no tokens, no scale), the empty line below */
+.eu-frame.is-empty .eu-scale{display:none}
+.eu-frame.is-empty .eu-trail{display:none}
+.eu-frame.is-empty .eu-unnamed{opacity:.35}
