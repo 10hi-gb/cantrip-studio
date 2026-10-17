@@ -65,13 +65,15 @@ window.MILL_HUB = {
    "name": "One Less Trip",
    "score": "7.70",
    "wave": 2,
-   "path": null,
+   "path": "one-less-trip/",
    "sources": [],
    "limits": [
     "No direct comment in the thread; scope proposed by the Cantrip agents under Joshua's authorization.",
-    "No map, routing or live list."
+    "No map, routing or live list.",
+    "Stop names that differ only in capital letters or spaces are treated as the same stop.",
+    "Merging needs an exact item name and unit match; near-matches (\"Oat milks\", \"litre\" vs \"l\") stay separate."
    ],
-   "engineer": "Not built yet.",
+   "engineer": "ENGINEER SELF-CHECK: unit tests 15 pass; local browser check 84/84 at 320/390/1280. Live check pending on its deploy. Not QA.",
    "qa": "Awaiting QA"
   },
   {
