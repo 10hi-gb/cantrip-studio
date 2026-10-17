@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-16 8:57 PM PT",
+ "updated": "2026-10-16 9:14 PM PT",
  "items": [
   {
    "id": "C148",
@@ -90,17 +90,17 @@
    "batch": "A",
    "name": "Our Knock",
    "description": "Call and answer: the door is the knock pad and a brass rail shows each knock. Classic \"shave and a haircut… two bits\", our own knock, or copy me; knock the answer and the door opens onto the note.",
-   "status": "Fix awaiting QA retest",
-   "note": "Writer revised the privacy line (copy changed after QA pass on 4eb01625); QA retest needed",
+   "status": "Engineer self-check passed",
+   "note": "QA passed on 57778a7d (commit 5a258595), QA-57778a7d.md: privacy copy change, defects none in C051; heard sound not tested",
    "url": "../our-knock/",
    "limitations": [
     "Heard sound needs a real-phone check.",
     "It's a playful game, not a lock."
    ],
    "qa": {
-    "verdict": "Fix awaiting QA retest",
-    "pin": "4eb01625",
-    "ledger": "Writer revised the privacy line (copy changed after QA pass on 4eb01625); QA retest needed",
+    "verdict": "QA passed",
+    "pin": "57778a7d",
+    "ledger": "QA-57778a7d.md, commit 5a258595",
     "untested": [
      "Heard sound not tested by QA: needs a real-phone check."
     ]
