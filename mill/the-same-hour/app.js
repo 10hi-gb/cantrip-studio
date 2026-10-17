@@ -145,10 +145,12 @@
   // ---------- results / proposal ----------
   function picked() { var o = res.options.filter(function (x) { return x.a === selA; })[0]; if (!o) { o = res.options[0]; selA = o ? o.a : null; } return o; }
   function slot(x) { var di = x.day; return { day: DF.fmt(res.days[di]), date: DFY.fmt(res.days[di]), start: tm(x.a, di), end: endTm(x.b, di) }; }
+  // DST: a slot that runs across a clock change says so (Writer's dstChangeLine), so 00:30–03:00 on a fall-back day isn't read as 2½ h.
+  function spanChange(o) { var c = (res.changes || []).filter(function (c) { return o.a < c.t && c.t < o.b; })[0]; return c ? M.fill(C.dstChangeLine, { date: DFY.fmt(res.days[c.day]), from: c.from, to: c.to }) : ''; }
   function names() { return res.people.map(function (p) { return p.name; }).join(', '); }
   function shareText() { var t = M.strip(st.t); return t ? M.fill(C.shareTextTyped, { title: t }) : C.shareText; }
   function proposalText(o) { var s = slot(o), info = T.zoneInfo(o.a, st.z), title = M.strip(st.t);
-    return M.fill(C.proposalText, { titleLine: title ? M.fill(C.proposalTextTitleLine, { title: title }) : '', date: s.date, start: s.start, end: s.end, zoneLine: M.fill(C.zoneLine, info), length: lenText(o.len), names: names() }); }
+    return M.fill(C.proposalText, { titleLine: title ? M.fill(C.proposalTextTitleLine, { title: title }) : '', date: s.date, start: s.start, end: s.end, zoneLine: M.fill(C.zoneLine, info) + (spanChange(o) ? '\n' + spanChange(o) : ''), length: lenText(o.len), names: names() }); }
   function unknownList() { return res.people.map(function (p) { var ds = []; p.merged.forEach(function (m, i) { if (!m.length) ds.push(DW.format(res.days[i])); }); return ds.length ? p.name + ': ' + ds.join(', ') : ''; }).filter(Boolean).join('; '); }
   function noOverlapText() { var c = res.closest, s = c ? slot(c) : null, ul = unknownList();
     return M.fill(C.noOverlapText, { duration: durText(), date: DFY.fmt(res.days[0]), zone: st.z, closestLine: c ? M.fill(C.noOverlapTextClosest, { day: s.date, start: s.start, end: s.end, length: lenText(res.dur - c.len) }) : '', unknownLine: ul ? M.fill(C.noOverlapTextUnknown, { list: ul }) : '' }).replace(/\n+$/, ''); }
@@ -164,7 +166,7 @@
       var s = slot(o), info = T.zoneInfo(o.a, st.z);
       $('prop-l').textContent = C.proposalHeading; $('prop-h').textContent = M.fill(C.proposalLine, { day: s.date, start: s.start, end: s.end, zone: st.z });
       var ttl = M.strip(st.t); $('prop-title').hidden = !ttl; $('prop-title').textContent = ttl;
-      $('prop-z').textContent = M.fill(C.proposalZone, info); $('prop-n').textContent = lenText(o.len) + ' · ' + M.fill(C.proposalNames, { names: names() });
+      $('prop-z').textContent = M.fill(C.proposalZone, info); $('prop-dst').textContent = spanChange(o); $('prop-dst').hidden = !spanChange(o); $('prop-n').textContent = lenText(o.len) + ' · ' + M.fill(C.proposalNames, { names: names() });
       $('prop-s').textContent = C.proposalSnapshot;
       var px = $('prop-x'); px.textContent = ''; res.maybe.slice(0, 5).forEach(function (x) { var d = res.dayRes[x.day]; px.appendChild(el('p', 'tsh-fine', M.fill(C.proposalExcluded, { day: slot(x).day, start: slot(x).start, end: slot(x).end, name: d.unknown.map(nm).join(', '), dayName: DL.format(d.date) }))); });
       if (res.touches) px.appendChild(el('p', 'tsh-fine', C.touchNote));

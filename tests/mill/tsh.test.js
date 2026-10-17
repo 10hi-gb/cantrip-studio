@@ -59,4 +59,54 @@ t('property (3000 cases): options/short/touch match a brute-force minute scan of
     const tp = []; for (let m = 0; m <= 1440; m += 30) if (closed(m) && !free(m - 0.5) && !free(m + 0.5)) tp.push(m);
     assert.deepEqual(r.dayRes[0].touch.map(x => T.localMin(x, r.days[0], 'UTC')), tp, JSON.stringify(people));
   } });
+
+// ---- DST correctness (Joshua 23:38): US fall-back Sun 1 Nov 2026, US spring-forward Sun 8 Mar 2026 / 14 Mar 2027, plus other zones
+const codes = r => r.errors.map(e => e.code + ' ' + e.f.slice(-1) + ' ' + e.time);
+const oneDay = (a, b, o) => mk([['A', [[6, a[0], a[1]]]], ['B', [[6, b[0], b[1]]]]], o);
+t('DST fall-back Sun 1 Nov 2026 (America/New_York): 01:00-01:59 happen twice and are rejected at either end; 00:59 and 02:00 are fine', () => {
+  const W = { w: '2026-10-26' };
+  assert.deepEqual(codes(T.compute(oneDay(['01:00', '03:00'], ['00:00', '04:00'], W))), ['dstAmbiguous s 01:00']);
+  assert.deepEqual(codes(T.compute(oneDay(['01:59', '03:00'], ['00:00', '04:00'], W))), ['dstAmbiguous s 01:59']);
+  assert.deepEqual(codes(T.compute(oneDay(['00:00', '01:30'], ['00:00', '04:00'], W))), ['dstAmbiguous e 01:30']);
+  const ok = T.compute(oneDay(['00:59', '02:00'], ['00:00', '04:00'], Object.assign({ n: 30 }, W))); assert.equal(ok.state, 'found');
+  assert.equal(ok.options[0].len, 121, '00:59 EDT to 02:00 EST is 2 h 1 min of real time');
+  assert.equal(T.resolve(T.parseDate('2026-11-01'), 120, NY).t, Date.UTC(2026, 10, 1, 7), '02:00 on 1 Nov is EST (UTC-5)');
+  assert.equal(T.resolve(T.parseDate('2026-11-01'), 59, NY).t, Date.UTC(2026, 10, 1, 4, 59), '00:59 on 1 Nov is still EDT (UTC-4)'); });
+t('DST fall-back Sun 1 Nov 2026: overlap lengths are real elapsed time; the whole day is 25 h; the day before is 24 h', () => {
+  const W = { w: '2026-10-26', n: 30 };
+  let r = T.compute(oneDay(['00:00', '04:00'], ['00:30', '03:00'], W)); assert.equal(r.options.length, 1); assert.equal(loc(r, r.options[0]), '00:30-03:00'); assert.equal(r.options[0].len, 210);
+  r = T.compute(oneDay(['00:00', '24:00'], ['00:00', '24:00'], W)); assert.equal(r.options[0].len, 1500);
+  r = T.compute(mk([['A', [[5, '00:00', '24:00']]], ['B', [[5, '00:00', '24:00']]]], W)); assert.equal(r.options[0].len, 1440, 'Sat 31 Oct 24:00 = Sun 1 Nov 00:00, still EDT');
+  // 4h asked: 00:00-03:00 on the fall-back day is 4h of real time, so it IS long enough; 02:00-05:00 is only 3h
+  r = T.compute(oneDay(['00:00', '03:00'], ['00:00', '03:00'], { w: '2026-10-26', n: 4, u: 'hr' })); assert.equal(r.state, 'found'); assert.equal(r.options[0].len, 240);
+  r = T.compute(oneDay(['02:00', '05:00'], ['02:00', '05:00'], { w: '2026-10-26', n: 4, u: 'hr' })); assert.equal(r.state, 'none'); assert.equal(r.closest.len, 180); });
+t('DST fall-back Sun 1 Nov 2026: the clocks-change line names the zone\'s own change; LA same day, London a week earlier, Tokyo none', () => {
+  assert.deepEqual(T.changes({ w: '2026-10-26', z: 'America/Los_Angeles' }).map(c => c.day + ' ' + c.from + ' -> ' + c.to), ['6 02:00 PDT -> 01:00 PST']);
+  assert.equal(T.changes({ w: '2026-10-26', z: 'Europe/London' }).length, 0);
+  assert.equal(T.changes({ w: '2026-10-19', z: 'Europe/London' }).map(c => c.day + ' ' + c.from.slice(0, 5) + ' -> ' + c.to.slice(0, 5)).join(), '6 02:00 -> 01:00');
+  assert.equal(T.changes({ w: '2026-10-26', z: 'Asia/Tokyo' }).length, 0);
+  // week that starts ON the change day: day 0
+  assert.deepEqual(T.changes({ w: '2026-11-01', z: NY }).map(c => c.day), [0]);
+  // same 01:30 entry: ambiguous in New York, fine in Tokyo
+  assert.equal(T.compute(oneDay(['01:30', '03:00'], ['00:00', '04:00'], { w: '2026-10-26', z: 'Asia/Tokyo' })).state, 'found'); });
+t('DST spring-forward Sun 8 Mar 2026 and Sun 14 Mar 2027 (America/New_York): 02:00-02:59 do not exist; 01:59 and 03:00 are fine; day is 23 h', () => {
+  for (const w of ['2026-03-02', '2027-03-08']) {
+    assert.deepEqual(T.changes({ w, z: NY }).map(c => c.day + ' ' + c.from + ' -> ' + c.to), ['6 02:00 EST -> 03:00 EDT'], w);
+    assert.deepEqual(codes(T.compute(oneDay(['02:00', '04:00'], ['00:00', '05:00'], { w }))), ['dstGap s 02:00'], w);
+    assert.deepEqual(codes(T.compute(oneDay(['00:00', '02:59'], ['00:00', '05:00'], { w }))), ['dstGap e 02:59'], w);
+    let r = T.compute(oneDay(['01:00', '04:00'], ['00:00', '05:00'], { w, n: 30 })); assert.equal(r.options[0].len, 120, w + ': 01:00 EST to 04:00 EDT is 2 h');
+    r = T.compute(oneDay(['01:59', '03:00'], ['00:00', '05:00'], { w, n: 1 })); assert.equal(r.options[0].len, 1, w + ': 01:59 EST to 03:00 EDT is 1 min');
+    r = T.compute(oneDay(['00:00', '24:00'], ['00:00', '24:00'], { w, n: 30 })); assert.equal(r.options[0].len, 1380, w);
+    r = T.compute(oneDay(['01:00', '04:00'], ['01:00', '04:00'], { w, n: 3, u: 'hr' })); assert.equal(r.state, 'none', w + ': 3 h of wall clock is only 2 h real'); }
+  // a gap error is reported once per bad end and nothing is moved: no option appears anywhere that week
+  const r = T.compute(mk([['A', [[6, '02:30', '04:00'], [0, '09:00', '10:00']]], ['B', [[6, '00:00', '05:00'], [0, '09:00', '10:00']]]], { w: '2026-03-02' }));
+  assert.equal(r.state, 'fix'); assert.equal(r.options, undefined); });
+t('DST other zones: Sydney fall-back 5 Apr 2026 (03:00->02:00) and spring-forward 4 Oct 2026; Lord Howe half-hour shift', () => {
+  const SY = 'Australia/Sydney';
+  assert.deepEqual(codes(T.compute(oneDay(['02:30', '04:00'], ['00:00', '05:00'], { w: '2026-03-30', z: SY }))), ['dstAmbiguous s 02:30']);
+  assert.equal(T.compute(oneDay(['00:00', '04:00'], ['00:00', '04:00'], { w: '2026-03-30', z: SY, n: 30 })).options[0].len, 300);
+  assert.deepEqual(codes(T.compute(oneDay(['02:30', '04:00'], ['00:00', '05:00'], { w: '2026-09-28', z: SY }))), ['dstGap s 02:30']);
+  const LH = 'Australia/Lord_Howe';
+  assert.deepEqual(codes(T.compute(oneDay(['01:45', '03:00'], ['00:00', '04:00'], { w: '2026-03-30', z: LH }))), ['dstAmbiguous s 01:45']);
+  assert.equal(T.compute(oneDay(['00:00', '04:00'], ['00:00', '04:00'], { w: '2026-03-30', z: LH, n: 30 })).options[0].len, 270); });
 console.log('PASS ' + n + ' tests');

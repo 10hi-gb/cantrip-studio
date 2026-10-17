@@ -103,13 +103,20 @@ window.MILL_HUB = {
    "name": "The Same Hour",
    "score": "7.35",
    "wave": 2,
-   "path": null,
+   "path": "the-same-hour/",
    "sources": [],
    "limits": [
     "No direct comment in the thread; scope proposed by the Cantrip agents under Joshua's authorization.",
-    "Manual entry only. No calendar access."
+    "Manual entry only. No calendar access. One time zone per week; everyone's times are read in that zone.",
+    "A day with no times for someone is unknown, never free; it is never offered as a shared time.",
+    "Times the clocks skip or repeat on a daylight-saving change are refused, never moved or guessed. Lengths are real elapsed time across a change.",
+    "Nothing is sent or booked. A proposal is a suggestion worked out from what the sender typed; nobody has replied to it."
    ],
-   "engineer": "Not built yet.",
+   "engineer": {
+    "pin": "localhost-preview",
+    "commit": "see ENGINEER-STATUS.txt",
+    "result": "ENGINEER SELF-CHECK only (not QA): unit 19 incl. DST (US fall-back 1 Nov 2026, spring-forward 8 Mar 2026 / 14 Mar 2027, Sydney, Lord Howe); browser 116/116 at 320/390/1280."
+   },
    "qa": "Awaiting QA"
   },
   {
