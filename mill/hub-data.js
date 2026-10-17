@@ -269,23 +269,24 @@ window.MILL_HUB = {
     "Up to 6 questions, each with a left and a right answer (and an optional emoji). Answers chosen stay on the page for this visit only; nothing reports back. Send the answer back makes plain text to copy or send by hand.",
     "A link carries the questions and the choosing method, never the answers; anyone with the link can read them.",
     "QA all-9 NOT TESTED: Left or Right at c07008e/2a8c67b (by instruction); tile text drawn with content:attr(data-v) (.lr-vt).",
-    "QA local-2304261 NOT TESTED: physical phones and touch; Firefox and Safari; forced colours / Windows high contrast; real screen readers, switch and dwell hardware; print output; heard audio; pixel-level ink gap for the rm-0/rm-1 hint at 390 (box geometry measured); 1000/1280/1440 brute force with overlay scrollbars (classic only; 320/390 cover both); other pieces; the full original suite (malformed-link catalogue, switch/hold timing simulation, share and copy fallbacks beyond those tested); reduced motion not rerun (carried forward).",
-    "QA worst-pixel sweep PASS @2304261 (no defects): qa/left-or-right/wp-sweep-2304261/WP-SWEEP-2304261.md"
+    "History (superseded by QA local-ad96660): QA local-2304261 NOT TESTED: physical phones and touch; Firefox and Safari; forced colours / Windows high contrast; real screen readers, switch and dwell hardware; print output; heard audio; pixel-level ink gap for the rm-0/rm-1 hint at 390 (box geometry measured); 1000/1280/1440 brute force with overlay scrollbars (classic only; 320/390 cover both); other pieces; the full original suite (malformed-link catalogue, switch/hold timing simulation, share and copy fallbacks beyond those tested); reduced motion not rerun (carried forward).",
+    "QA worst-pixel sweep PASS @2304261 (no defects): qa/left-or-right/wp-sweep-2304261/WP-SWEEP-2304261.md",
+    "QA local-ad96660 NOT TESTED: physical phones and touch, Firefox and Safari, forced colours; real screen readers, switch and dwell hardware; print; the full brute-force sweep (60 renders, not 428; not covered: ja/zh/ko, flags, emoji words, 1000/1440, and 390×760); the full L12 A/B pixel suite (per-side scan-line method used instead; board inset rings not re-measured, CSS unchanged); re-running 2304261 to confirm L16 predates this commit (inferred from bytes); other pieces."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 2a8c67b7f480614d4c25584a42d7574d5ed8fcb4: unit 42/42; browser 543/543 at 320/390/1280 plus a classic-scrollbar sweep at 320/360/390/700/1280/1440 (synthetic keys and mouse only; single-word fewest-pieces oracle, Japanese breaks, rendered focus-ring audit of every Tab stop at 390 and 1280, bad-link path-only writes, no-?query checks). f66fb8e superseded by 2a8c67b for the single-word rule (and L8–L10) only. Not QA, and not a switch or dwell check.",
-   "status": "NOT READY (L11 fixed; L12 mostly fixed, open on the box test; L13 pieces = brute-force minimum 428/428; open L14 Low (pending ruling on how the 10% size band is measured), L15 Low (focus ring vs red error border 1.86:1))",
+   "status": "NOT READY (L14, L15 fixed; open L16 Low (multi-word answers split extra words, more pieces than L13 allows))",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "230426115d99ed5f52be50c319ab409e7e2224a5",
-    "report": "qa/left-or-right/local-2304261/QA-local-2304261.md",
-    "note": "L11 fixed; L12 mostly fixed, left open on the box test (0.41px overlap of the Remove ring with the hint text box; no hint glyph under the ring); L13 fixed apart from one word (pieces = brute-force minimum 428/428; size ≥90% of the largest 426/428); open L14 Low (the 10% band is measured from the 2px grid; ruling note for Creative/PM), L15 Low (editor focus rings have zero clearance; in the error state the ring meets the red error border at 1.86:1)"
+    "sha": "ad966607cf977d7d532cb3a2af493a1a88a27c73",
+    "report": "qa/left-or-right/local-ad96660/QA-local-ad96660.md",
+    "note": "L14, L15 fixed; open L16 Low (multi-word answers split extra words, more pieces than L13 allows)"
    },
    "qaPrevious": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "2a8c67b7f480614d4c25584a42d7574d5ed8fcb4",
-    "report": "qa/left-or-right/local-2a8c67b/QA-local-2a8c67b.md (earlier: qa/left-or-right/local-f66fb8e/QA-local-f66fb8e.md: f66fb8e70ba60af04aa9e1dd0ad3ac4f8db7301c NOT READY)"
+    "sha": "230426115d99ed5f52be50c319ab409e7e2224a5",
+    "report": "qa/left-or-right/local-2304261/QA-local-2304261.md (earlier: qa/left-or-right/local-2a8c67b/QA-local-2a8c67b.md (earlier: qa/left-or-right/local-f66fb8e/QA-local-f66fb8e.md: f66fb8e70ba60af04aa9e1dd0ad3ac4f8db7301c NOT READY): 2a8c67b7f480614d4c25584a42d7574d5ed8fcb4 NOT READY)"
    }
   },
   {
@@ -327,7 +328,7 @@ window.MILL_HUB = {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "ae9d2656ce1c2e5f4d32fd7306f68b6f154a61a1",
-    "report": "qa/care-rota/local-ae9d265/QA-local-ae9d265.md (C18 partial: C17 fixed; C18 partly fixed (“groceries splits 561–569px)) (earlier: qa/care-rota/local-b6a90aa/VERDICT-P017-local-b6a90aa.md (C18 failing) (earlier: qa/care-rota/local-ced37c4/QA-local-ced37c4.md (earlier: qa/care-rota/local-3539188/QA-local-3539188.md — C17 later found present at this SHA (also qa/care-rota/local-64ea179/QA-local-64ea179.md: 64ea1799741988c047941a8fa5a0c37cfc138152 also NOT READY; also qa/care-rota/local-83edf87/QA-local-83edf87.md: 83edf87d032af47d88508f7eed08a8e1a528a9a2 also NOT READY): 3539188eb0ef9b6d97bf9d99c79326f9bf85e791 READY): ced37c460c21508ad3f96fef905c13c022dac060 NOT READY): b6a90aa2bdc1de1e6c81ec5c176e47e7d472b68a NOT READY)"
+    "report": "qa/care-rota/local-ae9d265/QA-local-ae9d265.md (QA verdict: NOT READY; C18 is NOT FIXED. Ordinary word “groceries still splits mid-word in the Line column at every integer width 561–569; dinner is fixed. C17 overflow regression: PASS) (earlier: qa/care-rota/local-b6a90aa/VERDICT-P017-local-b6a90aa.md (C18 failing) (earlier: qa/care-rota/local-ced37c4/QA-local-ced37c4.md (earlier: qa/care-rota/local-3539188/QA-local-3539188.md — C17 later found present at this SHA (also qa/care-rota/local-64ea179/QA-local-64ea179.md: 64ea1799741988c047941a8fa5a0c37cfc138152 also NOT READY; also qa/care-rota/local-83edf87/QA-local-83edf87.md: 83edf87d032af47d88508f7eed08a8e1a528a9a2 also NOT READY): 3539188eb0ef9b6d97bf9d99c79326f9bf85e791 READY): ced37c460c21508ad3f96fef905c13c022dac060 NOT READY): b6a90aa2bdc1de1e6c81ec5c176e47e7d472b68a NOT READY)"
    }
   },
   {
@@ -351,22 +352,24 @@ window.MILL_HUB = {
     "History (superseded by QA local-82c4667): QA local-11d8017 NOT TESTED: real devices, Safari/Firefox and any engine other than Chrome 155 headless; screen readers (only ax-tree text was checked) and real clipboard permission prompts; physical printing (only the Chrome PDF for Letter, and A4 only for the suggest/check PDFs); widths other than those listed, high-contrast or forced-colors mode, and browser zoom above 100%; the 12.45 and 16.14 ring pairs as separate figures; production; experience and design calls (Creative); whether H16 is present at d68094a.",
     "History (superseded by QA local-b67f087): QA local-82c4667 NOT TESTED: Firefox, Safari and any engine other than Chrome 155 headless; real devices, touch, OS-level text scaling, browser zoom above 100%, forced colours / high contrast; screen readers (only Chrome's ax tree was compared; the emoji-word text split was not judged); real clipboard permission prompts; physical printing, and the H12 print sweep and Chrome PDF at 641–800 (not re-run); frames between the sampled times (0–500 ms by seek, not continuous capture) and real devices' frame timing; widths other than 320/390/640/641/800/1024/1280/1440, and H17 beyond 320/390/641; a dedicated math sweep (fh.js unchanged; covered indirectly); the other pieces changed in 11d8017..82c4667, the hub, and production; experience and design calls (Creative).",
     "QA worst-pixel sweep PASS @82c4667 (no defects): qa/five-hands/wp-sweep-82c4667/WP-SWEEP-82c4667.md (cites the 'Contrast — PM 08:26 worst-pixel rule' section of qa/five-hands/local-82c4667/QA-local-82c4667.md, plus gap fills)",
-    "QA local-b67f087 NOT TESTED: Firefox, Safari and any engine other than Chrome 155 headless; real devices, touch, OS text scaling, browser zoom above 100%, forced-colors/high-contrast; screen readers (H19 is Chrome AX-tree evidence only); frames between the samples (glyph pixels at 0/25/50/75/100/250/500 ms + end; rects every 10 ms on h14 scenarios; no continuous real-time capture or real frame timing); H18 glyph-pixel contrast beyond tinyCheck/tiny1/narrow; widths other than 320/390/1280 (plus 641 for emojiwrap only); carried forward, not rerun: the full h14 at 641/800, the H5 width sweep, flows7, addr, focus walk, contrast/non-text sweeps, print/PDF, H1, H8 and math; real clipboard permission prompts and physical printing; the other pieces changed in 82c4667..b67f087, the hub, and production; experience/design calls (Creative)."
+    "History (superseded by QA local-3746b9a): QA local-b67f087 NOT TESTED: Firefox, Safari and any engine other than Chrome 155 headless; real devices, touch, OS text scaling, browser zoom above 100%, forced-colors/high-contrast; screen readers (H19 is Chrome AX-tree evidence only); frames between the samples (glyph pixels at 0/25/50/75/100/250/500 ms + end; rects every 10 ms on h14 scenarios; no continuous real-time capture or real frame timing); H18 glyph-pixel contrast beyond tinyCheck/tiny1/narrow; widths other than 320/390/1280 (plus 641 for emojiwrap only); carried forward, not rerun: the full h14 at 641/800, the H5 width sweep, flows7, addr, focus walk, contrast/non-text sweeps, print/PDF, H1, H8 and math; real clipboard permission prompts and physical printing; the other pieces changed in 82c4667..b67f087, the hub, and production; experience/design calls (Creative).",
+    "QA local-3746b9a NOT TESTED: real screen readers (VoiceOver, NVDA, JAWS, TalkBack, Narrator) and other browsers' accessibility trees (H19 verified only in Chrome 155's AX tree); Firefox and Safari; real devices, touch, zoom, text scaling, forced colours; H18 beyond tinyCheck at 320/390 this run (b67f087's full frame set stands on unchanged slide code); widths outside 320/390/1280 (641 only in emojiwrap); the full suites, print, math, share flows, focus and contrast sweeps (carried forward); other pieces, the hub, and production.",
+    "Known boundary: H19 verified in Chrome accessibility tree only; no real screen reader, device or other browser tested"
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview d68094ade9c8d49edd528b278dcf2583711c78c0: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 247/247 at 320/360/390/641/1024/1280/1440 (incl. Creative check 5f127ab items 1–6; QA local-8206084 H1–H3; QA local-08b466c/2a02a48 H5 tiny and huge sticks in Suggest and Check, H6 tip and capacity-bar contrast and H7 over-text contrast sampled on the rendered page, H8 rolled-up label on phones). Not QA.",
-   "status": "NOT READY (H17, H18 fixed; open H19 Low (spaces around emoji words lost in accessibility tree))",
+   "status": "READY ON LOCALHOST-PREVIEW (H17, H18 and H19 fixed)",
    "qaLocal": {
-    "verdict": "NOT READY",
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "b67f08784a60f162347ec4578706e183eb409d37",
-    "report": "qa/five-hands/local-b67f087/VERDICT-P012-local-b67f087.md",
-    "note": "H17, H18 fixed; open H19 Low (spaces around emoji words lost in accessibility tree)"
+    "sha": "3746b9ab939a604f46bb07619305621d5951d05f",
+    "report": "qa/five-hands/local-3746b9a/VERDICT-P012-local-3746b9a.md",
+    "note": "H17, H18 and H19 fixed"
    },
    "qaPrevious": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "82c466783e637c9016718ace7067f9000adfd41e",
-    "report": "qa/five-hands/local-82c4667/QA-local-82c4667.md (earlier: qa/five-hands/local-11d8017/QA-local-11d8017.md (earlier: qa/five-hands/local-d68094a/QA-local-d68094a.md (H13–H14 per a later QA message, not yet in this file): d68094ade9c8d49edd528b278dcf2583711c78c0 NOT READY): 11d8017894af21f7658b4ba751c3ab585d276219 NOT READY)"
+    "sha": "b67f08784a60f162347ec4578706e183eb409d37",
+    "report": "qa/five-hands/local-b67f087/VERDICT-P012-local-b67f087.md (H19) (earlier: qa/five-hands/local-82c4667/QA-local-82c4667.md (earlier: qa/five-hands/local-11d8017/QA-local-11d8017.md (earlier: qa/five-hands/local-d68094a/QA-local-d68094a.md (H13–H14 per a later QA message, not yet in this file): d68094ade9c8d49edd528b278dcf2583711c78c0 NOT READY): 11d8017894af21f7658b4ba751c3ab585d276219 NOT READY): 82c466783e637c9016718ace7067f9000adfd41e NOT READY)"
    }
   }
  ]
