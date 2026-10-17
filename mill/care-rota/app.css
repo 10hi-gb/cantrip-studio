@@ -193,3 +193,13 @@ label{margin-bottom:10px}
  .sheet td{display:block;width:auto;border-bottom:0}
  .sheet td.day{width:auto;padding-bottom:0}
 }
+/* QA local-ced37c4 C17: the "How each line was read" table never grows past its panel. Columns are fixed (Day, Need and Result sized for their
+   longest words; Line and Name share the rest), cells wrap at spaces first and mid-word only for a word wider than its cell (break-word, PM rule),
+   and a result badge may wrap at its spaces ("Set aside: / not needed") instead of forcing the table wider. */
+.readas .st{white-space:normal;max-width:100%}
+@media (min-width:561px){
+ .readas{table-layout:fixed}
+ .readas th:nth-child(2){width:5.5rem}
+ .readas th:nth-child(3){width:7rem}
+ .readas th:nth-child(5){width:8.5rem}
+}

@@ -579,5 +579,27 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     ck('QA W-7 / PM wrap rule: on the sheet at 320/390, \'Wolfeschlegelsteinhausen\' and \'Pneumonoultramicroscopic\' sit whole on one line; a word breaks mid-word only when it is wider than its cell (40-char name)', views.every(x => x.words.every(q => q.found && (q.wordW <= q.avail ? q.lines === 1 : q.lines > 1)) && x.words.slice(0, 2).every(q => q.lines === 1)), views.map(x => ({ where: x.where, w: x.w, words: x.words })));
     ck('QA W-7: with its rows stacked at 320 the sheet is still a table to assistive tech (role table/row/cell, no LayoutTable)', ax && ax.ax.tr === ax.ax.rows && ax.ax.td === 2 * ax.ax.rows && ax.ax.display === 'block' && !ax.axRoles.LayoutTable && !ax.axRoles.LayoutTableRow && ax.axRoles.row >= ax.ax.rows, ax);
     ck('QA W-7: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA local-ced37c4 C17 + PM 08:09: with a 40-character one-word name (and QA's other long words) nothing on the organizer page is offscreen at any
+  // width 320–1440 (every 10px, plus 561/580/600 exactly), and in the "How each line was read" table and the household sheet a word breaks mid-word
+  // only when it can't fit its cell (break at spaces first). Fails on ced37c4 at 561/580/600 (table 584.8px in a 510px box, "Mo|n", "Dinn|er").
+  { const s = await session(H, IP); const { p } = s; const W40 = 'Abcdefghijklmnopqrstuvwxyzabcdefghijklmn';
+    const plan = ['Mon 19 dinner ' + W40, 'Tue 20 dinner Wolfeschlegelsteinhausen', 'Tue 20 dinner Pneumonoultramicroscopic', 'Wed 21 groceries Ana', 'Wed 21 ride Ana', 'Wed 21 ride Ana', 'Thu 22 dinner and walk Ben', 'Sat 24 walk Ana', 'dinner Carla', 'blah blah'];
+    await p.setViewport({ width: 561, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    await form(p, { forName: 'Priya & Sam', org: 'Jess', first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', rule: 'every' }, { key: 'ride', rule: 'every' }, { key: 'walk', rule: 'weekdays' }, { key: 'other', rule: 'every', label: 'Groceries' }], lines: plan }); await check(p);
+    const results = await p.$$eval('#readas .st', e => [...new Set(e.map(x => x.textContent))]);
+    const widths = [561, 580, 600]; for (let w = 320; w <= 1440; w += 10) widths.push(w); const bad = [], seen = { cells: 0, words: 0, broken: 0 };
+    for (const w of widths) { await p.setViewport({ width: w, height: 900 }); await sleep(60);
+      const m = await p.evaluate(() => { const cw = document.documentElement.clientWidth, out = { sw: document.documentElement.scrollWidth, cw, off: [], mid: [], cells: 0, words: 0, broken: 0 };
+        document.querySelectorAll('section.on *').forEach(e => { if (!e.getClientRects().length || getComputedStyle(e).visibility === 'hidden') return; const r = e.getBoundingClientRect(); if (r.width && (r.right > cw + 0.5 || r.left < -0.5)) out.off.push((e.id || e.className || e.tagName).toString().slice(0, 30) + '@' + Math.round(r.left) + '-' + Math.round(r.right)); });
+        document.querySelectorAll('#readas td, #sheet-t td').forEach(td => { out.cells++; const cs = getComputedStyle(td), cellAvail = td.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+          const tw = document.createTreeWalker(td, NodeFilter.SHOW_TEXT); let tn; while ((tn = tw.nextNode())) { const re = /\S+/g; let mm; while ((mm = re.exec(tn.data))) { out.words++; const rg = document.createRange(); rg.setStart(tn, mm.index); rg.setEnd(tn, mm.index + mm[0].length);
+            const rs = [...rg.getClientRects()].filter(q => q.width > 0.5), tops = []; rs.forEach(q => { if (!tops.some(t => Math.abs(t - q.top) < 3)) tops.push(q.top); }); if (tops.length < 2) continue; out.broken++;
+            const par = tn.parentElement, ps = getComputedStyle(par), avail = par === td ? cellAvail : Math.min(cellAvail, par.getBoundingClientRect().width) - parseFloat(ps.paddingLeft) - parseFloat(ps.paddingRight) - parseFloat(ps.borderLeftWidth) - parseFloat(ps.borderRightWidth), ww = rs.reduce((a, q) => a + q.width, 0);
+            if (ww <= avail - 1) out.mid.push(mm[0].slice(0, 14) + ' ' + Math.round(ww) + '/' + Math.round(avail) + 'px in ' + (td.closest('#readas') ? 'readas' : 'sheet')); } } });
+        return out; });
+      seen.cells += m.cells; seen.words += m.words; seen.broken += m.broken; if (m.sw > m.cw || m.off.length || m.mid.length) bad.push({ w, sw: m.sw, cw: m.cw, off: m.off.slice(0, 4), mid: m.mid.slice(0, 6) }); }
+    ck('QA C17: organizer page with a 40-char one-word name — nothing offscreen, no sideways scroll, and no mid-word break of a word that fits its cell (reading table + household sheet), every 10px 320–1440 plus 561/580/600', !bad.length && results.length >= 5 && seen.broken > 0, { widths: widths.length, results, seen, bad: bad.slice(0, 8), failWidths: bad.map(b => b.w).slice(0, 40) });
+    ck('QA C17: reading-table and sheet cells use break-word, never anywhere/break-all', await p.evaluate(() => [...document.querySelectorAll('#readas td, #readas th, #readas .st, #sheet-t td')].every(e => { const c = getComputedStyle(e); return c.overflowWrap !== 'anywhere' && c.wordBreak !== 'break-all'; })), null);
+    ck('QA C17: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })();
