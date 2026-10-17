@@ -108,4 +108,33 @@ t('banned claims: no AAC / therapy / speech / assistive / communication device a
   for (const f of files) { const s = fs.readFileSync(DIR + f, 'utf8'); if (/\bAAC\b|therap|speech|assistive|communication device|augmentative|helps? (someone|people) communicate/i.test(s)) hits.push(f);
     const ca = (s.match(/communication aid/gi) || []).length; if (ca && !(f === 'copy.js' && ca === 1 && s.includes("It isn't a communication aid and doesn't replace one."))) hits.push(f + ':communication aid'); }
   assert.deepEqual(hits, []); });
+
+// ---- long-word fit (Creative r2): fit.js with a fake measure (every grapheme 0.6em, emoji 1.2em, marks 0.4em at R = 100)
+const F = require('../../mill/left-or-right/fit.js');
+const fake = (avail, pad = 12) => ({ R: 100, avail, full: avail + 2 * pad - 4, measure: (s, f, l) => { const w = F.graphemes(s).reduce((a, g) => a + (/\p{Extended_Pictographic}/u.test(g) ? 120 : 60), 0), qo = f ? 32 : 0, qc = l ? 32 : 0; return { w, marks: qo + qc, hang: 2 * Math.max(qo, qc) }; } });
+t('fit: Liang patterns (hyph-en-us, notice kept) give Grand-mother, hy-phen-ation; exceptions win (ta-ble, present never)', () => {
+  assert.deepEqual(F.hyphenate('grandmother'), [5]); assert.deepEqual(F.hyphenate('hyphenation'), [2, 6]); assert.deepEqual(F.hyphenate('table'), [2]); assert.deepEqual(F.hyphenate('present'), []);
+  const src = fs.readFileSync(DIR + 'hyph-en.js', 'utf8'); assert.ok(src.includes('Copyright (C) 1990, 2004, 2005 Gerard D.C. Kuiken') && src.includes('provided the copyright') && !/fetch\(|XMLHttpRequest|import\(/.test(src)); });
+t('fit: sizes step 2px from the normal size down to the 24px floor', () => { assert.deepEqual(F.sizes(31, 24), [31, 29, 27, 25, 24]); assert.deepEqual(F.sizes(24, 24), [24]); });
+t('fit: unbroken whenever it fits at any size down to 24px (no break above the floor)', () => {
+  const r = F.plan("Grandmother's", Object.assign(fake(220), { sizes: F.sizes(60, 24) })); assert.equal(r.broken, false); assert.ok(r.size >= 24); assert.deepEqual(r.lines, [["Grandmother's"]]); });
+t('fit: Grandmother\'s too wide even at 24px -> dictionary break Grand- / mother\'s at the largest size where both lines fit', () => {
+  const r = F.plan("Grandmother's", Object.assign(fake(136), { sizes: F.sizes(44.8, 24) })); assert.equal(r.broken, true); assert.deepEqual(r.lines, [['Grand-', "mother's"]]); assert.equal(r.level, 0); assert.ok(r.size > 24, r.size);
+  const w = n => n * 0.6 * r.size; assert.ok(w(8) + 0.32 * r.size <= 136 - 1); }); // mother's + closing mark fits the line
+t('fit: no dictionary break -> fallback at the most even letter point, >= 4 letters on each side, visible hyphens; fewest lines first', () => {
+  assert.deepEqual(F.hyphenate('nooooooooooooooooooo'), []);
+  let r = F.plan('Nooooooooooooooooooo', Object.assign(fake(171), { sizes: F.sizes(54.6, 24) })); assert.equal(F.token('Nooooooooooooooooooo', true, true).tiers[0], 1); assert.equal(r.lines[0].length, 2, JSON.stringify(r));
+  r.lines[0].forEach((l, i, a) => { assert.ok((l.match(/\p{L}/gu) || []).length >= 4); if (i < a.length - 1) assert.ok(l.endsWith('-')); });
+  r = F.plan('Nooooooooooooooooooo', Object.assign(fake(136), { sizes: F.sizes(44.8, 24) })); assert.ok(r.lines[0].length >= 2); r.lines[0].forEach(l => assert.ok((l.match(/\p{L}/gu) || []).length >= 4));
+  const tk = F.token('Abcdefgh', true, true); assert.deepEqual(tk.br.filter(b => b.tier === 1).map(b => b.at), [4]); }); // 4 | 4 only
+t('fit: emoji (ZWJ + skin tone sequences) are never split; no hyphen between emoji; breaks only on grapheme boundaries', () => {
+  const E = '\u{1F9D1}\u{1F3FD}\u200D\u{1F9B3}', r = F.plan(E.repeat(7), Object.assign(fake(136), { sizes: F.sizes(44.8, 24) })); assert.equal(r.broken, true);
+  r.lines[0].forEach(l => { assert.ok(!l.endsWith('-')); assert.equal(l.split(E).join(''), ''); }); assert.equal(r.lines[0].join(''), E.repeat(7));
+  const tk = F.token('Abuela' + E + 'Rosalinda', true, true), bounds = new Set(); let k = 0; tk.gs.forEach((g, i) => { bounds.add(i); }); tk.br.forEach(b => { assert.ok(b.at > 0 && b.at < tk.gs.length); assert.ok(!(tk.gs[b.at - 1] === E && b.hy) && !(tk.gs[b.at] === E && b.hy)); }); });
+t('fit: the closing mark never sits alone — it is outside the tokens and counted on the last line; the last line is never empty', () => {
+  for (const [word, avail] of [["Grandmother's", 136], ['Nooooooooooooooooooo', 136], ['Abcdefghijklmnopqrstuvwxyzabcd', 136], ['Superextraordinarily', 120]]) {
+    const o = Object.assign(fake(avail), { sizes: F.sizes(44.8, 24) }), r = F.plan(word, o), lines = r.lines[r.lines.length - 1], last = lines[lines.length - 1];
+    assert.ok(F.graphemes(last).length >= 1 && /\p{L}/u.test(last)); const m = o.measure(last, lines.length === 1, true); assert.ok((m.w + m.marks) * r.size / 100 <= avail - 1, word); } });
+t('fit: multi-word answers keep spaces as the only breaks when every word fits; marks counted on the first and last word', () => {
+  const r = F.plan('Watch a movie at home', Object.assign(fake(136), { sizes: F.sizes(44.8, 24) })); assert.equal(r.broken, false); assert.deepEqual(r.lines.map(x => x.join('|')), ['Watch', 'a', 'movie', 'at', 'home']); });
 console.log('lr unit: ' + n + ' passed');
