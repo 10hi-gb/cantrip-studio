@@ -168,11 +168,21 @@ window.MILL_HUB = {
   {
    "id": "P006",
    "name": "Even Up",
-   "status": "QUEUED, NOT BUILT",
-   "path": null,
+   "score": "7.30",
+   "wave": 2,
+   "path": "even-up/",
+   "sources": [
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf7jx23/"
+   ],
    "limits": [
-    "Undercut in the thread; no claim of fewest transfers. Moves no money."
-   ]
+    "Undercut in the thread; no claim of fewest transfers. Moves no money.",
+    "One event, 2 to 8 people, up to 20 expenses, each split equally or by weight. Amounts are whole cents; leftover cents go to the largest fractions first, ties to whoever is listed first.",
+    "The payments shown are one simple way to settle everyone to zero; they aren't necessarily the fewest. Nothing is paid, sent or linked to a bank.",
+    "Currency is picked from $, € or £; there is no conversion. Refunds and negative amounts aren't supported.",
+    "A received link is a snapshot of what the sender entered; nobody has agreed to anything by opening it."
+   ],
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview 0df2c35: unit 16 (incl. 5000-case settlement property test); browser 180/180 at 320/390/1280. Not QA.",
+   "status": "No QA verdict, NOT READY"
   },
   {
    "id": "P018",
