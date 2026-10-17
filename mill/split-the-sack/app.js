@@ -147,17 +147,29 @@
   function lineCount(e) { var t = e && e.firstChild; if (!t || !e.getClientRects().length) return 0; var r = document.createRange(); r.selectNodeContents(e); var tops = {}; [].forEach.call(r.getClientRects(), function (x) { if (x.width > 0) tops[Math.round(x.top)] = 1; }); return Object.keys(tops).length; }
   function spills(e) { var cell = e.closest('.v, output, .ss-field') || e.parentNode, r = document.createRange(); r.selectNodeContents(e); var c = cell.getBoundingClientRect(); return [].some.call(r.getClientRects(), function (x) { return x.width > 0 && (x.right > c.right + 1 || x.left < c.left - 1); }); }
   function fitOne(box, cls, unitEl) { box.classList.remove(cls); var els = !unitEl ? [] : unitEl.length != null ? [].slice.call(unitEl) : [unitEl]; if (els.some(function (e) { return e.getClientRects().length && (lineCount(e) > 1 || spills(e)); })) box.classList.add(cls); }
+  function fitPick() { var sel = $('pick'), pk = $('picked'), o = sel.selectedOptions && sel.selectedOptions[0]; pk.hidden = true; if (pick < 0 || !o || !sel.getClientRects().length) return;
+    var cs = getComputedStyle(sel), c = document.createElement('canvas').getContext('2d'); c.font = cs.font;
+    pk.hidden = c.measureText(o.textContent).width <= sel.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 24; } // 24px: the native arrow
+  // D10-r5: the widest piece of a name that the PM wrap rule keeps whole (split at spaces and after hyphens), measured unwrapped in the name's own font.
+  function widestWord(e) { var m = document.createElement('span'), w = 0; m.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;left:0;top:0'; e.appendChild(m);
+    e.firstChild.textContent.replace(/-/g, '-\n').split(/\s+/).forEach(function (t) { if (!t) return; m.textContent = t; w = Math.max(w, m.getBoundingClientRect().width); }); e.removeChild(m); return w; }
+  function fitWho(rws) { rws.classList.remove('is-widew'); rws.style.removeProperty('--who-w'); var whos = [].filter.call(rws.querySelectorAll('.ss-alloc .who'), function (e) { return e.getClientRects().length && e.firstChild; });
+    var need = 0, over = whos.some(function (e) { var ww = widestWord(e); need = Math.max(need, ww); return ww > e.clientWidth + .5; }); if (!over) return;
+    rws.classList.add('is-widew'); if (matchMedia('(min-width:561px)').matches) rws.style.setProperty('--who-w', Math.ceil(Math.min(need + 1, rws.clientWidth * .34)) + 'px'); }
   function fitUnits() {
+    fitPick();
     fitOne(document.querySelector('.ss-lcd'), 'is-wideq', $('lcd-q').querySelector('.unit'));
     fitOne($('hh'), 'is-wideu', $('hh').querySelector('.ss-wants .u'));
     fitOne(document.querySelector('.ss-stepper'), 'is-wide', $('amt').querySelector('.unit'));
     // D10-r3: when a table unit doesn't fit its quantity cell, narrow screens give the quantity its own full-width line; wider tables
     // widen the quantity column (all rows and the header together) to the unit's own width.
-    var rws = $('rows'), qus = rws.querySelectorAll('.qu'); rws.style.removeProperty('--qu-w'); fitOne(rws, 'is-wideq', qus);
+    var rws = $('rows'), qus = rws.querySelectorAll('.qu'); rws.style.removeProperty('--qu-w'); fitWho(rws); fitOne(rws, 'is-wideq', qus);
     if (rws.classList.contains('is-wideq')) { var mw = 0; [].forEach.call(qus, function (q) { q.style.whiteSpace = 'nowrap'; q.style.maxWidth = 'none'; mw = Math.max(mw, q.getBoundingClientRect().width); q.style.whiteSpace = ''; q.style.maxWidth = ''; }); rws.style.setProperty('--qu-w', Math.ceil(mw + 1) + 'px'); }
   }
   var fitT; window.addEventListener('resize', function () { cancelAnimationFrame(fitT); fitT = requestAnimationFrame(fitUnits); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitUnits(); });
+  // Print lays the page out at the paper's width: refit before printing and whenever print media starts or stops.
+  window.addEventListener('beforeprint', fitUnits); window.addEventListener('afterprint', fitUnits); if (window.matchMedia) { var pm = matchMedia('print'); if (pm.addEventListener) pm.addEventListener('change', fitUnits); else if (pm.addListener) pm.addListener(fitUnits); }
   function render() {
     var fe = fieldErrors(), cn = mode === 'own' ? capNotes() : { item: [], hh: [] }; list('item-msg', fe.item.concat(cn.item)); list('hh-msg', fe.hh.concat(cn.hh));
     var rows = $('rows'), as = $('assign'), u = unit(); rows.textContent = ''; as.textContent = '';
@@ -243,6 +255,8 @@
   function recvPanel() {
     var sel = $('pick'), v = pick; sel.textContent = ''; var o0 = el('option', null, '—'); o0.value = ''; sel.appendChild(o0);
     st.h.forEach(function (_, i) { var o = el('option', null, typedName(i)); o.value = String(i); sel.appendChild(o); }); sel.value = v >= 0 ? String(v) : '';
+    // No ellipsis on typed names: a closed <select> cuts a long picked name, so the full name is also shown under it (wrapping) when it doesn't fit (fitPick).
+    var pk = $('picked'); pk.textContent = ''; if (pick >= 0) { var pn = M.strip(st.h[pick][0]); if (pn) pk.appendChild(V.typed(pn)); else pk.textContent = nameOf(pick); }
     $('change').disabled = pick < 0; var inc = S.parseQty(st.i);
     if (pick >= 0) { $('amt-l').textContent = M.fill(C.answerAmountLabel, { increment: S.fmtQty(inc), unit: unit() }); $('down').setAttribute('aria-label', M.fill(C.stepDownAria, { name: qName(pick) })); $('up').setAttribute('aria-label', M.fill(C.stepUpAria, { name: qName(pick) })); var am = $('amt'), au = unit(); am.textContent = ''; am.appendChild(el('span', 'num', S.fmtQty(S.parseQty(String(st.h[pick][1]).trim() || '0')))); if (au) { am.appendChild(document.createTextNode(' ')); am.appendChild(el('span', 'unit', au)); } }
     var res = result(), oc = $('owncost'); oc.textContent = '';
@@ -276,7 +290,8 @@
   function fromHash() {
     V.clearErrors(document, '#item-msg,#hh-msg,#change-err'); $('banner').hidden = true; lastLink = ''; $('link').value = ''; $('linkbox').hidden = true; $('rlink').value = ''; $('rlinkbox').hidden = true;
     if (!location.hash || location.hash === '#') { st = blank(); setMode('own'); return; }
-    var d = L.decode(location.hash);
+    // QA local-d8d1dce D7r: the WHOLE received URL (origin + path + # + fragment) is capped at 2,000 like sending (shared MILLVIEW.linkFor), not just the fragment
+    var d = V.linkFor(location.hash.replace(/^#/, '')) ? L.decode(location.hash) : { ok: false, why: 'tooLong' };
     if (d.ok) {
       st = d.data; orig = JSON.parse(JSON.stringify(st)); pick = -1;
       // D4: sender text is labelled and quoted, never inside a product sentence (no organizer-name field -> anonymous strings)

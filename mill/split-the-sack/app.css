@@ -33,8 +33,11 @@
   .ss-lcd .k:nth-child(3){grid-row:3;grid-column:1}.ss-lcd .v:nth-child(6){grid-row:3;grid-column:2}
   .ss-lcd .v{text-align:right}
 }
-/* D2: a long single-word name is cut with an ellipsis, never broken mid-word; the full name stays in the DOM text (accessible name), title tooltip and export. */
-.ss-alloc .who{overflow-wrap:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* No ellipsis on typed values (QA local-d8d1dce, pre-empting D10-r5): a name always shows in full. PM wrap rule: break at spaces, then hyphens, mid-word only when one word can't fit (overflow-wrap:break-word, never anywhere). */
+.ss-alloc .who{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word;word-break:normal;min-width:0}
+.mill-typed{overflow-wrap:break-word;word-break:normal}
+.ss-assign .ss-btn{min-width:0;max-width:100%;white-space:normal;overflow-wrap:break-word;word-break:normal;text-align:left}
+.ss-picked{margin:2px 0 0;font:600 14px/1.3 var(--ss-sans);min-width:0;max-width:100%;overflow-wrap:break-word;word-break:normal}
 /* D4: sender-typed text is quoted and attributed. */
 .ss-quote{margin:4px 0;font-weight:700;overflow-wrap:anywhere;unicode-bidi:plaintext}
 .ss-from{margin:0 0 2px;font:700 11px var(--ss-sans);letter-spacing:.08em;text-transform:uppercase;opacity:.8}
@@ -96,4 +99,14 @@ body.is-recv .ss-alloc .who{text-transform:none;letter-spacing:0}
   .ss-rows.is-wideq .ss-alloc,.ss-rows.is-wideq .ss-sum{grid-template-areas:"bin who tot" "bin qty qty" "bin fee fee"}
   .ss-rows.is-wideq .ss-alloc .m.fee,.ss-rows.is-wideq .ss-sum span:nth-child(5){justify-self:end;text-align:right}
 }
-@media (min-width:561px){.ss-rows.is-wideq .ss-colhead,.ss-rows.is-wideq .ss-alloc,.ss-rows.is-wideq .ss-sum{grid-template-columns:44px minmax(0,1.3fr) minmax(var(--qu-w,0px),.9fr) minmax(0,.9fr) minmax(0,.8fr) minmax(0,1fr)}}
+@media (min-width:561px){.ss-rows.is-wideq .ss-colhead,.ss-rows.is-wideq .ss-alloc,.ss-rows.is-wideq .ss-sum,.ss-rows.is-widew .ss-colhead,.ss-rows.is-widew .ss-alloc,.ss-rows.is-widew .ss-sum{grid-template-columns:44px minmax(var(--who-w,0px),1.3fr) minmax(var(--qu-w,0px),.9fr) minmax(0,.9fr) minmax(0,.8fr) minmax(0,1fr)}}
+/* QA local-d8d1dce D10-r5: names wrap, never ellipsis. So that a word is only broken mid-word when it can't fit at all (the old D2 problem), a name word
+   wider than its cell gets room first: on narrow screens the name takes the row's full width (total and fee move under it); on wider tables the name
+   column widens to that word, up to 34% of the table (--who-w). Print keeps the same rules. */
+@media (max-width:560px){
+  .ss-rows.is-widew .ss-alloc,.ss-rows.is-widew .ss-sum{grid-template-areas:"bin who who" "bin qty tot" "bin fee fee"}
+  .ss-rows.is-widew.is-wideq .ss-alloc,.ss-rows.is-widew.is-wideq .ss-sum{grid-template-areas:"bin who who" "bin qty qty" "bin fee tot"}
+  .ss-rows.is-widew .ss-alloc .m.fee,.ss-rows.is-widew .ss-sum span:nth-child(5){justify-self:end;text-align:right}
+  .ss-rows.is-widew.is-wideq .ss-alloc .m.fee,.ss-rows.is-widew.is-wideq .ss-sum span:nth-child(5){justify-self:start;text-align:left}
+}
+.ss-grid>*{min-width:0}
