@@ -141,10 +141,11 @@ input[aria-invalid=true],textarea[aria-invalid=true]{border-color:var(--red);box
 }
 /* QA H15 (PM 07:39): labels are in their final place and fully readable on every frame of the slide-in. The bar slides (transform only; no fade,
    since a fading bar fades its label too); each label is held still against it by the same timing in reverse (fh-hold), so bar + label nets to
-   zero movement. Out labels carry the hold on .lab (their positioned box; their .t/.m must not double it); in-bar labels on .t and .m. */
+   zero movement. Out labels carry the hold on .lab (their positioned box; their .t/.m must not double it); in-bar labels on .t and .m.
+   QA H18: an in-bar label's slide (--sd) and hold (--hx) are sized per bar in app.js slideRoom, so it never leaves its bar or the track on any frame. */
 @media (prefers-reduced-motion:no-preference){
- @keyframes slide{from{transform:translateX(-14px)}}
- @keyframes fh-hold{from{transform:translateX(14px)}}
+ @keyframes slide{from{transform:translateX(calc(-1 * var(--sd,14px)))}}
+ @keyframes fh-hold{from{transform:translateX(var(--hx,14px))}}
  .stick{animation:slide .5s ease-out both}
  .stick .lab,.stick .t,.stick .m{animation:fh-hold .5s ease-out both}
  .stick.out .t,.stick.out .m{transform:none!important}
