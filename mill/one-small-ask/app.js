@@ -31,7 +31,7 @@
   // D4: sender-typed values are shown as label + separate value, never voiced inside product copy.
   function typed(tpl, key, value) { var f = document.createDocumentFragment(), parts = String(tpl).split('{' + key + '}'); f.appendChild(document.createTextNode(parts[0])); f.appendChild(el('span', 'osa-typed', value)); if (parts[1]) f.appendChild(document.createTextNode(parts[1])); return f; }
   function quoted(value) { var w = el('span', 'osa-quoted'); w.appendChild(el('span', 'osa-qlabel', C.receiverAskLabel)); w.appendChild(document.createTextNode(' ')); w.appendChild(el('span', 'osa-qtext', M.fill(C.quoteWrap, { text: value }))); return w; }
-  function page(title, lede) { var tt = $('title'); tt.textContent = ''; if (typeof title === 'string') tt.textContent = title; else tt.appendChild(title); $('lede').textContent = lede || ''; $('lede').hidden = !lede; $('delta').hidden = true; $('note').hidden = true; $('linkbox').hidden = true; $('x').textContent = ''; $('x').setAttribute('aria-label', C.exchangeAria); rowN = 0; }
+  function page(title, lede) { var tt = $('title'); tt.textContent = ''; if (typeof title === 'string') tt.textContent = title; else tt.appendChild(title); $('lede').textContent = lede || ''; $('lede').hidden = !lede; $('delta').hidden = true; $('delta').textContent = ''; $('delta').removeAttribute('aria-label'); $('link').value = ''; setText(''); $('note').hidden = true; $('linkbox').hidden = true; $('x').textContent = ''; $('x').setAttribute('aria-label', C.exchangeAria); rowN = 0; }
   function noteLine(t) { $('note').textContent = t; $('note').hidden = !t; }
   // ---------- copy / share ----------
   function selectText(node) { node.focus(); if (node.select) node.select(); else { var r = document.createRange(); r.selectNodeContents(node); var s = getSelection(); s.removeAllRanges(); s.addRange(r); } }
@@ -46,7 +46,7 @@
   // ---------- compose ----------
   function composeErrors(d) {
     var e = {}, t = draftTerms(d), x;
-    if ((x = M.len(M.strip(d.w)) - A.CAP.w) > 0) e.w = M.plural(C.actionTooLong, x); else if (!M.strip(d.w)) e.w = C.actionEmpty;
+    if ((x = M.len(A.stripW(d.w)) - A.CAP.w) > 0) e.w = M.plural(C.actionTooLong, x); else if (!A.stripW(d.w)) e.w = C.actionEmpty;
     if (!(t.e >= 1 && t.e <= A.EMAX[t.u])) e.e = String(d.e).trim() && /^\d+$/.test(String(d.e).trim()) && +d.e > 0 ? M.fill(C.errorRange, { max: A.EMAX[t.u] }) : C.effortInvalid;
     if (!M.strip(d.d) || !d.s || !d.t || M.len(M.strip(d.d)) > A.CAP.d) e.win = C.windowMissing; else if (d.t <= d.s) e.win = C.windowOrder;
     if ((x = M.len(M.strip(d.h)) - A.CAP.h) > 0) e.h = M.plural(C.whereTooLong, x);
@@ -72,7 +72,7 @@
     var win = el('div', 'osa-win'); [[C.windowStartLabel, s], [C.windowEndLabel, t]].forEach(function (p) { var l = el('label'); l.appendChild(el('span', null, p[0])); l.appendChild(p[1]); win.appendChild(l); });
     x.appendChild(term('open', C.windowLabel, wrap([day, win, el('span', 'osa-hint', C.asTypedHint), errBox('e-win')]), '·', none()));
     var h = bind(input('is-ask', d.h, C.whereLabel, { ph: C.wherePlaceholder, id: 'f-h' }), 'h');
-    x.appendChild(term('open', C.whereLabel, wrap([h, errBox('e-h')]), '·', none()));
+    h.setAttribute('aria-describedby', 'h-h'); var wh = el('span', 'osa-hint', C.whereHint); wh.id = 'h-h'; x.appendChild(term('open', C.whereLabel, wrap([h, wh, errBox('e-h')]), '·', none()));
     var f = bind(input('is-ask', d.f, C.fromLabel, { ph: C.fromPlaceholder, id: 'f-f' }), 'f'), o = bind(input('is-ask', d.o, C.toLabel, { ph: C.toPlaceholder, id: 'f-o' }), 'o');
     x.appendChild(term('open', C.fromLabel, wrap([f, errBox('e-f')]), '·', none()));
     x.appendChild(term('open', C.toLabel, wrap([o, errBox('e-o')]), '·', none()));
@@ -125,7 +125,7 @@
     if (choice === 'y' || choice === 'p') { var nl = el('label', 'osa-lab', C.noteLabel), na = input('osa-note-in', note, null, { area: true, ph: C.notePlaceholder, id: 'f-note' }); nl.htmlFor = 'f-note'; na.addEventListener('input', function () { note = na.value; refreshReply(); }); side.push(nl, na, errBox('e-note')); }
     if (choice === 'n') side.push(el('p', 'osa-fine', C.noConfirm));
     if (choice === 'p') side.push(errBox('e-part'));
-    if (choice) side.push(btns([btn(C.copyReplyLink, 'osa-btn--ans', function () { var fr = makeReply(); if (fr != null) { var u = linkOrText(fr); if (u) copy(u, $('link')); } }, 'b-rlink'), btn(C.replyShare, '', function () { var fr = makeReply(); if (fr != null) share(fr, C.title, C.replyShareText, C.replyShareCancel); }, 'b-rshare'), btn(C.copyAsText, '', function () { copy(lastText, $('text')); }, 'b-rtext')]), el('p', 'osa-fine', C.replySendYourself), el('p', 'osa-fine', C.replySnapshot));
+    if (choice) side.push(btns([btn(C.copyReplyLink, 'osa-btn--ans', function () { var fr = makeReply(); if (fr != null) { var u = linkOrText(fr); if (u) copy(u, $('link')); } }, 'b-rlink'), btn(C.replyShare, '', function () { var fr = makeReply(); if (fr != null) share(fr, C.title, C.replyShareText, C.replyShareCancel); }, 'b-rshare'), btn(C.copyAsText, '', function () { copy(lastText, $('text')); }, 'b-rtext'), btn(C.reset, '', replyReset, 'b-rreset')]), el('p', 'osa-fine', C.replyPrivacy), el('p', 'osa-fine', C.replySendYourself), el('p', 'osa-fine', C.replySnapshot));
     x.appendChild(foot([el('p', 'osa-fine', C.knownPersonNote)], side));
     refreshReply(); markRows();
     if (focusId && $(focusId)) { var f = $(focusId); f.focus(); if (f.setSelectionRange && typeof f.value === 'string' && f.type !== 'time') try { f.setSelectionRange(f.value.length, f.value.length); } catch (e) {} }
@@ -166,6 +166,8 @@
     $('linkbox').hidden = true;
   }
   function makeReply() { var c = currentReply(); if (c && c.yes) { pick('y'); return null; } if (!c || !c.r) return null; return A.encodeReply(c.r); }
+  // Recipient Start over: clears only this visitor's unsent reply (choice, offer, note, link box); the ask and its link stay.
+  function replyReset() { if (!confirm(C.replyResetConfirm)) return; choice = null; offer = null; note = ''; $('link').value = ''; $('linkbox').hidden = true; drawAnswer('c-y'); toast(C.resetDone); }
   function pick(v) { choice = v; if (v === 'p' && !offer) offer = { w: ask.w, e: String(ask.e), u: ask.u, d: ask.d, s: ask.s, t: ask.t, h: ask.h }; drawAnswer('c-' + v); }
   // ---------- read reply (#r1) ----------
   function readReply() {
@@ -190,7 +192,7 @@
     setText(A.textReply(C, r));
   }
   function leave() { history.replaceState(null, '', location.pathname + location.search); touched = {}; $('banner').hidden = true; compose(); $('f-w').focus(); }
-  function reset() { if (!confirm(C.resetConfirm)) return; history.replaceState(null, '', location.pathname + location.search); draft = blankDraft(); touched = {}; $('banner').hidden = true; compose(); toast(C.resetDone); $('f-w').focus(); }
+  function reset() { if (!confirm(C.resetConfirm)) return; history.replaceState(null, '', location.pathname + location.search); $('link').value = ''; $('linkbox').hidden = true; draft = blankDraft(); touched = {}; $('banner').hidden = true; compose(); toast(C.resetDone); $('f-w').focus(); }
   function route() {
     choice = null; offer = null; note = ''; $('banner').hidden = true;
     var h = location.hash; if (!h || h === '#') { draft = draft || blankDraft(); return compose(); }

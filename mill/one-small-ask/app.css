@@ -1,3 +1,4 @@
+[hidden]{display:none!important}
 /* One Small Ask — engineer additions on top of Creative's theme.css (unchanged). Labels in ::before come from COPY via data-lbl. */
 .osa-term.is-changed .ans::before,.osa-term.is-changed .ask::before{content:attr(data-lbl)}
 .osa-vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -14,8 +15,8 @@ select.osa-in{appearance:auto}
 @media print{.osa-banner,.osa-linkbox,.osa-toast,.osa-top a{display:none!important}}
 .osa-in.osa-note-in{border-color:var(--osa-ans-ink);margin:4px 0 8px}
 /* D2 pattern (from Split the Sack QA): a long single-word name must not widen the card; full name stays in the text and title attribute. */
-.osa-who>span{min-width:0;flex:1 1 auto}
-.osa-who b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.osa-who>span:not(.osa-ini){min-width:0;flex:1 1 auto}
+.osa-who b{white-space:normal;overflow-wrap:anywhere}
 .osa-term,.osa-term>div{min-width:0}
 @media (max-width:720px){.osa-heads,.osa-foot,.osa-term{grid-template-columns:minmax(0,1fr)}}
 .osa-title{overflow-wrap:anywhere;min-width:0}
@@ -24,3 +25,10 @@ select.osa-in{appearance:auto}
 .osa-quoted{display:block}
 .osa-qlabel{display:block;font:600 12px var(--osa-body);letter-spacing:.02em;color:var(--osa-mute)}
 .osa-qtext{overflow-wrap:anywhere;unicode-bidi:plaintext}
+
+/* QA 83a2ebcd D2/D3: copy-text box and delta line wrap long words and URLs. */
+.osa-copytext,.osa-delta,.osa-delta .a,.osa-delta .b,.osa-term s{overflow-wrap:anywhere;min-width:0;max-width:100%}
+.osa-copytext{white-space:pre-wrap}
+/* Favor keeps up to 3 line breaks: show them as typed. */
+.osa-term .ask,.osa-term .ans,.osa-qtext,.osa-delta .a,.osa-delta .b{white-space:pre-line}
+.osa-ini{flex:none}

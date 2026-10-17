@@ -58,6 +58,7 @@ const COPY = {
   "shareText": "Small favor?",
   "shareCancel": "Not sent. The ask is still here.",
   "privacy": "The ask lives in the link and nowhere else; nothing is uploaded. Anyone with the link can read it, and it may stay in browser history.",
+  "replyPrivacy": "Your reply goes in a new link, with the original ask. Nothing is uploaded. Anyone with the link can read it, and it may stay in browser history.",
   "receiverIntro": "Small ask from: {from}",
   "receiverIntroAnon": "Small ask (no name given)",
   "replyHeading": "Your answer",
@@ -111,6 +112,7 @@ const COPY = {
   "diffAria": "{term}: was {was}, now {now}.",
   "whereLabel": "Where (optional)",
   "wherePlaceholder": "Main St post office",
+  "whereHint": "A public spot works best. Leave out home addresses, yours or anyone else's.",
   "whereTooLong": {
     "one": "1 character over.",
     "other": "{n} characters over."

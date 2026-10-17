@@ -1,3 +1,4 @@
+[hidden]{display:none!important}
 *{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#f4f1ea;color:#1d1d1b}
 .hub{max-width:44rem;margin:0 auto;padding:1.2rem .9rem 3rem}.hub h1{font-size:1.4rem;line-height:1.2}
 .hub-shared{font-size:.9rem;padding-left:1.1rem}.hub-list{list-style:none;padding:0;margin:1rem 0}

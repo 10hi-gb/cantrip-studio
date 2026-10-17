@@ -4,19 +4,21 @@
 // Reply JSON {a: <ask>, v: 'y'|'p'|'n', p: <offer {w,e,u,d,s,t,h}> | null, n: note}
 //   y: p null, note optional. p: offer required and must differ from the ask in at least one term. n: p null, note must be '' (no reason).
 // encodeAsk/encodeReply return null when invalid and '' when valid but over the 2000-char cap (UI then offers text only).
-// Text is kept exactly as typed (after stripping control/bidi characters and collapsing whitespace). No time-zone math.
+// Text is kept exactly as typed (after stripping control/bidi characters and collapsing whitespace; the favor keeps up to 3 line breaks). No time-zone math.
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('../shared/core.js'));
   else root.ASK = factory(root.MILL);
 })(this, function (M) {
-  var FRAG_MAX = 2000, CAP = { w: 120, d: 40, h: 80, name: 24, note: 120 }, EMAX = { min: 600, hr: 24 };
+  var FRAG_MAX = 2000, CAP = { w: 140, d: 40, h: 80, name: 24, note: 120 }, EMAX = { min: 600, hr: 24 };
+  // Favor text keeps up to 3 line breaks (4 lines); further lines collapse into the 4th with spaces. Each line is stripped like other text; blank lines dropped.
+  function stripW(x) { var lines = String(x == null ? '' : x).replace(/\r\n?/g, '\n').split('\n').map(M.strip).filter(Boolean); return lines.slice(0, 4).join('\n') + (lines.length > 4 ? ' ' + lines.slice(4).join(' ') : ''); }
   var TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
   function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
   function exact(o, keys) { return o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length === keys.length && keys.every(function (k) { return own(o, k); }); }
   // Terms check -> null or the first error code (used for both the ask and an offer)
   function termsError(t) {
-    if (typeof t.w !== 'string' || !M.strip(t.w)) return 'actionEmpty';
-    if (M.len(M.strip(t.w)) > CAP.w) return 'actionTooLong';
+    if (typeof t.w !== 'string' || !stripW(t.w)) return 'actionEmpty';
+    if (M.len(stripW(t.w)) > CAP.w) return 'actionTooLong';
     if (t.u !== 'min' && t.u !== 'hr') return 'effortInvalid';
     if (!Number.isInteger(t.e) || t.e < 1 || t.e > EMAX[t.u]) return 'effortInvalid';
     if (typeof t.d !== 'string' || typeof t.s !== 'string' || typeof t.t !== 'string' || !M.strip(t.d) || !TIME.test(t.s) || !TIME.test(t.t)) return 'windowMissing';
@@ -33,7 +35,7 @@
     if (M.len(M.strip(a.f)) > CAP.name || M.len(M.strip(a.o)) > CAP.name) return 'nameTooLong';
     return null;
   }
-  function cleanTerms(t) { return { w: M.strip(t.w), e: t.e, u: t.u, d: M.strip(t.d), s: t.s, t: t.t, h: M.strip(t.h) }; }
+  function cleanTerms(t) { return { w: stripW(t.w), e: t.e, u: t.u, d: M.strip(t.d), s: t.s, t: t.t, h: M.strip(t.h) }; }
   function cleanAsk(a) { var c = cleanTerms(a); c.f = M.strip(a.f); c.o = M.strip(a.o); return c; }
   // Which terms changed between the ask and an offer. Byte-for-byte after the same cleaning.
   function diff(a, p) { a = cleanTerms(a); p = cleanTerms(p); return { action: a.w !== p.w, effort: a.e !== p.e || a.u !== p.u, window: a.d !== p.d || a.s !== p.s || a.t !== p.t, where: a.h !== p.h }; }
@@ -83,5 +85,5 @@
       if (d[k]) ch += M.fill(C.textChangedLine, { term: C[t[1]], now: p[k] || '—', was: a[k] || '—' }); else same += M.fill(C.textSameLine, { term: C[t[1]], value: a[k] }); });
     return M.fill(C.textReplyPart, { action: a.action, changedLines: ch, sameLines: same, noteLine: noteLine });
   }
-  return { TERMS: TERMS, effortText: effortText, windowText: windowText, termValues: termValues, textAsk: textAsk, textReply: textReply, FRAG_MAX: FRAG_MAX, CAP: CAP, EMAX: EMAX, termsError: termsError, askError: askError, replyError: replyError, diff: diff, anyChanged: anyChanged, encodeAsk: encodeAsk, encodeReply: encodeReply, decode: decode, fmtTime: fmtTime, cleanTerms: cleanTerms };
+  return { TERMS: TERMS, effortText: effortText, windowText: windowText, termValues: termValues, textAsk: textAsk, textReply: textReply, FRAG_MAX: FRAG_MAX, CAP: CAP, EMAX: EMAX, termsError: termsError, askError: askError, replyError: replyError, diff: diff, anyChanged: anyChanged, encodeAsk: encodeAsk, encodeReply: encodeReply, decode: decode, fmtTime: fmtTime, cleanTerms: cleanTerms, stripW: stripW };
 });

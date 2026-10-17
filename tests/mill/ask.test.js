@@ -11,7 +11,7 @@ t('yes and no replies round-trip; no carries no reason', () => { for (const v of
 t('part with nothing changed is refused (encode and forged decode)', () => { const same = { w: ask.w, e: 20, u: 'min', d: ask.d, s: ask.s, t: ask.t, h: '' }; assert.equal(A.replyError({ a: ask, v: 'p', p: same, n: '' }), 'partNothingChanged'); assert.equal(A.decode(M.pack('r', 1, { a: ask, v: 'p', p: same, n: '' })).ok, false); });
 t('ask validation: empty favor, too long, effort bounds, window missing/order, names', () => {
   const e = o => A.askError({ ...ask, ...o });
-  assert.equal(e({ w: '  ' }), 'actionEmpty'); assert.equal(e({ w: 'x'.repeat(121) }), 'actionTooLong'); assert.equal(e({ w: '😀'.repeat(120) }), null);
+  assert.equal(e({ w: '  ' }), 'actionEmpty'); assert.equal(e({ w: 'x'.repeat(141) }), 'actionTooLong'); assert.equal(e({ w: '😀'.repeat(140) }), null);
   for (const v of [0, -5, 1.5, NaN, Infinity, 601, '20']) assert.equal(e({ e: v }), 'effortInvalid', String(v)); assert.equal(e({ e: 25, u: 'hr' }), 'effortInvalid'); assert.equal(e({ u: 'day' }), 'effortInvalid');
   assert.equal(e({ d: '' }), 'windowMissing'); assert.equal(e({ s: '4pm' }), 'windowMissing'); assert.equal(e({ s: '24:00' }), 'windowMissing'); assert.equal(e({ s: '18:00', t: '16:00' }), 'windowOrder'); assert.equal(e({ s: '16:00', t: '16:00' }), 'windowOrder');
   assert.equal(e({ f: 'x'.repeat(25) }), 'nameTooLong'); assert.equal(e({ h: 'x'.repeat(81) }), 'whereTooLong'); assert.equal(e({ h: 'Main St post office' }), null); });
@@ -39,4 +39,9 @@ t('plain-text exports read complete (Writer templates, verbatim values)', () => 
   assert.equal(A.textReply(C, { a: ask, v: 'n', p: null, n: '' }), "Re: Pick up my parcel and drop it at Mom's\nNot this time.");
   assert.equal(A.textReply(C, { a: { ...ask, h: 'Main St' }, v: 'y', p: null, n: 'Happy to.' }), "Re: Pick up my parcel and drop it at Mom's\nYes, as asked: 20 minutes max, Tue Oct 20, 4 PM–6 PM. Where: Main St.\nNote: Happy to.");
   for (const x of [A.textAsk(C, ask), A.textReply(C, { a: ask, v: 'p', p: offer, n: '' })]) assert.ok(!/\b(sent|delivered|accepted|confirmed|agreed|notified)\b/i.test(x)); });
+t('favor cap is 140 (counted after cleaning); 141 refused', () => { const base = { ...ask, w: 'x'.repeat(140) }; assert.ok(A.encodeAsk(base)); assert.equal(A.termsError({ ...base, w: 'x'.repeat(141) }), 'actionTooLong'); assert.equal(A.encodeAsk({ ...base, w: 'x'.repeat(141) }), null); });
+t('favor keeps up to 3 line breaks; more collapse to spaces; blank lines dropped; text export matches', () => {
+  assert.equal(A.stripW('a\nb\r\nc\n\n\nd'), 'a\nb\nc\nd'); assert.equal(A.stripW('1\n2\n3\n4\n5\n6'), '1\n2\n3\n4 5 6'); assert.equal(A.stripW('  a  b \n\t c '), 'a b\nc');
+  const a = { ...ask, w: 'Pick up\nthe parcel\nfrom\nthe post office\nplease' }; const d = A.decode(A.encodeAsk(a)); assert.equal(d.data.w, 'Pick up\nthe parcel\nfrom\nthe post office please'); assert.ok(A.textAsk(C, d.data).includes('Small favor: Pick up\nthe parcel\nfrom\nthe post office please\n')); });
+t('"Not this time" carries no note: a reply link with v=n and a note is refused', () => { assert.equal(A.encodeReply({ a: ask, v: 'n', p: null, n: 'sorry' }), null); assert.ok(A.encodeReply({ a: ask, v: 'n', p: null, n: '' })); });
 console.log('PASS ' + n + ' tests');

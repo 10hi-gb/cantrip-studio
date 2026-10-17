@@ -1,3 +1,4 @@
+[hidden]{display:none!important}
 /* Split the Sack — engineer additions on top of Creative's theme.css (unchanged): household inputs, link box, toast. */
 .ss-top a{color:inherit;text-decoration:none}
 .ss-top a:focus-visible{outline:3px solid var(--ss-penny);outline-offset:2px}

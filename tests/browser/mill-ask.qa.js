@@ -1,6 +1,7 @@
 // node tests/browser/mill-ask.qa.js <host[:port]> <ip> [scheme] — One Small Ask end to end: sender -> recipient -> reply, @320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
 const { textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const M = require('../../mill/shared/core.js'), C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/one-small-ask/copy.js', 'utf8') + ';COPY');
 const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
@@ -83,5 +84,58 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     const sw = await p.evaluate(() => document.documentElement.scrollWidth); const ov = await textOverlap(p, '#title, .osa-who b, .osa-who small, .osa-term .k1, .osa-term .ask, .osa-choice');
     const ttl = await p.$$eval('.osa-who b', bs => bs.map(b => b.title));
     ck(w + ' ask long single-word values: no overflow, no overlap, full name in title attr', sw <= w && !ov.length && ttl.includes(L), { sw, ov, ttl }); await s.b.close(); }
+  // ---- QA 83a2ebcd fixes (D1-D9) + PM scope (140 cap, line breaks, no note on "Not this time", recipient Start over)
+  const USPS = 'Track at https://tools.usps.com/go/TrackConfirmAction?tLabels=9400111899223344556677';
+  const A0 = { w: 'pickup', e: 20, u: 'min', d: 'Tue', s: '16:00', t: '18:00', h: '', f: 'Jordan', o: 'Sam' };
+  for (const w of [320, 390]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 800 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const L = await p.evaluate((A0, USPS) => { const { f: _f, o: _o, ...T0 } = A0; const part = ASK.encodeReply({ a: A0, v: 'p', p: { ...T0, w: 'collection-only', d: 'Wed', s: '17:00' }, n: '' });
+      const yes = ASK.encodeReply({ a: { ...A0, w: 'water plants', d: 'Sat', s: '09:00', t: '10:00', f: 'Kim', o: 'Lee' }, v: 'y', p: null, n: '' });
+      const urlPart = ASK.encodeReply({ a: { ...A0, w: USPS }, v: 'p', p: { ...T0, w: 'collection only', d: 'Wed' }, n: '' }); const urlAsk = ASK.encodeAsk({ ...A0, w: USPS, h: USPS.slice(0, 80) }); const ask2 = ASK.encodeAsk({ ...A0, w: 'Line one\nLine two\nLine three\nLine four\nLine five' });
+      const names = ASK.encodeAsk({ ...A0, f: 'Christopher Montgomery', o: 'Bartholomew-Featherstone' }); return { part, yes, urlPart, urlAsk, ask2, names }; }, A0, USPS);
+    const delta = () => p.evaluate(() => { const d = document.getElementById('delta'); return { shown: getComputedStyle(d).display !== 'none', text: d.textContent }; });
+    await p.goto(BASE + '#' + L.part, { waitUntil: 'load' }); await sleep(150); let d = await delta(); const okPart = d.shown && d.text.includes('pickup');
+    await p.goto(BASE + '#' + L.yes, { waitUntil: 'load' }); await sleep(150); const dy = await delta();
+    await p.goto(BASE + '#' + L.part, { waitUntil: 'load' }); await sleep(150); await p.goto(BASE + '#' + 'r1.zzzz.000000', { waitUntil: 'load' }); await sleep(150); const db = await delta();
+    await p.goto(BASE + '#' + L.part, { waitUntil: 'load' }); await sleep(150); await p.focus('#b-again'); await p.keyboard.press('Enter'); await sleep(150); const da = await delta();
+    await p.focus('#b-reset'); await p.keyboard.press('Enter'); await sleep(150); const dr = await delta();
+    ck(w + ' D1: delta from a Part reply never carries over (yes reply, bad link, Ask again, Start over) in the same tab', okPart && !dy.shown && !dy.text && !db.shown && !da.shown && !dr.shown, { okPart, dy, db, da, dr });
+    await p.goto(BASE + '#' + L.urlPart, { waitUntil: 'load' }); await sleep(150); let of = await overflow(p); const dd = await p.evaluate(() => { const r = document.getElementById('delta').getBoundingClientRect(); return [...document.querySelectorAll('#delta span')].every(e => e.getBoundingClientRect().right <= document.documentElement.clientWidth + 1); });
+    const tb = await p.evaluate(() => { const t = document.getElementById('text'); return t.scrollWidth <= t.clientWidth + 1; });
+    ck(w + ' D2/D3: long USPS URL wraps in delta line (incl. struck original) and copy-text box', of.sw <= w && !of.bad.length && dd && tb, { of, dd, tb });
+    await p.goto(BASE + '#' + L.urlAsk, { waitUntil: 'load' }); await sleep(150); of = await overflow(p); ck(w + ' D2: long URL in favor/where on recipient view: no overflow', of.sw <= w && !of.bad.length, of);
+    const ini = await p.evaluate(() => [...document.querySelectorAll('.osa-ini')].map(e => { const r = e.getBoundingClientRect(); return Math.round(r.width) + 'x' + Math.round(r.height); }));
+    ck(w + ' D4: avatar initials stay round', ini.length && ini.every(x => { const [a, b] = x.split('x').map(Number); return Math.abs(a - b) <= 1; }), ini);
+    await p.goto(BASE + '#' + L.names, { waitUntil: 'load' }); await sleep(150);
+    const nm = await p.evaluate(() => [...document.querySelectorAll('.osa-who b')].map(b => ({ t: b.textContent, clipped: b.scrollWidth > b.clientWidth + 1, ell: getComputedStyle(b).textOverflow, lines: Math.round(b.getBoundingClientRect().height / parseFloat(getComputedStyle(b).lineHeight || 20)) })));
+    ck(w + ' D5: 20+ character names wrap instead of ellipsis', nm.some(x => x.t === 'Christopher Montgomery') && nm.every(x => !x.clipped && x.ell !== 'ellipsis'), nm);
+    const D8 = await p.evaluate(() => ({ title: document.getElementById('title').textContent, typed: (document.querySelector('#title .osa-typed') || {}).textContent, q: (document.querySelector('.osa-term .ask .osa-qlabel') || {}).textContent }));
+    ck(w + ' D8: "Small ask from:" label + separate name; "Their ask, as typed:" + quotes', D8.title === 'Small ask from: Christopher Montgomery' && D8.typed === 'Christopher Montgomery' && D8.q === 'Their ask, as typed:', D8);
+    // D7: reply privacy once on all three answer views; "Not this time" has no note field
+    const views = {}; for (const c of ['y', 'p', 'n']) { await p.click('#c-' + c); await sleep(80); views[c] = await p.evaluate(P => ({ n: [...document.querySelectorAll('.osa-fine')].filter(e => e.textContent === P).length, note: !!document.getElementById('f-note') }), C.replyPrivacy); }
+    ck(w + ' D7: replyPrivacy shown once on Yes / Part of it / Not this time; no note field on Not this time', views.y.n === 1 && views.p.n === 1 && views.n.n === 1 && views.y.note && views.p.note && !views.n.note, views);
+    // recipient Start over: clears own unsent reply, keeps ask + hash
+    await p.click('#c-y'); await sleep(50); await typeInto(p, '#f-note', 'Happy to'); await p.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.focus('#b-rlink'); await p.keyboard.press('Enter'); await sleep(120);
+    const before = await p.evaluate(() => location.hash); await p.focus('#b-rreset'); await p.keyboard.press('Enter'); await sleep(150);
+    let t = await p.evaluate(() => ({ hash: location.hash, checked: [...document.querySelectorAll('[role=radio]')].filter(b => b.getAttribute('aria-checked') === 'true').length, note: !!document.getElementById('f-note'), link: document.getElementById('link').value, lb: document.getElementById('linkbox').hidden, title: document.getElementById('title').textContent, toast: document.getElementById('toast').textContent }));
+    ck(w + ' recipient Start over: own reply cleared (choice, note, link box value), ask and its link kept', t.hash === before && /^#a1\./.test(t.hash) && !t.checked && !t.note && t.link === '' && t.lb && t.title.startsWith('Small ask from:') && t.toast === C.resetDone, t);
+    // reply link from "Not this time" holds no note
+    await p.click('#c-n'); await sleep(50); await p.focus('#b-rlink'); await p.keyboard.press('Enter'); await sleep(120); const rl = await p.$eval('#link', e => e.value);
+    const nd = await p.evaluate(u => ASK.decode(u.split('#')[1]), rl); ck(w + ' "Not this time" reply link carries an empty note', nd.ok && nd.data.v === 'n' && nd.data.n === '', nd);
+    // line breaks: favor shows up to 3 breaks (pre-line), copy text matches
+    await p.goto(BASE + '#' + L.ask2, { waitUntil: 'load' }); await sleep(150);
+    t = await p.evaluate(() => { const q = document.querySelector('.osa-term .ask .osa-qtext'); return { txt: q.textContent, ws: getComputedStyle(q).whiteSpace, lines: q.getClientRects().length, h: q.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(q).lineHeight) }; });
+    ck(w + ' favor keeps 3 line breaks (4th line collects the rest), shown with pre-line', t.txt === '“Line one\nLine two\nLine three\nLine four Line five”' && t.ws === 'pre-line' && t.h >= 3.5 * t.lh, t);
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(100); await p.goto(BASE + '#', { waitUntil: 'load' }); await sleep(100);
+    // composer: where hint, 140 cap, D6 link value cleared on Start over
+    const hint = await p.evaluate(() => ({ t: (document.getElementById('h-h') || {}).textContent, d: document.getElementById('f-h').getAttribute('aria-describedby') }));
+    ck(w + ' D9: whereHint under the Where field, wired to it', hint.t === C.whereHint && hint.d === 'h-h', hint);
+    await typeInto(p, '#f-w', 'x'.repeat(141)); await p.focus('#f-e'); await sleep(60); const e141 = await p.$eval('#e-w', e => e.textContent);
+    await typeInto(p, '#f-w', 'Line A'); await p.keyboard.down('Shift'); await p.keyboard.press('Enter'); await p.keyboard.up('Shift'); await p.keyboard.type('Line B'); await typeInto(p, '#f-e', '20'); await typeInto(p, '#f-d', 'Tue'); await p.focus('#f-s'); await p.keyboard.type('0400PM'); await p.focus('#f-t'); await p.keyboard.type('0600PM'); await typeInto(p, '#f-f', 'Dana'); await typeInto(p, '#f-o', 'Sam'); await sleep(60);
+    const tx = await p.$eval('#text', e => e.textContent);
+    ck(w + ' composer: 141 characters refused (cap 140); typed line break kept in copy text', e141 === M.plural(C.actionTooLong, 1) && tx.includes('Small favor: Line A\nLine B\n'), { e141, tx });
+    await p.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(120); const had = await p.$eval('#link', e => e.value);
+    await p.focus('#b-reset'); await p.keyboard.press('Enter'); await sleep(150); const after = await p.$eval('#link', e => e.value);
+    ck(w + ' D6: Start over empties the hidden link box', /#a1\./.test(had) && after === '', { had: had.length, after });
+    ck(w + ' QA-fix checks no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
