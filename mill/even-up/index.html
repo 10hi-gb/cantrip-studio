@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Even Up · Cantrip Studio</title>
+<meta name="description" content="A small tool from Cantrip Studio.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="app.css">
+<script src="copy.js" defer></script>
+<script src="copy-extra.js" defer></script>
+<script src="../shared/core.js" defer></script>
+<script src="../shared/view.js" defer></script>
+<script src="eu.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="eu">
+<div class="eu-page">
+ <div class="eu-strip"><a href="../" id="home"></a><span id="strip"></span></div>
+ <h1 class="eu-title" id="title"></h1>
+ <p class="eu-lede" id="lede"></p>
+ <div class="eu-status eu-status--info" id="banner" role="status" hidden><p id="banner-t"></p><p id="banner-n" hidden></p><button type="button" class="eu-btn" id="own-copy" hidden></button></div>
+ <div class="eu-status eu-status--err" id="fix" role="alert" hidden><p id="fix-t"></p><ul class="eu-fixlinks" id="fix-l"></ul></div>
+ <div class="eu-grid">
+  <div class="eu-main">
+   <p class="eu-event" id="event-line"></p>
+   <section class="eu-frame" id="frame" aria-labelledby="frame-h">
+    <h2 class="eu-h2" id="frame-h"></h2>
+    <div class="eu-scale" aria-hidden="true"><span></span><span><i id="sc-owes"></i><i>0</i><i id="sc-owed"></i></span><span></span></div>
+    <div class="eu-board" id="board">
+     <ol class="eu-rods" id="rods"></ol>
+     <div class="eu-lines" id="lines" aria-hidden="true"></div>
+    </div>
+    <p class="eu-empty" id="empty"></p>
+    <p class="eu-fine eu-legend" id="legend" hidden></p>
+   </section>
+   <section class="eu-settle" id="settle" aria-labelledby="settle-h">
+    <h3 id="settle-h"></h3>
+    <p class="eu-meta" id="settle-count"></p>
+    <ol class="eu-transfers" id="transfers" aria-live="polite"></ol>
+    <p class="eu-check" id="settle-check"></p>
+    <p class="eu-fine" id="notfewest" hidden></p>
+    <div class="eu-actions">
+     <button type="button" class="eu-btn eu-btn--primary" id="b-copy"></button>
+     <button type="button" class="eu-btn" id="b-share"></button>
+     <button type="button" class="eu-btn" id="b-print"></button>
+     <button type="button" class="eu-btn" id="b-reset"></button>
+    </div>
+    <p class="eu-fine" id="nomoney"></p>
+    <p class="eu-fine" id="privacy"></p>
+    <p class="eu-fine" id="linkroom" aria-live="polite"></p>
+    <div class="eu-linkbox" id="linkbox" hidden><label class="eu-lab" for="link" id="link-l"></label><textarea id="link" readonly rows="3"></textarea></div>
+    <div class="eu-linkbox" id="fbwrap" hidden><label class="eu-lab" for="fallback" id="fb-l"></label><textarea id="fallback" readonly rows="7"></textarea></div>
+    <p class="eu-print-only eu-fine" id="pfoot"></p>
+   </section>
+  </div>
+  <div class="eu-side">
+   <section class="eu-tape" id="tape" aria-labelledby="tape-h" tabindex="-1">
+    <p class="eu-tape-h"><span id="tape-h"></span><span id="tape-meta"></span></p>
+    <div id="xs"></div>
+    <div class="eu-x eu-net" id="net"></div>
+    <p class="eu-x-meta eu-policy" id="policy"></p>
+   </section>
+   <section class="eu-form" id="people" aria-labelledby="people-h">
+    <h2 class="eu-h2" id="people-h"></h2>
+    <div class="eu-row2">
+     <div class="eu-field"><label for="ev" id="l-ev"></label><input id="ev" autocomplete="off"><span class="eu-err" id="e-ev"></span></div>
+     <div class="eu-field eu-field--cur"><label for="cur" id="l-cur"></label><select id="cur"></select></div>
+    </div>
+    <p class="eu-meta" id="p-meta"></p>
+    <ul class="eu-people" id="plist"></ul>
+    <button type="button" class="eu-btn" id="p-add"></button>
+    <p class="eu-err" id="p-e" aria-live="polite"></p>
+   </section>
+   <section class="eu-form" id="expform" aria-labelledby="x-h">
+    <h2 class="eu-h2" id="x-h"></h2>
+    <p class="eu-meta" id="x-meta"></p>
+    <form id="form" novalidate>
+     <div class="eu-field"><label for="f-what" id="l-what"></label><input id="f-what" autocomplete="off"><span class="eu-err" id="e-what"></span></div>
+     <div class="eu-row2">
+      <div class="eu-field"><label for="f-amt" id="l-amt"></label><input id="f-amt" inputmode="decimal" autocomplete="off"><span class="eu-err" id="e-amt"></span></div>
+      <div class="eu-field"><label for="f-payer" id="l-payer"></label><select id="f-payer"></select><span class="eu-err" id="e-payer"></span></div>
+     </div>
+     <p class="eu-lab" id="l-mode"></p>
+     <div class="eu-split eu-modes" role="group" aria-labelledby="l-mode"><button type="button" class="eu-chip" id="m-e" aria-pressed="true"></button><button type="button" class="eu-chip" id="m-w" aria-pressed="false"></button></div>
+     <p class="eu-lab" id="l-among"></p>
+     <div class="eu-split" id="chips" role="group" aria-labelledby="l-among"></div>
+     <p class="eu-fine" id="w-hint" hidden></p>
+     <span class="eu-err" id="e-split"></span>
+     <div class="eu-actions"><button type="submit" class="eu-btn eu-btn--primary" id="f-add"></button><button type="button" class="eu-btn" id="f-cancel" hidden></button></div>
+     <p class="eu-err" id="e-form" aria-live="polite"></p>
+     <p class="eu-fine" id="limits"></p>
+    </form>
+   </section>
+  </div>
+ </div>
+</div>
+<div class="eu-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

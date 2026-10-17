@@ -1,0 +1,80 @@
+/* Even Up — engineer additions on top of Creative's theme.css (unchanged). */
+.eu-strip a{color:inherit;text-decoration:none}
+.eu-strip a:hover{text-decoration:underline}
+.eu-status--info{background:var(--eu-tape);border:1.5px solid var(--eu-line);color:var(--eu-ink);font-weight:400}
+.eu-status p{margin:0 0 4px}
+.eu-status .eu-btn{margin-top:6px}
+.eu-fixlinks{margin:4px 0 0;padding-left:18px}
+.eu-fixlinks a{color:var(--eu-err);font-weight:600;overflow-wrap:anywhere}
+.eu-meta{font:400 13px/1.4 var(--eu-sans);color:var(--eu-mute);margin:0 0 6px}
+.eu-unnamed{opacity:.55}
+/* frame: each rod row carries its own name (no separate aria-hidden name column), rows grow with long names */
+.eu-board{grid-template-columns:minmax(0,1fr) var(--eu-settle);--eu-name:112px}
+.eu-scale{grid-template-columns:112px minmax(0,1fr) var(--eu-settle)}
+.eu-rods{list-style:none;margin:0;padding:0;grid-auto-rows:auto;min-width:0}
+.eu-rods::before{left:calc(var(--eu-name) + (100% - var(--eu-name)) / 2)}
+.eu-rod-row{display:grid;grid-template-columns:var(--eu-name) minmax(0,1fr);align-items:center;min-height:var(--eu-row);min-width:0}
+.eu-rod{height:48px;min-width:0}
+.eu-name{min-width:0}
+.eu-token{max-width:calc(50% - 8px);white-space:normal;overflow-wrap:anywhere;text-align:center;height:auto;min-height:44px;padding:4px 10px;line-height:1.05}
+.eu-token small{margin-top:3px}
+.eu-lines{min-width:0}
+.eu-link-num{position:absolute;z-index:1;left:calc(4px + 16px + var(--k)*var(--gap,26px) + 3px);transform:translateY(-50%);min-width:18px;height:18px;padding:0 3px;border-radius:9px;
+  background:var(--eu-board);border:1.5px solid var(--eu-line);color:var(--eu-line);font:600 11px/15px var(--eu-sans);text-align:center}
+.eu-legend{margin:8px 0 0}
+.eu-empty{padding:14px 10px 4px}
+/* settle card */
+.eu-transfers .eu-num{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:10px;border:1.5px solid var(--eu-line);color:var(--eu-line);font:600 11px var(--eu-sans)}
+.eu-transfers b{overflow-wrap:anywhere;min-width:0}
+.eu-settle h3{overflow-wrap:anywhere}
+.eu-btn{max-width:100%;white-space:normal;line-height:1.15;text-align:center}
+.eu-linkbox{display:flex;flex-direction:column;gap:3px;margin-top:10px}
+.eu-linkbox textarea{font:400 13px/1.4 var(--eu-sans);width:100%;border:1.5px solid #C7BCA8;border-radius:6px;padding:6px 8px;background:#fff;color:var(--eu-ink);resize:vertical}
+#linkroom.is-over{color:var(--eu-err);font-weight:600}
+/* tape */
+.eu-x:focus{outline:3px solid var(--eu-focus);outline-offset:2px}
+.eu-tape:focus{outline:none}
+.eu-x-h{flex-wrap:wrap}
+.eu-x-meta{overflow-wrap:anywhere}
+.eu-xacts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.eu-mini{min-height:44px;padding:0 12px;font-size:13px}
+.eu-net .eu-check{margin:6px 0 0}
+.eu-policy{margin:8px 0 0}
+.eu-policy:empty{display:none}
+/* forms */
+.eu-err:empty{display:none}
+.eu-people{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}
+.eu-people li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start}
+.eu-people input{font:400 15px var(--eu-sans);color:var(--eu-ink);background:#fff;border:1.5px solid #C7BCA8;border-radius:6px;padding:7px 8px;min-height:44px;width:100%;min-width:0}
+.eu-people input[aria-invalid=true]{border-color:var(--eu-err);background:var(--eu-err-bg)}
+.eu-people .eu-err{grid-column:1/-1}
+.eu-field input,.eu-field select{min-height:44px}
+.eu-chipwrap{display:inline-flex;align-items:center;gap:4px;max-width:100%}
+.eu-chip{min-height:44px;max-width:100%;cursor:pointer;color:var(--eu-ink);text-align:left}
+.eu-chip span{overflow-wrap:anywhere}
+.eu-w{width:4.2em;min-height:44px;border:1.5px solid #C7BCA8;border-radius:6px;font:400 15px var(--eu-sans);text-align:center;padding:0 4px;background:#fff;color:var(--eu-ink)}
+.eu-w[aria-invalid=true]{border-color:var(--eu-err);background:var(--eu-err-bg)}
+.eu-w:disabled{opacity:.45}
+.eu-modes .eu-chip[aria-pressed=false]{text-decoration:none}
+.eu-form .eu-actions{margin-top:6px}
+/* toast */
+.eu-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);max-width:calc(100% - 32px);background:var(--eu-ink);color:#fff;padding:10px 16px;border-radius:22px;font:600 14px/1.3 var(--eu-sans);z-index:10;text-align:center}
+/* recipient: read-only (MILLVIEW.readOnly disables controls; editors hidden) */
+.is-recv .eu-xacts{display:none}
+@media(max-width:699px){
+  .eu-board{--eu-name:0px}
+  .eu-rods::before{display:none} /* names sit above their rods on phones: the zero post is drawn per rod so it never crosses a name */
+  .eu-rod::after{content:"";position:absolute;left:50%;top:-5px;bottom:-5px;width:6px;transform:translateX(-50%);background:var(--eu-post);border-radius:3px}
+  .eu-rod-row{grid-template-columns:minmax(0,1fr);align-content:center;padding:4px 0}
+  .eu-name{font-size:15px;line-height:1.15;padding:0 0 2px}
+  .eu-rod{height:44px}
+  .eu-token{min-height:40px;padding:3px 6px}
+  .eu-row2{grid-template-columns:minmax(0,1fr)}
+  .eu-row2 .eu-field--cur{max-width:none}
+  .eu-transfers li{font-size:15px}
+}
+@media(min-width:700px){.eu-row2 .eu-field--cur select{width:100%}}
+@media print{
+  .eu-toast,.eu-xacts,#linkroom,.eu-linkbox,#fix,#banner .eu-btn{display:none!important}
+  .eu-link-num{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
