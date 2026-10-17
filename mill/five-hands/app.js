@@ -68,7 +68,7 @@
   function stick(it, sc) { var s = el('div', 'stick'); setv(s, '--m', it.min); setv(s, '--sc', sc); var t = el('span', 't'); t.append(V.typed(it.name)); s.append(t, el('span', 'm', String(it.min)));
     if (it.overMin) { s.classList.add('over'); if (it.overMin >= it.min) s.classList.add('all'); setv(s, '--p', (Math.round(it.overMin / it.min * 1000) / 10) + '%'); } return s; }
   // minutes line: loadLine, then (red) tallySep + overBy, or (green) tallySep + loadSpare (Writer N9/N9b). A 0-minute helper with no tasks: zeroHead (Writer N12).
-  function helperCard(r, sc, title, mode) { var a = el('article', 'helper' + (r.cap === 0 ? ' zero' : '')), nm = q(M.strip(r.name)), ll = M.fill(C.loadLine, { load: r.load, cap: r.cap });
+  function helperCard(r, sc, title, mode) { var a = el('article', 'helper' + (r.cap === 0 ? ' zero' : '') + (r.cap === 0 && !r.items.length ? ' idle' : '')), nm = q(M.strip(r.name)), ll = M.fill(C.loadLine, { load: r.load, cap: r.cap });
     var idle = r.cap === 0 && !r.items.length, ov = r.over ? M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : '', sp = !ov && r.cap > 0 && r.spare > 0 ? M.fill(C.loadSpare, { n: r.spare }) : '';
     var hh = el('div', 'hhead'), tab = el('span', 'tab'); tab.append(V.typed(r.name)); var ld = el('span', 'load', idle ? C.zeroHead : ll);
     if (ov) ld.append(el('span', 'over', C.tallySep + ov)); else if (sp) ld.append(el('span', 'spare', C.tallySep + sp));
