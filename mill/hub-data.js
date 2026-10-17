@@ -224,14 +224,14 @@ window.MILL_HUB = {
     "Nothing is booked or confirmed. Messages are copied and the sheet is printed by hand, each stamped with when the plan was checked.",
     "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview 04292393a04ccee5d6f98539908801a1b43ad73b: unit 21 (every proto r1d assert, QA local-ea5aabe C3/C4/C7, codec agreement, 6,000-case reference sweep); browser 182/182 at 320/390/1280/1440 (incl. C1 whole-URL 1999/2000/2001, C2 print, C5/C6 wrap sweep). Not QA.",
-   "status": "NOT READY (retest pending at 0429239)",
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview e5780b7911a76f29c0c52dc40cf34d8c14ee5f4a: unit 21/21 (every proto r1d assert, QA local-ea5aabe C3/C4/C7, codec agreement, 6,000-case reference sweep); browser 182/182 at 320/390/1280/1440 (incl. C1 whole-URL 1999/2000/2001, C2 print, C5/C6 wrap sweep). Not QA.",
+   "status": "NOT READY (retest pending at e5780b7)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "ea5aabe6f65ac5d276755d9202ba2e46b9d507aa",
     "report": "qa/care-rota/local-ea5aabe/QA-local-ea5aabe.md",
-    "note": "retest pending at 0429239"
+    "note": "retest pending at e5780b7"
    }
   },
   {
