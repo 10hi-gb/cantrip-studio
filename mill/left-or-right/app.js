@@ -10,7 +10,11 @@
   var bd = null, scanT = 0, dueT = 0, raf = 0, armT = 0, armed = true, swallowUp = false, lastPtr = -1e9, lastShare = '';
   function now() { return performance.now(); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-  function typed(s, cls) { return V.typed(L.clean(s), cls); }
+  // typed values through the shared rule (MILLVIEW.typed: “…”), then the two marks get their own spans for Creative's
+  // quote styling (0.8em, 70% ink) and hanging; the element's text (screen, accessibility tree, copy) is unchanged.
+  function typed(s, cls) { var e = V.typed(L.clean(s), cls), t = e.textContent;
+    if (t.length >= 2 && t[0] === '\u201C' && t[t.length - 1] === '\u201D') { e.textContent = ''; e.appendChild(el('span', 'lr-qm lr-qo', '\u201C')); e.appendChild(document.createTextNode(t.slice(1, -1))); e.appendChild(el('span', 'lr-qm lr-qc', '\u201D')); }
+    return e; }
   function qt(s) { return M.quote(L.clean(s)); }
   // Writer template -> nodes; values may be strings or nodes (typed values are already-quoted nodes).
   function tpl(t, v) { var f = document.createDocumentFragment(), re = /\{(\w+)\}/g, last = 0, m;
@@ -100,33 +104,39 @@
     if (st.key === 'any') return C.hint.switchAny;
     return M.fill(C.hint.switch, { key: C.switchKeys[st.key] });
   }
-  // ---------- long answers (Creative 2026-10-17): break only at spaces; shrink the answer text in 2px steps to a 24px floor
-  // (the tile-height squeeze stops at 30px); both halves take the same size; only below the floor may a word break, and then
-  // only at a visible hyphen. The hyphenated copy is drawn as CSS generated content with empty alt text, so the DOM text, the
-  // accessible name and copied text never carry a soft hyphen.
-  var FLOOR = 24, TALL_FLOOR = 30, SHY = '\u00AD';
-  function wOver(box) { return box.scrollWidth > box.clientWidth + 1; }
+  // ---------- long answers (Creative r2, 2026-10-17; plan in fit.js): normal size if it fits, else 2px steps; unbroken down
+  // to the 24px floor if possible; else the fewest, most even lines at the largest size, breaking at a dictionary point
+  // (Grand-mother's), else at the most even letter point with 4+ letters each side, never inside an emoji, never leaving the
+  // closing quote alone. Both halves share one size. A broken answer is drawn as CSS generated content with empty alt
+  // text; the clean text stays in the DOM (visually hidden), so names, the accessibility tree and copies are untouched.
+  var FLOOR = 24, TALL_FLOOR = 30, R = 100, qCache = {};
   function hOver(t) { return t.scrollHeight > t.clientHeight + 1; }
-  function unshy(box) { var w = box.querySelector('.lr-shy-src'); if (w) { while (w.firstChild) box.insertBefore(w.firstChild, w); box.removeChild(w); } box.classList.remove('lr-shy'); box.removeAttribute('data-v'); }
-  function fitSize(box, tile) { // largest size (2px steps from the design size) at which no word is wider than the tile
-    unshy(box); box.style.fontSize = ''; var size = parseFloat(getComputedStyle(box).fontSize), g = 100;
-    while (g-- && size > FLOOR && (wOver(box) || (tile && hOver(tile) && size > TALL_FLOOR))) { size = Math.max(FLOOR, size - 2); box.style.fontSize = size + 'px'; }
-    return size;
-  }
-  function graphemes(s) { if (window.Intl && Intl.Segmenter) return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s), function (x) { return x.segment; }); return Array.from(s); }
-  function hyph(box) { // still too wide at the floor: put a soft hyphen exactly where each overlong word must break
-    if (!wOver(box)) return false;
-    var text = box.textContent, avail = box.clientWidth - parseFloat(getComputedStyle(box).paddingLeft) - parseFloat(getComputedStyle(box).paddingRight), probe = el('span', 'lr-probe');
-    box.appendChild(probe); var wd = function (t) { probe.textContent = t; return probe.offsetWidth; }; // layout width: the chosen screen's swell transform must not skew it
-    var out = text.split(' ').map(function (word) { if (wd(word) <= avail) return word; var parts = [], cur = '';
-      graphemes(word).forEach(function (g) { if (cur && wd(cur + g + '-') > avail) { parts.push(cur); cur = g; } else cur += g; }); parts.push(cur); return parts.join(SHY); }).join(' ');
-    box.removeChild(probe);
+  function px(e, k) { return parseFloat(getComputedStyle(e)[k]) || 0; }
+  function probe(box, fs) { var p = el('span', 'lr-probe'); p.style.fontSize = fs + 'px'; box.appendChild(p); return p; }
+  function quoteEm(box) { // width of each mark as a fraction of the mark's own size, per font (for the hang margins)
+    var cs = getComputedStyle(box), key = cs.fontFamily + '|' + cs.fontWeight + '|' + cs.fontStyle;
+    if (!qCache[key]) { var pr = probe(box, R); pr.textContent = '\u201C'; var o = pr.offsetWidth; pr.textContent = '\u201D'; var c = pr.offsetWidth; box.removeChild(pr); qCache[key] = { o: o / R, c: c / R }; }
+    return qCache[key]; }
+  function hang(box) { if (!box.getClientRects().length) return; var q = quoteEm(box); box.style.setProperty('--qo', q.o.toFixed(3)); box.style.setProperty('--qc', q.c.toFixed(3)); }
+  function unshy(box) { var w = box.querySelector('.lr-shy-src'), d = box.querySelector('.lr-draw'); if (d) box.removeChild(d); if (w) { while (w.firstChild) box.insertBefore(w.firstChild, w); box.removeChild(w); } box.classList.remove('lr-shy'); }
+  function innerOf(box) { var t = box.textContent; return t.length >= 2 && t[0] === '\u201C' && t[t.length - 1] === '\u201D' ? t.slice(1, -1) : t; }
+  function planFor(box, tile, sizes) { // measure at R px once per string; widths scale with the size
+    unshy(box); box.style.fontSize = ''; hang(box); var q = quoteEm(box), pr = probe(box, R), cw = box.clientWidth, padIn = px(tile, 'paddingLeft') + px(tile, 'paddingRight');
+    var o = { R: R, avail: cw - px(box, 'paddingLeft') - px(box, 'paddingRight'), sizes: sizes || LRFIT.sizes(px(box, 'fontSize'), FLOOR),
+      measure: function (s, f, l) { pr.textContent = s; return { w: pr.offsetWidth, hang: 2 * Math.max(f ? q.o * 0.8 * R : 0, l ? q.c * 0.8 * R : 0) }; } };
+    o.full = o.avail + padIn - 4; // hanging marks may use the tile padding, never the tile edge
+    o.ok = function (size, lines) { if (!tile.classList.contains('half') || size <= TALL_FLOOR) return true; box.style.fontSize = size + 'px'; var t = hOver(tile); box.style.fontSize = ''; return !t; };
+    var r = LRFIT.plan(innerOf(box), o); box.removeChild(pr); return r; }
+  function draw(box, r) { // apply size + (if broken) the drawn copy: open mark, lines joined by newlines, close mark
+    box.style.fontSize = r.size + 'px'; if (!r.broken) return;
     var src = el('span', 'lr-sr lr-shy-src'); while (box.firstChild) src.appendChild(box.firstChild); box.appendChild(src);
-    box.setAttribute('data-v', out); box.classList.add('lr-shy'); return true;
-  }
-  function fitBoard() { if ($('s2').hidden) return; var a = $('h-l-a'), b = $('h-r-a'), m = Math.min(fitSize(a, $('h-l')), fitSize(b, $('h-r'))) + 'px';
-    a.style.fontSize = m; b.style.fontSize = m; hyph(a); hyph(b); } // the same size on both halves, so neither looks favoured
-  function fitChosen() { if ($('s3').hidden) return; var a = $('c-a'); fitSize(a, null); hyph(a); }
+    var d = el('span', 'lr-draw'), qo = el('span', 'lr-qm lr-qo'), tx = el('span', 'lr-dt'), qc = el('span', 'lr-qm lr-qc');
+    qo.setAttribute('data-v', '\u201C'); qc.setAttribute('data-v', '\u201D'); tx.setAttribute('data-v', r.lines.map(function (p) { return p.join('\n'); }).join(' '));
+    d.appendChild(qo); d.appendChild(tx); d.appendChild(qc); box.appendChild(d); box.classList.add('lr-shy'); }
+  function fitBoard() { if ($('s2').hidden) return; hang($('b-q'));
+    var a = $('h-l-a'), b = $('h-r-a'), ra = planFor(a, $('h-l')), rb = planFor(b, $('h-r')), m = Math.min(ra.size, rb.size); // one size for both halves, so neither looks favoured
+    draw(a, ra.size === m ? ra : planFor(a, $('h-l'), [m])); draw(b, rb.size === m ? rb : planFor(b, $('h-r'), [m])); }
+  function fitChosen() { if ($('s3').hidden) return; hang($('c-q')); var a = $('c-a'); draw(a, planFor(a, $('s3'))); }
   function refit() { fitBoard(); fitChosen(); }
   function setHi() { ['l', 'r'].forEach(function (s) { $('h-' + s).classList.toggle('scan', st.mode === 'switch' && bd && bd.hi === s); }); }
   function stopBoard() { clearInterval(scanT); clearTimeout(dueT); cancelAnimationFrame(raf); scanT = dueT = raf = 0; ringOff(); }

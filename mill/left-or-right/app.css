@@ -48,10 +48,15 @@ textarea{width:100%;font:400 16px/1.4 var(--ui);padding:12px;border:3px solid va
 .half{min-width:0;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .half .arrow{display:block}
 .half .lr-ans{display:block;width:100%;max-width:100%}
-.half .lr-ans,.lr-chosen .ans{overflow-wrap:normal;word-break:normal;-webkit-hyphens:manual;hyphens:manual}
+.half .lr-ans,.lr-chosen .ans{overflow-wrap:normal;word-break:normal;-webkit-hyphens:auto;hyphens:auto}
 .lr-ans .mill-typed,.lr-chosen .ans .mill-typed{overflow-wrap:normal;word-break:normal}
-/* below the 24px floor only: the hyphenated copy is generated content with empty alt text (not read, not in the name) */
-.lr-shy::after{display:block;content:attr(data-v);content:attr(data-v) / "";-webkit-hyphens:manual;hyphens:manual;overflow-wrap:normal;word-break:normal}
+/* quote marks on typed values (Creative r2): 0.8em, same weight, tile ink at 70% (contrast checked >= 3:1 in tests) */
+.lr-qm{font-size:.8em;opacity:.7}
+.lr-hang .lr-qo{margin-inline-start:calc(var(--qo,0) * -1em)} /* the opening mark hangs into the padding by its own width */
+.lr-hang .lr-qc{margin-inline-end:calc(var(--qc,0) * -1em)}
+/* a broken answer (fit.js): the drawn copy is generated content with empty alt text (not read, not in the name, not copied) */
+.lr-draw{display:block;white-space:pre-line;-webkit-hyphens:manual;hyphens:manual;overflow-wrap:normal;word-break:normal}
+.lr-draw .lr-dt::before,.lr-draw .lr-qm::before{content:attr(data-v);content:attr(data-v) / ""}
 .lr-probe{position:absolute;left:0;top:0;visibility:hidden;white-space:nowrap}
 .half .sym{display:block;margin-bottom:.1em}
 .half:focus-visible{outline:var(--focus-w) solid var(--ink);outline-offset:calc(-1 * var(--focus-w))}
@@ -69,8 +74,13 @@ textarea{width:100%;font:400 16px/1.4 var(--ui);padding:12px;border:3px solid va
 .chosen.r{background:var(--spruce);color:var(--spruce-ink)}
 .chosen.r .btn-main{background:#fff;color:var(--spruce);box-shadow:none}
 .lr-chosen .row .btn{max-width:100%}
-.lr-chosen .btn{transition:opacity .15s}
-.lr-guard .btn{opacity:.45} /* the 500ms post-pick guard, visible; reduced motion (theme.css) makes the change instant */
+.lr-chosen .btn{transition:background-color .15s,color .15s}
+/* the 500ms post-pick guard, visible: fill and text at 45% over the felt (what opacity .45 would show), but the element
+   itself stays opaque so the focus ring keeps full strength. Reduced motion (theme.css) makes the change instant. */
+.chosen.l.lr-guard .btn-main{background:color-mix(in srgb,var(--ink) 45%,var(--marigold));color:var(--marigold)}
+.chosen.l.lr-guard .btn-ghost{color:color-mix(in srgb,var(--marigold-ink) 45%,var(--marigold))}
+.chosen.r.lr-guard .btn-main{background:color-mix(in srgb,#fff 45%,var(--spruce));color:var(--spruce)}
+.chosen.r.lr-guard .btn-ghost{color:color-mix(in srgb,var(--spruce-ink) 45%,var(--spruce))}
 .lr-done{font:700 20px/1.3 var(--ui);margin:16px 0 0}
 .lr-chosen .lr-box{width:100%;max-width:36em;text-align:left}
 .lr-chosen .lr-box label{color:inherit}

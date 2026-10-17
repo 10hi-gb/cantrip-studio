@@ -52,16 +52,16 @@ t('Check: a task on a 0-minute helper -> over by its minutes, stick fully over; 
   const r = F.check(H, [3, -1, 0, 0, 0, 0, 0, 0, 1], T); const dee = r.rows[3];
   assert.equal(dee.load, 40); assert.equal(dee.over, 40); assert.equal(dee.items[0].overMin, 40); assert.deepEqual(r.over.map(x => x.name), ['Ana', 'Dee']); assert.equal(r.rows[0].load, 170); assert.equal(r.rows[0].over, 50);
   assert.deepEqual(r.rows[0].items.map(i => i.overMin), [0, 0, 0, 0, 35, 15]); assert.deepEqual(r.assign, [3, -1, 0, 0, 0, 0, 0, 0, 1]); conserved(r); assert.equal(r.scale, 170); });
-t('card text: Writer templates verbatim, name/title/tasks quoted, stamp in every card (tasks, none at 0, none with minutes)', () => {
+t('card text: Writer templates verbatim, name/title/tasks quoted, stamp in every card (Writer finals N9: For/Session lines; tasks, cardTextNoTasks at 0, cardTextNoFit with minutes)', () => {
   const r = F.suggest(H, T);
-  assert.equal(F.cardText(C, 'Garden cleanup', r.rows[0]), '“Ana”, your part of “Garden cleanup”:\n• “Rake paths” 45 min\n• “Haul yard bags to curb” 35 min\n• “Clean and oil tools” 20 min\n• “Fix gate latch” 15 min\n= 115 of your 120 min.\nTask names and minutes are my estimates.\n' + STAMP + '\nIf something doesn\'t work for you, tell me.');
-  assert.equal(F.cardText(C, 'Garden cleanup', r.rows[3]), '“Dee”, for “Garden cleanup”: no tasks for you this time (0 minutes).\n' + STAMP);
+  assert.equal(F.cardText(C, 'Garden cleanup', r.rows[0]), 'For: “Ana”\nSession: “Garden cleanup”\n• “Rake paths” 45 min\n• “Haul yard bags to curb” 35 min\n• “Clean and oil tools” 20 min\n• “Fix gate latch” 15 min\n= 115 of your 120 min.\nTask names and minutes are my estimates.\n' + STAMP + '\nIf something doesn\'t work for you, tell me.');
+  assert.equal(F.cardText(C, 'Garden cleanup', r.rows[3]), 'For: “Dee”\nSession: “Garden cleanup”\nNo tasks for you this time (0 minutes).\n' + STAMP);
   const s = F.suggest(H2, T); const lone = F.result(mk([['Eli', 45]]), mk([['Big', 200]]), [-1], 'suggest').rows[0];
-  assert.equal(F.cardText(C, 'G', lone), '“Eli”, your part of “G”:\n= 0 of your 45 min.\nTask names and minutes are my estimates.\n' + STAMP + '\nIf something doesn\'t work for you, tell me.');
+  assert.equal(F.cardText(C, 'G', lone), 'For: “Eli”\nSession: “G”\nNo tasks for you in this split. You offered 45 min.\n' + STAMP + '\nIf something doesn\'t work for you, tell me.'); // cardTextNoFit
   [...r.rows, ...s.rows, lone].forEach(x => assert.ok(F.cardText(C, 'G', x).includes(STAMP))); });
 t('typed marks neutralised: names with quotes / {braces} cannot break the frame', () => {
   const r = F.suggest(mk([['“Jo”', 30]]), mk([['{title} “x”', 10]])); const c = F.cardText(C, 'A “B” {name}', r.rows[0]);
-  assert.ok(c.startsWith('“"Jo"”, your part of “A "B" {name}”:\n• “{title} "x"” 10 min\n= 10 of your 30 min.'), c); }); // shared quote/fill: inner curly marks -> straight, braces stay literal
+  assert.ok(c.startsWith('For: “"Jo"”\nSession: “A "B" {name}”\n• “{title} "x"” 10 min\n= 10 of your 30 min.'), c); }); // shared quote/fill: inner curly marks -> straight, braces stay literal
 t('bench text: verbatim, quoted, stamp; benchExplain only when spare exists but nothing fits', () => {
   const r = F.suggest(H2, T); assert.equal(F.benchText(C, 'Garden cleanup', r), 'Still on the bench for “Garden cleanup”:\n• “Empty rain barrels” 20 min\n• “Fix gate latch” 15 min\n' + STAMP);
   assert.equal(F.suggest(mk([['A', 10]]), mk([['B', 5], ['C', 20]])).benchExplain, true); // C 20 > 10 -> bench; B 5 placed -> 5 spare < 20
@@ -78,9 +78,17 @@ t('link codec: round trip (suggest + check), <=1000 chars, rejects tamper, cut, 
   assert.ok(F.decode(forge(Object.assign({}, base, { a: [-1], m: 'c' }))).ok); assert.ok(!F.decode(forge(Object.assign({}, base, { k: [['x', -10]], m: 'c' }))).ok); assert.ok(!F.decode(forge(Object.assign({}, base, { h: [['A', 10], ['a', 3]] }))).ok);
   const big = mk(Array.from({ length: 12 }, (_, i) => [String.fromCharCode(65 + i).repeat(40), 480])), bh = mk(Array.from({ length: 5 }, (_, i) => [String(i).repeat(24), 480]));
   assert.ok(F.encode('T'.repeat(60), bh, big, F.suggest(bh, big)).length > 1000); assert.equal(F.decode('x'.repeat(1001)).why, 'bad'); });
+t('Q1 spoof in the template-framed slots: a typed ” in the session title or a task name cannot close “…” early; no doubled quotes', () => {
+  const title = 'Fest” · Pay “me', task = 'Rake” 999 min “Bank';
+  const r = F.suggest(mk([['Ana”x', 30], ['Ben', 0]]), mk([[task, 10], ['Big', 200]])), c = F.cardText(C, title, r.rows[0]);
+  assert.equal(c.split('\n').slice(0, 3).join('\n'), 'For: “Ana"x”\nSession: “Fest" · Pay "me”\n• “Rake" 999 min "Bank” 10 min');
+  for (const x of [c, F.cardText(C, title, r.rows[1]), F.benchText(C, title, r)]) { assert.ok(!x.includes('””') && !x.includes('““'), x); const body = x.replace(C.stamp, '');
+    assert.ok(!/[\u201C\u201D]/.test(body.replace(/“[^“”]*”/g, '')), 'every curly mark is a matched frame: ' + x); assert.ok(!x.includes('Fest”') && !x.includes('Rake”'), x); }
+  assert.equal(F.benchText(C, title, r).split('\n')[0], 'Still on the bench for “Fest" · Pay "me”:');
+  assert.equal(M.fill(C.taskDuplicate, { name: 'Rake” and “x' }), 'Two tasks are both called “Rake" and "x”.'); });
 t('minutes(): digits only; −10, 2.5, 1e2, blank -> NaN', () => { assert.equal(F.minutes(' 45 '), 45); assert.equal(F.minutes('0'), 0); for (const s of ['−10', '-10', '2.5', '1e2', '', ' ', '45min']) assert.ok(Number.isNaN(F.minutes(s)), s); });
 t('copy.js has every key the core and UI use; banned words absent except "agreed" in the stamp', () => {
-  for (const k of ['cardText', 'cardTextNoTasks', 'cardTaskLine', 'benchText', 'benchLine', 'stamp', 'ruleHeading', 'ruleText', 'sheetRule', 'sheetRuleCheck', 'conservation', 'linkWarning']) assert.ok(C[k], k);
+  for (const k of ['cardText', 'cardTextNoTasks', 'cardTextNoFit', 'sessionEmpty', 'loadSpare', 'benchHeadingEmpty', 'sheetTaskCell', 'sheetMinutes', 'taskRowLabel', 'minutesRowLabel', 'helperRowLabel', 'helperMinutesRowLabel', 'removeTaskBlank', 'removeHelperBlank', 'checkNote', 'receiverNote', 'cardTaskLine', 'benchText', 'benchLine', 'stamp', 'ruleHeading', 'ruleText', 'sheetRule', 'sheetRuleCheck', 'conservation', 'linkWarning']) assert.ok(C[k], k);
   const all = JSON.stringify(C).toLowerCase(); for (const w of ['booked', 'confirmed', 'reserved', 'accepted', 'optimal', 'fair split', 'guaranteed', ' safe', 'private']) assert.ok(!all.includes(w), w);
-  assert.equal(all.split('agreed').length - 1, 3); }); // stamp + its two copies inside cardText/cardTextNoTasks
+  assert.equal(all.split('agreed').length - 1, 5); }); // stamp + its copies inside cardText/cardTextNoTasks/cardTextNoFit + receiverNote
 console.log(n + ' tests passed');

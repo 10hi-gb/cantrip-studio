@@ -12,7 +12,6 @@
 <link rel="stylesheet" href="../shared/base.css">
 <link rel="stylesheet" href="app.css">
 <script src="copy.js" defer></script>
-<script src="copy-extra.js" defer></script>
 <script src="../shared/core.js" defer></script>
 <script src="../shared/view.js" defer></script>
 <script src="fh.js" defer></script>
@@ -21,7 +20,7 @@
 <body class="fh">
 <div class="wrap">
  <div class="top noprint"><a href="../" id="home" class="studio"></a></div>
- <div class="fh-banner noprint" id="recv" role="status" hidden><p id="recv-intro"></p><button type="button" class="btn" id="own" data-ro-keep></button></div>
+ <div class="fh-banner noprint" id="recv" role="status" hidden><p id="recv-intro"></p><p class="privacy" id="recv-note"></p><button type="button" class="btn" id="own" data-ro-keep></button></div>
  <div class="fh-banner fh-banner--err noprint" id="bad" role="alert" hidden><p id="bad-t"></p></div>
  <header class="noprint" id="head">
   <div class="sign"><h1 id="title"></h1></div>
@@ -54,7 +53,7 @@
    <fieldset class="fh-modefs"><legend id="mode-l"></legend>
     <div class="modes"><label><input type="radio" name="mode" value="suggest" id="m-suggest" checked><span id="m-suggest-l"></span></label><label><input type="radio" name="mode" value="check" id="m-check"><span id="m-check-l"></span></label></div>
    </fieldset>
-   <div class="panel fh-check" id="check" hidden><h2 class="fh-ph" id="check-h"></h2><div id="check-rows"></div></div>
+   <div class="panel fh-check" id="check" hidden><h2 class="fh-ph" id="check-h"></h2><p class="hint fh-checknote" id="check-note"></p><div id="check-rows"></div></div>
    <div class="fh-btnrow"><button type="submit" class="btn main" id="b-split"></button><button type="button" class="btn" id="b-reset"></button></div>
    <p class="privacy" id="privacy"></p>
   </form>

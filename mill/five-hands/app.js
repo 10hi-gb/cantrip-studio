@@ -1,10 +1,9 @@
 'use strict';
-// Five Hands r1c UI. Memory only: no storage, no network. Visitor text from COPY (writer/five-hands/copy.js verbatim) plus one
-// marked stand-in (COPY_EXTRA.sessionEmpty). Typed text (session title, task names, helper names) is shown through the shared
+// Five Hands r1c UI. Memory only: no storage, no network. Visitor text from COPY only (writer/five-hands/copy.js finals, verbatim). Typed text (session title, task names, helper names) is shown through the shared
 // quote rule everywhere: screen, aria, select options, print and copied text (PM: no exemption).
 // Shared helpers: MILLVIEW.route/readOnly/toast/quote/typed/linkFor/clearInputs. Sizes go through style.setProperty (CSP-safe).
 (function () {
-  var C = COPY, X = COPY_EXTRA, M = MILL, V = MILLVIEW, $ = function (id) { return document.getElementById(id); }, q = V.quote, L = FH.LIM;
+  var C = COPY, M = MILL, V = MILLVIEW, $ = function (id) { return document.getElementById(id); }, q = V.quote, L = FH.LIM;
   var seq = 0, tried = false, last = null, prevSuggest = null, fbText = '';
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function txt(s) { return document.createTextNode(s); }
@@ -22,8 +21,8 @@
   function rows(kind) { return Array.from($(kind === 'task' ? 'tasks' : 'helpers').children); }
   function relabel() { ['task', 'helper'].forEach(function (k) { var rs = rows(k), max = k === 'task' ? L.tasks : L.helpers;
       rs.forEach(function (r, i) { var nm = M.strip(r.querySelector('input').value), lab = r.querySelectorAll('label');
-        lab[0].textContent = (k === 'task' ? C.taskLabel : C.helperLabel) + ' ' + (i + 1); lab[1].textContent = (k === 'task' ? C.minutesLabel : C.helperMinutesLabel) + ' ' + (i + 1);
-        var rm = r.querySelector('.fh-rm'); rm.setAttribute('aria-label', M.fill(k === 'task' ? C.removeTask : C.removeHelper, k === 'task' ? { task: nm ? q(nm) : lab[0].textContent } : { name: nm ? q(nm) : lab[0].textContent })); rm.disabled = rs.length < 2; });
+        lab[0].textContent = M.fill(k === 'task' ? C.taskRowLabel : C.helperRowLabel, { i: i + 1 }); lab[1].textContent = M.fill(k === 'task' ? C.minutesRowLabel : C.helperMinutesRowLabel, { i: i + 1 });
+        var rm = r.querySelector('.fh-rm'); rm.setAttribute('aria-label', nm ? M.fill(k === 'task' ? C.removeTask : C.removeHelper, k === 'task' ? { task: q(nm) } : { name: q(nm) }) : M.fill(k === 'task' ? C.removeTaskBlank : C.removeHelperBlank, { i: i + 1 })); rm.disabled = rs.length < 2; });
       $(k + 's-h').textContent = M.fill(k === 'task' ? C.tasksHeading : C.helpersHeading, { n: rs.length, max: max });
       $('add-' + k).disabled = rs.length >= max; var mx = $(k + 's-max'); mx.hidden = rs.length < max; mx.textContent = M.fill(k === 'task' ? C.tooManyTasks : C.tooManyHelpers, { max: max }); }); }
   function addRow(kind, name, min, focus) { var host = $(kind === 'task' ? 'tasks' : 'helpers'); if (host.children.length >= (kind === 'task' ? L.tasks : L.helpers)) return; var r = row(kind, name, min); host.append(r); relabel(); syncCheck(); if (focus) r.querySelector('input').focus(); }
@@ -41,13 +40,13 @@
       var o = el('option', null, C.benchOption); o.value = ''; s.append(o);
       hs.forEach(function (h) { var op = el('option', null, q(M.strip(h.querySelector('input').value))); op.value = h.dataset.id; s.append(op); });
       s.value = was[r.dataset.id] && hs.some(function (h) { return h.dataset.id === was[r.dataset.id]; }) ? was[r.dataset.id] : '';
-      d.append(t, el('span', 'fh-cm', isNaN(min) ? '' : min + ' min'), lab, s); host.append(d); }); }
+      d.append(t, el('span', 'fh-cm', isNaN(min) ? '' : M.fill(C.sheetMinutes, { n: min })), lab, s); host.append(d); }); }
   // ---- validation UX: field errors, button says "Fix N things to continue", first error gets focus ----
   function errText(e) { switch (e.code) {
     case 'taskMinutesInvalid': return M.fill(C.taskMinutesInvalid, { min: L.taskMin, max: L.maxMin }); case 'helperMinutesInvalid': return M.fill(C.helperMinutesInvalid, { min: L.helperMin, max: L.maxMin });
     case 'taskTooLong': return M.plural(C.taskTooLong, e.n, { max: L.task }); case 'helperTooLong': return M.plural(C.helperTooLong, e.n, { max: L.helper }); case 'sessionTooLong': return M.plural(C.sessionTooLong, e.n, { max: L.title });
     case 'taskDuplicate': case 'helperDuplicate': return M.fill(C[e.code], { name: e.name }); case 'tooManyTasks': return M.fill(C.tooManyTasks, { max: L.tasks }); case 'tooManyHelpers': return M.fill(C.tooManyHelpers, { max: L.helpers });
-    case 'sessionEmpty': return X.sessionEmpty; default: return C[e.code] || C.error; } }
+    case 'sessionEmpty': return C.sessionEmpty; default: return C[e.code] || C.error; } }
   function clearErrs() { V.clearErrors($('form'), '.errmsg'); $('form').querySelectorAll('[aria-invalid]').forEach(function (n) { n.removeAttribute('aria-invalid'); n.removeAttribute('aria-describedby'); });
     $('form').querySelectorAll('.row.err').forEach(function (r) { r.classList.remove('err'); }); }
   function showErrs(errs, d) { clearErrs(); var first = null;
@@ -69,8 +68,9 @@
   function stick(it, sc) { var s = el('div', 'stick'); setv(s, '--m', it.min); setv(s, '--sc', sc); var t = el('span', 't'); t.append(V.typed(it.name)); s.append(t, el('span', 'm', String(it.min)));
     if (it.overMin) { s.classList.add('over'); setv(s, '--p', (Math.round(it.overMin / it.min * 1000) / 10) + '%'); } return s; }
   function helperCard(r, sc, title) { var a = el('article', 'helper' + (r.cap === 0 ? ' zero' : '')), nm = q(M.strip(r.name)), ll = M.fill(C.loadLine, { load: r.load, cap: r.cap });
-    a.setAttribute('aria-label', nm + ': ' + ll);
+    var sp = r.cap > 0 && r.spare > 0 ? M.fill(C.loadSpare, { n: r.spare }) : ''; a.setAttribute('aria-label', nm + ': ' + ll + (sp ? C.tallySep + sp : ''));
     var hh = el('div', 'hhead'), tab = el('span', 'tab'); tab.append(V.typed(r.name)); var ld = el('span', 'load', r.cap === 0 && !r.items.length ? C.rolledUp : ll);
+    if (sp) ld.append(document.createTextNode(C.tallySep), el('span', 'spare', sp));
     var b = el('button', 'btn noprint', M.fill(C.copyCard, { name: nm })); b.type = 'button'; b.addEventListener('click', function () { var t = FH.cardText(C, title, r); preview(nm, t); copy(t); });
     hh.append(tab, ld, b); a.append(hh);
     var me = el('div', 'meter'); me.setAttribute('aria-hidden', 'true'); setv(me, '--sc', sc); setv(me, '--cap', r.cap); setv(me, '--ld', Math.min(r.load, r.cap)); setv(me, '--ov', r.over);
@@ -92,7 +92,7 @@
     ov.textContent = res.over.length ? M.plural(C.overList, res.over.length, { list: M.raw(res.over.map(function (r) { return M.fill(C.overItem, { name: q(M.strip(r.name)), n: r.over }); }).join(', ')) }) : C.checkNoneOver;
     var sc = res.scale, host = $('rolls'); host.textContent = ''; res.rows.forEach(function (r) { host.append(helperCard(r, sc, title)); });
     // bench
-    var bh = $('bench-h'), pl = $('plank'); pl.textContent = ''; bh.hidden = !res.bench.length; bh.textContent = res.bench.length ? M.plural(C.benchHeading, res.bench.length, { m: res.benchMin }) : '';
+    var bh = $('bench-h'), pl = $('plank'); pl.textContent = ''; bh.textContent = res.bench.length ? M.plural(C.benchHeading, res.bench.length, { m: res.benchMin }) : C.benchHeadingEmpty;
     if (res.bench.length) { var bs = el('div', 'sticks'), bsc = Math.max(sc, Math.max.apply(null, res.bench.map(function (t) { return t.min; }))); res.bench.forEach(function (t) { bs.append(stick(t, bsc)); }); pl.append(bs); }
     else pl.append(el('p', 'empty', C.benchEmpty));
     var be = $('bench-explain'); be.hidden = !res.benchExplain; be.textContent = res.benchExplain ? M.fill(C.benchExplain, { m: res.benchMin, list: M.raw(res.spares.map(function (r) { return M.fill(C.spareItem, { name: q(M.strip(r.name)), n: r.spare }); }).join(' · ')) }) : '';
@@ -100,11 +100,11 @@
     $('b-change').hidden = !!recv; sheet(title, res); $('link-box').hidden = true; $('link').value = ''; $('link-long').hidden = true; $('share').hidden = !!recv;
     show('s2', true); show('s5', true); }
   function sheet(title, res) { $('sheet-h').textContent = M.fill(C.sheetHeading, { title: title }); var tb = $('sheet-t').tBodies[0]; tb.textContent = '';
-    var line = function (its) { return its.map(function (it) { return q(M.strip(it.name)) + ' ' + it.min; }).join(' · '); };
+    var line = function (its) { return its.map(function (it) { return M.fill(C.sheetTaskCell, { task: M.strip(it.name), m: it.min }); }).join(' · '); };
     res.rows.forEach(function (r) { var tr = el('tr'), n = el('td', 'n'); n.append(V.typed(r.name)); var nm = q(M.strip(r.name));
       var mt = M.fill(C.loadLine, { load: r.load, cap: r.cap }) + (r.over ? C.tallySep + M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : '');
       tr.append(n, el('td', null, r.items.length ? line(r.items) : r.cap === 0 ? C.rolledUp : ''), el('td', null, mt)); tb.append(tr); });
-    if (res.bench.length) { var tr = el('tr', 'fh-benchrow'); tr.append(el('td', 'n', C.sheetBenchRow), el('td', null, line(res.bench)), el('td', null, res.benchMin + ' min')); tb.append(tr); }
+    if (res.bench.length) { var tr = el('tr', 'fh-benchrow'); tr.append(el('td', 'n', C.sheetBenchRow), el('td', null, line(res.bench)), el('td', null, M.fill(C.sheetMinutes, { n: res.benchMin }))); tb.append(tr); }
     $('sheet-stamp').textContent = C.stamp; $('sheet-rule').textContent = res.mode === 'check' ? C.sheetRuleCheck : C.sheetRule; $('sheet-note').textContent = C.sheetNote; }
   function split() { tried = true; var d = read(), errs = FH.validate(d.helpers, d.tasks, d.title), first = showErrs(errs, d);
     if (errs.length) { first.scrollIntoView({ block: 'center' }); first.focus({ preventScroll: true }); return; }
@@ -131,7 +131,7 @@
   function texts() { document.title = C.title + ' · ' + C.studioName; $('home').textContent = C.studioLabel; $('home').setAttribute('aria-label', C.backLabel); $('title').textContent = C.title; $('lede').textContent = C.invitation; $('scope').textContent = C.scopeLine;
     $('f-title-l').textContent = C.sessionLabel; $('f-title').placeholder = C.sessionPlaceholder; $('empty-state').textContent = C.emptyState;
     $('th-task').textContent = C.taskLabel; $('th-min').textContent = C.minutesLabel; $('th-helper').textContent = C.helperLabel; $('th-hmin').textContent = C.helperMinutesLabel; $('zero-hint').textContent = C.zeroHint;
-    $('add-task').textContent = C.addTask; $('add-helper').textContent = C.addHelper; $('mode-l').textContent = C.modeLabel; $('m-suggest-l').textContent = C.modeSuggest; $('m-check-l').textContent = C.modeCheck; $('check-h').textContent = C.checkHeading;
+    $('add-task').textContent = C.addTask; $('add-helper').textContent = C.addHelper; $('mode-l').textContent = C.modeLabel; $('m-suggest-l').textContent = C.modeSuggest; $('m-check-l').textContent = C.modeCheck; $('check-h').textContent = C.checkHeading; $('check-note').textContent = C.checkNote;
     $('b-split').textContent = C.primary; $('b-reset').textContent = C.reset; $('privacy').textContent = C.privacy; $('b-bench').textContent = C.copyBench; $('b-print').textContent = C.printSheet; $('b-change').textContent = C.changeMinutes;
     $('sc-helper').textContent = C.sheetCols.helper; $('sc-tasks').textContent = C.sheetCols.tasks; $('sc-min').textContent = C.sheetCols.minutes;
     $('share-h').textContent = C.shareHeading; $('link-warn').textContent = C.linkWarning; $('link-holds').textContent = C.linkHolds; $('b-link').textContent = C.makeLink; $('link-l').textContent = C.linkLabel; $('fb-l').textContent = C.copyTextLabel; $('own').textContent = C.receiverPrimary; }
@@ -146,7 +146,7 @@
     var d = r.data; document.body.classList.add('is-recv');
     // recipient: the proposed split, read-only; the organizer form is filled (for "Make my own copy"), disabled (shared readOnly) and not shown
     fill(d, d.res.mode, d.res.assign); V.readOnly($('form'), true); show('s1', false);
-    $('recv-intro').textContent = C.receiverIntro; $('recv').hidden = false;
+    $('recv-intro').textContent = C.receiverIntro; $('recv-note').textContent = C.receiverNote; $('recv').hidden = false;
     render(d, d.res, true); }
   function own() { var d = last && last.d, res = last && last.res; history.replaceState(null, '', location.pathname + location.search); routeTo('');
     if (d) { fill(d, res.mode, res.assign); split(); } }
