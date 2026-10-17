@@ -96,7 +96,7 @@
     b.offers.forEach(function (of) {
       var nt = el('div', 'olt-note olt-note--merge'), owners = [].concat.apply([], of.lines.map(function (l) { return l.traces.map(function (t) { return t.owner; }); }));
       var tagsTxt = [].concat.apply([], of.lines.map(function (l) { return l.traces.map(function (t) { return t.tag; }); }));
-      nt.appendChild(el('p', null, M.fill(C.duplicateFound, { owner1: M.raw(owners.slice(0, -1).map(M.unquote).join('\u201D, \u201C')), owner2: owners[owners.length - 1], item: of.lines[0].item, unit: of.lines[0].unit ? qt(of.lines[0].unit) : '—' }) + ' ' + C.mergeHint));
+      nt.appendChild(el('p', null, M.fill(C.duplicateFound, { owner1: owners.slice(0, -1).join('\u201D, \u201C'), owner2: owners[owners.length - 1], item: of.lines[0].item, unit: of.lines[0].unit ? qt(of.lines[0].unit) : '—' }) + ' ' + C.mergeHint));
       var mb = btn('olt-mini', C.mergeButton, function () { var wasRecv = mode === 'recv'; O.merge(st, of.stopKey, of.key); if (wasRecv) takeCopy(C.copyMergedNote); changed(); refresh(); if (wasRecv) offerLink(); toast(M.fill(C.mergedStatus, { item: qt(of.lines[0].item) })); var f = $('um-' + of.ids.slice().sort(function (p, q) { return idx(p) - idx(q); })[0]); if (f) f.focus(); });
       mb.id = 'mg-' + of.ids[0]; mb.setAttribute('aria-label', M.fill(C.mergeAria, { tags: tagsTxt.join(' + ') })); nt.appendChild(mb); a.appendChild(nt);
     });

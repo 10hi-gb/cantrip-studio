@@ -46,3 +46,7 @@
 .byg-print-only{display:none}
 @media print{.byg-print-only:not([hidden]){display:block!important}.byg-line{display:block}.byg-printq-wrap h2{font:800 13pt var(--byg-font);margin:12px 0 4px}.byg-count,.byg-hintline,.byg-ns{display:none!important}}
 .byg-chip{white-space:normal;max-width:100%;min-width:0;overflow-wrap:anywhere}
+/* QA local-652d0e0 N8: facts are auto-growing textareas (full text at 320); N9: empty date/time inputs never print */
+textarea.byg-fv{resize:none;overflow:hidden;min-height:40px;line-height:1.35;font:inherit;width:100%;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:anywhere}
+.byg-acount{margin-left:6px}
+@media print{.byg-when > .is-empty{display:none!important}}
