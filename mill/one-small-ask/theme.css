@@ -21,7 +21,7 @@
 .osa-draft{background:var(--osa-ink);color:var(--osa-paper);padding:2px 8px;border-radius:99px;white-space:nowrap;letter-spacing:.08em}
 .osa-title{font:900 clamp(30px,5vw,56px)/1 var(--osa-head);letter-spacing:-.02em;margin:12px 0 6px}
 .osa-lede{margin:0 0 16px;max-width:52ch;color:var(--osa-mute)}
-/* the delta line: Joshua's "A -> B" in one glance */
+/* the delta line: the "A -> B" change in one glance */
 .osa-delta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 14px;font:700 clamp(17px,2.2vw,22px)/1.25 var(--osa-head)}
 .osa-delta .a{background:var(--osa-ask-tint);color:var(--osa-ask-ink);padding:3px 10px;border-radius:8px;text-decoration:line-through;text-decoration-thickness:2px}
 .osa-delta .b{background:var(--osa-ans-tint);color:var(--osa-ans-ink);padding:3px 10px;border-radius:8px}

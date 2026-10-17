@@ -1,11 +1,11 @@
-// split-the-sack — visitor copy (Writing Bot, 2026-10-16). Matches briefs/JOSHUA-SCOPES-WAVE1-2.md. App reads all text from COPY.
+// split-the-sack — visitor copy (Writing Bot, 2026-10-16). Matches the Wave 1-2 scope brief in briefs/ (scopes proposed by the Cantrip agents under Joshua's authorization). App reads all text from COPY.
 const COPY = {
   "title": "Split the Sack",
   "studioName": "Cantrip Studio",
   "studioLabel": "Cantrip Studio · Split the Sack",
   "backLabel": "Back to Cantrip Studio",
   "copied": "Copied.",
-  "copyFail": "Couldn't copy. The text is selected below. Copy it yourself.",
+  "copyFail": "Couldn't copy. Select the text below and copy it yourself.",
   "printLabel": "Print",
   "invitation": "Split one bulk buy. See what everyone gets and pays.",
   "primary": "Weigh it out",

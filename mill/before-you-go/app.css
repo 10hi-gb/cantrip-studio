@@ -1,0 +1,23 @@
+/* Before You Go — engineer additions on top of Creative's theme.css (unchanged). */
+[hidden]{display:none!important}
+.byg-q::before{content:none}
+.byg-top a{color:inherit;text-decoration:none}
+.byg-top a:focus-visible,.byg-in:focus-visible,.byg-btn:focus-visible,.byg-call:focus-visible{outline:3px solid #1F5FBF;outline-offset:2px}
+.byg-fieldrow{margin:12px 0 0;display:grid;gap:4px}
+.byg-fieldrow label{font:800 12px var(--byg-font);letter-spacing:.1em;text-transform:uppercase}
+.byg-fact .byg-in.byg-fv{margin-top:4px}
+.byg-fact .byg-lab label{cursor:pointer}
+.byg-err{display:block;color:#A3241A;font:700 13px var(--byg-font);margin-top:4px}
+.byg-err:empty{display:none}
+.byg-banner{margin:10px 0 0;padding:10px 14px;border:2px solid #111;border-radius:6px;background:#fff;font:700 15px/1.4 var(--byg-font)}
+.byg-banner p{margin:0 0 6px}
+.byg-own{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin:8px 0}
+.byg-script .byg-rm{margin-left:auto;min-height:40px;padding:6px 10px;font-size:13px}
+.byg-script li{gap:10px}
+.byg-script li span.t{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.byg-linkbox textarea,.byg-text{width:100%;font:400 13px/1.45 var(--byg-font);border:2px dashed #555;border-radius:6px;padding:8px;background:#fff;color:#111;white-space:pre-wrap}
+.byg-text{min-height:12rem}
+.byg-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:6px;max-width:calc(100% - 32px);z-index:5;font:800 14px var(--byg-font)}
+.byg-val,.byg-q,.byg-what{overflow-wrap:anywhere;unicode-bidi:plaintext}
+.byg-confirmed{grid-column:2/span 2;margin-top:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font:600 13px var(--byg-font)}
+@media print{.byg-banner,.byg-toast,.byg-linkbox,.byg-edit,.byg-own,.byg-rm,.byg-fieldrow,.byg-fv,.byg-confirmed button,.byg-top a,.byg-textwrap{display:none!important}}

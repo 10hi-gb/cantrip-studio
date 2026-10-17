@@ -1,8 +1,8 @@
 {
  "title": "Cantrip Studio · Mill sprint 2026-10-16",
- "note": "Review only, not public. Scores are Joshua's rubric scores from QUEUE.md. Source links are the permalinks recorded in QUEUE.md; none are invented.",
+ "note": "Review prototype; not a production release. Scope and score proposed by the Cantrip agents under Joshua's authorization; scores are the rubric scores recorded in QUEUE.md. Source links are the permalinks recorded in QUEUE.md; none are invented.",
  "sharedLimits": [
-  "The source thread doesn't directly ask for any of the Wave 1 or Wave 2 tools, so those scores rest on Joshua's scopes, not on commenter demand.",
+  "The source thread doesn't directly ask for any of the Wave 1 or Wave 2 tools, so those scores rest on scopes proposed by the Cantrip agents under Joshua's authorization, not on commenter demand.",
   "Every piece is memory-only: nothing is uploaded or stored. A link carries its content, anyone holding the link can read it, and it may stay in browser history.",
   "Engineer self-check is the builder checking their own work. It is not QA."
  ],
@@ -28,7 +28,7 @@
    "name": "Before You Go",
    "score": "7.75",
    "wave": 1,
-   "path": null,
+   "path": "before-you-go/",
    "sources": [
     "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf5a6mv/",
     "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf89iw1/",
@@ -38,7 +38,7 @@
     "No comment mentions calling ahead.",
     "Questions come from a fixed generic checklist. It knows nothing about any real place."
    ],
-   "engineer": "Not built yet.",
+   "engineer": "ENGINEER SELF-CHECK: unit tests 9/9 pass; local browser check 78/78 at 320/390/1280. Live check pending on its deploy. Not QA.",
    "qa": "Awaiting QA"
   },
   {
@@ -67,7 +67,7 @@
    "path": null,
    "sources": [],
    "limits": [
-    "No direct comment in the thread; scope is Joshua's.",
+    "No direct comment in the thread; scope proposed by the Cantrip agents under Joshua's authorization.",
     "No map, routing or live list."
    ],
    "engineer": "Not built yet.",
@@ -81,7 +81,7 @@
    "path": null,
    "sources": [],
    "limits": [
-    "No direct comment in the thread; scope is Joshua's.",
+    "No direct comment in the thread; scope proposed by the Cantrip agents under Joshua's authorization.",
     "Manual entry only. No calendar access."
    ],
    "engineer": "Not built yet.",

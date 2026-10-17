@@ -1,11 +1,11 @@
-// one-small-ask — visitor copy (Writing Bot, 2026-10-16). Matches briefs/JOSHUA-SCOPES-WAVE1-2.md. App reads all text from COPY.
+// one-small-ask — visitor copy (Writing Bot, 2026-10-16). Matches the Wave 1-2 scope brief in briefs/ (scopes proposed by the Cantrip agents under Joshua's authorization). App reads all text from COPY.
 const COPY = {
   "title": "One Small Ask",
   "studioName": "Cantrip Studio",
   "studioLabel": "Cantrip Studio · One Small Ask",
   "backLabel": "Back to Cantrip Studio",
   "copied": "Copied.",
-  "copyFail": "Couldn't copy. The text is selected below. Copy it yourself.",
+  "copyFail": "Couldn't copy. Select the text below and copy it yourself.",
   "printLabel": "Print",
   "invitation": "Ask someone you know for one small favor. They can say yes, take part of it, or say no.",
   "primary": "Write the ask",
