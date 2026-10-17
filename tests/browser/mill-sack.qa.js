@@ -546,5 +546,24 @@ async function textCR(p, b, sel) {
     const pr = await textCR(p, s.b, '.ss-alloc .p'), why = await textCR(p, s.b, '.ss-why b'), all = pr.map((r, i) => Object.assign(r, { on: where[i] })).concat(why.map(r => Object.assign(r, { on: 'why' })));
     ck(w + " PM 07:25: '+1¢ rounding' (11px) on the household cards and the Unclaimed tint, ≥4.5:1 on rendered pixels (" + all.length + ' runs)', where.includes('card') && where.includes('unclaimed') && all.every(r => r.worst >= 4.5 && r.n > 0 && parseFloat(r.fs) >= 10), all);
     ck(w + ' PM 07:25: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // Creative 07:25: 0 unclaimed is not a warning (white card fill, dashed mute edge ≥3:1 on the card from pixels, ink label, faded bin, every text at full strength);
+  // 1+ unclaimed unchanged (tint, dashed orange edge, orange label); 8 households, 390/1280
+  for (const w of [390, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); const got = {};
+    for (const q of ['8', '10']) { const st = { n: 'Rice', u: 'kilograms-ish', c: '$', q, i: '1', p: '20.00', f: '1.00', b: 'p', x: -1, h: Array.from({ length: 8 }, (_, i) => ['Home ' + (i + 1), '1']) };
+      const f = await p.evaluate(o => SACKLINK.encode(o), st); await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(300); await p.evaluate(() => Promise.all([document.fonts.ready, ...document.getAnimations().map(a => a.finished)]));
+      const css = await p.evaluate(() => { const r = document.querySelector('.ss-alloc.is-unalloc'), c = getComputedStyle(r), b = r.getBoundingClientRect(); return { cls: r.className, bg: c.backgroundColor, bs: c.borderLeftStyle, bc: c.borderLeftColor, bw: c.borderLeftWidth, who: getComputedStyle(r.querySelector('.who')).color, bin: getComputedStyle(r.querySelector('.ss-bin')).opacity, rect: [b.left + scrollX, b.top + scrollY, b.width, b.height] }; });
+      // darkest pixel of the left border band (2px) along the row height vs the card fill just inside it
+      const png = await p.screenshot({ encoding: 'base64', fullPage: true }), dpr = await p.evaluate(() => devicePixelRatio), pg = await s.b.newPage();
+      const edge = await pg.evaluate(async (png, R, dpr) => { const im = new Image(); im.src = 'data:image/png;base64,' + png; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+        const lum = q => { const v = q.map(t => t / 255).map(t => t <= .03928 ? t / 12.92 : Math.pow((t + .055) / 1.055, 2.4)); return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]; };
+        const d = x.getImageData(Math.round((R[0] + .5) * dpr), Math.round((R[1] + 8) * dpr), 1, Math.round((R[3] - 16) * dpr)).data; let dk = null; for (let i = 0; i < d.length; i += 4) { const q = [d[i], d[i + 1], d[i + 2]]; if (!dk || lum(q) < lum(dk)) dk = q; }
+        const fill = [...x.getImageData(Math.round((R[0] + 6) * dpr), Math.round((R[1] + R[3] / 2) * dpr), 1, 1).data].slice(0, 3); return { dk, fill }; }, png, css.rect, dpr); await pg.close();
+      const tx = await textCR(p, s.b, '.ss-alloc.is-unalloc .who, .ss-alloc.is-unalloc .qty, .ss-alloc.is-unalloc .m, .ss-alloc.is-unalloc .tot');
+      got[q] = Object.assign(css, { edge, edgeCR: +crOf(edge.dk, edge.fill).toFixed(2), text: tx.map(r => ({ t: r.t, op: r.op, color: r.color, worst: r.worst })) }); }
+    const z = got['8'], u = got['10'];
+    ck(w + ' Creative 07:25: 0 unclaimed: white card fill, dashed edge in the mute colour (#4F5C66) ≥3:1 against the card from pixels, "Unclaimed" in ink, bin faded, every text at full strength (alpha 1) and ≥4.5:1',
+      /is-zero/.test(z.cls) && z.bg === 'rgb(255, 255, 255)' && z.bs === 'dashed' && z.bc === 'rgb(79, 92, 102)' && z.edgeCR >= 3 && z.who === 'rgb(24, 36, 48)' && +z.bin < 1 && z.text.length >= 3 && z.text.every(r => r.op === 1 && !/rgba/.test(r.color) && r.worst >= 4.5), z);
+    ck(w + ' Creative 07:25: 1+ unclaimed unchanged: tint #FFF3E9, dashed #AD531A edge, "Unclaimed" #AD531A, bin at full strength', !/is-zero/.test(u.cls) && u.bg === 'rgb(255, 243, 233)' && u.bs === 'dashed' && u.bc === 'rgb(173, 83, 26)' && u.who === 'rgb(173, 83, 26)' && +u.bin === 1 && u.text.every(r => r.worst >= 4.5), u);
+    ck(w + ' Creative 07:25: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
