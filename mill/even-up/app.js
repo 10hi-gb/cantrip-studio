@@ -31,7 +31,10 @@
   }
   function listNodes(ids) { var f = document.createDocumentFragment(); ids.forEach(function (id, i) { if (i) f.appendChild(document.createTextNode(', ')); f.appendChild(nameNode(id)); }); return f; }
   function toast(m) { V.toast(m, 3200); }
-  function clearHash() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); }
+  // PM 04:57 query strip: the page only ever writes origin + path (+ #fragment). Load and hashchange keep path + #fragment; edit, reset and
+  // "Start my own" write the path only. A ?query is never carried over (it was kept by location.search here before).
+  function writeURL(frag) { history.replaceState(null, '', location.origin + location.pathname + (frag ? '#' + frag : '')); }
+  function clearHash() { if (location.hash || location.search) writeURL(''); }
   function changed() { clearHash(); $('linkbox').hidden = true; $('fbwrap').hidden = true; }
   function linkPrefix() { return location.origin + location.pathname + '#'; }
 
@@ -254,7 +257,7 @@
   }
   function showFallback() { var w = $('fbwrap'), f = $('fallback'); f.value = E.summary(st, C); w.hidden = false; f.focus(); f.select(); }
   function showLink(u) { $('linkbox').hidden = false; var l = $('link'); l.value = u; l.focus(); l.select(); }
-  function makeLink() { var f = E.encode(st, linkPrefix().length); if (f === null) return null; if (f === '') { toast(C.tooLongLink); showFallback(); return null; } return linkPrefix() + f; }
+  function makeLink() { if (location.search) writeURL(location.hash.replace(/^#/, '')); var f = E.encode(st, linkPrefix().length); if (f === null) return null; if (f === '') { toast(C.tooLongLink); showFallback(); return null; } return linkPrefix() + f; }
 
   function init() {
     document.title = C.title + ' \u00B7 ' + C.studioName; $('home').textContent = '\u2190 ' + C.backLabel; $('strip').textContent = C.studioLabel;
@@ -298,6 +301,7 @@
   }
   // Every load and every hashchange (valid, bad, old or empty) starts from a blank page: nothing from a previous link survives.
   function load(h) {
+    if (location.search) writeURL(h && h !== '#' ? h.replace(/^#/, '') : '');
     st = E.blank(); mode = 'own'; editing = null; touched = {}; showAll = false; prevSide = {};
     V.clearInputs(document); V.clearErrors(document, '.eu-err'); $('banner').hidden = true; $('banner-n').hidden = true; $('own-copy').hidden = true;
     $('banner-t').textContent = ''; $('banner-n').textContent = ''; // QA E3: a hidden banner keeps nothing from an earlier link
