@@ -22,7 +22,12 @@
     "Fee rule: by amount, the fee is split over all quantity and the unclaimed row carries its own fee share until someone takes it or the sender assigns it; equal, the fee is split among households taking some, and with no takers the split is blocked.",
     "Recipients see a read-only split. \"Change my amount\" makes a new link on the recipient's device; it does not update or notify the sender."
    ],
-   "engineer": "Fresh ENGINEER SELF-CHECK pending for this build. Not QA.",
+   "engineer": {
+    "pin": "83a2ebcd",
+    "commit": "d37121e7f446865ae3e7e930042ffb1582390070",
+    "tree": "dd88bafd8539e76efa7a2ffbc142dfb3a1a6fd6d",
+    "result": "unit tests 21+5 pass; live browser check 107/107 at 320/390/1280 (incl. D1-D4 checks, read-only recipient, fee rule); byte-compare 65/65."
+   },
    "qa": "Awaiting QA"
   },
   {
@@ -40,7 +45,12 @@
     "No comment mentions calling ahead.",
     "Questions come from a fixed generic checklist. It knows nothing about any real place."
    ],
-   "engineer": "Fresh ENGINEER SELF-CHECK pending for this build. Not QA.",
+   "engineer": {
+    "pin": "83a2ebcd",
+    "commit": "d37121e7f446865ae3e7e930042ffb1582390070",
+    "tree": "1f37ffe0ce0236ea213816e7f4cdf74961bf59c9",
+    "result": "unit tests 9 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
+   },
    "qa": "Awaiting QA"
   },
   {
@@ -58,7 +68,12 @@
     "No comment mentions a counteroffer.",
     "Replies travel only by a link the recipient chooses to send back. It never tells the asker anything by itself."
    ],
-   "engineer": "Fresh ENGINEER SELF-CHECK pending for this build. Not QA.",
+   "engineer": {
+    "pin": "83a2ebcd",
+    "commit": "d37121e7f446865ae3e7e930042ffb1582390070",
+    "tree": "f83c650c08b683a712f9d700e4ff76e66f756316",
+    "result": "unit tests 11 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
+   },
    "qa": "Awaiting QA"
   },
   {
@@ -74,7 +89,12 @@
     "Stop names that differ only in capital letters or spaces are treated as the same stop.",
     "Merging needs an exact item name and unit match; near-matches (\"Oat milks\", \"litre\" vs \"l\") stay separate."
    ],
-   "engineer": "Fresh ENGINEER SELF-CHECK pending for this build. Not QA.",
+   "engineer": {
+    "pin": "83a2ebcd",
+    "commit": "d37121e7f446865ae3e7e930042ffb1582390070",
+    "tree": "b436439c6fafa24c13bf8e20dc5a3f34a660b771",
+    "result": "unit tests 15 pass; live browser check 84/84 at 320/390/1280; byte-compare 65/65."
+   },
    "qa": "Awaiting QA"
   },
   {
