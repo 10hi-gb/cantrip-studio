@@ -128,12 +128,12 @@
     "tree": "b436439c6fafa24c13bf8e20dc5a3f34a660b771",
     "result": "unit tests 15 pass; live browser check 84/84 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
    "qaLocal": {
-    "verdict": "NOT READY",
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "652d0e038d7033812cf6954e32576cd794ad896e",
-    "report": "qa/one-less-trip/local-652d0e0/QA-local-652d0e0.md"
+    "sha": "bc74052a02d8603a4ec1feeaff647920ea150886",
+    "report": "qa/one-less-trip/local-bc74052/QA-local-bc74052.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
