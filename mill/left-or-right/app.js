@@ -11,6 +11,14 @@
   function now() { return performance.now(); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function typed(s, cls) { return V.typed(L.clean(s), cls); }
+  // Creative's quote styling (board tiles + question, chosen screen, From line, recipient intro): the shared typed() text
+  // stays whole in a visually hidden span (one text node: screen readers, the accessibility tree, find and copy get “…”),
+  // and the visible copy is CSS generated content with empty alt text, so the marks can be styled (0.8em, 70% ink, hung)
+  // without splitting the text in the accessibility tree and without being read twice.
+  function typedVis(s) { var t = typed(s), w = el('span', 'lr-tv'), sr = el('span', 'lr-sr'), v = el('span', 'lr-vis'), x = t.textContent, q = x.length >= 2 && x[0] === '\u201C' && x[x.length - 1] === '\u201D';
+    function part(cls, val) { var e = el('span', cls); e.setAttribute('data-v', val); v.appendChild(e); }
+    sr.appendChild(t); if (q) part('lr-qm lr-qo', '\u201C'); part('lr-vt', q ? x.slice(1, -1) : x); if (q) part('lr-qm lr-qc', '\u201D');
+    w.appendChild(sr); w.appendChild(v); return w; }
   function qt(s) { return M.quote(L.clean(s)); }
   // Writer template -> nodes; values may be strings or nodes (typed values are already-quoted nodes).
   function tpl(t, v) { var f = document.createDocumentFragment(), re = /\{(\w+)\}/g, last = 0, m;
@@ -77,7 +85,7 @@
   // ---------- recipient (read-only) view
   function renderRecv() {
     var n = st.qs.length, from = L.clean(st.from), intro = $('recv-intro');
-    if (from) put(intro, n === 1 ? tpl(C.receiverIntroOne, { from: typed(from) }) : tpl(C.receiverIntro, { from: typed(from), n: n })); else intro.textContent = M.plural(C.receiverIntroAnon, n);
+    if (from) put(intro, n === 1 ? tpl(C.receiverIntroOne, { from: typedVis(from) }) : tpl(C.receiverIntro, { from: typedVis(from), n: n })); else intro.textContent = M.plural(C.receiverIntroAnon, n);
     var ol = $('recv-list'); ol.textContent = '';
     st.qs.forEach(function (x, i) { var li = el('li', 'lr-item'); li.appendChild(el('p', 'lr-qn', M.fill(C.fromLineAnon, { i: i + 1, n: n }))); var qp = el('p', 'lr-iq'); qp.appendChild(typed(x.q)); li.appendChild(qp);
       ['l', 'r'].forEach(function (s) { var p = el('p', 'lr-is lr-is-' + s); var a = typed(L.answerOf(x, s)); var e = L.clean(s === 'l' ? x.le : x.re); put(p, tpl(C.halfAria, { side: sideLabel(s), answer: a })); if (e) { p.appendChild(document.createTextNode(' ')); p.appendChild(typed(e)); } li.appendChild(p); });
@@ -100,45 +108,48 @@
     if (st.key === 'any') return C.hint.switchAny;
     return M.fill(C.hint.switch, { key: C.switchKeys[st.key] });
   }
-  // ---------- long answers (Creative 2026-10-17): break only at spaces; shrink the answer text in 2px steps to a 24px floor
-  // (the tile-height squeeze stops at 30px); both halves take the same size; only below the floor may a word break, and then
-  // only at a visible hyphen. The hyphenated copy is drawn as CSS generated content with empty alt text, so the DOM text, the
-  // accessible name and copied text never carry a soft hyphen.
-  var FLOOR = 24, TALL_FLOOR = 30, SHY = '\u00AD';
-  function wOver(box) { return box.scrollWidth > box.clientWidth + 1; }
+  // ---------- long answers (Creative r2, 2026-10-17; plan in fit.js): normal size if it fits, else 2px steps; unbroken down
+  // to the 24px floor if possible; else the fewest, most even lines at the largest size, breaking at a dictionary point
+  // (Grand-mother's), else at the most even letter point with 4+ letters each side, never inside an emoji, never leaving the
+  // closing quote alone. Both halves share one size. A broken answer is drawn as CSS generated content with empty alt
+  // text; the clean text stays in the DOM (visually hidden), so names, the accessibility tree and copies are untouched.
+  var FLOOR = 24, TALL_FLOOR = 30, R = 100, qCache = {};
   function hOver(t) { return t.scrollHeight > t.clientHeight + 1; }
-  function unshy(box) { var w = box.querySelector('.lr-shy-src'); if (w) { while (w.firstChild) box.insertBefore(w.firstChild, w); box.removeChild(w); } box.classList.remove('lr-shy'); box.removeAttribute('data-v'); }
-  function fitSize(box, tile) { // largest size (2px steps from the design size) at which no word is wider than the tile
-    unshy(box); box.style.fontSize = ''; var size = parseFloat(getComputedStyle(box).fontSize), g = 100;
-    while (g-- && size > FLOOR && (wOver(box) || (tile && hOver(tile) && size > TALL_FLOOR))) { size = Math.max(FLOOR, size - 2); box.style.fontSize = size + 'px'; }
-    return size;
-  }
-  function graphemes(s) { if (window.Intl && Intl.Segmenter) return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s), function (x) { return x.segment; }); return Array.from(s); }
-  function hyph(box) { // still too wide at the floor: put a soft hyphen exactly where each overlong word must break
-    if (!wOver(box)) return false;
-    var text = box.textContent, avail = box.clientWidth - parseFloat(getComputedStyle(box).paddingLeft) - parseFloat(getComputedStyle(box).paddingRight), probe = el('span', 'lr-probe');
-    box.appendChild(probe); var wd = function (t) { probe.textContent = t; return probe.offsetWidth; }; // layout width: the chosen screen's swell transform must not skew it
-    var out = text.split(' ').map(function (word) { if (wd(word) <= avail) return word; var parts = [], cur = '';
-      graphemes(word).forEach(function (g) { if (cur && wd(cur + g + '-') > avail) { parts.push(cur); cur = g; } else cur += g; }); parts.push(cur); return parts.join(SHY); }).join(' ');
-    box.removeChild(probe);
-    var src = el('span', 'lr-sr lr-shy-src'); while (box.firstChild) src.appendChild(box.firstChild); box.appendChild(src);
-    box.setAttribute('data-v', out); box.classList.add('lr-shy'); return true;
-  }
-  function fitBoard() { if ($('s2').hidden) return; var a = $('h-l-a'), b = $('h-r-a'), m = Math.min(fitSize(a, $('h-l')), fitSize(b, $('h-r'))) + 'px';
-    a.style.fontSize = m; b.style.fontSize = m; hyph(a); hyph(b); } // the same size on both halves, so neither looks favoured
-  function fitChosen() { if ($('s3').hidden) return; var a = $('c-a'); fitSize(a, null); hyph(a); }
+  function px(e, k) { return parseFloat(getComputedStyle(e)[k]) || 0; }
+  function probe(box, fs) { var p = el('span', 'lr-probe'); p.style.fontSize = fs + 'px'; box.appendChild(p); return p; }
+  function quoteEm(box) { // width of each mark as a fraction of the mark's own size, per font (for the hang margins)
+    var cs = getComputedStyle(box), key = cs.fontFamily + '|' + cs.fontWeight + '|' + cs.fontStyle;
+    if (!qCache[key]) { var pr = probe(box, R); pr.textContent = '\u201C'; var o = pr.offsetWidth; pr.textContent = '\u201D'; var c = pr.offsetWidth; box.removeChild(pr); qCache[key] = { o: o / R, c: c / R }; }
+    return qCache[key]; }
+  function hang(box) { if (!box.getClientRects().length) return; var q = quoteEm(box); box.style.setProperty('--qo', q.o.toFixed(3)); box.style.setProperty('--qc', q.c.toFixed(3)); }
+  function innerOf(box) { var t = box.querySelector('.lr-sr').textContent; return t.length >= 2 && t[0] === '\u201C' && t[t.length - 1] === '\u201D' ? t.slice(1, -1) : t; }
+  function unbreak(box) { var vt = box.querySelector('.lr-vt'); vt.setAttribute('data-v', innerOf(box)); box.querySelector('.lr-vis').classList.remove('lr-brk'); }
+  function planFor(box, tile, sizes) { // measure at R px once per string; widths scale with the size
+    unbreak(box); box.style.fontSize = ''; hang(box); var q = quoteEm(box), pr = probe(box, R), cw = box.clientWidth, padIn = px(tile, 'paddingLeft') + px(tile, 'paddingRight');
+    var o = { R: R, avail: cw - px(box, 'paddingLeft') - px(box, 'paddingRight'), sizes: sizes || LRFIT.sizes(px(box, 'fontSize'), FLOOR),
+      measure: function (s, f, l) { pr.textContent = s; return { w: pr.offsetWidth, marks: (f ? q.o * 0.8 * R : 0) + (l ? q.c * 0.8 * R : 0), hang: 2 * Math.max(f ? q.o * 0.8 * R : 0, l ? q.c * 0.8 * R : 0) }; } };
+    o.full = o.avail + padIn - 4; // hanging marks may use the tile padding, never the tile edge
+    o.ok = function (size, lines) { if (!tile.classList.contains('half') || size <= TALL_FLOOR) return true; box.style.fontSize = size + 'px'; var t = hOver(tile); box.style.fontSize = ''; return !t; };
+    var r = LRFIT.plan(innerOf(box), o); box.removeChild(pr); return r; }
+  function draw(box, r) { // apply the size and the drawn lines (newlines between the pieces of a broken word)
+    box.style.fontSize = r.size + 'px'; box.querySelector('.lr-vt').setAttribute('data-v', r.lines.map(function (p) { return p.join('\n'); }).join(' '));
+    box.querySelector('.lr-vis').classList.toggle('lr-brk', r.broken); box.classList.toggle('lr-shy', r.broken); }
+  function fitBoard() { if ($('s2').hidden) return; hang($('b-q'));
+    var a = $('h-l-a'), b = $('h-r-a'), ra = planFor(a, $('h-l')), rb = planFor(b, $('h-r')), m = Math.min(ra.size, rb.size); // one size for both halves, so neither looks favoured
+    draw(a, ra.size === m ? ra : planFor(a, $('h-l'), [m])); draw(b, rb.size === m ? rb : planFor(b, $('h-r'), [m])); }
+  function fitChosen() { if ($('s3').hidden) return; hang($('c-q')); var a = $('c-a'); draw(a, planFor(a, $('s3'))); }
   function refit() { fitBoard(); fitChosen(); }
   function setHi() { ['l', 'r'].forEach(function (s) { $('h-' + s).classList.toggle('scan', st.mode === 'switch' && bd && bd.hi === s); }); }
   function stopBoard() { clearInterval(scanT); clearTimeout(dueT); cancelAnimationFrame(raf); scanT = dueT = raf = 0; ringOff(); }
   function ringOff() { cancelAnimationFrame(raf); raf = 0; ['l', 'r'].forEach(function (s) { var h = $('h-' + s); h.classList.remove('holding'); h.style.removeProperty('--p'); }); }
   function startBoard(i) {
     cur = i; var x = st.qs[i], n = st.qs.length, from = L.clean(st.from);
-    if (from) put($('b-from'), tpl(C.fromLine, { from: typed(from), i: i + 1, n: n })); else $('b-from').textContent = M.fill(C.fromLineAnon, { i: i + 1, n: n });
-    put($('b-q'), typed(x.q));
+    if (from) put($('b-from'), tpl(C.fromLine, { from: typedVis(from), i: i + 1, n: n })); else $('b-from').textContent = M.fill(C.fromLineAnon, { i: i + 1, n: n });
+    put($('b-q'), typedVis(x.q));
     ['l', 'r'].forEach(function (s) { var h = $('h-' + s), e = L.clean(s === 'l' ? x.le : x.re);
       $('h-' + s + '-s').textContent = s === 'l' ? '\u25C0 ' + C.leftSide : C.rightSide + ' \u25B6';
-      put($('h-' + s + '-e'), e ? typed(e) : document.createDocumentFragment()); $('h-' + s + '-e').hidden = !e;
-      put($('h-' + s + '-a'), typed(L.answerOf(x, s))); h.setAttribute('aria-label', M.fill(C.halfAria, { side: sideLabel(s), answer: qt(L.answerOf(x, s)) }) + (e ? ' ' + qt(e) : '')); });
+      put($('h-' + s + '-e'), e ? typedVis(e) : document.createDocumentFragment()); $('h-' + s + '-e').hidden = !e;
+      put($('h-' + s + '-a'), typedVis(L.answerOf(x, s))); h.setAttribute('aria-label', M.fill(C.halfAria, { side: sideLabel(s), answer: qt(L.answerOf(x, s)) }) + (e ? ' ' + qt(e) : '')); });
     $('hint').textContent = hintText(); $('b-back').textContent = C.boardBack;
     $('s2').setAttribute('data-mode', st.mode);
     bd = L.board(cfg()); screen(2); setHi(); fitBoard();
@@ -157,7 +168,7 @@
   function chosen(side) {
     stopBoard(); answers[cur] = side; var x = st.qs[cur], last = cur >= st.qs.length - 1, s3 = $('s3');
     s3.classList.remove('l', 'r'); s3.classList.add(side);
-    put($('c-q'), typed(x.q)); unshy($('c-a')); put($('c-a'), typed(L.answerOf(x, side))); $('c-tag').textContent = M.fill(C.chosenTag, { side: L.sideWord(C, side) });
+    put($('c-q'), typedVis(x.q)); put($('c-a'), typedVis(L.answerOf(x, side))); $('c-tag').textContent = M.fill(C.chosenTag, { side: L.sideWord(C, side) });
     $('c-next').hidden = last; $('c-done').hidden = !last; $('c-done').textContent = C.done; $('c-fb').hidden = true;
     $('live').textContent = M.fill(C.chosenAria, { answer: qt(L.answerOf(x, side)), side: L.sideWord(C, side) });
     screen(3); fitChosen(); renderAnswers();
