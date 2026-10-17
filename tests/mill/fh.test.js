@@ -59,6 +59,15 @@ t('card text: Writer templates verbatim, name/title/tasks quoted, stamp in every
   const s = F.suggest(H2, T); const lone = F.result(mk([['Eli', 45]]), mk([['Big', 200]]), [-1], 'suggest').rows[0];
   assert.equal(F.cardText(C, 'G', lone), 'For: “Eli”\nSession: “G”\nNo tasks for you in this split. You offered 45 min.\n' + STAMP + '\nIf something doesn\'t work for you, tell me.'); // cardTextNoFit
   [...r.rows, ...s.rows, lone].forEach(x => assert.ok(F.cardText(C, 'G', x).includes(STAMP))); });
+t('Writer N9b: {stamp} = stamp in Suggest, stampCheck in Check (cardText, cardTextNoTasks, cardTextNoFit, benchText); stampFor', () => {
+  const SC = 'Split made by hand, then added up. Nobody has agreed to this yet.'; assert.equal(C.stampCheck, SC); assert.equal(F.stampFor(C, 'check'), SC); assert.equal(F.stampFor(C, 'suggest'), STAMP);
+  const c = F.check(H, [3, -1, 0, 0, 0, 0, 0, 0, 1], T), lone = F.result(mk([['Eli', 45]]), mk([['Big', 200]]), [-1], 'check');
+  assert.equal(F.cardText(C, 'G', c.rows[3], 'check'), 'For: “Dee”\nSession: “G”\n• “Pull tomato cages” 40 min\n= 40 of your 0 min.\nTask names and minutes are my estimates.\n' + SC + '\nIf something doesn\'t work for you, tell me.');
+  assert.equal(F.cardText(C, 'G', F.check(H, [0, 0, 0, 0, 0, 0, 0, 0, 0].map((x, i) => i < 3 ? 0 : -1), T).rows[3], 'check'), 'For: “Dee”\nSession: “G”\nNo tasks for you this time (0 minutes).\n' + SC);
+  assert.equal(F.cardText(C, 'G', lone.rows[0], 'check'), 'For: “Eli”\nSession: “G”\nNo tasks for you in this split. You offered 45 min.\n' + SC + '\nIf something doesn\'t work for you, tell me.');
+  assert.equal(F.benchText(C, 'G', c), 'Still on the bench for “G”:\n• “Turn compost bed A” 30 min\n' + SC);
+  c.rows.forEach(r => { const x = F.cardText(C, 'G', r, 'check'); assert.ok(x.includes(SC) && !x.includes(STAMP) && !x.includes('{stamp}'), x); });
+  F.suggest(H, T).rows.forEach(r => { const x = F.cardText(C, 'G', r, 'suggest'); assert.ok(x.includes(STAMP) && !x.includes(SC), x); assert.equal(F.cardText(C, 'G', r), x); }); });
 t('typed marks neutralised: names with quotes / {braces} cannot break the frame', () => {
   const r = F.suggest(mk([['“Jo”', 30]]), mk([['{title} “x”', 10]])); const c = F.cardText(C, 'A “B” {name}', r.rows[0]);
   assert.ok(c.startsWith('For: “"Jo"”\nSession: “A "B" {name}”\n• “{title} "x"” 10 min\n= 10 of your 30 min.'), c); }); // shared quote/fill: inner curly marks -> straight, braces stay literal
@@ -88,7 +97,8 @@ t('Q1 spoof in the template-framed slots: a typed ” in the session title or a 
   assert.equal(M.fill(C.taskDuplicate, { name: 'Rake” and “x' }), 'Two tasks are both called “Rake" and "x”.'); });
 t('minutes(): digits only; −10, 2.5, 1e2, blank -> NaN', () => { assert.equal(F.minutes(' 45 '), 45); assert.equal(F.minutes('0'), 0); for (const s of ['−10', '-10', '2.5', '1e2', '', ' ', '45min']) assert.ok(Number.isNaN(F.minutes(s)), s); });
 t('copy.js has every key the core and UI use; banned words absent except "agreed" in the stamp', () => {
-  for (const k of ['cardText', 'cardTextNoTasks', 'cardTextNoFit', 'sessionEmpty', 'loadSpare', 'benchHeadingEmpty', 'sheetTaskCell', 'sheetMinutes', 'taskRowLabel', 'minutesRowLabel', 'helperRowLabel', 'helperMinutesRowLabel', 'removeTaskBlank', 'removeHelperBlank', 'checkNote', 'receiverNote', 'cardTaskLine', 'benchText', 'benchLine', 'stamp', 'ruleHeading', 'ruleText', 'sheetRule', 'sheetRuleCheck', 'conservation', 'linkWarning']) assert.ok(C[k], k);
+  for (const k of ['stampCheck', 'overBy', 'loadLine', 'copyCard', 'zeroHint', 'rolledUp', 'sheetBenchRow', 'benchEmpty', 'cardText', 'cardTextNoTasks', 'cardTextNoFit', 'sessionEmpty', 'loadSpare', 'benchHeadingEmpty', 'sheetTaskCell', 'sheetMinutes', 'taskRowLabel', 'minutesRowLabel', 'helperRowLabel', 'helperMinutesRowLabel', 'removeTaskBlank', 'removeHelperBlank', 'checkNote', 'receiverNote', 'cardTaskLine', 'benchText', 'benchLine', 'stamp', 'ruleHeading', 'ruleText', 'sheetRule', 'sheetRuleCheck', 'conservation', 'linkWarning']) assert.ok(C[k], k);
   const all = JSON.stringify(C).toLowerCase(); for (const w of ['booked', 'confirmed', 'reserved', 'accepted', 'optimal', 'fair split', 'guaranteed', ' safe', 'private']) assert.ok(!all.includes(w), w);
-  assert.equal(all.split('agreed').length - 1, 5); }); // stamp + its copies inside cardText/cardTextNoTasks/cardTextNoFit + receiverNote
+  assert.equal(all.split('agreed').length - 1, 3); // stamp + stampCheck + receiverNote (N9b: card templates take {stamp})
+  for (const k of ['cardText', 'cardTextNoTasks', 'cardTextNoFit']) assert.ok(C[k].includes('{stamp}') && !C[k].includes('agreed'), k); });
 console.log(n + ' tests passed');
