@@ -87,12 +87,20 @@ textarea{width:100%;font:400 16px/1.4 var(--ui);padding:12px;border:3px solid va
 .half.holding .lr-ring{opacity:1}
 .lr-hint p{margin:0}
 .lr-back{font-size:17px;padding:12px 18px;min-height:48px;margin-top:6px;background:transparent;color:var(--oat);border:3px solid var(--oat)}
+/* QA local-f66fb8e L9: on the ink hint bar the ring is stitch (16.26:1 on ink), 4px off the button, with room above and
+   below so it never touches the dashed banner (or the bar's edge) */
+.lr-back:focus-visible{outline-color:var(--stitch)}
+.lr-hint .lr-back{margin-top:calc(var(--focus-w) + 10px)}
+.lr-hint{padding-bottom:calc(var(--focus-w) + 10px)}
 /* chosen (S3): the felt swell, in normal flow */
 .lr-clip{overflow:hidden} /* the swell's soft overshoot never pushes the page sideways */
 .lr-chosen{position:relative;inset:auto;min-height:100vh;min-height:100dvh}
 .lr-chosen .ans{width:100%;max-width:100%}
 .chosen.r{background:var(--spruce);color:var(--spruce-ink)}
 .chosen.r .btn-main{background:#fff;color:var(--spruce);box-shadow:none}
+/* QA local-f66fb8e L8: the rule above cancelled the stitch band on the focused main button (same specificity, later); the focus
+   ring wins here: ink inside (17.33:1 on white), stitch outside (7.47:1 on spruce) */
+.chosen.r .btn:focus-visible{outline:calc(var(--focus-w) / 2) solid var(--ink);outline-offset:0;box-shadow:0 0 0 var(--focus-w) var(--stitch)}
 .lr-chosen .row .btn{max-width:100%}
 .lr-chosen .btn{transition:background-color .15s,color .15s}
 /* the 500ms post-pick guard (QA local-372ce92 L4, Creative option (b)): fill, label, border and focus ring stay exactly

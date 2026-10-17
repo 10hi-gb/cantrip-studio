@@ -52,7 +52,7 @@
 .eu-scale span:nth-child(3){padding-left:8px}
 .eu-board{display:grid;grid-template-columns:var(--eu-name) minmax(0,1fr) var(--eu-settle);position:relative}
 .eu-names,.eu-rods{display:grid;grid-auto-rows:var(--eu-row)}
-.eu-name{display:flex;align-items:center;font:400 20px var(--eu-serif);overflow-wrap:anywhere;line-height:1.05;padding-right:4px}
+.eu-name{display:flex;align-items:center;font:400 20px var(--eu-serif);overflow-wrap:break-word;line-height:1.05;padding-right:4px}
 .eu-rods{position:relative}
 .eu-rods::before{content:"";position:absolute;top:-6px;bottom:-6px;left:50%;width:6px;transform:translateX(-50%);background:var(--eu-post);border-radius:3px} /* zero post */
 .eu-rod{position:relative}
@@ -101,10 +101,10 @@
 .eu-x{border-top:1px dashed #C9C3B4;padding:8px 0}
 .eu-x:first-of-type{border-top:0}
 .eu-x-h{display:flex;justify-content:space-between;gap:8px;font-weight:600}
-.eu-x-h span:first-child{overflow-wrap:anywhere;min-width:0}
+.eu-x-h span:first-child{overflow-wrap:break-word;min-width:0}
 .eu-x-meta{color:#6E6C85;font-size:12px}
 .eu-x dl{display:grid;grid-template-columns:minmax(0,1fr) auto;margin:4px 0 0;gap:0 8px}
-.eu-x dt{overflow-wrap:anywhere}.eu-x dd{margin:0;text-align:right}
+.eu-x dt{overflow-wrap:break-word}.eu-x dd{margin:0;text-align:right}
 .eu-x .eu-total{border-top:1px solid var(--eu-tape-ink);font-weight:600}
 .eu-resid{color:var(--eu-tape-red);font-weight:600}
 .eu-x.is-invalid{background:var(--eu-err-bg);box-shadow:inset 3px 0 var(--eu-err);padding-left:8px}
