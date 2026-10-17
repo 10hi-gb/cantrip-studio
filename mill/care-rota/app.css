@@ -203,3 +203,11 @@ label{margin-bottom:10px}
  .readas th:nth-child(3){width:7rem}
  .readas th:nth-child(5){width:8.5rem}
 }
+/* QA local-b6a90aa C18 (PM 08:59): at 561–640 the Line column must hold the longest ordinary word with its opening quote ("“groceries" in 15px mono
+   is about 90px). Day, Need and Result give up width and cells use 4px side padding there (their longest words still fit: "Oct", "“Groceries”", "COUNTED"), so the Line text area is ≥ 93px at 561. */
+@media (min-width:561px) and (max-width:640px){
+ .readas th,.readas td{padding-left:4px;padding-right:4px}
+ .readas th:nth-child(2){width:4.4rem}
+ .readas th:nth-child(3){width:6.5rem}
+ .readas th:nth-child(5){width:7rem}
+}
