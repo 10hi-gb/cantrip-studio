@@ -131,8 +131,21 @@
     $('b-open').textContent = C.copyStillOpen; $('b-edit').textContent = C.editAgain;
     handoffs(r, c); sheetView(CR.sheet(r), { forName: M.strip(c.forName), org: M.strip(c.org), first: c.first, last: c.last, stamp: r.stamp, std: isStd }); reading(r);
     $('link-box').hidden = true; $('link').value = ''; $('link-long').hidden = true; $('link-long').textContent = '';
-    ['s2', 's3', 's4', 's5'].forEach(function (s) { show(s, true); }); $('share').hidden = false;
+    ['s2', 's3', 's4', 's5'].forEach(function (s) { show(s, true); }); $('share').hidden = false; fitNames();
     $('s2').focus({ preventScroll: true }); $('s2').scrollIntoView({ block: 'start' }); }
+  // QA local-cde64e3 C14: above the phone layout, a quoted name of up to 10 graphemes stays on one line in its square: that square's names step
+  // down in size (never under 10px) until the name fits. Longer names keep the base size and wrap under the PM rule (spaces, hyphens, mid-word last).
+  var SEG = window.Intl && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+  function graphemes(t) { return SEG ? Array.from(SEG.segment(t)).length : Array.from(t).length; }
+  function fitNames() { var wide = window.matchMedia('(min-width: 561px)').matches;
+    document.querySelectorAll('#quilts .patch .who').forEach(function (w) { w.style.fontSize = ''; var nm = w.querySelectorAll('.mill-typed'); if (!wide || !nm.length || !w.clientWidth) return;
+      var avail = w.clientWidth, f = parseFloat(getComputedStyle(w).fontSize), wid = function (s) { s.style.whiteSpace = 'nowrap'; var x = s.getBoundingClientRect().width; s.style.whiteSpace = ''; return x; };
+      nm.forEach(function (s) { if (graphemes(s.textContent) - 2 > 10) return; // the two quote marks are not part of the name
+        for (var x = wid(s); x > avail + 0.5 && f > 10; x = wid(s)) { f = Math.max(10, Math.min(f - 0.25, Math.floor(f * avail / x * 4) / 4)); w.style.fontSize = f + 'px'; } }); }); }
+  var fitT = 0; window.addEventListener('resize', function () { cancelAnimationFrame(fitT); fitT = requestAnimationFrame(fitNames); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNames);
+  // PM 04:57 / 05:15 query strip: load and hashchange keep path + #fragment; edit, reset and Make my own rota write the path only. A ?query never survives.
+  function bare() { if (location.hash || location.search) history.replaceState(null, '', location.pathname); }
   // ---- copy / fallback ----
   function hideFb() { $('fb').hidden = true; $('fb-t').value = ''; fbText = ''; }
   function copy(text) { hideFb(); var fail = function () { V.toast(C.copyFail); fbText = text; $('fb-why').textContent = C.copyFail; $('fb-t').value = text; $('fb').hidden = false; $('fb-t').focus(); $('fb-t').select(); };
@@ -149,7 +162,8 @@
     $('fb-l').textContent = C.copyTextLabel; $('privacy').textContent = C.privacy; $('own').textContent = C.receiverPrimary; $('b-print').textContent = C.printSheet; }
   function fresh() { last = null; lastCfg = null; prevPatch = {}; clearSheet(); $('quilts').textContent = ''; $('cards').textContent = ''; $('tags').textContent = ''; $('readas').tBodies[0].textContent = ''; $('link-box').hidden = true; $('link').value = ''; V.readOnly($('form'), false); V.clearInputs($('form')); buildNeeds(); clearErrs(); hideFb();
     ['s2', 's3', 's4', 's5'].forEach(function (s) { show(s, false); }); show('s1', true); $('recv').hidden = true; $('bad').hidden = true; $('share').hidden = false; $('privacy').hidden = false; document.body.classList.remove('is-recv'); }
-  function routeTo(h) { fresh(); if (!h) return;
+  function routeTo(h) { if (location.search) history.replaceState(null, '', location.pathname + location.hash); // PM 04:57: never keep a ?query
+    fresh(); if (!h) return;
     // QA C1: received origin+path+fragment is capped at 2,000 like every piece (shared linkFor), not just the fragment
     // Cap: origin+path+fragment ≤ 2,000 chars. Not a literal full-URL cap. An appended ?query is ignored; pieces never generate a query, and no visitor content is ever in a query string (never parsed, shown or echoed).
     var d = V.linkFor(String(h).replace(/^#/, '')) ? CR.decodeSheet(h) : { ok: false, why: 'bad' }; if (!d.ok) { $('bad-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; $('bad').hidden = false; return; }
@@ -159,18 +173,19 @@
     var intro = $('recv-intro'), parts = C.receiverIntro.split('{org}'); intro.textContent = ''; intro.append(document.createTextNode(parts[0]), V.typed(s.org), document.createTextNode(parts.slice(1).join('{org}')));
     $('recv-note').textContent = C.receiverNote; $('recv').hidden = false;
     sheetView(s.sheet, { forName: s.forName, org: s.org, first: s.first, last: s.last, stamp: s.stamp, std: isStd }); show('s4', true); }
-  function reset() { if (!window.confirm(C.resetConfirm)) return; var had = location.hash && location.hash !== '#';
-    if (had) history.replaceState(null, '', location.pathname + location.search); routeTo(''); V.toast(C.resetDone); $('f-for').focus(); }
+  function reset() { if (!window.confirm(C.resetConfirm)) return;
+    bare(); routeTo(''); V.toast(C.resetDone); $('f-for').focus(); }
   // deferred script: the DOM is parsed. Wire once here, BEFORE route() runs (route runs at once when readyState isn't 'loading').
   (function init() { texts(); buildNeeds();
     $('form').addEventListener('submit', function (e) { e.preventDefault(); try { runCheck(); } catch (err) { V.toast(C.error); } });
     ['f-first', 'f-last'].forEach(function (id) { $(id).addEventListener('change', buildChips); });
     $('b-reset').addEventListener('click', reset);
     $('b-open').addEventListener('click', function () { if (last) copy(CR.stillOpen(C, last, lastCfg)); });
-    $('b-edit').addEventListener('click', function () { var p = $('f-plan'); p.scrollIntoView({ block: 'center' }); p.focus(); });
+    $('form').addEventListener('input', bare); $('form').addEventListener('change', bare);
+    $('b-edit').addEventListener('click', function () { bare(); var p = $('f-plan'); p.scrollIntoView({ block: 'center' }); p.focus(); });
     $('b-print').addEventListener('click', function () { window.print(); });
     $('b-link').addEventListener('click', makeLink);
-    $('own').addEventListener('click', function () { history.replaceState(null, '', location.pathname + location.search); routeTo(''); $('f-for').focus(); });
+    $('own').addEventListener('click', function () { bare(); routeTo(''); $('f-for').focus(); });
   })();
   V.route(routeTo);
 })();

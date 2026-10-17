@@ -348,7 +348,7 @@ async function checkAll(p, who) { await p.evaluate(who => { const m = document.g
           return out; });
         if (r.length) bad.push(nm + ': ' + r.slice(0, 4).join('; ')); }
       ck(w + ' QA H5: tiny (1–5 min) and huge (480 min) sticks in Suggest and Check (big overruns, 0-minute helper): every name box ≥30px, words break only at spaces/hyphens unless one word is wider than its box, minutes never break, every stick and its text inside its card and track, no sideways scroll', !bad.length, bad);
-      if (w >= 1024) { // where every stick is wider than --fh-stmin, the sticks stay to scale (at 641 Ben's 20-min stick is held at the readable minimum): Ben 30+30+20 of 60 ends 20 min past the roll end
+      if (w > 640) { // QA H14: the sticks are to scale at every width above 640: Ben 30+30+20 of 60 ends 20 min past the roll end
         await fill(p, CTITLE, TS, HS); await checkS4(p); await split(p); await sleep(100);
         const g = await p.evaluate(() => { const ben = document.querySelectorAll('#rolls article')[1], tr = ben.querySelector('.track').getBoundingClientRect(), roll = ben.querySelector('.roll').getBoundingClientRect(), st = [...ben.querySelectorAll('.stick')].map(x => x.getBoundingClientRect());
           return { rows: new Set(st.map(x => Math.round(x.top))).size, end: st[st.length - 1].right - tr.left, rollEnd: roll.right - tr.left, track: tr.width }; });
@@ -385,6 +385,106 @@ async function checkAll(p, who) { await p.evaluate(who => { const m = document.g
     if (w <= 640) ck(w + ' QA H8: phone: Dee (0 minutes, no tasks) shows rolledUp "' + C.rolledUp + '" right under the header; no empty track or meter (≤14px from header to label, label to stamp line)', d.label === C.rolledUp && d.zv && d.zv.t >= d.hhB - .5 && d.zv.t - d.hhB <= 14 && d.slT - d.zv.b <= 14 && d.zv.r <= d.card && d.meter === 'none' && d.head === C.zeroHead && d.aria === '“Dee”: ' + C.zeroHead, d);
     else ck(w + ' QA H8: desktop: Dee\'s roll label still on the rolled-up roll', d.label === C.rolledUp && d.zv && d.zv.t > d.hhB, d);
     ck(w + ' QA H6–H8 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+
+  // ---------- QA local-d68094a. H14 (PM 05:12): bars to scale (4px floor) at 641–1440; H11 the roll holds an under-capacity helper's bars; H9 text on the red tip ≥4.5:1
+  { const lw = (p, sel) => p.evaluate(sel => { const out = []; document.querySelectorAll(sel).forEach(box => { const W = box.clientWidth, sts = [...box.children].filter(x => x.classList.contains('stick')), floored = sts.filter(s => +s.style.getPropertyValue('--m') / +s.style.getPropertyValue('--sc') * W < 7).length;
+        sts.forEach((s, i) => { const m = +s.style.getPropertyValue('--m'), sc = +s.style.getPropertyValue('--sc'), w = s.getBoundingClientRect().width, exp = m / sc * W - (i ? 3 : 0);
+          out.push({ t: s.querySelector('.t').textContent, m, sc, W: Math.round(W), w: +w.toFixed(1), exp: +exp.toFixed(1), ok: exp < 4 ? w >= 3.5 && w <= 4.5 : Math.abs(w - exp) <= 1 + 4 * floored }); }); }); return out; }, sel);
+    const H9 = { title: 'Saturday', h: [['Ana', 30], ['Ben', 480]], t: [['Rake the long paths', 25], ['Weed every bed', 60], ['Haul bags', 200]], who: ['Ana', 'Ana', 'Ben'] };
+    const H11 = { title: 'Saturday', h: [['Ana', 15], ['Ben', 480]], t: [['Sweep', 5], ['Wipe', 5], ['Haul bags', 300]], who: ['Ana', 'Ana', 'Ben'] };
+    const TINY = [['Wab3', 5], ['Sweep the path', 5], ['Greenhouse-Greenhouse10', 120], ['rake rake rake', 480], ['Weed', 15], ['Wabcdefghijklmnopqrstuvwxyzabcdefghijkl3', 1], ['Fix gate latch', 1]];
+    const SETS = [['garden Check', CTITLE, TS, HS, null], ['H9', H9.title, H9.t, H9.h, H9.who], ['H11', H11.title, H11.t, H11.h, H11.who], ['tiny Check, Ana 10 has everything', 'Tiny', TINY, [['Ana', 10], ['Ben', 480]], TINY.map(() => 'Ana')],
+      ['tiny Suggest', 'Tiny', TINY, [['Ana', 480], ['Ben', 480], ['Cy', 480]], 'suggest'], ['12 × 5 min on a 480 roll, 3 on the bench', 'Many', Array.from({ length: 12 }, (_, i) => ['Job ' + (i + 1), 5]), [['Ana', 45], ['Ben', 480]], 'suggest']];
+    for (const w of [641, 700, 1024, 1280, 1440]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+      await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await p.evaluate(() => document.fonts.ready); const prop = [], roll = [], tip = [];
+      for (const [nm, title, tasks, helpers, who] of SETS) { await fill(p, title, tasks, helpers);
+        if (who === null) await checkS4(p); else if (who === 'suggest') await p.evaluate(() => { const m = document.getElementById('m-suggest'); m.checked = true; m.dispatchEvent(new Event('change', { bubbles: true })); }); else await checkAll(p, who);
+        await split(p); await sleep(120);
+        (await lw(p, '#rolls .sticks, #plank .sticks')).filter(x => !x.ok).forEach(x => prop.push(nm + ': ' + JSON.stringify(x)));
+        // H11: every minute that fits the roll stays on it: for each helper, the sticks before the roll end end at or before it (±1px)
+        (await p.evaluate(() => [...document.querySelectorAll('#rolls article')].map(a => { const r = a.querySelector('.roll'), sts = [...a.querySelectorAll('.stick')]; if (!r || getComputedStyle(r).display === 'none') return null;
+          const re = r.getBoundingClientRect().right; return { n: a.querySelector('.tab').textContent, re: Math.round(re), bad: sts.filter(s => !s.classList.contains('over')).filter(s => s.getBoundingClientRect().right > re + 1).map(s => s.querySelector('.t').textContent + ' ends ' + Math.round(s.getBoundingClientRect().right)) }; }).filter(x => x && x.bad.length))).forEach(x => roll.push(nm + ': ' + JSON.stringify(x)));
+        // H9: every name and minutes run sits wholly on one ground: wood (dark text), the red tip (light text) or a chalk tag (ink), each ≥4.5:1
+        (await p.evaluate(() => { const out = []; document.querySelectorAll('#rolls .stick, #plank .stick').forEach(s => { const r = s.getBoundingClientRect(), p = +s.dataset.p || 0, edge = r.right - r.width * p, out_ = s.classList.contains('out');
+          for (const e of [s.querySelector('.t'), s.querySelector('.m')]) { const rg = document.createRange(); rg.selectNodeContents(e); const rs = [...rg.getClientRects()].filter(x => x.width > 0), c = getComputedStyle(e).color;
+            const ground = out_ ? 'chalk' : rs.every(x => x.right <= edge + .5) ? 'wood' : rs.every(x => x.left >= edge - .5) ? 'red' : 'both';
+            out.push({ t: e.textContent, ground, c, p: +p.toFixed(3) }); } }); return out; })).forEach(x => {
+          const c = rgb(x.c), worst = x.ground === 'wood' ? Math.min(cr(c, [240, 215, 163]), cr(c, [210, 171, 108])) : x.ground === 'red' ? cr(c, RED) : x.ground === 'chalk' ? cr(c, [244, 239, 227]) : 0;
+          if (worst < 4.5) tip.push(nm + ': ' + JSON.stringify(Object.assign(x, { cr: +worst.toFixed(2) }))); }); }
+      ck(w + ' QA H14: every bar is to scale: width = minutes / scale × track (3px gap), ±1px; bars under 4px held at the 4px floor (bars, bench, Suggest and Check, 1–480 min)', !prop.length, prop.slice(0, 8));
+      ck(w + ' QA H11: no bar that fits the roll runs past the roll end (H11 repro: Ana 15 with Sweep 5 + Wipe 5)', !roll.length, roll.slice(0, 8));
+      ck(w + ' QA H9: every task name and minutes in a bar sits wholly on the wood (dark text), wholly on the red tip (light text) or on a chalk tag (ink): ≥4.5:1 against the lightest and darkest wood / the red / chalk (H9 repro: Ana 30, "Weed every bed" 60)', !tip.length, tip.slice(0, 8));
+      // pixels, H9 repro: the text colour against the ground right next to the "Weed every bed" name, sampled with the page painted
+      await fill(p, H9.title, H9.t, H9.h); await checkAll(p, H9.who); await split(p); await sleep(150);
+      const g = await p.evaluate(() => { const s = [...document.querySelectorAll('#rolls .stick')].find(x => x.querySelector('.t').textContent === '“Weed every bed”'), t = s.querySelector('.t').getBoundingClientRect(), m = s.querySelector('.m').getBoundingClientRect(); return { cls: s.className, c: getComputedStyle(s.querySelector('.t')).color, tl: t.left, tt: t.top, tb: t.bottom, mr: m.right, mt: m.top }; });
+      const px = await pixels(p, s.b, [[g.tl - 3, (g.tt + g.tb) / 2], [g.mr + 3, g.mt + 4]]), h9 = { cls: g.cls, color: g.c, ground: px, cr: px.map(b => +cr(rgb(g.c), b).toFixed(2)) };
+      ck(w + ' QA H9 pixels: "Weed every bed" (92% over): its name and minutes are light on the red, ≥4.5:1 against the painted ground beside them', h9.cr.every(c => c >= 4.5), h9);
+      ck(w + ' QA H9/H11/H14 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); } }
+
+  // ---------- QA H10: the focus ring is ≥3:1 against every colour next to it, measured from pixels at every focus stop (form, form with errors, results) at 390 and 1280
+  for (const w of [390, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.evaluateOnNewDocument(clipStub);
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await p.evaluate(() => document.fonts.ready); const bad = [], seen = [];
+    const walk = async (state, max) => { await p.evaluate(() => { window.scrollTo(0, 0); const d = document.createElement('span'); d.tabIndex = -1; document.body.prepend(d); d.focus(); d.blur(); d.remove(); });
+      let first = null;
+      for (let i = 0; i < max; i++) { await p.keyboard.press('Tab'); await sleep(40);
+        const f = await p.evaluate(() => { const e = document.activeElement; if (!e || e === document.body) return null; const t = e.closest('.modes') || e; t.scrollIntoView({ block: 'center' }); const b = t.getBoundingClientRect();
+          return { id: e.id || e.tagName + '.' + e.className, fv: e.matches(':focus-visible'), l: b.left, r: b.right, t: b.top, b: b.bottom, cy: (b.top + b.bottom) / 2, cx: (b.left + b.right) / 2 }; });
+        if (!f) break; if (first === f.id) break; first = first || f.id; await sleep(30);
+        const f2 = await p.evaluate(() => { const e = document.activeElement, t = e.closest('.modes') || e, b = t.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; }); Object.assign(f, f2, { cy: (f2.t + f2.b) / 2, cx: (f2.l + f2.r) / 2 });
+        const pts = [[f.l - 9.5, f.cy], [f.l - 6, f.cy], [f.l - 3.5, f.cy], [f.l - 1, f.cy], [f.l + 1, f.cy], [f.cx, f.t - 9.5], [f.cx, f.t - 6], [f.cx, f.t - 3.5], [f.cx, f.t - 1], [f.cx, f.t + 1]];
+        const px = await pixels(p, s.b, pts), sides = [px.slice(0, 5), px.slice(5)].map(([out, ink1, yel, ink2, edge]) => ({ out, ink1, yel, ink2, edge, a: +cr(out, ink1).toFixed(2), b: +cr(ink1, yel).toFixed(2), c: +cr(yel, ink2).toFixed(2), d: +cr(ink2, edge).toFixed(2) }));
+        const ok = f.fv && sides.every(q => near(q.yel, [242, 194, 48], 10) && near(q.ink1, [31, 33, 36], 10) && near(q.ink2, [31, 33, 36], 10) && q.a >= 3 && q.b >= 3 && q.c >= 3 && (q.d >= 3 || near(q.edge, [31, 33, 36], 12)));
+        seen.push(state + ' ' + f.id); if (!ok) bad.push({ state, id: f.id, fv: f.fv, sides }); } };
+    await walk('form', 40); await fill(p, '', [['', '']], [['', '']]); await split(p); await walk('form+errors', 40);
+    await fill(p, CTITLE, TS, HS); await split(p); await walk('results', 60);
+    ck(w + ' QA H10: at every focus stop (' + seen.length + ': form, form with errors, results) the ring is ink | yellow | ink, each edge ≥3:1 (outside/ink, ink/yellow, yellow/ink; ink/element ≥3:1 or the element\'s own ink edge), sampled left and top from pixels', seen.length >= 30 && !bad.length, { n: seen.length, bad: bad.slice(0, 6) });
+    // H13: error text ≥4.5:1 and invalid borders ≥3:1 against what they sit on (pixels)
+    await fill(p, '', [['', '']], [['', '']]); await split(p); await sleep(150);
+    const e = await p.evaluate(() => { const m = [...document.querySelectorAll('#form .errmsg')].find(x => !x.hidden && x.getClientRects().length), f = document.querySelector('[aria-invalid=true]'); m.scrollIntoView({ block: 'center' }); const a = m.getClientRects()[0], b = f.getBoundingClientRect();
+      return { c: getComputedStyle(m).color, bc: getComputedStyle(f).borderLeftColor, ml: a.left, mt: a.top, mb: a.bottom, mr: a.right, fl: b.left, fcy: (b.top + b.bottom) / 2, fb: b.bottom, fcx: (b.left + b.right) / 2 }; });
+    const ep = await pixels(p, s.b, [[e.mr + 4, (e.mt + e.mb) / 2], [e.ml, e.mb + 1], [e.fl + 1, e.fcy], [e.fl + 4, e.fcy], [e.fcx, e.fb + 4]]), tc = rgb(e.c);
+    const h13 = { text: e.c, border: e.bc, textOn: [ep[0], ep[1]].map(b => +cr(tc, b).toFixed(2)), borderPx: ep[2], borderVsField: +cr(ep[2], ep[3]).toFixed(2), borderVsPanel: +cr(ep[2], ep[4]).toFixed(2) };
+    ck(w + ' QA H13: error text (' + e.c + ') ≥4.5:1 on the panel; invalid-field border ≥3:1 against the field and the panel (pixels)', e.c === 'rgb(174, 47, 27)' && h13.textOn.every(c => c >= 4.5) && h13.borderVsField >= 3 && h13.borderVsPanel >= 3, h13);
+    ck(w + ' QA H10/H13 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+
+  // ---------- QA H12: the sheet table stays inside the sheet at 641/700/739/800, on screen and in print media (24-letter one-word helper, 40-letter one-word task)
+  { const s = await session(H, IP); const { p } = s; const bad = [];
+    for (const w of [641, 700, 739, 800, 1024]) { await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+      for (const [nm, helpers, who] of [['over', [['Abcdefghijklmnopqrstuvwx', 60], ['Ben', 120]], ['Abcdefghijklmnopqrstuvwx', 'Abcdefghijklmnopqrstuvwx', 'Ben']], ['hyphenated, under', [['Abcdefghijk-lmnopqrstuvw', 120], ['Ben', 120]], ['Abcdefghijk-lmnopqrstuvw', 'Abcdefghijk-lmnopqrstuvw', 'Ben']]]) {
+        await fill(p, 'Sheet', [['Wabcdefghijklmnopqrstuvwxyzabcdefghijkl3', 50], ['Weed beds', 30], ['Haul', 20]], helpers); await checkAll(p, who); await split(p); await sleep(120);
+        for (const media of [null, 'print']) { await p.emulateMediaType(media); await sleep(80);
+          const r = await p.evaluate(() => { const sh = document.getElementById('sheet'), t = document.getElementById('sheet-t'), cs = getComputedStyle(sh), inner = sh.getBoundingClientRect().right - parseFloat(cs.paddingRight) - parseFloat(cs.borderRightWidth);
+            const cells = [...t.querySelectorAll('td')].filter(c => c.getClientRects().length), over = cells.filter(c => c.scrollWidth > c.clientWidth + 1).map(c => c.textContent.slice(0, 30));
+            const nums = cells.filter(c => /\d/.test(c.textContent)).flatMap(c => { const out = []; const tw = document.createTreeWalker(c, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) { const re = /\d+/g; let m; while ((m = re.exec(n.textContent))) { const rg = document.createRange(); rg.setStart(n, m.index); rg.setEnd(n, m.index + m[0].length); if (new Set([...rg.getClientRects()].filter(x => x.width).map(x => Math.round(x.top))).size > 1) out.push(m[0]); } } return out; });
+            return { tableR: Math.round(t.getBoundingClientRect().right), inner: Math.round(inner), over, nums, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }; });
+          if (r.tableR > r.inner + 1 || r.over.length || r.nums.length || (!media && r.sw > r.cw)) bad.push(w + ' ' + nm + ' ' + (media || 'screen') + ': ' + JSON.stringify(r)); }
+        await p.emulateMediaType(null); } }
+    ck('QA H12: at 641/700/739/800/1024 the sheet table stays inside the sheet, on screen and in print media (24-letter one-word and hyphenated helper, 40-letter one-word task, over and under): no cell overflows, no number split across lines, no sideways scroll', !bad.length, bad.slice(0, 6));
+    ck('QA H12 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+
+  // ---------- PM 04:57 query rulings. (a) links this piece makes never carry '?', and a ?q=<marker> on the sender page or a received link is never shown,
+  // used or copied; (b) query-strip: every address-bar rewrite (load, Make my own copy, Start over) writes path + #fragment only: location.search stays '',
+  // the #fragment is kept where it was kept before (a received link) and cleared where it was cleared before (Make my own copy, Start over).
+  for (const [QN, QQ] of [['short', '?q=Qzst57'], ['html+script with a visitor name', '?q=' + encodeURIComponent('<script>alert("Ana")</script><b onclick=x>Ana Qzst57</b>') + '&name=Qzst57&title=Qzst57'], ['2,100-char pad', '?q=Qzst57' + 'p'.repeat(2100)]]) {
+    const QM = 'Qzst57', s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 });
+    await p.evaluateOnNewDocument(() => { window.__q = []; window.confirm = () => true; window.print = () => window.__q.push('print:' + document.body.innerText); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: t => { window.__q.push('clip:' + t); return Promise.resolve(); } } }); });
+    const scan = () => p.evaluate(M => { const a = []; document.querySelectorAll('*').forEach(e => { for (const n of e.getAttributeNames()) if ((e.getAttribute(n) || '').includes(M)) a.push(e.tagName + '@' + n); });
+      return { search: location.search, hash: location.hash, href: location.href.includes(M), text: document.body.innerText.includes(M) || document.title.includes(M), attrs: a, vals: [...document.querySelectorAll('input,textarea,select')].filter(e => String(e.value).includes(M)).map(e => e.id), outs: window.__q.filter(x => x.includes(M)).length, links: [...document.querySelectorAll('#link')].map(e => e.value).filter(Boolean) }; }, QM);
+    const steps = [], at = async (step, exp, did = true) => { const r = await scan(); steps.push(Object.assign({ step, did, exp, hashOk: r.hash === exp }, r, { hash: r.hash.slice(0, 40) })); return r; };
+    const open = async url => { await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(300); };
+    await open(BASE); const fq = await p.evaluate(() => { const h = [{ name: 'Ana', min: 60 }, { name: 'Ben', min: 30 }], t = [{ name: 'Rake paths', min: 45 }, { name: 'Weed', min: 20 }]; return FH.encode('Saturday', h, t, FH.suggest(h, t)); }), F = '#' + fq;
+    await open(BASE + QQ); await at('open the sender page with the query', '');
+    await fill(p, 'Saturday', [['Rake paths', 45], ['Weed', 20]], [['Ana', 60], ['Ben', 30]]); await split(p); await p.click('#b-link'); await sleep(150);
+    await p.evaluate(() => { document.querySelectorAll('#rolls article .hhead button').forEach(b => b.click()); document.getElementById('b-print').click(); }); await sleep(150); await at('split, make a link, copy the cards, print', '');
+    const r1 = await p.evaluate(() => document.getElementById('b-reset') && !document.getElementById('b-reset').disabled); await p.click('#b-reset'); await sleep(200); await at('Start over', '', r1);
+    await open(BASE + QQ + F); const rv = await at('open a received link with the query', F); const okRecv = await p.evaluate(() => !document.getElementById('recv').hidden && document.querySelectorAll('#rolls article').length === 2);
+    await p.evaluate(() => { document.querySelectorAll('#rolls article .hhead button').forEach(b => b.click()); }); await sleep(100); await at('copy the cards (recipient)', F);
+    await p.click('#own'); await sleep(250); await at('Make my own copy', ''); await p.click('#b-link'); await sleep(150); const own = await at('make a link from my own copy', '');
+    await open(BASE + QQ + F); await p.click('#own'); await sleep(250); await p.click('#b-reset'); await sleep(200); await at('received -> Make my own copy -> Start over', '');
+    const links = steps.flatMap(x => x.links);
+    ck('PM 04:57 query-strip (' + QN + '): ' + steps.map(x => x.step).join(' -> ') + ': location.search empty, no marker in the address bar, #fragment kept on the received link and cleared after Make my own copy / Start over', okRecv && steps.length === 9 && steps.every(x => x.did && x.search === '' && !x.href && x.hashOk), steps.map(x => ({ step: x.step, search: x.search.slice(0, 30), hash: x.hash, exp: (x.exp || '').slice(0, 40), href: x.href })));
+    ck('query ruling (' + QN + '): links made here carry no "?" (' + links.length + ': sender, own copy); the marker is nowhere in page text, attributes, field values or copied/printed text', links.length >= 2 && !links.some(u => u.includes('?')) && steps.every(x => !x.text && !x.attrs.length && !x.vals.length && !x.outs), steps.filter(x => x.text || x.attrs.length || x.vals.length || x.outs).map(x => ({ step: x.step, text: x.text, attrs: x.attrs, vals: x.vals, outs: x.outs })).concat(links.filter(u => u.includes('?'))));
+    ck('query (' + QN + '): no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
 
   // ---------- QA H3: the WHOLE URL is capped at 2,000 on send and receive (shared MILLVIEW.linkFor), tested under a long path (/mill/ + slashes + five-hands/)
   { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: 390, height: 900 }); await p.evaluateOnNewDocument(clipStub);
