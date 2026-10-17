@@ -178,4 +178,29 @@ t('fit L1: an existing hyphen never gets a second one added next to it; a leadin
   r.lines.forEach(l => assert.ok(!/--$/.test(l))); });
 t('fit L1: an emoji run that fits stays whole on its own line (Pizza 🍕🍕🍕 party)', () => {
   const r = P('Pizza \u{1F355}\u{1F355}\u{1F355} party', 136); assert.ok(r.lines.includes('\u{1F355}\u{1F355}\u{1F355}'), JSON.stringify(r.lines)); assert.equal(r.broken, false); });
+// Creative r5 (after f66fb8e): a single word takes the fewest pieces before the larger size
+const NOOO = 'N' + 'o'.repeat(29), piecesAt = (w, a, size) => { const g = F.plan(w, Object.assign(fake(a), { sizes: [size] })); return g.overflow ? Infinity : g.lines.length; };
+t('fit r5: single word = fewest pieces at any size >= 24px, then the largest size for that count (30-letter Nooo…)', () => {
+  for (const [a, base] of [[136, 26.8], [159, 32.6], [171, 54.6], [300, 44.8], [600, 112]]) { const sz = F.sizes(base, 24), r = P(NOOO, a, base);
+    const best = Math.min(...sz.map(x => piecesAt(NOOO, a, x))); assert.equal(r.lines.length, best, a + ' ' + JSON.stringify(r));
+    const bigger = sz.filter(x => x > r.size); assert.ok(bigger.every(x => piecesAt(NOOO, a, x) > best), a + ': a larger size with as few pieces exists');
+    assert.ok(r.size >= 24); r.lines.forEach((l, i, all) => { assert.ok(letters(l) >= 4); if (i < all.length - 1) assert.ok(l.endsWith('-')); }); assert.equal(r.lines.join('').replace(/-/g, ''), NOOO); } });
+const fitsFn = (o, size) => (x, f, l) => { const m = o.measure(x, f, l); return (m.w + m.marks) * size / 100 <= o.avail - 1 && (m.w + m.hang) * size / 100 <= o.full - 1; };
+const oldPlan = (w, a, base) => { const o = fake(a), sz = F.sizes(base, 24), PP = F.parse(w); for (let L = 0; L <= 3; L++) for (const x of sz) { const g = F.greedy(PP, fitsFn(o, x), L); if (g) return { size: x, lines: g.lines }; } return null; };
+t('fit r5: narrow tiles take fewer pieces than f66fb8e did (largest size first gave Nooo- x5-6); count = the minimum possible at >= 24px', () => {
+  for (const [a, base] of [[130, 26.8], [159, 32.6], [171, 54.6]]) { const r = P(NOOO, a, base), old = oldPlan(NOOO, a, base);
+    assert.ok(a === 130 ? r.lines.length <= old.lines.length : r.lines.length < old.lines.length, a + ' new ' + JSON.stringify(r.lines) + ' old ' + JSON.stringify(old.lines)); assert.ok(r.size <= old.size); } });
+t('fit r5: a word that fits unbroken at any size >= 24 stays unbroken (smaller size, no break)', () => {
+  for (const [w, a] of [["Grandmother's", 220], ['Nooooooooooo', 200], ['Abcdefghijklmnop', 260]]) { const r = P(w, a, 60); assert.deepEqual(r.lines, [w], w); assert.equal(r.broken, false); assert.ok(r.size >= 24); } });
+t('fit r5: a single hyphenated word also takes the fewest pieces (Bartholomew-Smythe: 2 pieces at its hyphen when that fits at >= 24)', () => {
+  const r = P('Bartholomew-Smythe', 200, 60); assert.deepEqual(r.lines, ['Bartholomew-', 'Smythe']); assert.deepEqual(r.kinds, ['h']); });
+t('fit r5: if even the most pieces cannot fit at 24px, the old behaviour stands (one overflow line at the floor)', () => {
+  const r = P(NOOO, 30, 44.8); assert.equal(r.overflow, true); assert.equal(r.size, 24); assert.deepEqual(r.lines, [NOOO]); });
+t('fit r5: multi-word answers are unchanged (greedy at the largest size, same as the reference)', () => {
+  for (const [w, a] of [['Watch a movie at home', 136], ['Twenty-two-year-old cat', 136], ['Nooooooooooooooooooo yes', 136], ['Mother-in-law visit', 136], ['Pizza night at the lake house', 171]]) { const r = P(w, a), old = oldPlan(w, a, 44.8);
+    assert.deepEqual([r.size, r.lines], [old.size, old.lines], w); if (!/o{8}/.test(w)) assert.deepEqual(r.lines, refGreedy(w, fake(a), r.size), w); } });
+t('fit: Japanese breaks between characters with no Latin hyphen; no line starts with small kana, ー or closing marks, none ends on an opening bracket', () => {
+  for (const [w, a] of [['今日は映画を見に行きましょう', 136], ['今日は映画を見に行きましょう', 90], ['チョコレートケーキ', 100], ['「映画」を見に行こう', 100], ['ありがとう、ございます。', 110]]) { const r = P(w, a, 44.8);
+    assert.ok(r.lines.length > 1, w + ' ' + JSON.stringify(r.lines)); assert.equal(r.lines.join(''), w, w); assert.ok(!r.lines.some(l => /[-\u2010\u00AD]/.test(l)), w + ' ' + JSON.stringify(r.lines));
+    assert.ok(r.kinds.every(k => k === 'c'), w + ' ' + JSON.stringify(r.kinds)); assert.ok(!r.lines.slice(1).some(l => /^[ぁぃぅぇぉっゃゅょァィゥェォッャュョーヽヾゝゞ々、。，．」』）】〉》！？]/.test(l)), w + ' ' + JSON.stringify(r.lines)); assert.ok(!r.lines.slice(0, -1).some(l => /[「『（【〈《]$/.test(l)), w); } });
 console.log('lr unit: ' + n + ' passed');
