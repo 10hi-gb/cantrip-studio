@@ -253,6 +253,24 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     ck('C2/C3/C7 session: no page errors, no off-origin requests', !errsOf(s, SCHEME).length && !netCheck(s.reqs, H, []).offending.length, errsOf(s, SCHEME)); await s.b.close();
   }
   {
+    // QA local-e5780b7 C8: a wide-glyph 16-char Other label must never widen the page (305 = 320 minus a classic scrollbar, 320, 390)
+    const s = await session(H, IP), { p } = s; const bad = []; let runs = 0;
+    for (const w of [305, 320, 390]) for (const label of ['WWWWWWWWWWWWWWWW', 'MMMMMMMMMMMMMMMM', 'WMWmWMwMWMWmWMWM', 'Wheelchair-Washs', 'MW WM-MWMW WMWMW']) {
+      await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(120);
+      await form(p, { forName: 'Priya', org: 'Jess', first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', rule: 'every' }, { key: 'other', label, rule: 'every' }], lines: ['Mon 19 dinner Ana'] }); await check(p);
+      const r = await p.evaluate(() => { const iw = innerWidth, out = { sw: document.documentElement.scrollWidth, iw, clipped: [], small: [] };
+        const inView = e => { const rg = document.createRange(); rg.selectNodeContents(e); const b = rg.getBoundingClientRect(); return !b.width || (b.left >= -.5 && b.right <= iw + .5); };
+        const targets = [document.querySelector('.qgrid'), ...document.querySelectorAll('.qgrid .patch .need, .qgrid .patch .who, .qgrid .patch .d, #tags .tag p, #stamp-2, #tally')];
+        for (const e of targets) { if (!e || !e.getClientRects().length) continue; const b = e.getBoundingClientRect(); if (b.left < -.5 || b.right > iw + .5 || !inView(e) || (getComputedStyle(e).display !== 'inline' && e.scrollWidth > e.clientWidth + 1)) out.clipped.push((e.id || e.className) + ':' + e.textContent.slice(0, 40));
+          if (parseFloat(getComputedStyle(e).fontSize) < 10) out.small.push(e.className); }
+        out.gapTags = [...document.querySelectorAll('#tags .tag p')].filter(e => /^Gap:/.test(e.textContent)).length; out.stamp = document.getElementById('stamp-2').textContent;
+        return out; }); runs++;
+      if (!(r.sw <= r.iw && !r.clipped.length && !r.small.length && r.gapTags >= 7 && /^Plan checked/.test(r.stamp))) bad.push(Object.assign({ w, label }, r)); }
+    ck('QA C8: Other label W×16, M×16, mixed, hyphenated and spaced at 305/320/390: document.scrollWidth <= innerWidth; grid, patches, GAP tags and "Plan checked" fully in view and unclipped; nothing under 10px', !bad.length && runs === 15, bad.slice(0, 3));
+    const a = await wrapAudit(p); ck('QA C8: the W×16 / mixed grid at 390 still passes the PM wrap audit (mid-word only when one word cannot fit)', a.ok, a);
+    ck('C8 session: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
+  }
+  {
     // C1: the WHOLE URL is capped at 2,000, made side and received side, at 1999 / 2000 / 2001 chars, via a long path on a local
     // throwaway server (nested dirs + a symlink to the repo). Date.now frozen so the made fragment is stable.
     const os = require('os'), path = require('path'), { spawn } = require('child_process'), REPO = path.resolve(__dirname, '../..');

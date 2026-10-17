@@ -155,4 +155,13 @@ t('placement sweep vs an independent reference (port of QA ref.py, 6,000 random 
     else if (e.kind === 'ambiguous') assert.equal(row.result, 'ambiguous', line); else { assert.equal(row.result, 'toFix', line); assert.equal(gd, null, line); }
     checked++; }
   assert.ok(checked > 5800, checked); console.log('   sweep: ' + checked + ' matched the reference; ' + monthAsBareName + ' "Month N need" lines asked for a name (never misplaced)'); });
+t('QA local-e5780b7 regression names: Corey, Orla, Andrea, Leonor, Igor placed as single helpers, alone and inside a plan; lowercase right side "Ana orben" unchanged (placed as typed)', () => {
+  const NM = ['Corey', 'Orla', 'Andrea', 'Leonor', 'Igor'];
+  for (const nm of NM) for (const l of ['Mon 19 dinner ' + nm, nm + ': Mon 19 dinner', nm + ' Mon 19 dinner', 'Mon 19 ' + nm + ' dinner']) { const r = CR.check(CFG, [l]);
+    assert.deepEqual([r.rows[0].result, r.issues.length], ['placed', 0], l); assert.deepEqual(got(r), { '2026-10-19 Dinner': [nm] }, l); }
+  const days = ['Mon 19', 'Tue 20', 'Wed 21', 'Thu 22', 'Fri 23'], lines = NM.map((nm, i) => days[i] + ' walk ' + nm).concat(FIXED.filter(l => !/ walk /.test(l)));
+  const r = CR.check(CFG, lines); assert.ok(!r.issues.length, JSON.stringify(r.issues));
+  for (const [i, nm] of NM.entries()) assert.deepEqual(got(r)[CR.iso(T('2026-10-' + (19 + i))) + ' Dog walk'], [nm], nm);
+  assert.deepEqual(r.helpers.filter(h => NM.includes(h.name)).map(h => h.name + ' ' + h.items.length), NM.map(n => n + ' 1'));
+  const o = CR.check(CFG, ['Mon 19 dinner Ana orben']); assert.deepEqual([o.rows[0].result, o.rows[0].name], ['placed', 'Ana orben']); });
 console.log('PASS ' + n + ' tests');

@@ -50,7 +50,7 @@ textarea.plan{font:400 17px/1.5 ui-monospace,"Courier New",monospace;min-height:
 @media (max-width:560px){
  .readas td::before{content:attr(data-l)!important;font-weight:700}
  .readas td:first-child::before,.readas td:last-child::before{content:none!important}
- .qgrid{grid-template-columns:1fr!important}
+ .qgrid{grid-template-columns:minmax(0,1fr)!important} /* QA C8: the track may shrink below a long word's min-content */
  .btnrow .btn{flex:1 1 100%}
 }
 @media print{
@@ -98,3 +98,16 @@ textarea.plan{font:400 17px/1.5 ui-monospace,"Courier New",monospace;min-height:
 /* QA C2: theme.css:156 shows section.printme unconditionally in print; Creative's theme stays verbatim, so this overrides it:
    the sheet prints only while a current sheet exists (body.has-sheet, set by sheetView, cleared on Start over / own copy / bad link). */
 @media print{body:not(.has-sheet) section.printme{display:none!important}}
+/* QA local-e5780b7 C8: a single wide word (e.g. 16 W's as the Other label) must never widen the page. Every ancestor of the grid
+   can shrink (min-width:0 / minmax(0,1fr)); in the ≤560 row layout the need label shrinks and wraps (break-word, mid-word only as
+   a last resort) instead of holding its min-content width. No overflow-wrap:anywhere, no break-all. */
+#s2,.cr-check,.cr-check>div,#quilts,.quilt,.qgrid,.qgrid .patch{min-width:0}
+/* every typed value that can show up in text (tags, cards, per-helper list, reading table, sheet, banners) wraps under the same rule */
+body{overflow-wrap:break-word}
+#tags,.tag,.tag p,#cards,.hcard,#per-l,#pocket-l,.readas,.readas td,#sheet-t td{min-width:0}
+@media (max-width:900px){.cols.rev.cr-check{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){
+ .qgrid .patch>span{flex-shrink:1}
+ .qgrid .patch .d{flex-shrink:0}
+ .qgrid .patch .need,.qgrid .patch .who{min-width:0;max-width:100%}
+}
