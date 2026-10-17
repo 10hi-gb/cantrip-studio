@@ -6,7 +6,7 @@
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function btn(cls, txt, fn) { var b = el('button', cls, txt); b.type = 'button'; b.addEventListener('click', fn); return b; }
   function toast(m) { V.toast(m, 3200); } // shared: route() clears it (QA N2)
-  function clearHash() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); }
+  function clearHash() { if (location.hash || location.search) history.replaceState(null, '', location.pathname); }
   function changed() { clearHash(); $('linkbox').hidden = true; $('fbwrap').hidden = true; }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function qu(q, u) { return O.qtyUnit(q, u); }
@@ -218,6 +218,7 @@
   }
   // Every load and every hashchange (valid, bad, old or empty) starts from a blank tab: nothing from a previous link survives.
   function load(h) {
+    if (location.search) history.replaceState(null, '', location.pathname + location.hash); // PM 04:57: the address bar never keeps a ?query (path + #fragment only)
     var bn = $('banner');
     st = O.blank(); checks = {}; editing = null; mode = 'own'; isCopy = false; prevSig = null; hhTouched = {}; $('link-l').textContent = C.linkLabel; $('banner-typed').hidden = true;
     $('f-add').textContent = C.addRow; $('f-cancel').hidden = true; V.clearInputs($('form')); $('f-s').disabled = false;
