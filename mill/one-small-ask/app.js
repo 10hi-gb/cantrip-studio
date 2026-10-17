@@ -205,7 +205,8 @@
   function routeTo(h) {
     choice = null; offer = null; note = ''; touched = {}; ask = null; reply = null; $('banner').hidden = true; V.clearErrors(document, '.osa-err'); $('link').value = ''; $('linkbox').hidden = true;
     if (!h) { draft = blankDraft(); return compose(); }
-    var d = A.decode(h);
+    // PM 03:48: the WHOLE received URL (origin + path + # + fragment) is capped at 2,000 with the shared MILLVIEW.linkFor before decode, same as sending
+    var d = V.linkFor(h.replace(/^#/, '')) ? A.decode(h) : { ok: false, why: 'bad' };
     if (d.ok && d.kind === 'ask') { ask = d.data; return answer(); }
     if (d.ok && d.kind === 'reply') { reply = d.data; return readReply(); }
     draft = blankDraft(); compose(); $('banner').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; $('banner').hidden = false;

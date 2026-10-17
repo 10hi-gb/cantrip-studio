@@ -226,5 +226,35 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
       const a = await typedAudit(p, [DAY, 'Call 555-0100 first'], Object.assign({ copied: tx, print: pb }, Object.fromEntries(clip.map((c, i) => ['clipboard#' + i, c]))));
       ck(w + ' N5 ' + tag + ': the typed Day is quoted with Q1 neutralising everywhere (When row, Part column, delta, aria, print, copy text, clipboard)', a.ok, a.hits); }
     ck(w + ' N5/N6 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // PM 03:48 (audit 04:00): the WHOLE received URL is capped at 2,000 with the shared MILLVIEW.linkFor before decode (as in Sack, Even Up, Care Rota).
+  // Normal path /mill/one-small-ask/ under a long *.localhost origin (Chrome resolves *.localhost to this server; hostnames up to 253) and a long path (throwaway
+  // server, nested dirs + symlink to this tree): 1999 and 2000 open; 2001 and 2040 show this piece's bad-link message and nothing received.
+  { const fsx = require('fs'), osx = require('os'), pathx = require('path'), { spawn } = require('child_process'), REPO = pathx.resolve(__dirname, '../..');
+    const X = require('../../mill/one-small-ask/ask.js'), CX = require('vm').runInNewContext(fsx.readFileSync(__dirname + '/../../mill/one-small-ask/copy.js', 'utf8') + ';COPY');
+    const MARK = 'Zqxd7', em = '\u{1F600}', E = (k, ch) => ch.repeat(k);
+    const pickF = (gen, lo, hi) => { for (let k = 0; k < 400; k++) { const f = gen(k); if (f && f.length >= lo && f.length <= hi) return f; } return null; };
+    const BIG = pickF(k => X.encodeReply({ a: { w: MARK + ' water the plants ' + E(100, em), e: 20, u: 'min', d: E(40, em), s: '16:00', t: '18:00', h: E(80, em), f: E(24, em), o: E(24, em) }, v: 'y', p: null, n: E(Math.min(k, 120), em) }), 1760, 1960), SMALL = X.encodeAsk({ w: MARK + ' water the plants', e: 20, u: 'min', d: 'Tue Oct 20', s: '16:00', t: '18:00', h: '', f: 'Ana', o: 'Sam' });
+    const s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 });
+    const openAt = async url => { await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(300);
+      return p.evaluate((MARK, bad) => { const t = document.body.innerText; return { len: location.href.length, opened: t.includes(MARK) && !t.includes(bad), bad: t.includes(bad) && !t.includes(MARK) }; }, MARK, CX.badLink); };
+    const port = H.includes(':') ? ':' + H.split(':').pop() : '', PATH = '/mill/one-small-ask/', fixed = (SCHEME + '://').length + port.length + PATH.length + 1 + BIG.length;
+    const hostOf = n => { const labels = []; let left = n - 10; while (left > 0) { const k = Math.min(63, left > 63 ? left - 1 : left); labels.push('a'.repeat(k)); left -= k + 1; } const h = labels.join('.') + '.localhost'; if (h.length !== n) throw new Error('host ' + h.length + ' != ' + n); return h; };
+    const normal = {}, maxN = fixed + 253;
+    for (const want of [1999, 2000, 2001, 2040]) { const total = Math.min(want, maxN); const r = await openAt(SCHEME + '://' + hostOf(total - fixed) + port + PATH + '#' + BIG); r.want = want; normal[want] = r; }
+    const root = fsx.mkdtempSync(osx.tmpdir() + '/d7-one-small-ask-'); const srv = spawn('python3', ['-u', '-m', 'http.server', '0', '--bind', '127.0.0.1', '--directory', root], { stdio: ['ignore', 'pipe', 'pipe'] }); const long = {};
+    try { const lport = await new Promise((res, rej) => { let b = ''; const f = d => { b += d; const m = /port (\d+)/.exec(b); if (m) res(+m[1]); }; srv.stdout.on('data', f); srv.stderr.on('data', f); setTimeout(() => rej(new Error('no port')), 8000); });
+      const ORIGIN = 'http://127.0.0.1:' + lport; let tag = 0;
+      const pathOf = total => { let left = total - 1 - PATH.length; const segs = []; tag++;
+        while (left > 0) { let k = left > 200 ? (left === 201 ? 199 : 200) : left; left -= k; if (left) left -= 1; segs.push(segs.length ? 'a'.repeat(k) : ('t' + tag + '_' + 'a'.repeat(k)).slice(0, k)); }
+        let dir = root; segs.slice(0, -1).forEach(x => { dir = pathx.join(dir, x); fsx.mkdirSync(dir, { recursive: true }); }); fsx.symlinkSync(REPO, pathx.join(dir, segs[segs.length - 1]));
+        const P = '/' + segs.join('/') + PATH; if (P.length !== total) throw new Error('path ' + P.length + ' != ' + total); return P; };
+      for (const total of [1999, 2000, 2001, 2040]) long[total] = await openAt(ORIGIN + pathOf(total - ORIGIN.length - 1 - SMALL.length) + '#' + SMALL);
+    } finally { srv.kill(); }
+    const over = Object.values(normal).filter(r => r.len > 2000);
+    ck('whole-URL receive cap, normal path (fragment ' + BIG.length + ', long origin): 1999 and 2000 open; over 2,000 (2001, ' + (maxN >= 2040 ? '2040' : maxN + ' = longest reachable with a 253-char host') + ') -> bad-link message, nothing received',
+      normal[1999].len === 1999 && normal[1999].opened && normal[2000].len === 2000 && normal[2000].opened && normal[2001].len === 2001 && over.length >= 2 && over.every(r => r.bad && !r.opened) && (maxN >= 2040 ? normal[2040].len === 2040 : normal[2040].len === maxN), normal);
+    ck('whole-URL receive cap, long path (fragment ' + SMALL.length + '): 1999 and 2000 open; 2001 and 2040 -> bad-link message, nothing received',
+      [1999, 2000].every(t => long[t].len === t && long[t].opened) && [2001, 2040].every(t => long[t].len === t && long[t].bad && !long[t].opened), long);
+    ck('whole-URL receive cap: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
