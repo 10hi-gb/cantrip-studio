@@ -113,11 +113,11 @@
         else { var parts = []; m.forEach(function (x) { var a = T.localMin(x.a, d.date, st.z), b = T.localMin(x.b, d.date, st.z), r = el('span', 'tsh-rib'); r.style.setProperty('--s', frac(a, w)); r.style.setProperty('--e', frac(b, w)); r.style.setProperty('--c', color(i)); r.style.setProperty('--i', i); r.title = M.fill(C.ribbonAria, { name: p.name, day: DF.fmt(d.date) }) + ', ' + T.hhmm(a) + '–' + T.hhmm(b); lane.appendChild(r); parts.push(T.hhmm(a) + '–' + T.hhmm(b)); }); aria.push(p.name + ': ' + parts.join(', ') + ';'); }
         var lab = el('span', 'tsh-lane-label', p.name + (m.length ? '' : ' ?')); lab.title = p.name; lane.appendChild(lab); wv.appendChild(lane);
       });
-      function seam(x, cls, text) { var a = T.localMin(x.a, d.date, st.z), b = T.localMin(x.b, d.date, st.z), s = el('div', 'tsh-seam' + (cls ? ' ' + cls : ''), text); s.style.setProperty('--s', frac(a, w)); s.style.setProperty('--e', frac(b, w)); s.setAttribute('aria-hidden', 'true'); wv.appendChild(s); return [T.hhmm(a), T.hhmm(b)]; }
+      function seam(x, cls, text) { var a = T.localMin(x.a, d.date, st.z), b = T.localMin(x.b, d.date, st.z), s = el('div', 'tsh-seam' + (cls ? ' ' + cls : ''), text); s.style.setProperty('--s', frac(a, w)); s.style.setProperty('--e', frac(b, w)); wv.appendChild(s); return [T.hhmm(a), T.hhmm(b)]; }
       d.options.forEach(function (x) { var tt = seam(x, x.a === selA ? 'is-picked' : '', ''); var s = wv.lastChild; s.textContent = tt[0] + '–' + tt[1]; aria.push(M.fill(C.overlapAria, { day: DF.fmt(d.date), start: tt[0], end: tt[1] }) + '.'); });
       d.short.forEach(function (x) { var tt = seam(x, 'is-short', lenText(x.len)); aria.push(M.fill(C.tooShortLine, { day: DF.fmt(d.date), start: tt[0], end: tt[1], length: lenText(x.len) })); });
       d.maybe.forEach(function (x) { var who = d.unknown.map(nm).join(', '); var tt = seam(x, 'is-maybe', who + ' ?'); aria.push(M.fill(C.proposalExcluded, { day: DF.fmt(d.date), start: tt[0], end: tt[1], name: who, dayName: DL.format(d.date) })); });
-      d.touch.forEach(function (t) { var m = T.localMin(t, d.date, st.z), p = el('div', 'tsh-touch'); p.style.setProperty('--s', frac(m, w)); p.setAttribute('aria-hidden', 'true'); p.appendChild(el('span', null, T.hhmm(m))); wv.appendChild(p); });
+      d.touch.forEach(function (t) { var m = T.localMin(t, d.date, st.z), p = el('div', 'tsh-touch'); p.style.setProperty('--s', frac(m, w)); p.appendChild(el('span', null, T.hhmm(m))); wv.appendChild(p); });
       if (d.touch.length) aria.push(C.touchNote);
       wv.setAttribute('aria-label', aria.join(' ')); row2.appendChild(wv); days.appendChild(row2);
     });
@@ -181,7 +181,7 @@
     }
     if (!found && !none) lastText = '';
   }
-  // Recipient view is read-only in the DOM (shared helper): the form is disabled + inert, both Start over buttons are gone.
+  // Recipient view is read-only in the DOM (shared helper): the form controls are disabled (never inert: names and times stay readable), both Start over buttons are gone.
   function applyMode() { var r = mode === 'recv'; V.readOnly($('form'), r); ['b-reset', 'b-nreset'].forEach(function (id) { $(id).hidden = r; $(id).disabled = r; }); }
   function refresh() { refresh0(); applyMode(); }
   function refresh0() {

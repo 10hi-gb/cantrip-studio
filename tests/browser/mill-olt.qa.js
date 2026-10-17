@@ -76,7 +76,7 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     await q.goto('about:blank'); await q.goto(url, { waitUntil: 'load' }); await sleep(150);
     let ro = await q.evaluate(() => ({ en: [...document.querySelectorAll('#intake input,#intake select,#intake textarea,#intake button')].filter(e => !e.disabled).map(e => e.id || e.className), inert: document.getElementById('intake').inert, ticks: [...document.querySelectorAll('.olt-check')].filter(e => !e.disabled).length }));
     const rh = await reallyHidden(q, ['#b-reset']);
-    ck(w + ' recipient read-only in DOM: intake controls disabled + inert, Start over not rendered, shopping ticks still usable', !ro.en.length && ro.inert && ro.ticks > 0 && rh.ok, { ro, rh });
+    ck(w + ' recipient read-only in DOM: intake controls disabled (never inert), Start over not rendered, shopping ticks still usable', !ro.en.length && !ro.inert && ro.ticks > 0 && rh.ok, { ro, rh });
     // same tab: valid link -> bad link fully resets (no rows, no read-only leftovers, empty link box)
     await q.evaluate(() => { location.hash = 't1.broken'; }); await sleep(150);
     ro = await q.evaluate(() => ({ rows: document.querySelectorAll('#rows li').length, tickets: document.querySelectorAll('.olt-ticket').length, hh: [...document.querySelectorAll('#hh input')].map(i => i.value).join(), b: document.getElementById('banner-t').textContent, inert: document.getElementById('intake').inert, dis: [...document.querySelectorAll('#intake input:disabled,#intake select:disabled')].map(e => e.id), reset: document.getElementById('b-reset').hidden, own: document.getElementById('own-copy').hidden, link: document.getElementById('link').value }));

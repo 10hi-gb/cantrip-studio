@@ -108,7 +108,7 @@
     Object.keys(checks).forEach(function (k) { if (keys.indexOf(k) < 0) delete checks[k]; });
     var n = keys.filter(function (k) { return checks[k]; }).length; $('progress').textContent = keys.length ? M.plural(C.progress, n).replace('{total}', String(keys.length)) + ' · ' + C.checksNote : '';
   }
-  // Recipient view is read-only in the DOM (shared helper): the intake is disabled + inert, Start over is gone.
+  // Recipient view is read-only in the DOM (shared helper): the intake is hidden and its controls disabled (never inert), Start over is gone.
   // Shopping ticks stay usable; they live in this tab only and are never in the link.
   function applyMode() { var r = mode === 'recv'; V.readOnly($('intake'), r); $('intake').hidden = r; $('b-reset').hidden = r; $('b-reset').disabled = r; $('samestop').hidden = r; }
   // Recipient changes (Merge / Split back out / Make my own) turn the list into the recipient's own copy: banner says so, the
