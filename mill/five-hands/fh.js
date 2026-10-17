@@ -50,11 +50,13 @@
   var Q = function (s) { return M.raw(M.quote(M.strip(s))); };
   // Writer finals (N9): "For: {name}" (label line -> shared quote rule); “{title}” and “{task}” are framed by the template, so
   // fill() applies the same Q1 normalisation (MILL.unquote) to the value inside: a typed ” can't close the frame early.
-  function cardText(C, title, r) { var v = { name: Q(r.name), title: M.strip(title), cap: r.cap };
+  // Writer N9b: {stamp} = stamp (Suggest) or stampCheck (Check), on screen cards, copied cards, bench text and the sheet.
+  function stampFor(C, mode) { return mode === 'check' ? C.stampCheck : C.stamp; }
+  function cardText(C, title, r, mode) { var v = { name: Q(r.name), title: M.strip(title), cap: r.cap, stamp: stampFor(C, mode) };
     if (!r.items.length) return M.fill(r.cap === 0 ? C.cardTextNoTasks : C.cardTextNoFit, v);
     v.taskLines = M.raw(r.items.map(function (it) { return M.fill(C.cardTaskLine, { task: M.strip(it.name), m: it.min }); }).join('\n')); v.load = r.load;
     return M.fill(C.cardText, v); }
-  function benchText(C, title, res) { return M.fill(C.benchText, { title: M.strip(title), lines: M.raw(res.bench.map(function (t) { return M.fill(C.benchLine, { task: M.strip(t.name), m: t.min }); }).join('\n')), stamp: C.stamp }); }
+  function benchText(C, title, res) { return M.fill(C.benchText, { title: M.strip(title), lines: M.raw(res.bench.map(function (t) { return M.fill(C.benchLine, { task: M.strip(t.name), m: t.min }); }).join('\n')), stamp: stampFor(C, res.mode) }); }
   // ---- optional sheet link "#fh1.<b64url JSON>.<ck>": title, task names + minutes, first names + minutes, who does what, mode. Nothing else.
   var TAG = 'fh', VER = 1;
   function encode(title, helpers, tasks, res) { var o = { t: M.strip(title), h: helpers.map(function (h) { return [M.strip(h.name), h.min]; }), k: tasks.map(function (t) { return [M.strip(t.name), t.min]; }), a: res.assign, m: res.mode === 'check' ? 'c' : 's' };
@@ -70,5 +72,5 @@
     var res; try { res = check(helpers, o.a, tasks); } catch (e) { return { ok: false, why: 'bad' }; }
     if (o.m === 's') { res = suggest(helpers, tasks); if (res.assign.join() !== o.a.join()) return { ok: false, why: 'bad' }; } // the rule's own result (its stick order)
     return { ok: true, data: { title: o.t, helpers: helpers, tasks: tasks, res: res } }; }
-  return { LIM: LIM, minutes: minutes, validate: validate, suggest: suggest, check: check, result: result, cardText: cardText, benchText: benchText, encode: encode, decode: decode };
+  return { LIM: LIM, minutes: minutes, validate: validate, suggest: suggest, check: check, result: result, stampFor: stampFor, cardText: cardText, benchText: benchText, encode: encode, decode: decode };
 });

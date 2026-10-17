@@ -7,10 +7,10 @@
 })(this, function (M, S) {
   var FRAG_MAX = 2000, ITEM_MAX = 40, NAME_MAX = 24, UNIT_MAX = 16, SYM_MAX = 3;
   var STR = ['n', 'u', 'c', 'q', 'i', 'p', 'f', 'b'];
-  // The unit cap counts user-perceived characters (grapheme clusters), so a ZWJ family, a flag or a keycap is 1 of the 16: the link
-  // parser, the editor's validator and the unit input all count with unitLen(). Intl.Segmenter where the browser has it; otherwise
+  // Every text cap (item 40, unit 16, currency 3, household name 24) counts user-perceived characters (grapheme clusters) after strip,
+  // so a ZWJ family, a flag or a keycap is 1: the link parser, the editor's validator and the inputs all count with glen(). Intl.Segmenter where the browser has it; otherwise
   // a close fallback (marks, variation selectors, skin tones, tags, keycaps and ZWJ joins attach; regional indicators pair).
-  // Every unit that passed the old code-point count still passes (graphemes <= code points).
+  // Every value that passed the old code-point count still passes (graphemes <= code points).
   var SEG = typeof Intl === 'object' && Intl && typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
   var MARK = (function () { try { return new RegExp('^\\p{M}$', 'u'); } catch (e) { return /^[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]$/; } })();
   function isRI(c) { return c >= 0x1F1E6 && c <= 0x1F1FF; }
@@ -25,7 +25,8 @@
     return out;
   }
   function graphemes(s) { s = String(s == null ? '' : s); if (!SEG) return approxGraphemes(s); var out = [], it = SEG.segment(s)[Symbol.iterator](), r; while (!(r = it.next()).done) out.push(r.value.segment); return out; }
-  function unitLen(u) { return graphemes(M.strip(u)).length; }
+  function glen(t) { return graphemes(M.strip(t)).length; }
+  var unitLen = glen;
   function clean(st) {
     var o = { h: st.h.map(function (x) { return [M.strip(x[0]), String(x[1]).trim()]; }), x: st.x };
     STR.forEach(function (k) { o[k] = k === 'n' || k === 'u' || k === 'c' ? M.strip(st[k]) : String(st[k]).trim(); });
@@ -41,15 +42,15 @@
     for (var j = 0; j < STR.length; j++) if (typeof st[STR[j]] !== 'string') return 'shape';
     if (!Number.isInteger(st.x)) return 'shape';
     var n = M.strip(st.n), u = M.strip(st.u);
-    if (!n || M.len(n) > ITEM_MAX) return 'item';
+    if (!n || glen(n) > ITEM_MAX) return 'item';
     if (!u || unitLen(u) > UNIT_MAX) return 'unit';
-    if (M.len(M.strip(st.c)) > SYM_MAX) return 'sym';
+    if (glen(st.c) > SYM_MAX) return 'sym';
     if (st.b !== 'p' && st.b !== 'e') return 'basis';
     if (st.h.length < S.MIN_H || st.h.length > S.MAX_H) return 'count';
     var seen = {};
     for (var k = 0; k < st.h.length; k++) {
       var x = st.h[k]; if (!Array.isArray(x) || x.length !== 2 || typeof x[0] !== 'string' || typeof x[1] !== 'string') return 'shape';
-      var nm = M.strip(x[0]); if (!nm || M.len(nm) > NAME_MAX) return 'name';
+      var nm = M.strip(x[0]); if (!nm || glen(nm) > NAME_MAX) return 'name';
       var key = nm.toLowerCase(); if (seen[key]) return 'duplicate'; seen[key] = 1;
     }
     var r = toCompute(st); if (!r) return 'money'; var c = S.compute(r); if (!c.ok) return c.error; if (!c.complete) return c.status === 'nobasis' ? 'nobasis' : 'over';
@@ -64,5 +65,5 @@
     if (check(d)) return { ok: false, why: 'bad' };
     return { ok: true, data: clean(d) };
   }
-  return { FRAG_MAX: FRAG_MAX, ITEM_MAX: ITEM_MAX, NAME_MAX: NAME_MAX, UNIT_MAX: UNIT_MAX, SYM_MAX: SYM_MAX, check: check, toCompute: toCompute, encode: encode, decode: decode, graphemes: graphemes, unitLen: unitLen, _approxGraphemes: approxGraphemes };
+  return { FRAG_MAX: FRAG_MAX, ITEM_MAX: ITEM_MAX, NAME_MAX: NAME_MAX, UNIT_MAX: UNIT_MAX, SYM_MAX: SYM_MAX, check: check, toCompute: toCompute, encode: encode, decode: decode, graphemes: graphemes, glen: glen, unitLen: unitLen, _approxGraphemes: approxGraphemes };
 });

@@ -5,12 +5,13 @@ section:focus{outline:none}
 .fh-ph{font:800 15px/1.3 var(--ui);margin:0 0 6px;letter-spacing:.02em}
 .fh-session{margin:0 0 16px;max-width:40em}
 .fh-session input{margin-bottom:2px}
+textarea.fh-grow{display:block;width:100%;min-width:0;margin:0 0 2px;resize:none;overflow:hidden;font:400 16px/1.2 var(--ui);padding:8px 9px;border:2px solid #6c6f73;border-radius:4px;background:#fff;color:var(--ink);overflow-wrap:break-word;word-break:normal}
 .row.fh-row{grid-template-columns:minmax(0,1fr) 6.5em 2.75em;position:relative}
 .fh-heads{margin-bottom:0}.fh-heads .l{font:600 13px/1.2 var(--ui)}
 .fh-cell{min-width:0}
 .fh-rm{padding:8px 0;min-height:40px;font-size:18px}
 .fh-rm[disabled]{opacity:.35}
-input[aria-invalid=true]{border-color:var(--red);box-shadow:0 0 0 2px rgba(200,54,31,.25)}
+input[aria-invalid=true],textarea[aria-invalid=true]{border-color:var(--red);box-shadow:0 0 0 2px rgba(200,54,31,.25)}
 .btn[aria-disabled=true]{opacity:.55;cursor:not-allowed}
 .btn{min-height:40px}
 .panel .btn{margin-top:6px}
@@ -24,7 +25,7 @@ input[aria-invalid=true]{border-color:var(--red);box-shadow:0 0 0 2px rgba(200,5
 .modes input:focus-visible+span{outline:3px solid var(--focus);outline-offset:-3px}
 .fh-check{margin-top:4px;max-width:40em}
 .row.chk{align-items:center}
-.fh-cn{min-width:0;font-weight:600;overflow-wrap:anywhere}
+.fh-cn{min-width:0;font-weight:600;overflow-wrap:break-word}
 .fh-cm{font-weight:600;white-space:nowrap}
 .fh-btnrow{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 0;align-items:center}
 .fh-banner{background:var(--chalk);border-left:6px solid var(--leather);border-radius:4px;padding:10px 14px;margin:8px 0 12px}
@@ -37,22 +38,42 @@ input[aria-invalid=true]{border-color:var(--red);box-shadow:0 0 0 2px rgba(200,5
 .tally>span{margin-right:0}
 .track{overflow:hidden}
 .stick{min-width:0}
-.stick .t .mill-typed{overflow-wrap:anywhere}
-.helper .load{overflow-wrap:anywhere}
-.tab{max-width:100%;overflow-wrap:anywhere}
+.stick .t .mill-typed{overflow-wrap:break-word}
+.helper .load{overflow-wrap:break-word}
+.tab{max-width:100%;overflow-wrap:break-word}
 .overtag{margin:4px 0 0}
 .bench .sticks{flex-wrap:wrap;row-gap:4px}
 .fh-explain{font-weight:600;margin:10px 0 0}
 .fh-preview{margin-top:16px}.fh-preview h3{margin-bottom:6px}
-.copied{overflow-wrap:anywhere}
+.copied{overflow-wrap:break-word}
 .sheet{margin-top:22px}
-.sheet td,.sheet h2,.fh-change,.fh-over,.fh-explain,.overtag,.errmsg,.tally>span,.fh-preview h3,.load{overflow-wrap:anywhere}
+.sheet td,.sheet h2,.fh-change,.fh-over,.fh-explain,.overtag,.errmsg,.tally>span,.fh-preview h3,.load{overflow-wrap:break-word}
 .sheet td.n{white-space:normal}
 .linkbox h3{margin:0 0 6px}.linkbox .btn{margin:6px 0}
 #link{margin-top:4px}
 #fb{margin-top:14px}#fb textarea{width:100%;font:400 15px/1.4 var(--ui)}
 .fh-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--chalk);font:600 16px/1.3 var(--ui);padding:10px 16px;border-radius:6px;max-width:calc(100vw - 24px);z-index:10}
 .is-recv .fh-btnrow #b-change{display:none}
-@media (max-width:640px){.row.fh-row{grid-template-columns:minmax(0,1fr) 4.6em 2.75em}}
+/* Creative check 5f127ab. Wrap rule: break at spaces, then hyphens, mid-word only when one word can't fit: break-word everywhere (overrides the theme .stick and shared .mill-typed wrap values on this page only). */
+.fh .mill-typed,.fh .stick,.fh .copied{overflow-wrap:break-word;word-break:normal;hyphens:manual}
+/* 1. over-tip: only the minutes past the roll's capacity, solid --fh-over, one clean colour (no grain, no overlay on the roll) */
+.fh{--fh-over:var(--red)}
+.stick.over{background:linear-gradient(90deg,transparent calc(100% - var(--p)),var(--fh-over) calc(100% - var(--p))),repeating-linear-gradient(90deg,rgba(150,100,40,.13) 0 1px,transparent 1px 7px),linear-gradient(180deg,#F0D7A3,var(--pine) 50%,var(--pine2))}
+.stick.over.all{background:var(--fh-over);color:var(--chalk)}
+/* 3. rolled-up label: Writer rolledUp, then zeroHint under it */
+.zeronote{top:12px;max-width:calc(100% - 76px)}
+.zeronote .fh-zl,.zeronote .fh-zh{display:block}.zeronote .fh-zh{font:400 13px/1.3 var(--ui);color:#3b3e42;margin-top:2px}
+@media (max-width:640px){.row.fh-row{grid-template-columns:minmax(0,1fr) 4.6em 2.75em}
+ .stick.over{background:linear-gradient(90deg,transparent calc(100% - 4.2em),var(--fh-over) calc(100% - 4.2em)),linear-gradient(180deg,#F0D7A3,var(--pine2))}
+ .stick.over.all{background:var(--fh-over);color:var(--chalk)}}
 @media (max-width:380px){.row.fh-row{grid-template-columns:minmax(0,1fr) 4.2em 2.5em}.row.fh-row input.min{width:100%}.fh-heads .l:nth-child(2){font-size:12px}}
+/* 5. entry at 360 and below: name at full width, then minutes + × on the line below; session title full width; no input text truncated */
+@media (max-width:360px){
+ .panel{padding:12px 10px}
+ .fh-session{max-width:none}
+ .fh-session textarea,.row.fh-row input{padding-left:7px;padding-right:7px}
+ .row.fh-row{grid-template-columns:6.5em 2.75em minmax(0,1fr);row-gap:4px;margin:4px 0 14px}
+ .row.fh-row>.fh-cell:first-child{grid-column:1/-1}
+ .row.fh-row.fh-heads{display:block;margin:0 0 2px}.fh-heads .l{display:block}.fh-heads .l:nth-child(2){font-size:13px}
+}
 @media print{.sheet{margin-top:0}.sheet td.n{white-space:nowrap}}

@@ -5,6 +5,8 @@
 (function () {
   var C = COPY, M = MILL, V = MILLVIEW, $ = function (id) { return document.getElementById(id); }, q = V.quote, L = FH.LIM;
   var seq = 0, tried = false, last = null, prevSuggest = null, fbText = '';
+  // STAND-IN (no Writer key yet; logged in writer/ENGINEER-NEEDS-five-hands.txt): header of a 0-minute helper with no tasks (Creative check 5f127ab item 3).
+  var SI = { zeroHead: '0 minutes · no tasks' };
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function txt(s) { return document.createTextNode(s); }
   function sep() { var s = el('span', 'fh-sep', C.tallySep); s.setAttribute('aria-hidden', 'true'); return s; }
@@ -66,22 +68,24 @@
       var s = el('span', p[2] || null), t = M.fill(C.tally[p[0]], { n: p[1] }), m = /^(\d+)(.*)$/.exec(t); s.append(el('b', null, m[1]), txt(m[2])); if (i) box.append(sep()); box.append(s); });
     var ok = res.conserved; box.append(sep()); box.append(el('span', ok ? 'ok' : 'bad', ok ? M.fill(C.conservation, { on: res.given, bench: res.benchMin, work: res.work }) : C.conservationFail)); }
   function stick(it, sc) { var s = el('div', 'stick'); setv(s, '--m', it.min); setv(s, '--sc', sc); var t = el('span', 't'); t.append(V.typed(it.name)); s.append(t, el('span', 'm', String(it.min)));
-    if (it.overMin) { s.classList.add('over'); setv(s, '--p', (Math.round(it.overMin / it.min * 1000) / 10) + '%'); } return s; }
-  function helperCard(r, sc, title) { var a = el('article', 'helper' + (r.cap === 0 ? ' zero' : '')), nm = q(M.strip(r.name)), ll = M.fill(C.loadLine, { load: r.load, cap: r.cap });
-    var sp = r.cap > 0 && r.spare > 0 ? M.fill(C.loadSpare, { n: r.spare }) : ''; a.setAttribute('aria-label', nm + ': ' + ll + (sp ? C.tallySep + sp : ''));
-    var hh = el('div', 'hhead'), tab = el('span', 'tab'); tab.append(V.typed(r.name)); var ld = el('span', 'load', r.cap === 0 && !r.items.length ? C.rolledUp : ll);
-    if (sp) ld.append(document.createTextNode(C.tallySep), el('span', 'spare', sp));
-    var b = el('button', 'btn noprint', M.fill(C.copyCard, { name: nm })); b.type = 'button'; b.addEventListener('click', function () { var t = FH.cardText(C, title, r); preview(nm, t); copy(t); });
+    if (it.overMin) { s.classList.add('over'); if (it.overMin >= it.min) s.classList.add('all'); setv(s, '--p', (Math.round(it.overMin / it.min * 1000) / 10) + '%'); } return s; }
+  // minutes line: loadLine, then (red) tallySep + overBy, or (green) tallySep + loadSpare (Writer N9/N9b). A 0-minute helper with no tasks: SI.zeroHead.
+  function helperCard(r, sc, title, mode) { var a = el('article', 'helper' + (r.cap === 0 ? ' zero' : '')), nm = q(M.strip(r.name)), ll = M.fill(C.loadLine, { load: r.load, cap: r.cap });
+    var idle = r.cap === 0 && !r.items.length, ov = r.over ? M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : '', sp = !ov && r.cap > 0 && r.spare > 0 ? M.fill(C.loadSpare, { n: r.spare }) : '';
+    var hh = el('div', 'hhead'), tab = el('span', 'tab'); tab.append(V.typed(r.name)); var ld = el('span', 'load', idle ? SI.zeroHead : ll);
+    if (ov) ld.append(el('span', 'over', C.tallySep + ov)); else if (sp) ld.append(el('span', 'spare', C.tallySep + sp));
+    a.setAttribute('aria-label', nm + ': ' + ld.textContent);
+    var b = el('button', 'btn noprint', M.fill(C.copyCard, { name: nm })); b.type = 'button'; b.addEventListener('click', function () { var t = FH.cardText(C, title, r, mode); preview(nm, t); copy(t); });
     hh.append(tab, ld, b); a.append(hh);
     var me = el('div', 'meter'); me.setAttribute('aria-hidden', 'true'); setv(me, '--sc', sc); setv(me, '--cap', r.cap); setv(me, '--ld', Math.min(r.load, r.cap)); setv(me, '--ov', r.over);
     me.append(el('span', 'cap'), el('span', 'fill')); if (r.over) me.append(el('span', 'ovr')); a.append(me);
     var tr = el('div', 'track'); setv(tr, '--sc', sc); setv(tr, '--cap', r.cap); setv(tr, '--ov', r.over);
-    if (r.cap === 0) { var ru = el('span', 'rolled'); ru.setAttribute('aria-hidden', 'true'); tr.append(ru); if (!r.items.length) { var zn = el('span', 'zeronote', C.rolledUp); zn.setAttribute('aria-hidden', 'true'); tr.append(zn); } }
+    // the roll (open or rolled up) is canvas only: nothing is painted over it; only the over part of each stick is red (.stick.over, --p)
+    if (r.cap === 0) { var ru = el('span', 'rolled'); ru.setAttribute('aria-hidden', 'true'); tr.append(ru);
+      if (idle) { var zn = el('span', 'zeronote'); zn.setAttribute('aria-hidden', 'true'); zn.append(el('span', 'fh-zl', C.rolledUp), el('span', 'fh-zh', C.zeroHint)); tr.append(zn); } }
     else { var rl = el('span', 'roll'); rl.setAttribute('aria-hidden', 'true'); tr.append(rl); }
-    if (r.over) { var oz = el('span', 'overzone'); oz.setAttribute('aria-hidden', 'true'); tr.append(oz); }
     var st = el('div', 'sticks'); r.items.forEach(function (it) { st.append(stick(it, sc)); }); tr.append(st); a.append(tr);
-    if (r.over) a.append(el('p', 'overtag', M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap })));
-    a.append(el('div', 'stampline', C.stamp)); return a; }
+    a.append(el('div', 'stampline', FH.stampFor(C, mode))); return a; }
   function preview(nm, t) { $('preview-h').textContent = M.fill(C.cardPreviewLabel, { name: nm }); $('preview-t').textContent = t; $('preview').hidden = false; }
   function render(d, res, recv) { last = { d: d, res: res }; var title = M.strip(d.title);
     $('s2-h').textContent = res.mode === 'check' ? C.checkTotals : res.bench.length ? C.suggestHeadingShort : C.suggestHeading;
@@ -90,7 +94,7 @@
     $('rule').hidden = res.mode !== 'suggest'; $('rule-h').textContent = C.ruleHeading; $('rule-t').textContent = C.ruleText;
     var ov = $('over'); ov.hidden = res.mode !== 'check';
     ov.textContent = res.over.length ? M.plural(C.overList, res.over.length, { list: M.raw(res.over.map(function (r) { return M.fill(C.overItem, { name: q(M.strip(r.name)), n: r.over }); }).join(', ')) }) : C.checkNoneOver;
-    var sc = res.scale, host = $('rolls'); host.textContent = ''; res.rows.forEach(function (r) { host.append(helperCard(r, sc, title)); });
+    var sc = res.scale, host = $('rolls'); host.textContent = ''; res.rows.forEach(function (r) { host.append(helperCard(r, sc, title, res.mode)); });
     // bench
     var bh = $('bench-h'), pl = $('plank'); pl.textContent = ''; bh.textContent = res.bench.length ? M.plural(C.benchHeading, res.bench.length, { m: res.benchMin }) : C.benchHeadingEmpty;
     if (res.bench.length) { var bs = el('div', 'sticks'), bsc = Math.max(sc, Math.max.apply(null, res.bench.map(function (t) { return t.min; }))); res.bench.forEach(function (t) { bs.append(stick(t, bsc)); }); pl.append(bs); }
@@ -104,8 +108,8 @@
     res.rows.forEach(function (r) { var tr = el('tr'), n = el('td', 'n'); n.append(V.typed(r.name)); var nm = q(M.strip(r.name));
       var mt = M.fill(C.loadLine, { load: r.load, cap: r.cap }) + (r.over ? C.tallySep + M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : '');
       tr.append(n, el('td', null, r.items.length ? line(r.items) : r.cap === 0 ? C.rolledUp : ''), el('td', null, mt)); tb.append(tr); });
-    if (res.bench.length) { var tr = el('tr', 'fh-benchrow'); tr.append(el('td', 'n', C.sheetBenchRow), el('td', null, line(res.bench)), el('td', null, M.fill(C.sheetMinutes, { n: res.benchMin }))); tb.append(tr); }
-    $('sheet-stamp').textContent = C.stamp; $('sheet-rule').textContent = res.mode === 'check' ? C.sheetRuleCheck : C.sheetRule; $('sheet-note').textContent = C.sheetNote; }
+    var br = el('tr', 'fh-benchrow'); br.append(el('td', 'n', C.sheetBenchRow), el('td', null, res.bench.length ? line(res.bench) : C.benchEmpty), el('td', null, M.fill(C.sheetMinutes, { n: res.benchMin }))); tb.append(br); // always printed, empty too
+    $('sheet-stamp').textContent = FH.stampFor(C, res.mode); $('sheet-rule').textContent = res.mode === 'check' ? C.sheetRuleCheck : C.sheetRule; $('sheet-note').textContent = C.sheetNote; }
   function split() { tried = true; var d = read(), errs = FH.validate(d.helpers, d.tasks, d.title), first = showErrs(errs, d);
     if (errs.length) { first.scrollIntoView({ block: 'center' }); first.focus({ preventScroll: true }); return; }
     var res;
@@ -127,6 +131,10 @@
   function makeLink() { if (!last) return; var f = FH.encode(last.d.title, last.d.helpers, last.d.tasks, last.res), u = f.length <= L.frag ? V.linkFor(f) : null;
     if (!u) { $('link-box').hidden = true; $('link-long').textContent = C.tooLongLink; $('link-long').hidden = false; V.toast(C.tooLongLink); return; }
     $('link-long').hidden = true; $('link').value = u; $('link-box').hidden = false; $('link').focus(); $('link').select(); copy(u); }
+  // ---- session title: a one-line textarea that grows, so a long title wraps instead of being cut off (Creative 5f127ab item 5).
+  // Enter submits like an input; pasted line breaks become spaces. Height via CSSOM (CSP-safe).
+  function grow() { var f = $('f-title'); f.style.setProperty('height', 'auto'); if (!f.getClientRects().length) return; f.style.setProperty('height', (f.scrollHeight + f.offsetHeight - f.clientHeight) + 'px'); }
+  function titleInput() { var f = $('f-title'); if (/[\r\n]/.test(f.value)) { var at = f.selectionStart; f.value = f.value.replace(/\r\n?|\n/g, ' '); f.setSelectionRange(at, at); } grow(); }
   // ---- views ----
   function texts() { document.title = C.title + ' · ' + C.studioName; $('home').textContent = C.studioLabel; $('home').setAttribute('aria-label', C.backLabel); $('title').textContent = C.title; $('lede').textContent = C.invitation; $('scope').textContent = C.scopeLine;
     $('f-title-l').textContent = C.sessionLabel; $('f-title').placeholder = C.sessionPlaceholder; $('empty-state').textContent = C.emptyState;
@@ -135,7 +143,7 @@
     $('b-split').textContent = C.primary; $('b-reset').textContent = C.reset; $('privacy').textContent = C.privacy; $('b-bench').textContent = C.copyBench; $('b-print').textContent = C.printSheet; $('b-change').textContent = C.changeMinutes;
     $('sc-helper').textContent = C.sheetCols.helper; $('sc-tasks').textContent = C.sheetCols.tasks; $('sc-min').textContent = C.sheetCols.minutes;
     $('share-h').textContent = C.shareHeading; $('link-warn').textContent = C.linkWarning; $('link-holds').textContent = C.linkHolds; $('b-link').textContent = C.makeLink; $('link-l').textContent = C.linkLabel; $('fb-l').textContent = C.copyTextLabel; $('own').textContent = C.receiverPrimary; }
-  function fill(data, mode, assign) { $('tasks').textContent = ''; $('helpers').textContent = ''; $('f-title').value = data ? data.title : '';
+  function fill(data, mode, assign) { $('tasks').textContent = ''; $('helpers').textContent = ''; $('f-title').value = data ? data.title : ''; grow();
     (data ? data.tasks : [{}]).forEach(function (t) { addRow('task', t.name, t.min); }); (data ? data.helpers : [{}]).forEach(function (h) { addRow('helper', h.name, h.min); });
     $('m-check').checked = mode === 'check'; $('m-suggest').checked = mode !== 'check'; syncCheck();
     if (assign) { var hr = rows('helper'); rows('task').forEach(function (r, i) { var s = $('a-' + r.dataset.id); if (s && assign[i] >= 0) s.value = hr[assign[i]].dataset.id; }); } }
@@ -153,6 +161,8 @@
   function reset() { if (!window.confirm(C.resetConfirm)) return; if (location.hash && location.hash !== '#') history.replaceState(null, '', location.pathname + location.search); routeTo(''); V.toast(C.resetDone); $('f-title').focus(); }
   // deferred script: the DOM is parsed. Wire once here, BEFORE route() runs (route runs at once when readyState isn't 'loading').
   (function init() { texts(); fill(null);
+    $('f-title').addEventListener('input', titleInput); $('f-title').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); $('form').requestSubmit ? $('form').requestSubmit() : $('b-split').click(); } });
+    window.addEventListener('resize', grow); if (document.fonts && document.fonts.ready) document.fonts.ready.then(grow);
     $('form').addEventListener('submit', function (e) { e.preventDefault(); try { split(); } catch (err) { V.toast(C.error); } });
     $('form').addEventListener('input', function () { if (tried) live(); });
     $('add-task').addEventListener('click', function () { addRow('task', '', null, true); }); $('add-helper').addEventListener('click', function () { addRow('helper', '', null, true); });

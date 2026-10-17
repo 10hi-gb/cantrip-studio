@@ -25,4 +25,17 @@ t('unit cap: 16 emoji incl. ZWJ, flag, tag-flag and keycap sequences round-trip;
   assert.equal(L.unitLen('😀'.repeat(16)), 16); assert.equal(L.check({ ...base, u: '😀'.repeat(17) }), 'unit');
 });
 t('unit cap: the no-Intl.Segmenter fallback counts the same clusters', () => { const g = L._approxGraphemes(EMO.join('')); assert.deepEqual(g, EMO); assert.equal(L._approxGraphemes('e\u0301abc').length, 4); assert.equal(L._approxGraphemes('abcdefghijklmnop').length, 16); });
+t('item 40 / household name 24 / currency 3 count graphemes like the unit: at the cap they round-trip, one more is refused (encode, check, forged link)', () => {
+  const E = k => Array.from({ length: k }, (_, i) => EMO[i % EMO.length]).join(''), F = M.pack;
+  for (const [field, cap, code] of [['n', L.ITEM_MAX, 'item'], ['c', L.SYM_MAX, 'sym'], ['name', L.NAME_MAX, 'name']]) {
+    for (const atCap of [E(cap), 'z'.repeat(cap)]) {
+      const st = field === 'name' ? { ...base, h: [[atCap, '8'], ['Ben', '8.5'], ['Cy', '6']] } : { ...base, [field]: atCap };
+      assert.equal(L.glen(atCap), cap); const f = L.encode(st); assert.ok(f, field + ' at cap encodes'); const d = L.decode(f); assert.ok(d.ok, field + ' decodes');
+      assert.equal(field === 'name' ? d.data.h[0][0] : d.data[field], atCap, field + ' survives');
+      const over = atCap + (atCap.startsWith('z') ? 'z' : '🇫🇷'), so = field === 'name' ? { ...base, h: [[over, '8'], ['Ben', '8.5'], ['Cy', '6']] } : { ...base, [field]: over };
+      assert.equal(L.check(so), code, field + ' over cap'); assert.equal(L.encode(so), null); assert.equal(L.decode(F('s', 1, so)).why, 'bad', field + ' forged over-cap link refused');
+    }
+  }
+  assert.equal(L.glen(' a\u202E b '), 3); // counted after strip, like the parser
+});
 console.log('PASS ' + n + ' tests');

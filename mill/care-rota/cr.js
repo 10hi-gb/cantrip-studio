@@ -4,7 +4,7 @@
 // and never placed. Pure: no DOM, no storage, no network. Dates are ISO Y-M-D; weekdays come from date math only
 // (UTC epoch days), so a DST change (Sun Nov 1 2026) can never shift a day.
 (function (root, factory) { var m = factory(root.MILL || (typeof require === 'function' ? require('../shared/core.js') : null)); if (typeof module === 'object' && module.exports) module.exports = m; else root.CR = m; })(this, function (M) {
-  var LIM = { days: 28, needs: 4, lines: 60, forName: 40, org: 24, other: 16, notes: 200, url: 2000 };
+  var LIM = { days: 28, needs: 4, lines: 60, forName: 40, org: 24, other: 16, notes: 200, url: 2000, name: 40 }; // name: helper-name cap, the same at parse and in a received link (QA C7)
   var DAY = 864e5, WDN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], WDS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   var MOS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var WDF = { mon: 0, monday: 0, tue: 1, tues: 1, tuesday: 1, wed: 2, weds: 2, wednesday: 2, thu: 3, thur: 3, thurs: 3, thursday: 3, fri: 4, friday: 4, sat: 5, saturday: 5, sun: 6, sunday: 6 };
@@ -12,7 +12,9 @@
   var NUM = /^\d{1,2}(st|nd|rd|th)?$/;
   // fixed synonyms (Creative §5): meal/food -> Dinner; lift/drive -> Ride; dog walk/walk/dog -> Dog walk
   var FIXED = { dinner: ['dinner', 'meal', 'food'], ride: ['ride', 'lift', 'drive'], walk: ['dog walk', 'walk', 'dog'] };
-  var JOIN = { and: 1, '&': 1, '+': 1 };
+  // name separators (QA C3): a whole word and/or, & + (ASCII and full-width) ➕ and /, spaced or not. A comma counts when it sits
+  // between two name words. Any of them -> TO FIX (tagTwoNames), never placed, never folded into one name.
+  var JOIN = { and: 1, or: 1, '&': 1, '+': 1, '\uFF06': 1, '\uFF0B': 1, '\u2795': 1, '/': 1 };
   // ---- dates ----
   function parseISO(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); if (!m) return null; var t = Date.UTC(+m[1], +m[2] - 1, +m[3]); var d = new Date(t); return d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3] ? t : null; }
   function iso(t) { return new Date(t).toISOString().slice(0, 10); }
@@ -28,21 +30,33 @@
   function synonyms(needs) { var syn = {}; needs.forEach(function (n) { var words = (FIXED[n.key] || []).slice(); var lab = M.strip(n.label).toLowerCase().replace(/[:,–]/g, ' ').replace(/\s+/g, ' ').trim(); if (lab) words.push(lab); words.forEach(function (w) { if (!(w in syn)) syn[w] = n.label; }); });
     ['dinner', 'ride', 'walk'].forEach(function (k) { if (!needs.some(function (n) { return n.key === k; })) FIXED[k].forEach(function (w) { if (!(w in syn)) syn[w] = { off: k }; }); }); return syn; }
   // ---- parse (proto r1d, exact) + build rules ----
-  function tokens(raw) { return String(raw).trim().replace(/[:,\u2013]/g, ' ').split(' - ').join(' ').split(/\s+/).filter(Boolean); }
+  function tokens(raw) { return String(raw).trim().replace(/[:\u2013]/g, ' ').replace(/,/g, ' , ').replace(/[&+\uFF06\uFF0B\u2795]/g, ' $& ').replace(/\/(?!\d)|(?<!\d)\//g, ' / ').split(' - ').join(' ').split(/\s+/).filter(Boolean); }
+  // "Name: day need" (planHint shape; QA C4 / Audience condition 2): words before the first colon are the helper's name, even a
+  // month word (May, Jan, June, April) — when they hold no digit, no weekday and no need word. Otherwise the colon is just a space.
+  function colonName(raw, syn) { var m = /^([^:]*):(.*)$/.exec(String(raw)); if (!m || /\d/.test(m[1]) || !m[2].trim()) return 0; var lt = tokens(m[1]), low = lt.map(function (w) { return w.toLowerCase(); });
+    if (!lt.length || low.some(function (l) { return l in WDF; })) return 0; var j = ' ' + low.join(' ') + ' ';
+    if (Object.keys(syn).some(function (k) { return j.indexOf(' ' + k + ' ') >= 0; })) return 0; return lt.length; }
   function parse(raw, syn) {
     var t = tokens(raw), low = t.map(function (w) { return w.toLowerCase(); }), used = t.map(function () { return false; }), nd = null, extra = null;
+    var nLock = colonName(raw, syn), lock = t.map(function (w, i) { return i < nLock; }); // locked = the "Name:" words: never a need, day or month
+    var free = function (a, b) { for (var k = a; k < b; k++) if (used[k] || lock[k]) return false; return true; };
     var phrases = Object.keys(syn).sort(function (a, b) { return b.split(' ').length - a.split(' ').length; });
     for (var pi = 0; pi < phrases.length && nd === null; pi++) { var pw = phrases[pi].split(' '), n = pw.length;
-      for (var i = 0; i + n <= low.length; i++) { if (!used.slice(i, i + n).some(Boolean) && low.slice(i, i + n).join(' ') === pw.join(' ')) { nd = syn[phrases[pi]]; for (var k = i; k < i + n; k++) used[k] = true; break; } } }
+      for (var i = 0; i + n <= low.length; i++) { if (free(i, i + n) && low.slice(i, i + n).join(' ') === pw.join(' ')) { nd = syn[phrases[pi]]; for (var k = i; k < i + n; k++) used[k] = true; break; } } }
     // build rule: a second need word left in the line -> two needs (organizer splits it); never folded into the name
     if (nd !== null) for (var pj = 0; pj < phrases.length && !extra; pj++) { var qw = phrases[pj].split(' '), m2 = qw.length;
-      for (var j = 0; j + m2 <= low.length; j++) if (!used.slice(j, j + m2).some(Boolean) && low.slice(j, j + m2).join(' ') === qw.join(' ')) { extra = syn[phrases[pj]]; break; } }
+      for (var j = 0; j + m2 <= low.length; j++) if (free(j, j + m2) && low.slice(j, j + m2).join(' ') === qw.join(' ')) { extra = syn[phrases[pj]]; break; } }
     var wd = null, num = null, mon = null;
-    low.forEach(function (l, i) { if (used[i]) return; if (/^\d{1,2}\/\d{1,2}$/.test(l) && num === null) { var p = l.split('/'); mon = +p[0]; num = +p[1]; used[i] = true; return; } if (NUM.test(l) && num === null) { num = parseInt(l, 10); used[i] = true; } });
-    low.forEach(function (l, i) { if (used[i]) return; if (l in WDF && wd === null) { wd = WDF[l]; used[i] = true; return; }
-      if (l in MONF && mon === null && [i - 1, i + 1].some(function (j) { return j >= 0 && j < low.length && NUM.test(low[j]); })) { mon = MONF[l]; used[i] = true; } });
-    var nameToks = t.filter(function (w, i) { return !used[i]; }), joined = nameToks.some(function (w) { return JOIN[w.toLowerCase()]; });
-    return { wd: wd, num: num, mon: mon, need: nd, extra: extra, name: nameToks.join(' '), twoNames: joined };
+    low.forEach(function (l, i) { if (used[i] || lock[i]) return; if (/^\d{1,2}\/\d{1,2}$/.test(l) && num === null) { var p = l.split('/'); mon = +p[0]; num = +p[1]; used[i] = true; return; } if (NUM.test(l) && num === null) { num = parseInt(l, 10); used[i] = true; } });
+    var monC = []; low.forEach(function (l, i) { if (used[i] || lock[i]) return; if (l in WDF && wd === null) { wd = WDF[l]; used[i] = true; return; }
+      if (l in MONF && [i - 1, i + 1].some(function (j) { return j >= 0 && j < low.length && NUM.test(low[j]); })) monC.push(i); });
+    // a month counts only next to the day number; two such months ("May 13 Nov dinner"): the line's first word is the name
+    if (monC.length > 1 && monC[0] === 0) monC.shift(); if (monC.length && mon === null) { mon = MONF[low[monC[0]]]; used[monC[0]] = true; }
+    var rest = t.map(function (w, i) { return used[i] ? null : w; }).filter(function (w) { return w !== null; });
+    var isSep = function (w) { return JOIN[w.toLowerCase()] || w === ','; }, real = rest.filter(function (w) { return !isSep(w); });
+    var joined = rest.some(function (w) { return JOIN[w.toLowerCase()]; }) || rest.some(function (w, i) { return w === ',' && rest.slice(0, i).some(function (x) { return !isSep(x); }) && rest.slice(i + 1).some(function (x) { return !isSep(x); }); })
+      || (nLock > 0 && t.some(function (w, i) { return i >= nLock && !used[i] && !isSep(w); })); // a name before the colon AND another after it
+    return { wd: wd, num: num, mon: mon, need: nd, extra: extra, name: real.join(' '), twoNames: !!joined };
   }
   function needLabel(x) { return typeof x === 'string' ? x : null; }
   // ---- check (proto r1d) ----
@@ -56,6 +70,7 @@
       if (p.need === null || !p.name) { row.result = 'couldntRead'; issues.push({ kind: 'couldntRead', line: line }); return; }
       if (p.extra !== null) { row.result = 'toFix'; issues.push({ kind: 'twoNeeds', line: line }); return; }
       if (p.twoNames) { row.result = 'toFix'; issues.push({ kind: 'twoNames', line: line }); return; }
+      if (M.len(p.name) > LIM.name) { row.result = 'toFix'; issues.push({ kind: 'nameTooLong', line: line, max: LIM.name }); return; }
       var cand = days.filter(function (t) { return (p.num === null || dayNum(t) === p.num) && (p.mon === null || monNum(t) === p.mon) && (p.wd === null || wday(t) === p.wd); });
       if (p.num !== null && p.wd !== null && !cand.length) { var mm = days.filter(function (t) { return dayNum(t) === p.num && (p.mon === null || monNum(t) === p.mon); });
         if (mm.length) { row.result = 'toFix'; row.day = mm[0]; issues.push({ kind: 'wrongWeekday', line: line, t: mm[0], weekday: WDN[wday(mm[0])], typedWeekday: WDN[p.wd], name: p.name }); return; } }
@@ -116,7 +131,7 @@
     if (!o || typeof o !== 'object' || Array.isArray(o) || Object.keys(o).sort().join() !== 'a,b,d,f,o,s' || !s(o.f, LIM.forName) || !o.f || !s(o.o, LIM.org) || !o.o || !s(o.s, 60) || !o.s) return { ok: false, why: 'bad' };
     var days = range(o.a, o.b); if (!days || days.length > LIM.days || !Array.isArray(o.d) || o.d.length !== days.length) return { ok: false, why: 'bad' };
     for (var i = 0; i < o.d.length; i++) { if (!Array.isArray(o.d[i]) || o.d[i].length > LIM.lines) return { ok: false, why: 'bad' };
-      for (var j = 0; j < o.d[i].length; j++) { var w = o.d[i][j]; if (!Array.isArray(w) || w.length !== 2 || !s(w[0], 80) || !w[0] || !Array.isArray(w[1]) || !w[1].length || w[1].length > LIM.needs || !w[1].every(function (x) { return s(x, LIM.other) && x; })) return { ok: false, why: 'bad' }; } }
+      for (var j = 0; j < o.d[i].length; j++) { var w = o.d[i][j]; if (!Array.isArray(w) || w.length !== 2 || !s(w[0], LIM.name) || !w[0] || !Array.isArray(w[1]) || !w[1].length || w[1].length > LIM.needs || !w[1].every(function (x) { return s(x, LIM.other) && x; })) return { ok: false, why: 'bad' }; } }
     return { ok: true, data: { forName: o.f, org: o.o, first: o.a, last: o.b, stamp: o.s, sheet: days.map(function (t, i) { return { t: t, who: o.d[i].map(function (w) { return { name: w[0], needs: w[1] }; }) }; }) } }; }
   // ---- validation of the form ----
   function errors(cfg, lines) { var e = []; var fl = M.len(M.strip(cfg.forName)), ol = M.len(M.strip(cfg.org));

@@ -81,11 +81,78 @@ t('PM 02:34: typed names quoted in copy text (helper, who it\'s for, organizer, 
   assert.ok(CR.stillOpen(C, r, cfg).startsWith('For: “Milk" from "Your bank”\nStill open. Reply to me, not the group:\n• Tue Oct 20 “Gro"c"”'));
   assert.equal(CR.sheetText(C, CR.sheet(r), { forName: cfg.forName, org: cfg.org, first: cfg.first, last: cfg.last, stamp: 'S', std: () => false }).split('\n')[2], 'Mon Oct 19: “Zq"x” (“Gro"c"”)');
   const WR = '/workspace/mill-sprint-2026-10-16/writer/care-rota/copy.v2.js'; if (fs.existsSync(WR)) assert.equal(fs.readFileSync(__dirname + '/../../mill/care-rota/copy.js', 'utf8'), fs.readFileSync(WR, 'utf8'), 'copy.js is Writer copy.v2.js verbatim');
-  assert.ok(!fs.existsSync(__dirname + '/../../mill/care-rota/copy-extra.js'), 'no stand-in file left');
+  { const ex = fs.readFileSync(__dirname + '/../../mill/care-rota/copy-extra.js', 'utf8'); assert.ok(/STAND-IN/.test(ex) && Object.keys(vm.runInNewContext(ex + ';COPY_EXTRA')).join() === 'tagNameTooLong', 'only the marked QA C7 stand-in in copy-extra.js'); }
 });
 t('Writer finals (N5) verbatim: tagTwoNeeds, tagTwoNames, tagNoDay quote {line}; patchGap, patchNotNeeded, copyHelper, label-line templates', () => {
   assert.equal(C.tagTwoNeeds, 'To fix: “{line}” has two needs. Put each on its own line.'); assert.equal(C.tagTwoNames, 'To fix: “{line}” has more than one name. One person per line.');
   assert.equal(C.tagNoDay, 'To fix: “{line}”. No day in this rota matches it.'); assert.equal(C.patchGap, '{date}: {need}, nobody yet'); assert.equal(C.patchNotNeeded, '{date}: {need}, not needed'); assert.equal(C.copyHelper, 'Copy the message for {name}');
   assert.equal(C.handoffText, "Days for: {name}\nHelping: {for}\nFrom: {org}\n{dayLines}\n{noteLines}Can't make one? Tell {org} before you swap with anyone.\n{stamp}"); assert.equal(C.stillOpenText, 'For: {for}\nStill open. Reply to me, not the group:\n{lines}\n{stamp}');
   assert.equal(M.fill(C.tagTwoNeeds, { line: 'Mon dinner \u201Cwalk\u201D Ana' }), 'To fix: “Mon dinner "walk" Ana” has two needs. Put each on its own line.'); });
+// ---------- QA local-ea5aabe C3 / C4 / C7 and the sweeps
+t('QA C3: a joined pair is TO FIX (tagTwoNames), never placed, never mangled into one name; plain names still placed', () => {
+  for (const pr of ['Ana&Ben', 'Ana+Ben', 'Ana\uFF06Ben', 'Ana \uFF06 Ben', 'Ana\uFF0BBen', 'Ana\u2795Ben', 'Ana / Ben', 'Ana/Ben', 'Ana or Ben', 'Ana OR Ben', 'Ana, Ben', 'Ana,Ben']) for (const l of ['Mon 19 dinner ' + pr, pr + ': Mon 19 dinner', 'Mon 19 ' + pr + ' dinner']) {
+    const r = CR.check(CFG, [l]); assert.equal(r.rows[0].result, 'toFix', l); assert.equal(r.issues.length, 1, l); assert.equal(r.issues[0].kind, 'twoNames', l); assert.equal(Object.keys(r.got).length, 0, l); assert.ok(!r.helpers.length, l); }
+  for (const nm of ['Andrea', 'Sandy', 'Alexander', 'Brandon', 'Dan', 'Orla', 'Mary-Jane', "O'Neil", 'Zoë', 'Anna Maria']) for (const l of ['Mon 19 dinner ' + nm, nm + ': Mon 19 dinner', nm + ' Mon 19 dinner'])
+    assert.deepEqual(got(CR.check(CFG, [l])), { '2026-10-19 Dinner': [nm] }, l);
+  assert.deepEqual(got(CR.check(CFG, ['Wed, Oct 21 ride Ana'])), { '2026-10-21 Ride': ['Ana'] }); assert.deepEqual(got(CR.check(CFG, ['10/21 ride Ana'])), { '2026-10-21 Ride': ['Ana'] }); });
+t('QA C4: "Name: day need" reads the name even when the name is a month (May/Jan/June/April); proto r1d month rule kept', () => {
+  const C4 = Object.assign({}, CFG, { first: '2026-10-19', last: '2026-10-28', needs: [{ key: 'dinner', label: 'Dinner', rule: 'every', days: [] }, { key: 'walk', label: 'Dog walk', rule: 'every', days: [] }] });
+  for (const [l, k, nm] of [['May: 20 dinner', '2026-10-20 Dinner', 'May'], ['Jan: 21 dinner', '2026-10-21 Dinner', 'Jan'], ['June: 24 dinner', '2026-10-24 Dinner', 'June'], ['April: 25 dinner', '2026-10-25 Dinner', 'April'],
+    ['May: 24 dog walk', '2026-10-24 Dog walk', 'May'], ['May: Oct 22 dinner', '2026-10-22 Dinner', 'May'], ['May 22 Oct dinner', '2026-10-22 Dinner', 'May'], ['Tue Oct 27 dinner May', '2026-10-27 Dinner', 'May']])
+    assert.deepEqual(got(CR.check(C4, [l])), { [k]: [nm] }, l);
+  assert.equal(CR.check(C4, ['Mon 19 dinner May 2']).rows[0].result, 'toFix', 'a month next to a number is still a date (proto)');
+  assert.equal(CR.check(C4, ['Ana: Tue 20 dinner Ben']).issues[0].kind, 'twoNames', 'a name before the colon and another after it'); });
+t('QA C7: helper name cap 40 at paste/parse and in a received link; over-cap line -> to fix (nameTooLong) with its {max}', () => {
+  const n40 = 'A' + 'b'.repeat(39), n41 = n40 + 'c'; assert.deepEqual(got(CR.check(CFG, ['Mon 19 dinner ' + n40])), { '2026-10-19 Dinner': [n40] });
+  const r = CR.check(CFG, ['Mon 19 dinner ' + n41]); assert.equal(r.rows[0].result, 'toFix'); assert.deepEqual(r.issues.map(i => [i.kind, i.max]), [['nameTooLong', 40]]); assert.equal(Object.keys(r.got).length, 0);
+  const r2 = CR.check(CFG, ['Mon 19 dinner Zoë ' + 'é'.repeat(35)]); assert.equal(r2.rows[0].result, 'placed', '40 code points incl. accents');
+  const X = vm.runInNewContext(fs.readFileSync(__dirname + '/../../mill/care-rota/copy-extra.js', 'utf8') + ';COPY_EXTRA'); assert.ok(!('tagNameTooLong' in C), 'Writer has no key yet: stand-in in copy-extra.js');
+  assert.equal(M.fill(X.tagNameTooLong, { line: 'Mon 19 dinner ' + n41, max: 40 }), 'To fix: “Mon 19 dinner ' + n41 + '”. The name is over 40 characters. Use a shorter name.');
+  const mk = nm => { const o = { f: 'Priya', o: 'Jess', a: '2026-10-19', b: '2026-10-19', s: 'Fri Oct 16, 10:04 PM PDT', d: [[[nm, ['Dinner']]]] }; const h = 'cr2.' + M.b64e(JSON.stringify(o)); return h + '.' + M.ck(h); };
+  assert.ok(CR.decodeSheet(mk(n40)).ok); assert.ok(!CR.decodeSheet(mk(n41)).ok); });
+const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let x = Math.imul(seed ^ seed >>> 15, 1 | seed); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };
+t('codec agreement: every sheet the app makes is accepted by the app (2,000 random checks: names up to the cap, accents, quotes, emoji)', () => {
+  const R = rng(7), pick = a => a[Math.floor(R() * a.length)], CH = 'abcdefghijklmnopqrstuvwxyzéøüßñ’\'-'.split('').concat(['\u201C', '\u201D', '\u00AB', '😀', 'Z']);
+  for (let i = 0; i < 2000; i++) { const len = 1 + Math.floor(R() * 40), nd = 1 + Math.floor(R() * 28), first = '2026-10-' + String(1 + Math.floor(R() * 3)).padStart(2, '0'), d0 = T(first);
+    const nm = () => { let s = 'Q'; while (M.len(s) < 1 + Math.floor(R() * 40)) s += pick(CH); return s; };
+    const cfg = { forName: 'F' + 'x'.repeat(Math.floor(R() * 39)), org: 'O' + 'y'.repeat(Math.floor(R() * 23)), first, last: CR.iso(d0 + (nd - 1) * 864e5), needs: [{ key: 'dinner', label: 'Dinner', rule: 'every', days: [] }, { key: 'walk', label: 'Dog walk', rule: 'every', days: [] }], noteAll: '' };
+    const lines = Array.from({ length: 1 + Math.floor(R() * 12) }, () => 'Oct ' + (1 + Math.floor(R() * 28)) + ' ' + pick(['dinner', 'walk']) + ' ' + nm());
+    const r = CR.check(cfg, lines); r.stamp = 'Fri Oct 16, 10:04 PM PDT'; const f = CR.encodeSheet(r, cfg), d = CR.decodeSheet(f);
+    assert.ok(d.ok, JSON.stringify({ lines, why: d.why })); assert.deepEqual(d.data.sheet.map(x => x.who), CR.sheet(r).map(x => x.who)); void len; } });
+t('placement sweep vs an independent reference (port of QA ref.py, 6,000 random ranges/lines incl. DST, month/year ends, month & weekday-prefix names)', () => {
+  const R = rng(20261017), ri = (a, b) => a + Math.floor(R() * (b - a + 1)), pick = a => a[Math.floor(R() * a.length)];
+  const WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], WDL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const NAMES = ['Ana', 'Ben', 'Carla', 'Dev', 'Ellie', 'Fatima', 'Mark', 'May', 'Andrea', 'Jan', 'Sandy', 'Zoë', 'Orla', 'Dan', 'Brandon', 'Alexander', 'June', 'April', 'Monica', 'Sunny', 'Mary-Jane'];
+  const NEEDW = { Dinner: ['dinner', 'meal', 'food'], Ride: ['ride', 'lift', 'drive'], 'Dog walk': ['dog walk', 'walk', 'dog'] };
+  const U = (y, m, d) => Date.UTC(y, m - 1, d), add = (t, k) => t + k * 864e5, D = t => new Date(t), wdOf = t => (D(t).getUTCDay() + 6) % 7, isoU = t => D(t).toISOString().slice(0, 10);
+  const on = (n, t) => n.rule === 'every' || (n.rule === 'weekdays' && wdOf(t) < 5) || (n.rule === 'these' && n.days.includes(isoU(t))) || (n.rule === 'except' && !n.days.includes(isoU(t)));
+  const starts = [U(2026, 10, 26), U(2027, 3, 8), U(2026, 12, 20), U(2027, 2, 15), U(2028, 2, 20), U(2026, 1, 1)]; let checked = 0, monthAsBareName = 0;
+  for (let i = 0; i < 6000; i++) {
+    const first = add(pick(starts), ri(-10, 40)), n = ri(1, 28), days = Array.from({ length: n }, (_, k) => add(first, k)); const needs = [];
+    for (const [key, label] of [['dinner', 'Dinner'], ['ride', 'Ride'], ['walk', 'Dog walk']]) if (R() < .7) { const rule = pick(['every', 'weekdays', 'these', 'except']); const pool = days.map(isoU).slice(); const pk = [];
+      for (let k = Math.min(n, ri(1, 3)); k > 0; k--) pk.push(pool.splice(ri(0, pool.length - 1), 1)[0]); needs.push({ key, label, rule, days: rule === 'these' || rule === 'except' ? pk.sort() : [] }); }
+    if (!needs.length) needs.push({ key: 'dinner', label: 'Dinner', rule: 'every', days: [] });
+    const needed = days.reduce((a, t) => a + needs.filter(x => on(x, t)).length, 0);
+    const d = R() < n / (n + 1) ? pick(days) : add(first, ri(-5, 35)), dd = D(d).getUTCDate(), dm = D(d).getUTCMonth() + 1, w = wdOf(d);
+    const v = pick(['wd num', 'num', 'wd', 'm/d', 'mon num', 'num mon', 'wd mon num', 'wrongwd', 'wd num th']); let parts, toks;
+    if (v === 'wd num') { parts = { wd: w, num: dd }; toks = [WD[w], '' + dd]; } else if (v === 'num') { parts = { num: dd }; toks = ['' + dd]; } else if (v === 'wd') { parts = { wd: w }; toks = [pick([WD[w], WDL[w]])]; }
+    else if (v === 'm/d') { parts = { mon: dm, num: dd }; toks = [dm + '/' + dd]; } else if (v === 'mon num') { parts = { mon: dm, num: dd }; toks = [MO[dm - 1], '' + dd]; } else if (v === 'num mon') { parts = { mon: dm, num: dd }; toks = ['' + dd, MO[dm - 1]]; }
+    else if (v === 'wd mon num') { parts = { wd: w, mon: dm, num: dd }; toks = [WD[w], MO[dm - 1], '' + dd]; } else if (v === 'wrongwd') { const x = (w + ri(1, 6)) % 7; parts = { wd: x, num: dd }; toks = [WD[x], '' + dd]; }
+    else { parts = { wd: w, num: dd }; toks = [WD[w], dd + (dd >= 11 && dd <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[dd % 10] || 'th')]; }
+    const nd = pick(needs.concat([{ label: 'Dinner' }])), word = pick(NEEDW[nd.label]), name = pick(NAMES), order = pick(['d n N', 'N d n', 'N: d n']);
+    const line = order === 'd n N' ? toks.concat([word, name]).join(' ') : order === 'N d n' ? [name].concat(toks, [word]).join(' ') : name + ': ' + toks.concat([word]).join(' ');
+    const cand = days.filter(t => (parts.num == null || D(t).getUTCDate() === parts.num) && (parts.mon == null || D(t).getUTCMonth() + 1 === parts.mon) && (parts.wd == null || wdOf(t) === parts.wd)); let e;
+    if (parts.num != null && parts.wd != null && !cand.length) { const mm = days.filter(t => D(t).getUTCDate() === parts.num && (parts.mon == null || D(t).getUTCMonth() + 1 === parts.mon)); if (mm.length) e = { kind: 'wrongWeekday', date: isoU(mm[0]), weekday: WDL[wdOf(mm[0])] }; }
+    if (!e) e = cand.length === 1 ? { kind: 'one', date: isoU(cand[0]) } : { kind: cand.length ? 'ambiguous' : 'noDay' };
+    const r = CR.check({ forName: 'Q', org: 'Jo', first: isoU(first), last: isoU(days[n - 1]), needs }, [line]), row = r.rows[0], iss = r.issues[0], gd = row.day != null ? CR.iso(row.day) : null;
+    assert.equal(r.needList.length, needed, line);
+    // "Jan 10 food" (a month-word name first, then a bare number): honestly ambiguous — the app may read Jan as the month and
+    // ask for a name ("couldn't read"), but it must never place it on a wrong day or under a wrong name.
+    if (order === 'N d n' && MO.concat(['June', 'April']).includes(name) && /^\d+$/.test(toks[0]) && row.result === 'couldntRead') { monthAsBareName++; continue; }
+    if (e.kind === 'one') { const want = needs.some(x => x.label === nd.label && on(x, Date.parse(e.date + 'T00:00:00Z'))) ? 'placed' : 'notNeeded';
+      assert.deepEqual([row.result, gd, row.name, row.need], [want, e.date, name, nd.label], line + ' ' + isoU(first) + '+' + n); }
+    else if (e.kind === 'wrongWeekday') { assert.deepEqual([row.result, gd, iss && iss.weekday], ['toFix', e.date, e.weekday], line); }
+    else if (e.kind === 'ambiguous') assert.equal(row.result, 'ambiguous', line); else { assert.equal(row.result, 'toFix', line); assert.equal(gd, null, line); }
+    checked++; }
+  assert.ok(checked > 5800, checked); console.log('   sweep: ' + checked + ' matched the reference; ' + monthAsBareName + ' "Month N need" lines asked for a name (never misplaced)'); });
 console.log('PASS ' + n + ' tests');

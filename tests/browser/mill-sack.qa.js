@@ -127,8 +127,8 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     ck('390 equal with nobody taking: errorFeeNoBasis, export blocked', t.status === COPYV2.errorFeeNoBasis && (await p.$eval('#share', e => e.disabled)), t);
     await p.focus('#bp'); await p.keyboard.press('Enter'); await sleep(50); t = await rowsOf(); ck('390 proportional with nobody taking: fee sits on Unclaimed', t.tots.join() === '$0.00,$0.00,$11.00', t);
     await typeInto(p, '#u', 'u'.repeat(17)); await typeInto(p, '#c', 'ABCDE'); await sleep(50);
-    // D10-r2: the unit input itself stops at 16 (maxlength + validation), so typing 17 leaves 16 and no unit error; currency keeps its Writer limit message
-    { const body = await p.evaluate(() => document.body.innerText), uv = await p.$eval('#u', e => e.value); ck('390 unit capped at 16 in the input (no over-limit unit reachable); currency limit uses Writer copy with {max} (3)', uv === 'u'.repeat(16) && !/Unit: 16 characters max/.test(body) && body.includes('Currency: 3 characters max. 2 over.'), { uv, msgs: body.match(/(Unit|Currency):[^\n]*/g) }); }
+    // The unit (16) and currency (3) inputs stop at their caps (counted like the link parser), so typing past them leaves the cap and no limit error is reachable
+    { const body = await p.evaluate(() => document.body.innerText), uv = await p.$eval('#u', e => e.value), cv = await p.$eval('#c', e => e.value); ck('390 unit capped at 16 and currency at 3 in the inputs (no over-limit value reachable, no limit error)', uv === 'u'.repeat(16) && cv === 'ABC' && !/Unit: 16 characters max/.test(body) && !/Currency: 3 characters max/.test(body), { uv, cv, msgs: body.match(/(Unit|Currency):[^\n]*/g) }); }
     ck('390 fee-mode checks no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   // ---- QA recheck 83a2ebcd: D7 read-only recipient / no stray recipient panel for the sender, D8 nobasis message, D9 residual sentence vs math, D1b unbroken money
   const RICE = { n: 'Rice', u: 'lb', c: '$', q: '25', i: '0.5', p: '31.47', f: '2.99', b: 'p', x: -1, h: [['Ana', '8'], ['Unit 2B', '7.5'], ['Bao & Linh', '6']] };
@@ -204,10 +204,10 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     let r = await p.evaluate(() => ({ x: [...document.querySelectorAll('#hh .sk-x')].map(e => e.getAttribute('aria-label')), give: [...document.querySelectorAll('#assign button, .ss-assign button')].map(e => e.textContent) }));
     ck(w + ' D14 editor: × aria-labels quote the typed household', r.x.includes(M_fill(COPY.removeHousehold, '“Zqx Ana”')) && r.x.includes(M_fill(COPY.removeHousehold, '“Zqx Ben”')), r);
     let a = await typedAudit(p, ['Zqx rice', 'Zqx Ana', 'Zqx Ben']); ck(w + ' D14 editor with leftover (Give to buttons): typedAudit (screen, aria, describedby, live, options, toast) finds nothing unquoted', a.ok && r.give.some(t => t.includes('“Zqx Ana”')), { a, give: r.give });
-    await p.click('#add'); await sleep(80); hh = await p.$$('#hh input'); await hh[4].click({ clickCount: 3 }); await hh[4].type('Zqx Cy with a very long name x'); await hh[5].click({ clickCount: 3 }); await hh[5].type('abc'); await hh[1].click({ clickCount: 3 }); await hh[1].type('4.5'); await p.keyboard.press('Tab'); await sleep(150);
+    await p.click('#add'); await sleep(80); hh = await p.$$('#hh input'); await hh[4].click({ clickCount: 3 }); await hh[4].type('Zqx Cy with a long name'); await hh[5].click({ clickCount: 3 }); await hh[5].type('abc'); await hh[1].click({ clickCount: 3 }); await hh[1].type('4.5'); await p.keyboard.press('Tab'); await sleep(150);
     const msgs = await p.evaluate(() => [...document.querySelectorAll('#hh-msg li')].map(e => e.textContent));
-    a = await typedAudit(p, ['Zqx rice', 'Zqx Ana', 'Zqx Ben', 'Zqx Cy with a very long name x']);
-    ck(w + ' D14 editor validation messages name the household quoted ("“Zqx Ana”: …")', msgs.length >= 2 && msgs.some(m => m.startsWith('“Zqx Ana”: ')) && msgs.some(m => m.startsWith('“Zqx Cy with a very long name x”: ')) && a.ok, { msgs, a });
+    a = await typedAudit(p, ['Zqx rice', 'Zqx Ana', 'Zqx Ben', 'Zqx Cy with a long name']);
+    ck(w + ' D14 editor validation messages name the household quoted ("“Zqx Ana”: …")', msgs.length >= 2 && msgs.some(m => m.startsWith('“Zqx Ana”: ')) && msgs.some(m => m.startsWith('“Zqx Cy with a long name”: ')) && a.ok, { msgs, a });
     ck(w + ' D14 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   // QA D10 reopened (PM): the free-text unit is quoted everywhere it is displayed: row unit spans, request aria, error/increment
   // messages, LCD, status, reconcile, assign, notready, copy text, changedWas, answer amount label, amount and print.
@@ -322,6 +322,30 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
         ck(w + ' unit cap = link parser count: 16 emoji (ZWJ, flags, tag flag, keycap) typed in full; 17th char refused when typed, as a flag, mid-text insert, paste and drop; no unit error', typed === EU && after17 === EU && afterFlag === EU && afterMid === EU && afterPaste === EU && drop === '🦊'.repeat(16) && !/Unit:/.test(sv.err) && sv.lcd === '\u201C' + EU + '\u201D' && !sv.share, { typed: typed === EU, after17: after17 === EU, afterFlag: afterFlag === EU, afterMid: afterMid === EU, afterPaste: afterPaste === EU, dropLen: [...drop].length, sv });
         ck(w + ' unit cap: the 16-emoji unit survives a link round-trip (link made, decodes, recipient view shows it quoted)', /#s1\./.test(link) && rv.ok && rv.u === EU && rv.recv && rv.lcd === '\u201C' + EU + '\u201D' && !/damaged/.test(rv.banner), { link: link.length, rv: { ok: rv.ok, same: rv.u === EU, recv: rv.recv } });
         ck(w + " unit cap: 'abcdefghijklmnop' typed unchanged, a 17th letter refused", abc === 'abcdefghijklmnop' && abc17 === 'abcdefghijklmnop', { abc, abc17 }); }
+      // Remaining caps count like the link parser too: item 40, household name 24, currency 3, all in grapheme clusters. Typed to the cap
+      // with ZWJ/flag/keycap sequences, one more refused (typed, pasted, script-set), no limit error, and every capped value survives a link round-trip.
+      { const EMO = ['👨‍👩‍👧‍👦', '🏳️‍🌈', '🇯🇵', '🇺🇦', '👩🏽‍💻', '😀', '❤️', '🧑‍🤝‍🧑', '🇬🇧', '👍🏿', '🐈‍⬛', '🏴󠁧󠁢󠁳󠁣󠁴󠁿', '1️⃣', '🫶', '🇨🇦', '🦊'], E = k => Array.from({ length: k }, (_, i) => EMO[i % EMO.length]).join('');
+        const IT = E(40), NM1 = E(24), NM2 = 'Bo' + E(22), CU = '🇪🇺€£';
+        await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(100);
+        const nameSel = await p.evaluate(() => '#' + document.querySelector('.ss-hn').id);
+        const capRun = async (sel, val, extra) => { await typeInto(p, sel, val); await sleep(30); const typed = await p.$eval(sel, e => e.value); await p.keyboard.type(extra); await sleep(30); const after = await p.$eval(sel, e => e.value);
+          await p.$eval(sel, e => { e.focus(); e.select(); }); await p.evaluate(t => document.execCommand('insertText', false, t), val + extra + extra); await sleep(30); const pasted = await p.$eval(sel, e => e.value);
+          const forced = await p.evaluate((sel, t) => { const e = document.querySelector(sel); e.value = t; e.dispatchEvent(new Event('input', { bubbles: true })); return e.value; }, sel, val + extra);
+          const ml = await p.$eval(sel, e => e.hasAttribute('maxlength')); return { typed: typed === val, after: after === val, pasted: pasted === val, forced: forced === val, noMaxlength: !ml }; };
+        const it = await capRun('#item', IT, '🇫🇷'), nm = await capRun(nameSel, NM1, 'x'), cu = await capRun('#c', CU, '$');
+        const ascii = { item: await capRun('#item', 'i'.repeat(40), 'j'), name: await capRun(nameSel, 'n'.repeat(24), 'm'), cur: await capRun('#c', 'ABC', 'D') };
+        const okRun = r => r.typed && r.after && r.pasted && r.forced && r.noMaxlength;
+        const st = { n: IT, u: 'kg', c: CU, q: '10', i: '1', p: '20.00', f: '1.00', b: 'p', x: -1, h: [[NM1, '3'], [NM2, '3']] };
+        await setForm(p, st); await p.evaluate(c => { const e = document.getElementById('c'); e.value = c; e.dispatchEvent(new Event('input', { bubbles: true })); }, CU); await sleep(120);
+        const sv = await p.evaluate(() => ({ errs: document.getElementById('item-msg').textContent + document.getElementById('hh-msg').textContent, share: document.getElementById('share').disabled, vals: [document.getElementById('item').value, document.getElementById('c').value].concat([...document.querySelectorAll('.ss-hn')].map(e => e.value)) }));
+        await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); });
+        await p.click('#share'); await sleep(200); const link = await p.$eval('#link', e => e.value);
+        await p.goto('about:blank'); await p.goto(link || BASE, { waitUntil: 'load' }); await sleep(200);
+        const rv = await p.evaluate(() => { const d = SACKLINK.decode(location.hash); return { ok: d.ok, d: d.ok ? { n: d.data.n, c: d.data.c, h: d.data.h.map(x => x[0]) } : null, recv: !document.getElementById('recv').hidden, cells: [...document.querySelectorAll('#rows .ss-alloc .who')].map(e => e.textContent), lcd: document.getElementById('lcd-p').textContent }; });
+        ck(w + ' caps count like the link parser: item 40 / name 24 / currency 3 graphemes (ZWJ, flags, keycaps) typed in full, one more refused typed + pasted + script-set, no maxlength', okRun(it) && okRun(nm) && okRun(cu), { it, nm, cu });
+        ck(w + ' caps: ASCII at the cap unchanged (item 40, name 24, currency ABC), one more letter refused', okRun(ascii.item) && okRun(ascii.name) && okRun(ascii.cur), ascii);
+        ck(w + ' caps: capped item, names and currency make a link with no limit error', !/characters max|too long/i.test(sv.errs) && !sv.share && sv.vals.join('|') === [IT, CU, NM1, NM2].join('|') && /#s1\./.test(link), { errs: sv.errs, share: sv.share });
+        ck(w + ' caps: capped item, names and currency survive the link round-trip (decode + recipient view)', rv.ok && rv.d.n === IT && rv.d.c === CU && rv.d.h.join('|') === [NM1, NM2].join('|') && rv.recv && rv.cells.includes('\u201C' + NM1 + '\u201D') && rv.cells.includes('\u201C' + NM2 + '\u201D') && rv.lcd.startsWith(CU), { ok: rv.ok, recv: rv.recv, lcd: rv.lcd }); }
       ck(w + ' D10-r1/r2 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   }
   process.exit(result(rows));

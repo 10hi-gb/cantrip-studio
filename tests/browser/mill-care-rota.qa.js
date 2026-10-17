@@ -8,7 +8,8 @@ const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'ht
 const { typedAudit, recipientAccess, mouseAt, errsOf, W, sleep, session, overflow, typeInto, storage, netCheck, result } = require('./mill-common');
 const fs = require('fs'), vm = require('vm');
 const C = vm.runInNewContext(fs.readFileSync(__dirname + '/../../mill/care-rota/copy.js', 'utf8') + ';COPY');
-const X = C; // Writer N5 supplied the former stand-in keys; no copy-extra.js
+const X = C; // Writer N5 supplied the former stand-in keys
+const XE = vm.runInNewContext(fs.readFileSync(__dirname + '/../../mill/care-rota/copy-extra.js', 'utf8') + ';COPY_EXTRA'); // QA C7 stand-in only (STAND-IN, logged for Writer)
 const CR = require('../../mill/care-rota/cr.js'), M = require('../../mill/shared/core.js');
 const pdfPages = buf => { const f = require('os').tmpdir() + '/cr-print-' + process.pid + '.pdf'; fs.writeFileSync(f, buf); const m = /Pages:\s+(\d+)/.exec(require('child_process').execFileSync('pdfinfo', [f]).toString()); fs.unlinkSync(f); return m ? +m[1] : -1; };
 const BASE = `${SCHEME}://${H}/mill/care-rota/`;
@@ -181,6 +182,108 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     ck(w + ' Start over (confirm): everything cleared, results gone, toast "Cleared."', t.on.join() === 's1' && t.v === '' && t.toast === C.resetDone && !t.n, t);
     ck(w + ' typed-audit session: no request off origin, no page errors', !netCheck(s.reqs, H, []).offending.length && !errsOf(s, SCHEME).length, errsOf(s, SCHEME));
     await s.b.close();
+  }
+  // ================= QA local-ea5aabe C1–C7 =================
+  // C5/C6 wrap audit: nothing clipped or outside its patch, no text under 10px, a word (or hyphen part) that fits its box is never
+  // broken mid-word, and a closing quote is never alone on a line.
+  const wrapAudit = p => p.evaluate(() => { const out = { patches: 0, clipped: [], outside: [], small: [], midword: [], loneQuote: [] };
+    for (const pt of document.querySelectorAll('#quilts .patch')) { out.patches++; const pr = pt.getBoundingClientRect();
+      for (const e of pt.querySelectorAll('.d,.wd,.need,.who')) { const cs = getComputedStyle(e), tag = e.className + ':' + e.textContent.slice(0, 30); if (!e.getClientRects().length) continue;
+        if (parseFloat(cs.fontSize) < 10) out.small.push(tag + ' ' + cs.fontSize); if (cs.display !== 'inline' && (e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1)) out.clipped.push(tag + ' ' + [e.scrollWidth, e.clientWidth, e.scrollHeight, e.clientHeight]);
+        const er = e.getBoundingClientRect(); if (er.left < pr.left - .5 || er.right > pr.right + .5 || er.top < pr.top - .5 || er.bottom > pr.bottom + .5) out.outside.push(tag);
+        if (e.matches('.d,.wd')) continue; const map = [], tw = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) for (let i = 0; i < n.data.length; i++) map.push([n, i]);
+        const text = map.map(([n, i]) => n.data[i]).join(''), rg = (a, b) => { const r = document.createRange(); r.setStart(map[a][0], map[a][1]); r.setEnd(map[b - 1][0], map[b - 1][1] + 1); return r; }, box = e.clientWidth;
+        const re = /[^\s-]+-?|-/g; let m; while ((m = re.exec(text))) { const rs = [...rg(m.index, m.index + m[0].length).getClientRects()].filter(r => r.width > 0), tops = new Set(rs.map(r => Math.round(r.top)));
+          if (tops.size > 1) { const w = rs.reduce((x, r) => x + r.width, 0); if (w <= box + .5) out.midword.push({ t: m[0], w: Math.round(w), box, cls: e.className }); } }
+        for (let i = 0; i < text.length; i++) if (text[i] === '\u201D') { const q = rg(i, i + 1).getClientRects()[0], pv = i ? rg(i - 1, i).getClientRects()[0] : null; if (!pv || Math.round(pv.top) !== Math.round(q.top)) out.loneQuote.push(text); } } }
+    out.ok = out.patches > 0 && !out.clipped.length && !out.outside.length && !out.small.length && !out.midword.length && !out.loneQuote.length; return out; });
+  {
+    // C6: the worked example at 320/390 (double patch "Carla" + "Dev"), QA's stress names; C5: Other labels at 1280/1440
+    for (const w of [320, 390, 1280, 1440]) {
+      const s = await session(H, IP), { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
+      await form(p, Object.assign({}, JESS, { lines: PLAN })); await check(p); let a = await wrapAudit(p);
+      const carla = await p.evaluate(() => { const e = [...document.querySelectorAll('#quilts .patch.dbl .who .mill-typed')].find(x => x.textContent === '\u201CCarla\u201D'); return e ? new Set([...e.getClientRects()].map(r => Math.round(r.top))).size : -1; });
+      ck(w + ' QA C6 worked example: "Carla" (double patch) on one line, closing quote never alone, nothing clipped, text >= 10px', a.ok && carla === 1, { a, carla });
+      for (const label of ['Groceries', 'Groceries-Pharm', 'Pharmacyerrands1', 'Meds pickup']) {
+        await p.reload({ waitUntil: 'load' }); await sleep(150);
+        await form(p, { forName: 'Priya', org: 'Jess', first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', rule: 'every' }, { key: 'other', label, rule: 'every' }],
+          lines: ['Mon 19 dinner Bartholomew-Alexandra', 'Mon 19 dinner Maximiliana Featherstonehaugh', 'Tue 20 ' + label.toLowerCase() + ' Carla', 'Tue 20 ' + label.toLowerCase() + ' Dev', 'Wed 21 dinner Ana'] });
+        await check(p); a = await wrapAudit(p);
+        ck(w + ` QA C5/C6 Other need "${label}" + stress names: nothing clipped, wrap at spaces then hyphens, mid-word only when one word can't fit, no lone quote, >= 10px`, a.ok, a);
+      }
+      // wrap sweep: random names (3-40 chars, spaces, hyphens, accents) and random Other labels
+      const R = (seed => () => { seed = seed + 0x6D2B79F5 | 0; let x = Math.imul(seed ^ seed >>> 15, 1 | seed); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; })(w);
+      const word = k => { let o = 'ABCDEFGHJKLMNOPRSTWZ'[Math.floor(R() * 20)]; while (o.length < k) o += 'aeioubcdfghklmnprstvwyéøü'[Math.floor(R() * 25)]; return o; };
+      const rname = () => { const L = 3 + Math.floor(R() * 38); let o = word(Math.min(L, 2 + Math.floor(R() * 16))); while (o.length < L - 2) o += (R() < .3 ? '-' : ' ') + word(Math.min(L - o.length - 1, 2 + Math.floor(R() * 16))); return o.slice(0, 40).replace(/[- ]+$/, ''); };
+      let bad = [], seen = 0;
+      for (let round = 0; round < 3; round++) { await p.reload({ waitUntil: 'load' }); await sleep(120); const label = rname().slice(0, 16).replace(/[- ]+$/, '').replace(/ +/g, ' '), names = Array.from({ length: 8 }, rname);
+        const lines = names.map((nm, i) => `Oct ${19 + i % 7} ${i % 3 ? 'dinner' : label.toLowerCase()} ${nm}`).concat([`Oct 19 dinner ${names[0]}2`]);
+        await form(p, { forName: 'Priya', org: 'Jess', first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', rule: 'every' }, { key: 'other', label, rule: 'every' }], lines }); await check(p);
+        const placed = (await p.evaluate(() => document.querySelectorAll('#quilts .patch.taken,#quilts .patch.dbl').length)); a = await wrapAudit(p); seen += a.patches; if (!a.ok || !placed) bad.push({ label, names, a, placed }); }
+      ck(w + ` QA C5/C6 wrap sweep: 3 rounds of random names/Other labels, every patch passes the wrap audit`, !bad.length && seen > 0, bad.slice(0, 2));
+      ck(w + ' wrap session: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
+    }
+  }
+  {
+    // C2: print never carries an old sheet over (Start over / Make my own rota / damaged link in the same tab); C3/C7 tags in the UI
+    const s = await session(H, IP), { p } = s; await p.setViewport({ width: 1280, height: 900 }); await p.evaluateOnNewDocument(clipStub); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
+    const printed = async () => { await p.emulateMediaType('print'); const r = await p.evaluate(() => ({ on: [...document.querySelectorAll('section')].filter(x => getComputedStyle(x).display !== 'none').map(x => x.id),
+      rows: document.querySelectorAll('#sheet-t tbody tr').length, head: document.getElementById('sheet-h').textContent + document.getElementById('stamp-4').textContent, has: document.body.classList.contains('has-sheet') }));
+      await p.emulateMediaType(null); const txt = require('child_process').execFileSync('pdftotext', ['-', '-'], { input: await p.pdf({ format: 'letter' }) }).toString(); r.pdfHasSheet = /Jess|Priya/.test(txt); return r; };
+    const gone = r => !r.on.includes('s4') && !r.rows && !r.head && !r.has && !r.pdfHasSheet;
+    await form(p, Object.assign({}, JESS, { lines: FIXED })); await check(p); let before = await printed();
+    await p.click('#b-reset'); await sleep(200); let after = await printed();
+    ck('QA C2a print after Start over: the sheet printed before, now nothing of it (DOM and state cleared, PDF has no sheet)', before.on.join() === 's4' && before.rows === 7 && gone(after), { before, after });
+    await form(p, Object.assign({}, JESS, { lines: FIXED })); await check(p); await p.click('#b-link'); await sleep(120); const link = await p.$eval('#link', e => e.value);
+    await p.goto('about:blank'); await p.goto(link, { waitUntil: 'load' }); await sleep(250); before = await printed();
+    await p.click('#own'); await sleep(200); after = await printed();
+    ck('QA C2b print after "Make my own rota": the received sheet printed, then nothing of it', before.on.join() === 's4' && before.rows === 7 && gone(after), { before, after });
+    await p.goto('about:blank'); await p.goto(link, { waitUntil: 'load' }); await sleep(250); before = await printed();
+    await p.evaluate(f => { location.hash = f; }, link.split('#')[1].slice(0, -3) + 'zzz'); await sleep(250); after = await printed();
+    const bad = await p.evaluate(() => !document.getElementById('bad').hidden && document.getElementById('bad-t').textContent);
+    ck('QA C2c print after a damaged link in the same tab as a valid one: badLink shown, nothing of the old sheet printed', before.on.join() === 's4' && bad === C.badLink && gone(after), { before, after, bad });
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const n41 = 'Q' + 'w'.repeat(40);
+    await form(p, Object.assign({}, JESS, { lines: ['Mon 19 dinner ' + n41, 'Mon 19 walk Ana / Ben', 'Tue 20 dinner Ana or Ben', 'Wed 21 ride Ana\uFF06Ben', 'Fri 23 dinner Ana, Ben', 'May: 20 dinner', 'Thu 22 walk Orla'] })); await check(p);
+    const st = await state(p);
+    ck('QA C7 + C3 in the UI: the 41-char name -> to fix with the marked stand-in (tagNameTooLong, max 40); "/", "or", "＆", "," -> tagTwoNames; May: and Orla placed',
+      JSON.stringify(st.tags) === JSON.stringify([M.fill(XE.tagNameTooLong, { line: 'Mon 19 dinner ' + n41, max: 40 })].concat(['Mon 19 walk Ana / Ben', 'Tue 20 dinner Ana or Ben', 'Wed 21 ride Ana\uFF06Ben', 'Fri 23 dinner Ana, Ben'].map(l => M.fill(C.tagTwoNames, { line: l }))))
+      && st.patches.some(x => /Oct 20.*Dinner.*May/.test(x)) && st.patches.some(x => /Oct 22.*Dog walk.*Orla/.test(x)) && !st.patches.some(x => /Ben|Qwww/.test(x)), st);
+    ck('C2/C3/C7 session: no page errors, no off-origin requests', !errsOf(s, SCHEME).length && !netCheck(s.reqs, H, []).offending.length, errsOf(s, SCHEME)); await s.b.close();
+  }
+  {
+    // C1: the WHOLE URL is capped at 2,000, made side and received side, at 1999 / 2000 / 2001 chars, via a long path on a local
+    // throwaway server (nested dirs + a symlink to the repo). Date.now frozen so the made fragment is stable.
+    const os = require('os'), path = require('path'), { spawn } = require('child_process'), REPO = path.resolve(__dirname, '../..');
+    const root = fs.mkdtempSync(os.tmpdir() + '/cr-long-'); const srv = spawn('python3', ['-u', '-m', 'http.server', '0', '--bind', '127.0.0.1', '--directory', root], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const port = await new Promise((res, rej) => { let b = ''; const f = d => { b += d; const m = /port (\d+)/.exec(b); if (m) res(+m[1]); }; srv.stdout.on('data', f); srv.stderr.on('data', f); setTimeout(() => rej(new Error('no port')), 8000); });
+    const ORIGIN = 'http://127.0.0.1:' + port; let tag = 0;
+    const pathOf = total => { let left = total - 1 - '/mill/care-rota/'.length; const segs = []; tag++;
+      while (left > 0) { let k = left > 200 ? (left === 201 ? 199 : 200) : left; left -= k; if (left) left -= 1; segs.push(segs.length ? 'a'.repeat(k) : ('t' + tag + '_' + 'a'.repeat(k)).slice(0, k)); }
+      let dir = root; segs.slice(0, -1).forEach(x => { dir = path.join(dir, x); fs.mkdirSync(dir, { recursive: true }); }); fs.symlinkSync(REPO, path.join(dir, segs[segs.length - 1]));
+      const P = '/' + segs.join('/') + '/mill/care-rota/'; if (P.length !== total) throw new Error('path ' + P.length + ' != ' + total); return P; };
+    const T0 = Date.UTC(2026, 9, 17, 17, 4);
+    const s = await session(H, IP), { p } = s; await p.setViewport({ width: 1280, height: 900 }); await p.evaluateOnNewDocument(clipStub); await p.evaluateOnNewDocument(t => { Date.now = () => t; }, T0);
+    const SMALL = { forName: 'Priya', org: 'Jess', first: '2026-10-19', last: '2026-10-19', needs: [{ key: 'dinner', rule: 'every' }], lines: ['Mon 19 dinner Ana'] };
+    const makeAt = async P => { await p.goto(ORIGIN + P, { waitUntil: 'load' }); await sleep(200); await form(p, SMALL); await check(p); await p.click('#b-link'); await sleep(150);
+      return p.evaluate(() => ({ box: !document.getElementById('link-box').hidden, link: document.getElementById('link').value, long: document.getElementById('link-long').textContent })); };
+    const openAt = async url => { await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(250);
+      return p.evaluate(() => ({ sheet: getComputedStyle(document.getElementById('s4')).display !== 'none' && document.querySelectorAll('#sheet-t tbody tr').length, bad: !document.getElementById('bad').hidden && document.getElementById('bad-t').textContent, len: location.href.length })); };
+    const probe = await makeAt(pathOf(60)); const frag = probe.link.split('#')[1]; const made = {}, recv = {};
+    for (const total of [1999, 2000, 2001]) {
+      const P = pathOf(total - ORIGIN.length - 1 - frag.length), m = await makeAt(P); made[total] = { box: m.box, len: m.link.length, long: m.long === C.tooLongLink };
+      if (m.box) made[total].reopened = await openAt(m.link);
+      // received side: a valid fragment (from the app) on a long path; and a long-path variant of the 120-day-ish real sheet
+      const R2 = pathOf(total - ORIGIN.length - 1 - frag.length); recv[total] = await openAt(ORIGIN + R2 + '#' + frag);
+    }
+    // received side with a fragment well inside cr.js's own cap but a path long enough to push the WHOLE URL over (the QA case)
+    const r = CR.check({ forName: 'Priya', org: 'Jess', first: '2026-10-01', last: '2026-10-28', needs: [{ key: 'dinner', label: 'Dinner', rule: 'every', days: [] }] }, Array.from({ length: 28 }, (_, i) => `Oct ${i + 1} dinner Helper${i}`)); r.stamp = 'Sat Oct 17, 10:04 AM PDT';
+    const big = CR.encodeSheet(r, { forName: 'Priya', org: 'Jess', first: '2026-10-01', last: '2026-10-28' }); const bigOver = await openAt(ORIGIN + pathOf(2001 - ORIGIN.length - 1 - big.length) + '#' + big), bigAt = await openAt(ORIGIN + pathOf(2000 - ORIGIN.length - 1 - big.length) + '#' + big);
+    ck('QA C1 made side: whole link 1999 and 2000 -> link made with exactly that length and the app accepts it; 2001 -> no link, tooLongLink',
+      made[1999].box && made[1999].len === 1999 && made[1999].reopened.sheet === 1 && made[2000].box && made[2000].len === 2000 && made[2000].reopened.sheet === 1 && !made[2001].box && made[2001].long, made);
+    ck('QA C1 received side: whole URL 1999 and 2000 open the sheet; 2001 (long path) -> badLink, nothing shown', recv[1999].sheet === 1 && recv[1999].len === 1999 && recv[2000].sheet === 1 && recv[2000].len === 2000 && !recv[2001].sheet && recv[2001].bad === C.badLink && recv[2001].len === 2001, recv);
+    ck('QA C1 received side, long real sheet (fragment ' + big.length + ' chars, under cr.js\'s own cap): 2000 opens, 2001 refused', bigAt.sheet === 28 && bigAt.len === 2000 && !bigOver.sheet && bigOver.bad === C.badLink && bigOver.len === 2001, { bigAt, bigOver });
+    await s.b.close(); srv.kill(); fs.rmSync(root, { recursive: true, force: true });
   }
   process.exit(result(rows));
 })();
