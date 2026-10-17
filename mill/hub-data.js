@@ -5,7 +5,8 @@ window.MILL_HUB = {
  "sharedLimits": [
   "The source thread doesn't directly ask for any of the Wave 1 or Wave 2 tools, so those scores rest on scopes proposed by the Cantrip agents under Joshua's authorization, not on commenter demand.",
   "Every piece is memory-only: nothing is uploaded or stored. A link carries its content, anyone holding the link can read it, and it may stay in browser history.",
-  "Engineer self-check is the builder checking their own work. It is not QA."
+  "Engineer self-check is the builder checking their own work. It is not QA.",
+  "QA all-9 recheck (LOCALHOST-PREVIEW @f893087, qa/all9/local-f893087/QA-all9-f893087.md) NOT TESTED: physical phones and touch, Firefox, Safari/WebKit, Windows/high-contrast modes, real screen readers (VoiceOver, TalkBack, NVDA, JAWS; accessibility checked only through the Chrome AX tree), physical print, zoom 200%/400%, RTL text; CSS-generated text (content:attr(), ::before/::after); contrast of focus rings and non-text UI."
  ],
  "pieces": [
   {
@@ -22,22 +23,22 @@ window.MILL_HUB = {
     "One item, one unit, one currency per split. No savings, purchase or payment features.",
     "Fee rule: by amount, the fee is split over all quantity and the unclaimed row carries its own fee share until someone takes it or the sender assigns it; equal, the fee is split among households taking some, and with no takers the split is blocked.",
     "Recipients see a read-only split. \"Change my amount\" makes a new link on the recipient's device; it does not update or notify the sender.",
-    "Not tested: Change my amount link at the 2,000-character boundary."
+    "QA all-9 NOT TESTED: the 11px “was” line drawn by .is-changed .qty::after (CSS-generated text); the Change my amount cap check ran in Chrome only, at 1280 without queries (query variants at 390)."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 134da28501527078776b63b0ffdc973de96b110e: unit 21+8; browser sack 410/410 at 305/320/390/600/1280 (incl. QA D7r received origin+path+fragment cap at 1999/2000/2001/2040, normal and long path; D10-r5 at-cap names in full, no ellipsis, sender/recipient/change/print + Letter PDF; D2 kept); quote-spoof 63/63, recipient-a11y 87/87, sender-typed 12/12. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL; shared wrap f893087, recheck pending)",
+   "status": "NOT READY (all-9 recheck NOT CLEAN: W-3 (Low), W-4 (Low), contrast; Change my amount at the 2,000 cap PASS 15/15; deployed pin FAIL)",
    "qaLocal": {
-    "verdict": "READY",
+    "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "48156f86a8dd9d1bbd9d52ceceaf34db18ddfdd5",
-    "report": "qa/split-the-sack/local-48156f8/QA-local-48156f8.md",
-    "note": "Not tested: Change my amount link at the 2,000-character boundary."
+    "sha": "f893087c7ac397638e17c9aaa084374809f02130",
+    "report": "qa/all9/local-f893087/QA-all9-f893087.md (split-the-sack tree 5a07412, unchanged at c07008e)",
+    "note": "QA all-9: A wrap PASS 9/9; B contrast FAIL 29 of 508, W-3 (Low), W-4 (Low); C address bar PASS 27/27; E Change my amount at the 2,000 cap PASS 15/15. Verdict for this pass: NOT CLEAN: W-3, W-4 (Low)"
    },
    "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "134da28501527078776b63b0ffdc973de96b110e",
-    "report": "qa/split-the-sack/local-134da28/QA-local-134da28.md"
+    "sha": "48156f86a8dd9d1bbd9d52ceceaf34db18ddfdd5",
+    "report": "qa/split-the-sack/local-48156f8/QA-local-48156f8.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -66,18 +67,19 @@ window.MILL_HUB = {
     "tree": "1f37ffe0ce0236ea213816e7f4cdf74961bf59c9",
     "result": "unit tests 9 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL; shared wrap f893087, recheck pending)",
+   "status": "READY ON LOCALHOST-PREVIEW (all-9 recheck PASS at f893087; deployed pin FAIL)",
    "qaLocal": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "b225af5b4bd505a737e46a9f78374d6d77bd5b28",
-    "report": "qa/before-you-go/local-b225af5/QA-local-b225af5.md"
+    "sha": "f893087c7ac397638e17c9aaa084374809f02130",
+    "report": "qa/all9/local-f893087/QA-all9-f893087.md (before-you-go tree 3e24dfe, unchanged at c07008e)",
+    "note": "QA all-9: A wrap PASS 6/6; B contrast PASS 0 of 384; C address bar PASS 30/30. Verdict for this pass: PASS"
    },
    "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "774b68d4a03a7d5c0fa0e64fd4a2f0de40497f06",
-    "report": "qa/before-you-go/local-774b68d/QA-local-774b68d.md"
+    "sha": "b225af5b4bd505a737e46a9f78374d6d77bd5b28",
+    "report": "qa/before-you-go/local-b225af5/QA-local-b225af5.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -106,18 +108,19 @@ window.MILL_HUB = {
     "tree": "f83c650c08b683a712f9d700e4ff76e66f756316",
     "result": "unit tests 11 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL; shared wrap f893087, recheck pending)",
+   "status": "NOT READY (all-9 recheck NOT CLEAN: W-2 (Low–Medium), contrast; deployed pin FAIL)",
    "qaLocal": {
-    "verdict": "READY",
+    "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "eade562ddc783558ad2068f927f7aa576e60dd50",
-    "report": "qa/one-small-ask/local-eade562/QA-local-eade562.md"
+    "sha": "f893087c7ac397638e17c9aaa084374809f02130",
+    "report": "qa/all9/local-f893087/QA-all9-f893087.md (one-small-ask tree f780c94, unchanged at c07008e)",
+    "note": "QA all-9: A wrap PASS 9/9; B contrast FAIL, W-2 (Low–Medium) white on #C8553D 4.35:1; C address bar PASS 30/30. Verdict for this pass: NOT CLEAN: W-2"
    },
    "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "7add2de13797af5b9bc68ffd8b94f258b241d945",
-    "report": "qa/one-small-ask/local-7add2de/QA-local-7add2de.md"
+    "sha": "eade562ddc783558ad2068f927f7aa576e60dd50",
+    "report": "qa/one-small-ask/local-eade562/QA-local-eade562.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -144,18 +147,19 @@ window.MILL_HUB = {
     "tree": "b436439c6fafa24c13bf8e20dc5a3f34a660b771",
     "result": "unit tests 15 pass; live browser check 84/84 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL; shared wrap f893087, recheck pending)",
+   "status": "NOT READY (all-9 recheck NOT CLEAN: W-6 (Low), contrast; deployed pin FAIL)",
    "qaLocal": {
-    "verdict": "READY",
+    "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "6169c34f07ac2c8b51e4066d3acc76e5fee1a3f9",
-    "report": "qa/one-less-trip/local-6169c34/QA-local-6169c34.md"
+    "sha": "f893087c7ac397638e17c9aaa084374809f02130",
+    "report": "qa/all9/local-f893087/QA-all9-f893087.md (one-less-trip tree 217f188, unchanged at c07008e)",
+    "note": "QA all-9: A wrap PASS 6/6; B contrast FAIL 1 of 318, W-6 (Low) #progress 3.83:1 at 1280; C address bar PASS 30/30. Verdict for this pass: NOT CLEAN: W-6 (Low)"
    },
    "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "bc74052a02d8603a4ec1feeaff647920ea150886",
-    "report": "qa/one-less-trip/local-bc74052/QA-local-bc74052.md"
+    "sha": "6169c34f07ac2c8b51e4066d3acc76e5fee1a3f9",
+    "report": "qa/one-less-trip/local-6169c34/QA-local-6169c34.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -175,22 +179,23 @@ window.MILL_HUB = {
     "Manual entry only. No calendar access. One time zone per week; everyone's times are read in that zone.",
     "A day with no times for someone is unknown, never free; it is never offered as a shared time.",
     "Times the clocks skip or repeat on a daylight-saving change are refused, never moved or guessed. Lengths are real elapsed time across a change.",
-    "Nothing is sent or booked. A proposal is a suggestion worked out from what the sender typed; nobody has replied to it."
+    "Nothing is sent or booked. A proposal is a suggestion worked out from what the sender typed; nobody has replied to it.",
+    "QA all-9 NOT TESTED: the zone-ID check (D) ran in Chrome only."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 715aa3a: unit 19 incl. DST; browser 116/116 at 320/390/1280. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW (hardening afb31b8, untested; shared wrap f893087, recheck pending)",
+   "status": "NOT READY (all-9 recheck NOT CLEAN: W-1 (Low–Medium), <wbr> adds spaces in accessible names; zone-ID breaks at 320 only after \"/\" or \"_\", 23/23)",
    "qaLocal": {
-    "verdict": "READY",
+    "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "88869436943a40e949ac4445487912cc14bec828",
-    "report": "qa/the-same-hour/local-8886943/QA-local-8886943.md",
-    "note": "hardening afb31b8, untested"
+    "sha": "f893087c7ac397638e17c9aaa084374809f02130",
+    "report": "qa/all9/local-f893087/QA-all9-f893087.md (the-same-hour tree c6ae8fd = hardening afb31b8, unchanged at c07008e)",
+    "note": "QA all-9: A wrap PASS 15/15; B contrast PASS (0 failing enabled text); C address bar PASS 30/30; D zone IDs at 320: 23 breaks, all after \"/\" or \"_\", 0 mid-word; text, copy and link exact; accessibility tree FAIL, W-1 (Low–Medium). Verdict for this pass: NOT CLEAN: W-1"
    },
    "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "14df77a1622593f85adf2d50ba8a0369390c37c6",
-    "report": "qa/the-same-hour/local-14df77a/QA-local-14df77a.md"
+    "sha": "88869436943a40e949ac4445487912cc14bec828",
+    "report": "qa/the-same-hour/local-8886943/QA-local-8886943.md"
    }
   },
   {
@@ -207,16 +212,23 @@ window.MILL_HUB = {
     "One event, 2 to 8 people, up to 20 expenses, each split equally or by weight. Amounts are whole cents; leftover cents go to the largest fractions first, ties to whoever is listed first.",
     "The payments shown are one simple way to settle everyone to zero; they aren't necessarily the fewest. Nothing is paid, sent or linked to a bank.",
     "Currency is picked from $, € or £; there is no conversion. Refunds and negative amounts aren't supported.",
-    "A received link is a snapshot of what the sender entered; nobody has agreed to anything by opening it."
+    "A received link is a snapshot of what the sender entered; nobody has agreed to anything by opening it.",
+    "QA NOT TESTED (Even Up): the f893087 query strip was informational only (pre-strip); cap at 1280 with the 2,100-char pad query (ran at 390); origins with other port lengths (only a 4-digit port); pages at the cap opened from other apps (e.g. a messenger URL rewriter)."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 6f5f5435f607b901a8fae6cd674e704af77f1324: unit 21 (incl. 5000-case settlement property test); browser 312/312 at 320/360/390/700–999/1280/1440. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW (also READY at 5ad5c277f48e52f1864513b3bfca3782b25fe79f; wrap prep b5b0d60, untested; query-strip 649874e, untested; shared wrap f893087, recheck pending; receive cap: Engineer self-check only; independent QA check pending)",
+   "status": "NOT READY (all-9 recheck NOT CLEAN: W-5 (Low–Medium), contrast; F FINAL PASS at c07008e: receive cap 28/28, query strip 30/30, Make a link and no echo 6/6)",
    "qaLocal": {
+    "verdict": "NOT READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "c07008e8b39e95cd698ab55812e5e6ceecbc61dc",
+    "report": "qa/even-up/local-649874e/QA-local-649874e.md (even-up tree 4039c6ef0371e5a4673fdb6e02654329c0baaac0 = 649874e; also qa/all9/local-f893087/QA-all9-f893087.md)",
+    "note": "QA F FINAL PASS at c07008e (= 649874e tree): receive cap 28/28, query strip 30/30, Make a link and no echo 6/6. QA all-9: A wrap PASS 6/6; B contrast FAIL 12 of 772, W-5 (Low–Medium) \"Owes\" 3.94:1. Verdict: NOT CLEAN: W-5"
+   },
+   "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "6f5f5435f607b901a8fae6cd674e704af77f1324",
-    "report": "qa/even-up/local-6f5f543/QA-local-6f5f543.md",
-    "note": "wrap prep b5b0d60, untested; query-strip 649874e, untested; receive cap: Engineer self-check only; independent QA check pending"
+    "report": "qa/even-up/local-6f5f543/QA-local-6f5f543.md (also READY at 5ad5c277f48e52f1864513b3bfca3782b25fe79f)"
    }
   },
   {
@@ -234,16 +246,17 @@ window.MILL_HUB = {
     "Real switch and dwell checks weren't done. Switch scanning and hold to choose haven't been tried with switch users, a real switch or switch interface, iOS Switch Control, Android Switch Access, a head pointer or a screen reader. Synthetic tests don't count as that check.",
     "Secondhand source: the comment describes someone else's post about a game for a brother who can only turn his head left and right. The question tool is our idea.",
     "Up to 6 questions, each with a left and a right answer (and an optional emoji). Answers chosen stay on the page for this visit only; nothing reports back. Send the answer back makes plain text to copy or send by hand.",
-    "A link carries the questions and the choosing method, never the answers; anyone with the link can read them."
+    "A link carries the questions and the choosing method, never the answers; anyone with the link can read them.",
+    "QA all-9 NOT TESTED: Left or Right at c07008e/2a8c67b (by instruction); tile text drawn with content:attr(data-v) (.lr-vt)."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 2a8c67b7f480614d4c25584a42d7574d5ed8fcb4: unit 42/42; browser 543/543 at 320/390/1280 plus a classic-scrollbar sweep at 320/360/390/700/1280/1440 (synthetic keys and mouse only; single-word fewest-pieces oracle, Japanese breaks, rendered focus-ring audit of every Tab stop at 390 and 1280, bad-link path-only writes, no-?query checks). f66fb8e superseded by 2a8c67b for the single-word rule (and L8–L10) only. Not QA, and not a switch or dwell check.",
-   "status": "NOT READY (L8–L10 fixed; open L11 Med, L12 Low, L13 Low (reopened per Creative 07:02; fix in progress); shared wrap f893087, recheck pending)",
+   "status": "NOT READY (L8–L10 fixed; open L11 Med, L12 Low, L13 Low (reopened per Creative 07:02; fix in progress); all-9 recheck at f893087 tree: superseded; not judged)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "2a8c67b7f480614d4c25584a42d7574d5ed8fcb4",
     "report": "qa/left-or-right/local-2a8c67b/QA-local-2a8c67b.md",
-    "note": "L8–L10 fixed; open L11 Med, L12 Low, L13 Low (reopened per Creative 07:02; fix in progress)"
+    "note": "L8–L10 fixed; open L11 Med, L12 Low, L13 Low (reopened per Creative 07:02; fix in progress); QA all-9 at f893087 tree 35cfec7 (qa/all9/local-f893087/QA-all9-f893087.md): superseded pending 2a8c67b handoff; not judged"
    },
    "qaPrevious": {
     "verdict": "NOT READY",
@@ -268,16 +281,17 @@ window.MILL_HUB = {
     "Checks a plan the group already worked out: up to 28 days, 4 kinds of help and 60 pasted lines like “Tue 20 dinner Ana”. It doesn't read chat messages.",
     "Lines that combine needs or people are set aside with a request to split them, never guessed.",
     "Nothing is booked or confirmed. Messages are copied and the sheet is printed by hand, each stamped with when the plan was checked.",
-    "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it."
+    "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it.",
+    "QA all-9 NOT TESTED: C11–C14 and the tag grid (covered by the other QA run); the Edit lines address-bar step (control not shown on a received sheet, 3 cases)."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 83edf87d032af47d88508f7eed08a8e1a528a9a2: cr unit 24/24; care-rota browser 216/216 at 305–1440. Not QA.",
-   "status": "NOT READY (C11–C13 fixed; open C14 (Low), C15 (Med), C16 (Low); shared wrap f893087, recheck pending)",
+   "status": "NOT READY (C11–C13 fixed; open C14 (Low), C15 (Med), C16 (Low); all-9 recheck NOT CLEAN: W-7 (Medium), wrap)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "83edf87d032af47d88508f7eed08a8e1a528a9a2",
     "report": "qa/care-rota/local-83edf87/QA-local-83edf87.md",
-    "note": "C11–C13 fixed; open C14 (Low), C15 (Med), C16 (Low)"
+    "note": "C11–C13 fixed; open C14 (Low), C15 (Med), C16 (Low); QA all-9 @f893087 (care-rota tree 95f8e78, unchanged at c07008e, qa/all9/local-f893087/QA-all9-f893087.md): A wrap FAIL, W-7 (Medium) .sheet td overflow-wrap:anywhere; B contrast PASS 0 of 92; C address bar PASS 30/30 executed, 3 NOT TESTED. Verdict for this pass: NOT CLEAN: W-7 (Medium)"
    },
    "qaPrevious": {
     "verdict": "NOT READY",
@@ -302,16 +316,17 @@ window.MILL_HUB = {
     "One session: up to 12 tasks and 5 helpers, whole minutes (1–480 per task, 0–480 per helper). Only for jobs that can be done in any order.",
     "Suggest uses a simple rule, not the best possible split. A task that fits nobody whole stays on the bench; nothing is split or dropped. Check only adds up your own split.",
     "Proposal only: every card, the copied text and the sheet say “Nobody has agreed to this yet.”",
-    "The optional link holds only task names, minutes and helper names. Anyone with the link can read it."
+    "The optional link holds only task names, minutes and helper names. Anyone with the link can read it.",
+    "QA all-9 NOT TESTED: the address-bar strip at f893087 was informational only; Five Hands has no strip commit yet."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview d68094ade9c8d49edd528b278dcf2583711c78c0: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 247/247 at 320/360/390/641/1024/1280/1440 (incl. Creative check 5f127ab items 1–6; QA local-8206084 H1–H3; QA local-08b466c/2a02a48 H5 tiny and huge sticks in Suggest and Check, H6 tip and capacity-bar contrast and H7 over-text contrast sampled on the rendered page, H8 rolled-up label on phones). Not QA.",
-   "status": "NOT READY (QA open: H9–H14; shared wrap f893087, recheck pending)",
+   "status": "NOT READY (QA open: H9–H14; all-9 recheck at f893087: wrap + contrast PASS; address bar pre-strip)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "d68094ade9c8d49edd528b278dcf2583711c78c0",
     "report": "qa/five-hands/local-d68094a/QA-local-d68094a.md (H13–H14 per a later QA message, not yet in this file)",
-    "note": "open: H9 (Med), H10 (Med), H11 (Low), H12 (Low) per report; H13 (Low) error text on --red 4.24–4.36:1, H14 (Med) drop the 104px minimum so bars stay proportional, labels beside/outside the bar, per a later QA message, not yet in report file"
+    "note": "open: H9 (Med), H10 (Med), H11 (Low), H12 (Low) per report; H13 (Low) error text on --red 4.24–4.36:1, H14 (Med) drop the 104px minimum so bars stay proportional, labels beside/outside the bar, per a later QA message, not yet in report file; QA all-9 @f893087 (five-hands tree 3fdebec, unchanged at c07008e, qa/all9/local-f893087/QA-all9-f893087.md): A wrap PASS 6/6; B contrast PASS 0 of 382; C address bar 0/30 (pre-strip, informational). Verdict for this pass: wrap + contrast PASS; address bar pre-strip"
    }
   }
  ]
