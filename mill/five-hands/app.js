@@ -36,7 +36,7 @@
     var hs = rows('helper').filter(function (r) { return M.strip(r.querySelector('input').value); });
     rows('task').forEach(function (r) { var nm = M.strip(r.querySelector('input').value); if (!nm) return; var min = FH.minutes(r.querySelectorAll('input')[1].value);
       var d = el('div', 'row chk'), t = el('span', 'fh-cn'), s = el('select'); s.id = 'a-' + r.dataset.id; s.dataset.task = r.dataset.id;
-      t.append(V.typed(nm)); var lab = el('label', 'fh-vh', M.fill(C.checkAssignLabel, { task: nm })); lab.htmlFor = s.id;
+      t.append(typed(nm)); var lab = el('label', 'fh-vh', M.fill(C.checkAssignLabel, { task: nm })); lab.htmlFor = s.id;
       var o = el('option', null, C.benchOption); o.value = ''; s.append(o);
       hs.forEach(function (h) { var op = el('option', null, q(M.strip(h.querySelector('input').value))); op.value = h.dataset.id; s.append(op); });
       s.value = was[r.dataset.id] && hs.some(function (h) { return h.dataset.id === was[r.dataset.id]; }) ? was[r.dataset.id] : '';
@@ -66,7 +66,14 @@
       var s = el('span', p[2] || null), t = M.fill(C.tally[p[0]], { n: p[1] }), m = /^(\d+)(.*)$/.exec(t); s.append(el('b', null, m[1]), txt(m[2])); if (i) box.append(sep()); box.append(s); });
     var ok = res.conserved; box.append(sep()); box.append(el('span', ok ? 'ok' : 'bad', ok ? M.fill(C.conservation, { on: res.given, bench: res.benchMin, work: res.work }) : C.conservationFail)); }
   // a stick is the bar (width = its minutes, to scale); .lab holds the name then the minutes (display:contents unless the label has to sit outside the bar)
-  function stick(it, sc) { var s = el('div', 'stick'), lab = el('span', 'lab'); setv(s, '--m', it.min); setv(s, '--sc', sc); var t = el('span', 't'); t.append(V.typed(it.name)); lab.append(t, el('span', 'm', String(it.min))); s.append(lab);
+  // QA H17: a space-free word that holds emoji or flags (with any quote glued to it) is one unit for wrapping: an inline-block, so the whole word
+  // moves to the next line when it fits there, and only a word wider than its box breaks inside (break-word). Text, copy and names unchanged.
+  var EMO = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
+  function emoWords(node) { var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), list = [], n; while ((n = w.nextNode())) if (EMO.test(n.data)) list.push(n);
+    list.forEach(function (tn) { var f = document.createDocumentFragment(); tn.data.split(/(\s+)/).forEach(function (x) { if (!x) return; if (EMO.test(x)) f.append(el('span', 'fh-w', x)); else f.append(document.createTextNode(x)); }); tn.replaceWith(f); });
+    return node; }
+  function typed(s) { return emoWords(V.typed(s)); }
+  function stick(it, sc) { var s = el('div', 'stick'), lab = el('span', 'lab'); setv(s, '--m', it.min); setv(s, '--sc', sc); var t = el('span', 't'); t.append(typed(it.name)); lab.append(t, el('span', 'm', String(it.min))); s.append(lab);
     s.dataset.p = it.overMin ? String(it.overMin / it.min) : '0';
     if (it.overMin) { s.classList.add('over'); if (it.overMin >= it.min) s.classList.add('all'); setv(s, '--p', (Math.round(it.overMin / it.min * 1000) / 10) + '%'); } return s; }
   // ---- LABEL TREATMENT (QA H14/H9/H11; PM 05:36, Creative 05:37). The one place that decides where a bar's label goes; its CSS is the "LABEL TREATMENT"
@@ -98,7 +105,11 @@
       else if (red - pad >= need) { s.classList.add('inr'); setv(s, '--pl', Math.ceil(wood + pad / 2) + 'px'); }
       else { s.classList.add('out'); outs.push(s); } });
     if (!outs.length) return;
-    var br = box.getBoundingClientRect(), rel = function (s) { var r = s.getBoundingClientRect(); return { l: r.left - br.left, r: r.right - br.left, t: r.top - br.top, b: r.bottom - br.top, w: r.width, h: r.height }; };
+    // QA H15: a stick may still be sliding in (translateX, app.css) when this runs, so its box is read without the transform: the final,
+    // settled geometry. The label itself is held still against the slide (fh-hold), so it sits at that final place on every frame.
+    var br = box.getBoundingClientRect(), rel = function (s) { var r = s.getBoundingClientRect(), tf = getComputedStyle(s).transform, dx = 0, dy = 0;
+      if (tf && tf !== 'none' && window.DOMMatrixReadOnly) { var mx = new DOMMatrixReadOnly(tf); dx = mx.m41; dy = mx.m42; }
+      return { l: r.left - dx - br.left, r: r.right - dx - br.left, t: r.top - dy - br.top, b: r.bottom - dy - br.top, w: r.width, h: r.height }; };
     if (!wide) { outs.forEach(function (s) { var r = rel(s), t = s.querySelector('.t'), m = s.querySelector('.m'), room = W - r.r - 8, wm = tw(m, m.textContent, '15px'), full = tw(t, t.textContent, '12px') + 6 + wm + 2;
         s.classList.add('gk'); setv(s, '--lx', (r.w + 8) + 'px'); setv(s, '--lw', Math.max(room, wm + 1) + 'px');
         if (room < wm + 2) { s.classList.add('under'); setv(s, '--lx', '0px'); setv(s, '--lw', W + 'px'); setv(s, '--below', '21px'); cut(t, W - 6 - 6 - wm - 2); } // a bar the width of the card: name and minutes on the line below
@@ -119,7 +130,7 @@
   // minutes line: loadLine, then (red) tallySep + overBy, or (green) tallySep + loadSpare (Writer N9/N9b). A 0-minute helper with no tasks: zeroHead (Writer N12).
   function helperCard(r, sc, title, mode) { var a = el('article', 'helper' + (r.cap === 0 ? ' zero' : '') + (r.cap === 0 && !r.items.length ? ' idle' : '')), nm = q(M.strip(r.name)), ll = M.fill(C.loadLine, { load: r.load, cap: r.cap });
     var idle = r.cap === 0 && !r.items.length, ov = r.over ? M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : '', sp = !ov && r.cap > 0 && r.spare > 0 ? M.fill(C.loadSpare, { n: r.spare }) : '';
-    var hh = el('div', 'hhead'), tab = el('span', 'tab'); tab.append(V.typed(r.name)); var ld = el('span', 'load', idle ? C.zeroHead : ll);
+    var hh = el('div', 'hhead'), tab = el('span', 'tab'); tab.append(typed(r.name)); var ld = el('span', 'load', idle ? C.zeroHead : ll);
     if (ov) ld.append(el('span', 'over', C.tallySep + ov)); else if (sp) ld.append(el('span', 'spare', C.tallySep + sp));
     a.setAttribute('aria-label', nm + ': ' + ld.textContent);
     var b = el('button', 'btn noprint', M.fill(C.copyCard, { name: nm })); b.type = 'button'; b.addEventListener('click', function () { var t = FH.cardText(C, title, r, mode); preview(nm, t); copy(t); });
@@ -152,7 +163,7 @@
     show('s2', true); show('s5', true); lay(); }
   function sheet(title, res) { $('sheet-h').textContent = M.fill(C.sheetHeading, { title: title }); var tb = $('sheet-t').tBodies[0]; tb.textContent = '';
     var line = function (its) { return its.map(function (it) { return M.fill(C.sheetTaskCell, { task: M.strip(it.name), m: it.min }); }).join(' · '); };
-    res.rows.forEach(function (r) { var tr = el('tr'), n = el('td', 'n'); n.append(V.typed(r.name)); var nm = q(M.strip(r.name));
+    res.rows.forEach(function (r) { var tr = el('tr'), n = el('td', 'n'); n.append(typed(r.name)); var nm = q(M.strip(r.name));
       var mt = M.fill(C.loadLine, { load: r.load, cap: r.cap }) + (r.over ? C.tallySep + M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : r.cap > 0 && r.spare > 0 ? C.tallySep + M.fill(C.loadSpare, { n: r.spare }) : ''); // PM: loadSpare on the sheet too
       tr.append(n, el('td', null, r.items.length ? line(r.items) : r.cap === 0 ? C.rolledUp : ''), el('td', null, mt)); tb.append(tr); });
     var br = el('tr', 'fh-benchrow'); br.append(el('td', 'n', C.sheetBenchRow), el('td', null, res.bench.length ? line(res.bench) : C.benchEmpty), el('td', null, M.fill(C.sheetMinutes, { n: res.benchMin }))); tb.append(br); // always printed, empty too
