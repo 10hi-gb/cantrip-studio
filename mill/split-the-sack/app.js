@@ -3,7 +3,7 @@
 (function () {
   var C = COPY, M = MILL, S = SACK, L = SACKLINK, $ = function (id) { return document.getElementById(id); };
   // mode: 'own' (editor) | 'view' (read-only recipient of a link) | 'change' (recipient's local copy, one household's amount)
-  var uPrev = '', st, lastLink = '', toastT, mode = 'own', orig = null, pick = -1, V = window.MILLVIEW;
+  var st, lastLink = '', toastT, mode = 'own', orig = null, pick = -1, V = window.MILLVIEW;
   function blank() { return { n: '', u: '', c: '$', q: '', i: '1', p: '', f: '', b: 'p', x: -1, h: [['', ''], ['', '']] }; }
   function key(k) { return k.split('.').reduce(function (o, p) { return o && o[p]; }, C); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -27,8 +27,33 @@
     document.querySelectorAll('[data-aria]').forEach(function (e) { e.setAttribute('aria-label', key(e.getAttribute('data-aria'))); });
     document.title = C.studioLabel;
   }
+  // Text caps counted exactly like the link parser (SACKLINK.glen: grapheme clusters after strip), enforced on the input itself for typing,
+  // paste, drop and script-set values. No maxlength: it counts UTF-16 code units (an emoji is 2, a ZWJ family 11). An edit that would go
+  // over keeps the text around it and only as much of the inserted text as fits, so a character past the cap is refused. Registered
+  // before the state listener, so the state only ever sees a value that fits.
+  function capInput(el, max) {
+    el._capPrev = el.value; el._capOver = 0;
+    el.addEventListener('input', function () { var v = el.value; if (mode !== 'own') return; el._capOver = 0; if (L.glen(v) <= max) { el._capPrev = v; return; }
+      el._capOver = L.glen(v) - max; // QA local-7dfd6ac note: a cut edit is never silent; capNotes() shows the field's existing over-cap message
+      var a = String(el._capPrev || ''), pre = 0, suf = 0; while (pre < a.length && pre < v.length && a[pre] === v[pre]) pre++; while (suf < a.length - pre && suf < v.length - pre && a[a.length - 1 - suf] === v[v.length - 1 - suf]) suf++;
+      var head = a.slice(0, pre), tail = a.slice(a.length - suf), ins = L.graphemes(v.slice(pre, v.length - suf)), keep = '';
+      for (var k = 0; k < ins.length && L.glen(head + keep + ins[k] + tail) <= max; k++) keep += ins[k];
+      if (L.glen(head + keep + tail) > max) { var g = L.graphemes(v), out = ''; for (var j = 0; j < g.length && L.glen(out + g[j]) <= max; j++) out += g[j]; head = out; keep = ''; tail = ''; }
+      el.value = head + keep + tail; el._capPrev = el.value; try { el.setSelectionRange((head + keep).length, (head + keep).length); } catch (er) {} });
+  }
+  // Over-cap messages for an edit the input cut (Writer's existing strings, same wording as the validator). Shown, never blocking: the value
+  // left in the field fits. Cleared by the field's next edit that fits, and by reset / opening a link (toForm).
+  function capNotes() {
+    var it = [], hh = [], x;
+    if ((x = $('item')._capOver)) it.push(C.itemLabel + ' ' + M.plural(C.itemTooLong, x));
+    if ((x = $('u')._capOver)) it.push(M.plural(C.unitTooLong, x, { max: L.UNIT_MAX }));
+    if ((x = $('c')._capOver)) it.push(M.plural(C.currencyTooLong, x, { max: L.SYM_MAX }));
+    [].forEach.call($('hh').querySelectorAll('.ss-hn'), function (e, i) { if (e._capOver) hh.push(qName(i) + ': ' + M.plural(C.householdTooLong, e._capOver)); });
+    return { item: it, hh: hh };
+  }
   function toForm() {
-    $('item').value = st.n; $('u').value = st.u; uPrev = st.u; $('c').value = st.c; $('q').value = st.q; $('inc').value = st.i; $('p').value = st.p; $('f').value = st.f;
+    $('item').value = st.n; $('u').value = st.u; $('c').value = st.c; $('q').value = st.q; $('inc').value = st.i; $('p').value = st.p; $('f').value = st.f;
+    ['item', 'u', 'c'].forEach(function (id) { $(id)._capPrev = $(id).value; $(id)._capOver = 0; });
     basisButtons(); drawHouseholds();
   }
   function drawHouseholds() {
@@ -36,7 +61,7 @@
     st.h.forEach(function (x, i) {
       var li = el('li', 'ss-hrow');
       var nf = el('div', 'ss-field'), nl = el('label', null, C.householdLabel + ' ' + (i + 1)), n = el('input');
-      n.id = 'hn' + i; nl.htmlFor = n.id; n.value = x[0]; n.maxLength = 48; n.autocomplete = 'off'; n.className = 'ss-hn'; n.placeholder = i === 0 ? C.householdPlaceholder : '';
+      n.id = 'hn' + i; nl.htmlFor = n.id; n.value = x[0]; capInput(n, L.NAME_MAX); n.autocomplete = 'off'; n.className = 'ss-hn'; n.placeholder = i === 0 ? C.householdPlaceholder : '';
       n.addEventListener('input', function () { if (mode !== 'own') { n.value = st.h[i][0]; return; } st.h[i][0] = n.value; edited(); }); nf.appendChild(nl); nf.appendChild(n);
       var rf = el('div', 'ss-field'), rlab = el('label', null, C.requestLabel), w = el('div', 'ss-wants'), r = el('input');
       r.id = 'hr' + i; rlab.htmlFor = r.id; r.value = x[1]; r.inputMode = 'decimal'; r.autocomplete = 'off'; r.placeholder = C.requestPlaceholder; r.className = 'sk-rq';
@@ -71,9 +96,9 @@
   function moneyErr(v) { v = String(v).trim(); if (v === '') return ''; if (/^-/.test(v)) return C.errorNegative; if (S.parseMoney(v) > 1e11) return M.fill(C.errorRange, { max: money(1e11) }); if (S.parseMoney(v) == null) return /^\d{14,}/.test(v) ? C.errorTooBig : C.errorNumber; return ''; }
   function fieldErrors() {
     var e = [], h = [], q = S.parseQty(st.q), inc = S.parseQty(st.i), x;
-    if ((x = M.len(M.strip(st.n)) - L.ITEM_MAX) > 0) e.push(C.itemLabel + ' ' + M.plural(C.itemTooLong, x));
-    if ((x = L.unitLen(unitRaw()) - L.UNIT_MAX) > 0) e.push(M.plural(C.unitTooLong, x, { max: L.UNIT_MAX })); // same count as the link parser
-    if ((x = M.len(M.strip(st.c)) - L.SYM_MAX) > 0) e.push(M.plural(C.currencyTooLong, x, { max: L.SYM_MAX }));
+    if ((x = L.glen(st.n) - L.ITEM_MAX) > 0) e.push(C.itemLabel + ' ' + M.plural(C.itemTooLong, x));
+    if ((x = L.glen(unitRaw()) - L.UNIT_MAX) > 0) e.push(M.plural(C.unitTooLong, x, { max: L.UNIT_MAX })); // same count as the link parser
+    if ((x = L.glen(st.c) - L.SYM_MAX) > 0) e.push(M.plural(C.currencyTooLong, x, { max: L.SYM_MAX }));
     if ((x = numErr(st.q, false))) e.push(C.packageQtyLabel + ': ' + x);
     if ((x = numErr(st.i, false))) e.push(C.incrementLabel + ': ' + x);
     else if (q && inc && q % inc) e.push(C.packageQtyLabel + ': ' + M.fill(C.errorIncrement, { increment: S.fmtQty(inc), unit: unit() }));
@@ -81,7 +106,7 @@
     if ((x = moneyErr(st.f))) e.push(C.feeLabel + ': ' + x);
     var seen = {}, dup = false;
     st.h.forEach(function (r, i) {
-      var nm = M.strip(r[0]); if ((x = M.len(nm) - L.NAME_MAX) > 0) h.push(qName(i) + ': ' + M.plural(C.householdTooLong, x));
+      var nm = M.strip(r[0]); if ((x = L.glen(nm) - L.NAME_MAX) > 0) h.push(qName(i) + ': ' + M.plural(C.householdTooLong, x));
       if (nm) { if (seen[nm.toLowerCase()]) dup = true; seen[nm.toLowerCase()] = 1; }
       if ((x = numErr(r[1], true, inc > 0 ? inc : 0))) h.push(qName(i) + ': ' + x);
     });
@@ -121,16 +146,20 @@
   // full-width line, the household rows stack (name above wants) and the Change my amount figure sits above its −/+ buttons.
   function lineCount(e) { var t = e && e.firstChild; if (!t || !e.getClientRects().length) return 0; var r = document.createRange(); r.selectNodeContents(e); var tops = {}; [].forEach.call(r.getClientRects(), function (x) { if (x.width > 0) tops[Math.round(x.top)] = 1; }); return Object.keys(tops).length; }
   function spills(e) { var cell = e.closest('.v, output, .ss-field') || e.parentNode, r = document.createRange(); r.selectNodeContents(e); var c = cell.getBoundingClientRect(); return [].some.call(r.getClientRects(), function (x) { return x.width > 0 && (x.right > c.right + 1 || x.left < c.left - 1); }); }
-  function fitOne(box, cls, unitEl) { box.classList.remove(cls); if (unitEl && (lineCount(unitEl) > 1 || spills(unitEl))) box.classList.add(cls); }
+  function fitOne(box, cls, unitEl) { box.classList.remove(cls); var els = !unitEl ? [] : unitEl.length != null ? [].slice.call(unitEl) : [unitEl]; if (els.some(function (e) { return e.getClientRects().length && (lineCount(e) > 1 || spills(e)); })) box.classList.add(cls); }
   function fitUnits() {
     fitOne(document.querySelector('.ss-lcd'), 'is-wideq', $('lcd-q').querySelector('.unit'));
     fitOne($('hh'), 'is-wideu', $('hh').querySelector('.ss-wants .u'));
     fitOne(document.querySelector('.ss-stepper'), 'is-wide', $('amt').querySelector('.unit'));
+    // D10-r3: when a table unit doesn't fit its quantity cell, narrow screens give the quantity its own full-width line; wider tables
+    // widen the quantity column (all rows and the header together) to the unit's own width.
+    var rws = $('rows'), qus = rws.querySelectorAll('.qu'); rws.style.removeProperty('--qu-w'); fitOne(rws, 'is-wideq', qus);
+    if (rws.classList.contains('is-wideq')) { var mw = 0; [].forEach.call(qus, function (q) { q.style.whiteSpace = 'nowrap'; q.style.maxWidth = 'none'; mw = Math.max(mw, q.getBoundingClientRect().width); q.style.whiteSpace = ''; q.style.maxWidth = ''; }); rws.style.setProperty('--qu-w', Math.ceil(mw + 1) + 'px'); }
   }
   var fitT; window.addEventListener('resize', function () { cancelAnimationFrame(fitT); fitT = requestAnimationFrame(fitUnits); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitUnits(); });
   function render() {
-    var fe = fieldErrors(); list('item-msg', fe.item); list('hh-msg', fe.hh);
+    var fe = fieldErrors(), cn = mode === 'own' ? capNotes() : { item: [], hh: [] }; list('item-msg', fe.item.concat(cn.item)); list('hh-msg', fe.hh.concat(cn.hh));
     var rows = $('rows'), as = $('assign'), u = unit(); rows.textContent = ''; as.textContent = '';
     $('basisnote').textContent = C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'];
     var res = result(), status = $('status'), q = S.parseQty(st.q) || 0;
@@ -163,6 +192,7 @@
       var sumQ = res.rows.reduce(function (a, r) { return a + r.qty; }, un.qty), sumM = res.rows.reduce(function (a, r) { return a + r.total; }, un.total);
       var sum = el('div', 'ss-sum'); sum.setAttribute('role', 'row'); var ok = sumQ === res.pkgQty && sumM === res.total;
       [['', 'presentation'], [C.reconcileLabel, 'rowheader'], [S.fmtQty(sumQ) + ' ' + u + (ok ? ' ✓' : ''), 'cell', 'ok'], [money(res.price), 'cell', 'ok'], [money(res.fee), 'cell', 'ok'], [money(sumM) + (ok ? ' ✓' : ''), 'cell', 'ok']].forEach(function (c) { var e = el('span', c[2] || null, c[0]); e.setAttribute('role', c[1]); sum.appendChild(e); });
+      if (u) { var sq = sum.children[2]; sq.textContent = S.fmtQty(sumQ) + ' '; sq.appendChild(el('span', 'qu', u)); if (ok) sq.appendChild(document.createTextNode(' ✓')); } // D10-r3: the unit wraps/reflows like the rows'
       rows.appendChild(sum);
       if (ok) $('reconcile').textContent = M.fill(C.reconcileLine, { qty: S.fmtQty(sumQ), unit: u, total: money(sumM) });
       $('residual').textContent = residualSentence(res);
@@ -175,7 +205,7 @@
       }
     }
     var blocked = L.check(st), feeNoTaker = !!(res && res.status === 'nobasis');
-    if (feeNoTaker) fe.item.push(C.errorFeeNoBasis), list('item-msg', fe.item);
+    if (feeNoTaker) fe.item.push(C.errorFeeNoBasis), list('item-msg', fe.item.concat(cn.item));
     var ready = !blocked && !fe.item.length && !fe.hh.length;
     ['share', 'copytext', 'print'].forEach(function (id) { $(id).disabled = !ready; });
     $('notready').textContent = ready ? '' : feeNoTaker ? C.errorFeeNoBasis : (blocked === 'over' && res && res.status === 'over' ? M.fill(C.overAllocationBlock, { qty: S.fmtQty(res.shortage), unit: u }) : blocked === 'count' ? C.tooFewHouseholds : blocked === 'duplicate' ? C.duplicateHousehold : feeNoTaker ? C.errorFeeNoBasis : C.notReady);
@@ -257,15 +287,8 @@
     else { st = blank(); setMode('own'); banner(d.why === 'oldVersion' ? C.oldVersion : C.badLink); }
   }
   function bind() {
-    // Unit cap (UNIT_MAX = 16) counted exactly like the link parser (SACKLINK.unitLen: grapheme clusters, after strip), enforced here for
-    // typing, paste, drop and script-set values; no maxlength (it counts UTF-16 code units and would stop at 8 emoji). An edit that
-    // would go over keeps the text around it and only as much of the inserted text as fits, so a 17th character is refused.
-    $('u').addEventListener('input', function (e) { var el = e.target, v = el.value; if (mode !== 'own') return; if (L.unitLen(v) <= L.UNIT_MAX) { uPrev = v; return; }
-      var pre = 0, suf = 0, a = uPrev; while (pre < a.length && pre < v.length && a[pre] === v[pre]) pre++; while (suf < a.length - pre && suf < v.length - pre && a[a.length - 1 - suf] === v[v.length - 1 - suf]) suf++;
-      var head = a.slice(0, pre), tail = a.slice(a.length - suf), ins = L.graphemes(v.slice(pre, v.length - suf)), keep = '';
-      for (var k = 0; k < ins.length && L.unitLen(head + keep + ins[k] + tail) <= L.UNIT_MAX; k++) keep += ins[k];
-      if (L.unitLen(head + keep + tail) > L.UNIT_MAX) { var g = L.graphemes(v), out = ''; for (var j = 0; j < g.length && L.unitLen(out + g[j]) <= L.UNIT_MAX; j++) out += g[j]; head = out; keep = ''; tail = ''; }
-      el.value = head + keep + tail; uPrev = el.value; try { el.setSelectionRange((head + keep).length, (head + keep).length); } catch (er) {} });
+    // Text caps (item 40, unit 16, currency 3, household names 24 in drawHouseholds) are enforced by capInput(), counted like the link parser.
+    capInput($('item'), L.ITEM_MAX); capInput($('u'), L.UNIT_MAX); capInput($('c'), L.SYM_MAX);
     [['item', 'n'], ['q', 'q'], ['inc', 'i'], ['p', 'p'], ['f', 'f'], ['c', 'c'], ['u', 'u']].forEach(function (p) { $(p[0]).addEventListener('input', function (e) { if (mode !== 'own') { e.target.value = st[p[1]]; return; } st[p[1]] = e.target.value; edited(); }); });
     $('bp').addEventListener('click', function () { if (mode !== 'own') return; st.b = 'p'; basisButtons(); edited(); });
     $('be').addEventListener('click', function () { if (mode !== 'own') return; st.b = 'e'; basisButtons(); edited(); });

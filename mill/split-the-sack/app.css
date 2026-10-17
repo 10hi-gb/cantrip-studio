@@ -60,7 +60,7 @@ body.is-recv .ss-alloc .who{text-transform:none;letter-spacing:0}
 /* QA local-652d0e0 D13 (optional): long money values ($9999999.99) fit inside their own LCD cell on narrow phones */
 @media (max-width:360px){.ss-lcd .v.is-long{font-size:13px;letter-spacing:0}}
 
-.ss-alloc .qty .qu{white-space:nowrap;display:inline-block} /* D10: the quoted unit is one unbroken token */
+.ss-alloc .qty .qu,.ss-sum .qu{display:inline-block;max-width:100%;vertical-align:top;white-space:normal;overflow-wrap:break-word;word-break:normal} /* D10 / D10-r3: PM wrap rule; the row reflows (is-wideq) before a word would break */
 
 /* QA local-a254042 D10-r1 / D10-r2 (PM wrap rule): a quoted unit breaks at spaces, then hyphens, and mid-word only when a single word
    can't fit its box at all (overflow-wrap:break-word, never anywhere/break-all). Where a unit would wrap, the row reflows (app.js fitUnits). */
@@ -90,3 +90,10 @@ body.is-recv .ss-alloc .who{text-transform:none;letter-spacing:0}
 .ss-err{overflow-wrap:break-word}
 .ss-stepper.is-wide output .unit{font-size:clamp(18px,6.5vw,30px)}
 .ss-hrow>.ss-field,.ss-wants{min-width:0}
+/* QA local-7dfd6ac D10-r3: when a table unit doesn't fit its quantity cell (305px desktop layout, the Adds up row at 320), the quantity takes the
+   full width under the name and the fee moves to its own line, right-aligned: no overlap with the fee, nothing past its cell. */
+@media (max-width:560px){
+  .ss-rows.is-wideq .ss-alloc,.ss-rows.is-wideq .ss-sum{grid-template-areas:"bin who tot" "bin qty qty" "bin fee fee"}
+  .ss-rows.is-wideq .ss-alloc .m.fee,.ss-rows.is-wideq .ss-sum span:nth-child(5){justify-self:end;text-align:right}
+}
+@media (min-width:561px){.ss-rows.is-wideq .ss-colhead,.ss-rows.is-wideq .ss-alloc,.ss-rows.is-wideq .ss-sum{grid-template-columns:44px minmax(0,1.3fr) minmax(var(--qu-w,0px),.9fr) minmax(0,.9fr) minmax(0,.8fr) minmax(0,1fr)}}
