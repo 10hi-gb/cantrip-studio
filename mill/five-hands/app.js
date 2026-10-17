@@ -106,7 +106,7 @@
   function sheet(title, res) { $('sheet-h').textContent = M.fill(C.sheetHeading, { title: title }); var tb = $('sheet-t').tBodies[0]; tb.textContent = '';
     var line = function (its) { return its.map(function (it) { return M.fill(C.sheetTaskCell, { task: M.strip(it.name), m: it.min }); }).join(' · '); };
     res.rows.forEach(function (r) { var tr = el('tr'), n = el('td', 'n'); n.append(V.typed(r.name)); var nm = q(M.strip(r.name));
-      var mt = M.fill(C.loadLine, { load: r.load, cap: r.cap }) + (r.over ? C.tallySep + M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : '');
+      var mt = M.fill(C.loadLine, { load: r.load, cap: r.cap }) + (r.over ? C.tallySep + M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : r.cap > 0 && r.spare > 0 ? C.tallySep + M.fill(C.loadSpare, { n: r.spare }) : ''); // PM: loadSpare on the sheet too
       tr.append(n, el('td', null, r.items.length ? line(r.items) : r.cap === 0 ? C.rolledUp : ''), el('td', null, mt)); tb.append(tr); });
     var br = el('tr', 'fh-benchrow'); br.append(el('td', 'n', C.sheetBenchRow), el('td', null, res.bench.length ? line(res.bench) : C.benchEmpty), el('td', null, M.fill(C.sheetMinutes, { n: res.benchMin }))); tb.append(br); // always printed, empty too
     $('sheet-stamp').textContent = FH.stampFor(C, res.mode); $('sheet-rule').textContent = res.mode === 'check' ? C.sheetRuleCheck : C.sheetRule; $('sheet-note').textContent = C.sheetNote; }
@@ -147,10 +147,14 @@
     (data ? data.tasks : [{}]).forEach(function (t) { addRow('task', t.name, t.min); }); (data ? data.helpers : [{}]).forEach(function (h) { addRow('helper', h.name, h.min); });
     $('m-check').checked = mode === 'check'; $('m-suggest').checked = mode !== 'check'; syncCheck();
     if (assign) { var hr = rows('helper'); rows('task').forEach(function (r, i) { var s = $('a-' + r.dataset.id); if (s && assign[i] >= 0) s.value = hr[assign[i]].dataset.id; }); } }
-  function fresh() { last = null; prevSuggest = null; tried = false; V.readOnly($('form'), false); V.clearInputs($('form')); fill(null); clearErrs(); hideFb(); $('b-split').textContent = C.primary; $('b-split').removeAttribute('aria-disabled');
+  // QA H1: Start over / a bad link empties the result and the sheet (DOM and state), not just hides them; print CSS shows #s5 only with .on (a current sheet)
+  function clearResult() { ['s2-h', 'tally', 'change', 'over', 'rolls', 'bench-h', 'plank', 'bench-explain', 'preview-h', 'preview-t', 'sheet-h', 'sheet-stamp', 'sheet-rule', 'sheet-note', 'cons-fail'].forEach(function (id) { $(id).textContent = ''; });
+    $('sheet-t').tBodies[0].textContent = ''; $('preview').hidden = true; $('link-box').hidden = true; $('link').value = ''; $('link-long').hidden = true; }
+  function fresh() { last = null; prevSuggest = null; tried = false; clearResult(); V.readOnly($('form'), false); V.clearInputs($('form')); fill(null); clearErrs(); hideFb(); $('b-split').textContent = C.primary; $('b-split').removeAttribute('aria-disabled');
     show('s2', false); show('s5', false); show('s1', true); $('head').hidden = false; $('recv').hidden = true; $('bad').hidden = true; $('share').hidden = false; document.body.classList.remove('is-recv'); }
   function routeTo(h) { fresh(); if (!h) return;
-    var r = FH.decode(h); if (!r.ok) { $('bad-t').textContent = r.why === 'oldVersion' ? C.oldVersion : C.badLink; $('bad').hidden = false; return; }
+    // QA H3: the WHOLE URL (origin + path + # + fragment) against the shared 2,000 cap used when sending (MILLVIEW.linkFor); over -> badLink
+    var r = V.linkFor(String(h).replace(/^#/, '')) ? FH.decode(h) : { ok: false, why: 'bad' }; if (!r.ok) { $('bad-t').textContent = r.why === 'oldVersion' ? C.oldVersion : C.badLink; $('bad').hidden = false; return; }
     var d = r.data; document.body.classList.add('is-recv');
     // recipient: the proposed split, read-only; the organizer form is filled (for "Make my own copy"), disabled (shared readOnly) and not shown
     fill(d, d.res.mode, d.res.assign); V.readOnly($('form'), true); show('s1', false);

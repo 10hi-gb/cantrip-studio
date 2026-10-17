@@ -91,7 +91,7 @@ const RED = [200, 54, 31];
       && t.cards.map(c => c.load).join('|') === '115 of 120 min · 5 min spare|50 of 60 min · 10 min spare|70 of 90 min · 20 min spare|' + ZEROHEAD + '|25 of 45 min · 20 min spare' && t.cards[0].label === '“Ana”: 115 of 120 min · 5 min spare' && t.cards[3].zero && t.cards[0].btn === 'Copy the card for “Ana”', t.cards);
     ck(w + ' stamp under every card (5/5) = Writer stamp', t.cards.length === 5 && t.cards.every(c => c.stamp === C.stamp), t.cards.map(c => c.stamp));
     ck(w + ' bench: benchHeadingEmpty above benchEmpty, no copy button, no benchExplain', t.benchEmpty === C.benchEmpty && t.benchH === C.benchHeadingEmpty && t.benchH === 'Still on the bench: none' && !t.benchBtn && !t.explain && !t.bench.length, t);
-    ck(w + ' sheet: “title” heading, one row per helper (quoted), tasks as sheetTaskCell joined " · ", stamp, sheetRule, sheetNote', t.sheetH === '“Garden cleanup, Saturday”: who does what' && t.sheet[0] === '“Ana” | “Rake paths” 45 min · “Haul yard bags to curb” 35 min · “Clean and oil tools” 20 min · “Fix gate latch” 15 min | 115 of 120 min' && t.sheet[3] === '“Dee” | ' + C.rolledUp + ' | 0 of 0 min' && t.sheet.length === 6 && t.sheet[5] === C.sheetBenchRow + ' | ' + C.benchEmpty + ' | 0 min' && t.sheetStamp === C.stamp && t.sheetRule === C.sheetRule && t.sheetNote === C.sheetNote, t.sheet);
+    ck(w + ' sheet: “title” heading, one row per helper (quoted), tasks as sheetTaskCell joined " · ", stamp, sheetRule, sheetNote', t.sheetH === '“Garden cleanup, Saturday”: who does what' && t.sheet[0] === '“Ana” | “Rake paths” 45 min · “Haul yard bags to curb” 35 min · “Clean and oil tools” 20 min · “Fix gate latch” 15 min | 115 of 120 min · 5 min spare' && t.sheet.slice(1, 5).join('/') === '“Ben” | “Turn compost bed A” 30 min · “Empty rain barrels” 20 min | 50 of 60 min · 10 min spare/“Chen” | “Pull tomato cages” 40 min · “Turn compost bed B” 30 min | 70 of 90 min · 20 min spare/“Dee” | ' + C.rolledUp + ' | 0 of 0 min/“Eli” | “Cover raised beds” 25 min | 25 of 45 min · 20 min spare' && t.sheet[3] === '“Dee” | ' + C.rolledUp + ' | 0 of 0 min' && t.sheet.length === 6 && t.sheet[5] === C.sheetBenchRow + ' | ' + C.benchEmpty + ' | 0 min' && t.sheetStamp === C.stamp && t.sheetRule === C.sheetRule && t.sheetNote === C.sheetNote, t.sheet);
     // copy every card: Writer cardText exactly (names, title, tasks quoted), stamp inside each copied card
     await p.evaluate(() => { window.__clip = []; document.querySelectorAll('#rolls article .hhead button').forEach(b => b.click()); }); await sleep(150);
     t = await p.evaluate(() => ({ clip: window.__clip, ph: document.getElementById('preview-h').textContent, pt: document.getElementById('preview-t').textContent, toast: document.getElementById('toast').textContent }));
@@ -195,6 +195,37 @@ const RED = [200, 54, 31];
     o = await overflow(p); ck(w + ' no sideways scroll at full caps (12 × 40-char tasks, 5 × 24-char helpers)', o.sw <= o.w && !o.bad.length, o);
     if (w === W[W.length - 1]) { const pages = pdfPages(await p.pdf({ format: 'letter' })); ck(w + ' print at full caps: one Letter page', pages === 1, pages); }
 
+
+    // ---------- QA local-8206084 H1: nothing from a previous plan prints after Start over or a bad link (sheet DOM + state emptied; print shows #s5 only when current)
+    { await p.reload({ waitUntil: 'load' }); await sleep(200); await fill(p, CTITLE, TS, HS); await split(p);
+      const pr = async () => { await p.emulateMediaType('print'); const r = await p.evaluate(() => ({ s5: getComputedStyle(document.getElementById('s5')).display !== 'none', text: document.body.innerText.trim(), rows: document.querySelectorAll('#sheet-t tbody tr').length, h: document.getElementById('sheet-h').textContent, stamp: document.getElementById('sheet-stamp').textContent, rolls: document.querySelectorAll('#rolls article').length, plank: document.getElementById('plank').textContent })); await p.emulateMediaType(null); return r; };
+      const before = await pr();
+      ck(w + ' QA H1: with a current split, print shows the sheet (title, 6 rows)', before.s5 && before.rows === 6 && before.text.includes('“Community garden cleanup, Saturday”: who does what'), before);
+      await p.click('#b-reset'); await sleep(200); const toast = await p.evaluate(() => document.getElementById('toast').textContent); const after = await pr();
+      ck(w + ' QA H1 (a): Start over → OK ("Cleared."): print emulation shows nothing from the old plan; sheet heading, rows and stamp emptied; rolls and bench emptied', toast === C.resetDone && !after.s5 && !after.text.includes('Community garden') && !after.text.includes('Ana') && after.rows === 0 && !after.h && !after.stamp && !after.rolls && !after.plank, after);
+      await fill(p, CTITLE, TS, HS); await split(p); await p.click('#b-link'); await sleep(150); const good = await p.evaluate(() => document.getElementById('link').value);
+      const q = await s.b.newPage(); await q.setViewport({ width: w, height: 900 }); await q.goto(good, { waitUntil: 'load' }); await sleep(250);
+      const okRecv = await q.evaluate(() => !document.getElementById('recv').hidden && document.querySelectorAll('#sheet-t tbody tr').length === 6);
+      await q.evaluate(f => { location.hash = f; }, good.split('#')[1].slice(0, -9) + 'zz'); await sleep(300);
+      await q.emulateMediaType('print'); const bad = await q.evaluate(() => ({ s5: getComputedStyle(document.getElementById('s5')).display !== 'none', text: document.body.innerText.trim(), rows: document.querySelectorAll('#sheet-t tbody tr').length, h: document.getElementById('sheet-h').textContent, rolls: document.querySelectorAll('#rolls article').length }));
+      await q.emulateMediaType(null); const badScreen = await q.evaluate(() => document.getElementById('bad').hidden ? '' : document.getElementById('bad-t').textContent);
+      ck(w + ' QA H1 (b): a valid link, then a malformed link in the same tab: badLink on screen; print emulation shows nothing from the earlier split; sheet DOM emptied', okRecv && badScreen === C.badLink && !bad.s5 && !bad.text.includes('Community garden') && !bad.text.includes('Ana') && bad.rows === 0 && !bad.h && !bad.rolls, { okRecv, badScreen, bad });
+      await q.close(); }
+    // ---------- QA H2: numbers never break. Sweep task names 1–40 chars (spaced/hyphenated words, and one unbroken word) with 15 minutes
+    if (w <= 390) { const bad = [];
+      for (const kind of ['words', 'one']) for (let L = 1; L <= 40; L++) {
+        const nm = kind === 'one' ? 'W'.repeat(L) : 'Disassemble-and-reassemble greenhouse roof'.slice(0, L).replace(/[\s-]+$/, '') || 'D';
+        await fill(p, CTITLE, [[nm, 15], ['Rake paths', 45]], [['Ana', 120]]); await p.evaluate(() => { const m = document.getElementById('m-suggest'); m.checked = true; m.dispatchEvent(new Event('change', { bubbles: true })); document.getElementById('b-split').click(); });
+        const r = await p.evaluate(nm => { const out = [], lines = el => { const rg = document.createRange(); rg.selectNodeContents(el); return new Set([...rg.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top))).size; };
+          document.querySelectorAll('#rolls .stick').forEach(st => { const m = st.querySelector('.m'); if (lines(m) !== 1) out.push('minutes "' + m.textContent + '" on ' + lines(m) + ' lines'); });
+          const st = [...document.querySelectorAll('#rolls .stick')].find(x => x.querySelector('.t').textContent === '“' + nm + '”'), t = st.querySelector('.mill-typed'), tn = t.firstChild, box = st.querySelector('.t').getBoundingClientRect().width, cx = document.createElement('canvas').getContext('2d'); cx.font = getComputedStyle(t).font;
+          // each word (between spaces/hyphens) stays on one line unless that word alone is wider than its box
+          let i = 0; for (const wd of nm.split(/(?<=[\s-])/)) { const rg = document.createRange(); rg.setStart(tn, i); rg.setEnd(tn, i + wd.trimEnd().length); i += wd.length; const rs = [...rg.getClientRects()].filter(x => x.width > 0);
+            if (new Set(rs.map(x => Math.round(x.top))).size > 1 && cx.measureText(wd.trimEnd()).width < box - 1) out.push('word "' + wd + '" broken though it fits'); }
+          if (document.documentElement.scrollWidth > document.documentElement.clientWidth) out.push('sideways scroll');
+          return out; }, nm);
+        if (r.length) bad.push(kind + ' ' + L + ': ' + r.join('; ')); }
+      ck(w + ' QA H2: task names 1–40 chars (words and one unbroken word), 15 min: the minutes never break; words break only at spaces/hyphens unless one word is wider than its box; no sideways scroll', !bad.length, bad.slice(0, 8)); }
     // ---------- Creative design check 5f127ab (items 1–6), Creative's reference data
     await p.reload({ waitUntil: 'load' }); await sleep(200); await fill(p, CTITLE, TS, HS); await split(p); await p.evaluate(() => document.fonts.ready);
     t = await p.evaluate(() => { const a = [...document.querySelectorAll('#rolls article')], d = a[3];
@@ -286,5 +317,26 @@ const RED = [200, 54, 31];
     ck(w + ' C5 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME));
     await s.b.close();
   }
+
+  // ---------- QA H3: the WHOLE URL is capped at 2,000 on send and receive (shared MILLVIEW.linkFor), tested under a long path (/mill/ + slashes + five-hands/)
+  { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: 390, height: 900 }); await p.evaluateOnNewDocument(clipStub);
+    const pathFor = n => '/mill/' + '/'.repeat(n) + 'five-hands/';
+    await p.goto(`${SCHEME}://${H}${pathFor(0)}`, { waitUntil: 'load' }); await sleep(150);
+    // a valid fragment under 1,000 chars from the real encoder
+    const st = { title: 'Long-path check ' + 'T'.repeat(30), tasks: Array.from({ length: 12 }, (_, i) => [String.fromCharCode(65 + i).repeat(28) + i, 10 + i]), helpers: [['Ana', 480], ['Ben', 60]] };
+    const frag = await p.evaluate(st => { const h = st.helpers.map(x => ({ name: x[0], min: x[1] })), t = st.tasks.map(x => ({ name: x[0], min: x[1] })); return FH.encode(st.title, h, t, FH.suggest(h, t)); }, st);
+    const origin = `${SCHEME}://${H}`, base = (origin + pathFor(0) + '#').length, res = {};
+    for (const L of [1999, 2000, 2001]) { const n = L - base - frag.length, url = origin + pathFor(n) + '#' + frag; await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(250);
+      res[L] = await p.evaluate(() => ({ len: location.href.length, recv: !document.getElementById('recv').hidden, bad: document.getElementById('bad').hidden ? '' : document.getElementById('bad-t').textContent, rows: document.querySelectorAll('#rolls article').length, sheet: document.querySelectorAll('#sheet-t tbody tr').length })); }
+    ck('QA H3 receive: long path, whole URL 1,999 and 2,000 open the recipient view (fragment ' + frag.length + ' ≤ 1,000)', frag.length <= 1000 && res[1999].len === 1999 && res[1999].recv && res[1999].rows === 2 && res[2000].len === 2000 && res[2000].recv && res[2000].rows === 2, res);
+    ck('QA H3 receive: long path, whole URL 2,001 → badLink, nothing opened, no sheet', res[2001].len === 2001 && !res[2001].recv && res[2001].bad === C.badLink && !res[2001].rows && !res[2001].sheet, res[2001]);
+    const send = {};
+    for (const L of [1999, 2000, 2001]) { const n = L - base - frag.length; await p.goto('about:blank'); await p.goto(origin + pathFor(n), { waitUntil: 'load' }); await sleep(150);
+      await fill(p, st.title, st.tasks, st.helpers); await split(p); await p.evaluate(() => { window.__clip = []; }); await p.click('#b-link'); await sleep(150);
+      send[L] = await p.evaluate(() => ({ link: document.getElementById('link-box').hidden ? '' : document.getElementById('link').value, msg: document.getElementById('link-long').hidden ? '' : document.getElementById('link-long').textContent, clip: window.__clip.length }));
+      send[L].len = send[L].link.length; }
+    ck('QA H3 send: long path, the same state makes a 1,999- and a 2,000-character link (copied); at 2,001 no link, tooLongLink shown, nothing copied',
+      send[1999].len === 1999 && send[1999].link.endsWith('#' + frag) && send[1999].clip === 1 && send[2000].len === 2000 && send[2000].clip === 1 && !send[2001].link && send[2001].msg === C.tooLongLink && !send[2001].clip, send);
+    ck('QA H3 no page errors on the long path', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })();
