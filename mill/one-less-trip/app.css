@@ -39,3 +39,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .olt-form > p,.olt-form > .olt-err{grid-column:1/-1}
 @media (max-width:480px){.olt-form .olt-field{grid-column:1/-1}.olt-form .olt-field.is-s{grid-column:span 3}.olt-form .olt-field.is-stop{grid-column:1/-1}}
 .olt-item.is-done .olt-unit{text-decoration:line-through;text-decoration-thickness:2px;color:var(--olt-mute)}
+/* QA W-6b (PM 08:26): the belt's drop shadow (theme.css, unchanged) reaches ~20px below the belt; #progress sat right under it with no gap, so its first
+   line was grey on shadow (darkest pixel 3.25:1). It now starts 14px below the belt, the same gap the set-aside tray uses, clear of the shade. */
+#progress{margin-top:14px}
