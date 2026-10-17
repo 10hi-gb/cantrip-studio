@@ -92,7 +92,7 @@
     $('b-text').disabled = !ok;
     var hd = $('x').querySelectorAll('.osa-heads b'); if (hd[0]) { hd[0].textContent = M.strip(draft.f) ? V.quote(M.strip(draft.f)) : C.fromLabel; hd[1].textContent = M.strip(draft.o) ? V.quote(M.strip(draft.o)) : C.toLabel; hd[0].title = hd[0].textContent; hd[1].title = hd[1].textContent; /* N6: the hover title follows the quoted name */ /* D14 class: typed names quoted in the compose preview */ var ini = $('x').querySelectorAll('.osa-heads .osa-ini'); ini[0].textContent = initial(draft.f); ini[1].textContent = initial(draft.o); }
   }
-  function edited() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); $('linkbox').hidden = true; $('banner').hidden = true; validate(); }
+  function edited() { if (location.hash || location.search) history.replaceState(null, '', location.pathname); $('linkbox').hidden = true; $('banner').hidden = true; validate(); }
   // ---------- answer (#a1) ----------
   function answer() {
     mode = 'answer'; page(ask.f ? typed(C.receiverIntro, 'from', ask.f) : C.receiverIntroAnon, C.receiverTypedNote); drawAnswer();
@@ -195,10 +195,11 @@
     noteLine([C.replyReceivedNote, C.noBookingNote, r.v === 'n' ? C.noReasonReceived : ''].filter(Boolean).join(' '));
     setText(A.textReply(C, r) + '\n' + C.replyTypedNote); // PM: copy-as-text carries the screen's attribution line, verbatim, once
   }
-  function leave() { history.replaceState(null, '', location.pathname + location.search); touched = {}; $('banner').hidden = true; compose(); $('f-w').focus(); }
-  function reset() { if (!confirm(C.resetConfirm)) return; history.replaceState(null, '', location.pathname + location.search); $('link').value = ''; $('linkbox').hidden = true; draft = blankDraft(); touched = {}; $('banner').hidden = true; compose(); toast(C.resetDone); $('f-w').focus(); }
+  function leave() { history.replaceState(null, '', location.pathname); touched = {}; $('banner').hidden = true; compose(); $('f-w').focus(); }
+  function reset() { if (!confirm(C.resetConfirm)) return; history.replaceState(null, '', location.pathname); $('link').value = ''; $('linkbox').hidden = true; draft = blankDraft(); touched = {}; $('banner').hidden = true; compose(); toast(C.resetDone); $('f-w').focus(); }
   // Shared MILLVIEW.route: every load and every hashchange (valid, bad, old or empty) rebuilds the tab from the fragment alone.
   function route(h) {
+    if (location.search) history.replaceState(null, '', location.pathname + location.hash); // PM 04:57: the address bar never keeps a ?query (path + #fragment only)
     var ae = document.activeElement; if (ae && ae !== document.body && ae.blur) ae.blur(); // N3: blur first (its validation runs now)...
     routeTo(h); touched = {}; V.clearErrors(document, '.osa-err'); // ...then clear errors after the rebuild
   }
