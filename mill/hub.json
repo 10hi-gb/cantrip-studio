@@ -237,11 +237,11 @@
     "https://old.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf5d1e5/"
    ],
    "limits": [
-    "Loose support: the thread is about coordinating people in general. Nobody asked for a task splitter; this narrow version is our idea.",
-    "One session only: up to 12 tasks and 5 helpers, whole minutes (1 to 480 per task, 0 to 480 per helper). Jobs must work in any order.",
-    "Suggest uses a simple rule, not the best possible split; tasks that fit nobody whole stay on the bench, never split or dropped. Check only adds up your own split.",
-    "Proposal only: every card, copied text and the sheet say “Nobody has agreed to this yet.”",
-    "The optional link holds only task names, minutes and first names; anyone with the link can read it."
+    "Loose fit to the thread: it's about coordinating people in general. Nobody asked for a task splitter; this narrow version is our idea.",
+    "One session: up to 12 tasks and 5 helpers, whole minutes (1–480 per task, 0–480 per helper). Only for jobs that can be done in any order.",
+    "Suggest uses a simple rule, not the best possible split. A task that fits nobody whole stays on the bench; nothing is split or dropped. Check only adds up your own split.",
+    "Proposal only: every card, the copied text and the sheet say “Nobody has agreed to this yet.”",
+    "The optional link holds only task names, minutes and helper names. Anyone with the link can read it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 5f127aba58e8a4a2fc5c06b7c20cb1d20cdab4bc: unit 16 (every proto r1d assert, check() validates, conservation); browser 143/143 at 320/390/1280. Not QA.",
    "status": "No QA verdict, NOT READY"
