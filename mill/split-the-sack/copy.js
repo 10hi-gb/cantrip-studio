@@ -157,5 +157,14 @@ const COPY = {
     "other": "Currency: {max} characters max. {n} over."
   },
   "linkLabel": "Link",
-  "notReady": "Item, package, price and every household's amount first. Then the proposal's ready."
+  "notReady": "Item, package, price and every household's amount first. Then the proposal's ready.",
+  "shareTextTyped": "Proposed split for “{item}” (typed by the sender)",
+  "residualLineMixed": {
+    "one": "1 extra cent went to {names}.",
+    "other": "{n} extra cents went to: {names}."
+  },
+  "residualShare": {
+    "one": "{name} 1¢",
+    "other": "{name} {n}¢"
+  }
 };
