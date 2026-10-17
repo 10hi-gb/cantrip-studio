@@ -236,7 +236,7 @@
     "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview cde64e3b02ca689ee7442fa3bc5bf48434c79c1c: unit 24/24 (every proto r1d assert, QA C3/C4/C7/C10, PM C9 as narrowed 04:38, regression names, codec agreement, 6,000-case reference sweep; QA 400 reference cases 400/400); browser 189/189 at 305/320/390/1280/1440. Not QA.",
-   "status": "NOT READY (QA open: C11–C13; PM-added: C14; retest pending at e1aa2db)",
+   "status": "NOT READY (QA open: C11–C13; PM-added: C14; retest pending at 83edf87)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
