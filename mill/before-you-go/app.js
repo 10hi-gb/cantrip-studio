@@ -112,7 +112,7 @@
     $('own-add').addEventListener('click', addOwn); $('own-in').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addOwn(); } });
     $('b-link').addEventListener('click', function () { var u = makeLink(); if (!u) return; showLink(u); copy(u, function () { showLink(u); }); });
     $('b-share').addEventListener('click', function () { var u = makeLink(); if (!u) return; showLink(u);
-      if (navigator.share) navigator.share({ title: C.title, text: M.fill(C.shareText, { pickup: M.strip(st.k) || C.title }), url: u }).then(function () {}, function () { toast(C.shareCancel); showLink(u); });
+      if (navigator.share) navigator.share({ title: C.title, text: M.strip(st.k) ? M.fill(C.shareTextTyped, { pickup: M.strip(st.k) }) : C.title, url: u }).then(function () {}, function () { toast(C.shareCancel); showLink(u); });
       else copy(u, function () { showLink(u); }); });
     $('b-text').addEventListener('click', function () { copy($('text').value, selectText); });
     $('b-print').addEventListener('click', function () { window.print(); });

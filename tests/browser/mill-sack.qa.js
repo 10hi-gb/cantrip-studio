@@ -2,6 +2,7 @@
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
 const { textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const COPYV2 = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/split-the-sack/copy.js', 'utf8') + ';COPY');
+const COPY = COPYV2;
 const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
@@ -44,7 +45,7 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     // share (no navigator.share headless -> clipboard path; failure must leave selectable link)
     await p.focus('#share'); await p.keyboard.press('Enter'); await sleep(300);
     t = await p.evaluate(() => ({ link: document.getElementById('link').value, hash: location.hash, text: document.getElementById('text').value, toast: document.getElementById('toast').textContent }));
-    ck(w + ' link made + text proposal', /#s1\./.test(t.link) && t.hash.startsWith('#s1.') && /Proposed split: Jasmine rice/.test(t.text) && /Unclaimed: 7 lb/.test(t.text), { len: t.link.length, toast: t.toast });
+    ck(w + ' link made + text proposal', /#s1\./.test(t.link) && t.hash.startsWith('#s1.') && /^Proposed split for “Jasmine rice” \(typed by the sender\)\n/.test(t.text) && /Unclaimed: 7 lb/.test(t.text), { len: t.link.length, toast: t.toast });
     // recipient opens the link in a fresh tab
     const q = await s.b.newPage(); await q.setViewport({ width: w, height: 800 }); const qerr = []; q.on('pageerror', e => qerr.push(String(e)));
     await q.goto(t.link || BASE, { waitUntil: 'load' }); await sleep(200);
@@ -127,5 +128,43 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     await typeInto(p, '#u', 'u'.repeat(17)); await typeInto(p, '#c', 'ABCDE'); await sleep(50);
     { const body = await p.evaluate(() => document.body.innerText); ck('390 unit/currency limits use Writer copy with {max} (16 / 3)', body.includes('Unit: 16 characters max. 1 over.') && body.includes('Currency: 3 characters max. 2 over.'), body.match(/(Unit|Currency):[^\n]*/g)); }
     ck('390 fee-mode checks no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // ---- QA recheck 83a2ebcd: D7 read-only recipient / no stray recipient panel for the sender, D8 nobasis message, D9 residual sentence vs math, D1b unbroken money
+  const RICE = { n: 'Rice', u: 'lb', c: '$', q: '25', i: '0.5', p: '31.47', f: '2.99', b: 'p', x: -1, h: [['Ana', '8'], ['Unit 2B', '7.5'], ['Bao & Linh', '6']] };
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 800 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const vis = () => p.evaluate(() => { const v = e => !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden'; return { inputs: [...document.querySelectorAll('input,select,textarea,button')].filter(v).map(e => e.id || e.className || e.tagName), editor: v(document.getElementById('editor')), recv: v(document.getElementById('recv')), pick: v(document.getElementById('pick')), change: v(document.getElementById('change')), reset: v(document.getElementById('reset')) }; });
+    let o = await vis(); ck(w + ' D7 sender view: no household picker and no Change my amount', o.editor && !o.recv && !o.pick && !o.change && o.reset, o);
+    const f = await p.evaluate(o => SACKLINK.encode(o), RICE); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(150);
+    const nums = () => p.evaluate(() => [...document.querySelectorAll('#rows .ss-alloc')].map(r => r.textContent).join('|'));
+    const n0 = await nums(); o = await vis();
+    const editable = o.inputs.filter(x => !['pick', 'change', 'ss-btn', 'home'].includes(x) && !/^(BUTTON|A)$/.test(x));
+    ck(w + ' D7 recipient view: editor and Clear the table not shown; only picker/Change are controls', !o.editor && o.recv && o.pick && o.change && !o.reset && !o.inputs.some(x => ['item', 'q', 'p', 'f', 'inc', 'u', 'c', 'add', 'reset', 'bp', 'be'].includes(x)) && !o.inputs.some(x => /ss-in|sk-/.test(x)), o);
+    const dom = await p.evaluate(() => ({ editable: [...document.querySelectorAll('input,textarea,select')].filter(e => !e.disabled && !e.readOnly).map(e => e.id || e.className), buttons: [...document.querySelectorAll('button')].filter(e => !e.disabled).map(e => e.id || e.className), hhRows: document.querySelectorAll('#hh li, #hh input').length, inert: document.getElementById('editor').inert }));
+    ck(w + ' D7 recipient DOM (not just CSS): no editable editor inputs, no enabled Clear/add/remove/basis/export buttons, household editor not rendered, editor inert', dom.editable.every(x => x === 'pick') && !dom.buttons.some(x => ['reset', 'add', 'bp', 'be', 'share', 'copytext', 'print'].includes(x) || /ss-x|sk-x/.test(x)) && dom.hhRows === 0 && dom.inert, dom);
+    // even forced input events on the hidden editor change nothing
+    await p.evaluate(() => { const set = (id, v) => { const e = document.getElementById(id); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }; set('q', '99'); set('p', '1.00'); document.querySelectorAll('#hh input').forEach(i => { i.value = '20'; i.dispatchEvent(new Event('input', { bubbles: true })); }); document.getElementById('add').click(); document.getElementById('be').click(); document.getElementById('reset').click(); });
+    await sleep(100); const n1 = await nums(); const h1 = await p.evaluate(() => location.hash);
+    ck(w + ' D7 recipient: forced edits/Clear on the hidden editor change no numbers and keep the link', n0 === n1 && h1 === '#' + f && /Ana/.test(n1) && /\$11\.02/.test(n1), { n0, n1 });
+    await p.select('#pick', '0'); await sleep(50); await p.goto(BASE + '#', { waitUntil: 'load' }); await sleep(150);
+    o = await vis(); const res = await p.evaluate(() => ({ own: document.getElementById('owncost').textContent, sel: document.getElementById('pick').options.length }));
+    ck(w + ' D7 back to own view: no recipient residue (picker emptied, "you take" text cleared, panel hidden)', !o.recv && !o.pick && !o.change && res.own === '' && res.sel === 0, { o, res });
+    // D9: sentence vs math (rice example: Unclaimed gets +2¢)
+    await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(150);
+    const d9 = await p.evaluate(st => { const c = SACK.compute(SACKLINK.toCompute(st)); const per = c.rows.map((r, i) => [st.h[i][0], r.extraCents]).concat([[COPY.unallocatedRow, c.unallocated.extraCents]]).filter(x => x[1]); return { per, line: document.getElementById('residual').textContent, total: per.reduce((a, x) => a + x[1], 0) }; }, RICE);
+    const parsed = (d9.line.match(/: (.*)\.$/) || [])[1]; const pairs = parsed ? parsed.split(', ').map(x => { const m = x.match(/^(.*) (\d+)¢$/); return m ? [m[1], +m[2]] : null; }) : null;
+    const allOne = d9.per.every(x => x[1] === 1);
+    ck(w + ' D9 leftover-cents sentence matches the per-row math (no "one each" unless every row got 1¢)', d9.per.some(x => x[1] === 2) && !/one each/.test(d9.line) && d9.line.startsWith(d9.total + ' extra cents') && JSON.stringify(pairs) === JSON.stringify(d9.per) && !allOne, d9);
+    // D8: equal fee, nobody takes any
+    await p.goto(BASE + '#', { waitUntil: 'load' }); await sleep(100);
+    await typeInto(p, '#item', 'Oats'); await typeInto(p, '#q', '10'); await typeInto(p, '#u', 'unit'); await typeInto(p, '#inc', '1'); await typeInto(p, '#p', '10.00'); await typeInto(p, '#f', '1.00'); await p.click('#be');
+    const hh = await p.$$('#hh input'); await hh[0].type('A'); await hh[1].type('0'); await hh[2].type('B'); await hh[3].type('0'); await sleep(100);
+    const d8 = await p.evaluate(() => ({ nr: document.getElementById('notready').textContent, st: document.getElementById('status').textContent, dis: document.getElementById('share').disabled }));
+    ck(w + ' D8 equal fee with no takers: errorFeeNoBasis, never "Requests are 0 … over"', d8.nr === COPY.errorFeeNoBasis && !/over the package/.test(d8.nr + d8.st) && d8.dis, d8);
+    // D1b: big values unbroken
+    await p.goto(BASE + '#', { waitUntil: 'load' }); await sleep(100); await typeInto(p, '#item', 'Sand'); await typeInto(p, '#q', '100000'); await typeInto(p, '#u', 'lb'); await typeInto(p, '#inc', '1'); await typeInto(p, '#p', '9999999.99'); await typeInto(p, '#f', '100000.00');
+    const hb = await p.$$('#hh input'); await hb[0].type('A'); await hb[1].type('50000'); await hb[2].type('B'); await hb[3].type('50000'); await sleep(120);
+    const d1 = await p.evaluate(() => [...document.querySelectorAll('.ss-lcd .v, #rows .ss-alloc .tot, #rows .ss-alloc .m.fee, #rows .ss-alloc .qty')].filter(e => e.getClientRects().length).map(e => { const r = document.createRange(); r.selectNodeContents(e.firstChild || e); const ls = new Set([...r.getClientRects()].map(x => Math.round(x.top))); return { t: (e.firstChild || e).textContent, lines: ls.size }; }));
+    const of = await overflow(p);
+    ck(w + ' D1b money/quantity values stay on one line (no mid-number wrap), no overflow', d1.length >= 6 && d1.every(x => x.lines === 1) && of.sw <= w && !of.bad.length, { d1, of });
+    ck(w + ' QA-recheck checks no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

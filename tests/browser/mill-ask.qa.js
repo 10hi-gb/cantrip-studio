@@ -110,6 +110,8 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     ck(w + ' D5: 20+ character names wrap instead of ellipsis', nm.some(x => x.t === 'Christopher Montgomery') && nm.every(x => !x.clipped && x.ell !== 'ellipsis'), nm);
     const D8 = await p.evaluate(() => ({ title: document.getElementById('title').textContent, typed: (document.querySelector('#title .osa-typed') || {}).textContent, q: (document.querySelector('.osa-term .ask .osa-qlabel') || {}).textContent }));
     ck(w + ' D8: "Small ask from:" label + separate name; "Their ask, as typed:" + quotes', D8.title === 'Small ask from: Christopher Montgomery' && D8.typed === 'Christopher Montgomery' && D8.q === 'Their ask, as typed:', D8);
+    const domA = await p.evaluate(() => ({ editable: [...document.querySelectorAll('input,textarea,select,[contenteditable=true]')].filter(e => !e.disabled && !e.readOnly).map(e => e.id || e.className), askInputs: document.querySelectorAll('.is-ask.osa-in,#f-w,#f-e,#f-u,#f-d,#f-s,#f-t,#f-h,#f-f,#f-o').length, reset: !!document.getElementById('b-reset') }));
+    ck(w + ' recipient DOM (not just CSS): the ask has no editor inputs and no composer Start over; nothing editable before a choice', domA.askInputs === 0 && !domA.reset && domA.editable.length === 0, domA);
     // D7: reply privacy once on all three answer views; "Not this time" has no note field
     const views = {}; for (const c of ['y', 'p', 'n']) { await p.click('#c-' + c); await sleep(80); views[c] = await p.evaluate(P => ({ n: [...document.querySelectorAll('.osa-fine')].filter(e => e.textContent === P).length, note: !!document.getElementById('f-note') }), C.replyPrivacy); }
     ck(w + ' D7: replyPrivacy shown once on Yes / Part of it / Not this time; no note field on Not this time', views.y.n === 1 && views.p.n === 1 && views.n.n === 1 && views.y.note && views.p.note && !views.n.note, views);
@@ -121,6 +123,9 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     // reply link from "Not this time" holds no note
     await p.click('#c-n'); await sleep(50); await p.focus('#b-rlink'); await p.keyboard.press('Enter'); await sleep(120); const rl = await p.$eval('#link', e => e.value);
     const nd = await p.evaluate(u => ASK.decode(u.split('#')[1]), rl); ck(w + ' "Not this time" reply link carries an empty note', nd.ok && nd.data.v === 'n' && nd.data.n === '', nd);
+    await p.goto(BASE + '#' + L.part, { waitUntil: 'load' }); await sleep(150);
+    const domR = await p.evaluate(() => ({ editable: [...document.querySelectorAll('input,textarea,select,[contenteditable=true]')].filter(e => !e.disabled && !e.readOnly).map(e => e.id || e.className), btns: [...document.querySelectorAll('button')].map(b => b.id) }));
+    ck(w + ' requester reading a reply: no editable inputs in the DOM; only Ask again / Ask someone else', domR.editable.length === 0 && !domR.btns.includes('b-reset') && !domR.btns.includes('b-rreset'), domR);
     // line breaks: favor shows up to 3 breaks (pre-line), copy text matches
     await p.goto(BASE + '#' + L.ask2, { waitUntil: 'load' }); await sleep(150);
     t = await p.evaluate(() => { const q = document.querySelector('.osa-term .ask .osa-qtext'); return { txt: q.textContent, ws: getComputedStyle(q).whiteSpace, lines: q.getClientRects().length, h: q.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(q).lineHeight) }; });

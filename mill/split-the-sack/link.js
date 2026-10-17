@@ -33,7 +33,7 @@
       var nm = M.strip(x[0]); if (!nm || M.len(nm) > NAME_MAX) return 'name';
       var key = nm.toLowerCase(); if (seen[key]) return 'duplicate'; seen[key] = 1;
     }
-    var r = toCompute(st); if (!r) return 'money'; var c = S.compute(r); if (!c.ok) return c.error; if (!c.complete) return 'over';
+    var r = toCompute(st); if (!r) return 'money'; var c = S.compute(r); if (!c.ok) return c.error; if (!c.complete) return c.status === 'nobasis' ? 'nobasis' : 'over';
     if (st.x >= 0 && c.unallocatedBeforeAssign === 0) return 'assign';
     return null;
   }

@@ -43,3 +43,10 @@
 .ss-alloc>span,.ss-sum>span{min-width:0}
 .ss-alloc .qty,.ss-alloc .m,.ss-alloc .tot,.ss-sum span{overflow-wrap:anywhere}
 @media (max-width:560px){.ss-alloc,.ss-sum{grid-template-columns:40px minmax(0,1fr) minmax(0,auto)}}
+/* QA 83a2ebcd D1b: money and quantity values never break mid-number; lines wrap between label and value instead. */
+.ss-lcd .v{white-space:normal;overflow-wrap:normal;word-break:keep-all}
+.ss-lcd .v .num{white-space:nowrap}
+.ss-lcd .v .unit{overflow-wrap:anywhere;word-break:normal}
+.ss-alloc .qty,.ss-alloc .m,.ss-alloc .tot,.ss-sum span{overflow-wrap:normal;word-break:keep-all}
+.ss-alloc .tot .p,.ss-alloc .m .fw{white-space:normal}
+@media (max-width:360px){.ss-lcd .v{font-size:17px}}

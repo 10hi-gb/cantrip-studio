@@ -27,12 +27,12 @@
       var li = el('li', 'ss-hrow');
       var nf = el('div', 'ss-field'), nl = el('label', null, C.householdLabel + ' ' + (i + 1)), n = el('input');
       n.id = 'hn' + i; nl.htmlFor = n.id; n.value = x[0]; n.maxLength = 48; n.autocomplete = 'off'; n.className = 'ss-hn'; n.placeholder = i === 0 ? C.householdPlaceholder : '';
-      n.addEventListener('input', function () { st.h[i][0] = n.value; edited(); }); nf.appendChild(nl); nf.appendChild(n);
+      n.addEventListener('input', function () { if (mode !== 'own') { n.value = st.h[i][0]; return; } st.h[i][0] = n.value; edited(); }); nf.appendChild(nl); nf.appendChild(n);
       var rf = el('div', 'ss-field'), rlab = el('label', null, C.requestLabel), w = el('div', 'ss-wants'), r = el('input');
       r.id = 'hr' + i; rlab.htmlFor = r.id; r.value = x[1]; r.inputMode = 'decimal'; r.autocomplete = 'off'; r.placeholder = C.requestPlaceholder; r.className = 'sk-rq';
-      r.addEventListener('input', function () { st.h[i][1] = r.value; edited(); }); w.appendChild(r); w.appendChild(el('span', 'u sk-unit', unit())); rf.appendChild(rlab); rf.appendChild(w);
+      r.addEventListener('input', function () { if (mode !== 'own') { r.value = st.h[i][1]; return; } st.h[i][1] = r.value; edited(); }); w.appendChild(r); w.appendChild(el('span', 'u sk-unit', unit())); rf.appendChild(rlab); rf.appendChild(w);
       var rm = el('button', 'ss-x sk-x', '×'); rm.type = 'button'; rm.disabled = st.h.length <= S.MIN_H;
-      rm.addEventListener('click', function () { st.h.splice(i, 1); if (st.x === i) st.x = -1; else if (st.x > i) st.x--; drawHouseholds(); edited(); ($('hh').querySelectorAll('input')[Math.max(0, (i - 1) * 2)] || $('add')).focus(); });
+      rm.addEventListener('click', function () { if (mode !== 'own') return; st.h.splice(i, 1); if (st.x === i) st.x = -1; else if (st.x > i) st.x--; drawHouseholds(); edited(); ($('hh').querySelectorAll('input')[Math.max(0, (i - 1) * 2)] || $('add')).focus(); });
       li.appendChild(nf); li.appendChild(rf); li.appendChild(rm); ol.appendChild(li);
     });
     $('add').disabled = st.h.length >= S.MAX_H; labels();
@@ -103,12 +103,13 @@
     var r = S.compute(inp); if (!r.ok && r.error === 'assign') { inp.assignTo = -1; r = S.compute(inp); }
     return r.ok ? r : null;
   }
+  function lockEditor() { if (mode === 'own') return; $('hh').textContent = ''; $('editor').querySelectorAll('input,select,textarea,button').forEach(function (e) { e.disabled = true; }); }
   function render() {
     var fe = fieldErrors(); list('item-msg', fe.item); list('hh-msg', fe.hh);
     var rows = $('rows'), as = $('assign'), u = unit(); rows.textContent = ''; as.textContent = '';
     $('basisnote').textContent = C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'];
     var res = result(), status = $('status'), q = S.parseQty(st.q) || 0;
-    $('lcd-q').textContent = st.q ? (S.parseQty(st.q) != null ? S.fmtQty(S.parseQty(st.q)) : '—') + (u ? ' ' + u : '') : '—';
+    var lq = $('lcd-q'); lq.textContent = ''; lq.appendChild(el('span', 'num', st.q ? (S.parseQty(st.q) != null ? S.fmtQty(S.parseQty(st.q)) : '—') : '—')); if (st.q && u) { lq.appendChild(document.createTextNode(' ')); lq.appendChild(el('span', 'unit', u)); }
     $('lcd-p').textContent = S.parseMoney(st.p) != null ? money(S.parseMoney(st.p)) : '—';
     $('lcd-f').textContent = money(S.parseMoney(st.f) || 0);
     var inc = S.parseQty(st.i); $('sname').textContent = (M.strip(st.n) || C.itemPlaceholder) + (inc ? ' · ' + C.incrementLabel + ' ' + S.fmtQty(inc) + (u ? ' ' + u : '') : '');
@@ -134,8 +135,7 @@
       [['', 'presentation'], [C.reconcileLabel, 'rowheader'], [S.fmtQty(sumQ) + ' ' + u + (ok ? ' ✓' : ''), 'cell', 'ok'], [money(res.price), 'cell', 'ok'], [money(res.fee), 'cell', 'ok'], [money(sumM) + (ok ? ' ✓' : ''), 'cell', 'ok']].forEach(function (c) { var e = el('span', c[2] || null, c[0]); e.setAttribute('role', c[1]); sum.appendChild(e); });
       rows.appendChild(sum);
       if (ok) $('reconcile').textContent = M.fill(C.reconcileLine, { qty: S.fmtQty(sumQ), unit: u, total: money(sumM) });
-      var ex = [], exn = 0; res.rows.forEach(function (r, i) { if (r.extraCents) { ex.push(nameOf(i)); exn += r.extraCents; } }); if (un.extraCents) { ex.push(C.unallocatedRow); exn += un.extraCents; }
-      $('residual').textContent = exn ? M.plural(C.residualLine, exn, { names: ex.join(', ') }) : C.residualNone;
+      $('residual').textContent = residualSentence(res);
       if (mode !== 'own') {}
       else if (un.qty > 0) {
         as.appendChild(el('p', null, M.fill(C.assignUnallocated, { qty: S.fmtQty(un.qty), unit: u })));
@@ -148,12 +148,19 @@
     if (feeNoTaker) fe.item.push(C.errorFeeNoBasis), list('item-msg', fe.item);
     var ready = !blocked && !fe.item.length && !fe.hh.length;
     ['share', 'copytext', 'print'].forEach(function (id) { $(id).disabled = !ready; });
-    $('notready').textContent = ready ? '' : (blocked === 'over' && res ? M.fill(C.overAllocationBlock, { qty: S.fmtQty(res.shortage), unit: u }) : blocked === 'count' ? C.tooFewHouseholds : blocked === 'duplicate' ? C.duplicateHousehold : feeNoTaker ? C.errorFeeNoBasis : C.notReady);
+    $('notready').textContent = ready ? '' : feeNoTaker ? C.errorFeeNoBasis : (blocked === 'over' && res && res.status === 'over' ? M.fill(C.overAllocationBlock, { qty: S.fmtQty(res.shortage), unit: u }) : blocked === 'count' ? C.tooFewHouseholds : blocked === 'duplicate' ? C.duplicateHousehold : feeNoTaker ? C.errorFeeNoBasis : C.notReady);
     if (mode !== 'own') { ['share', 'copytext', 'print'].forEach(function (id) { $(id).disabled = true; }); }
-    var txt = ready ? proposal(res) : ''; $('text').value = txt; $('printout').textContent = ready ? M.fill(C.proposalPolicy, { feeBasisLine: C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'], residualNote: C.residualNote }) + '\n' + C.proposalSnapshot + '\n' + C.noPaymentNote : '';
+    lockEditor(); var txt = ready ? proposal(res) : ''; $('text').value = txt; $('printout').textContent = ready ? M.fill(C.proposalPolicy, { feeBasisLine: C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'], residualNote: C.residualNote }) + '\n' + C.proposalSnapshot + '\n' + C.noPaymentNote : '';
+  }
+  // D9: the leftover-cents sentence names each row's actual extra cents. Writer's "one each" form is used only when every listed row got exactly 1.
+  function residualSentence(res) {
+    var parts = [], n = 0; res.rows.forEach(function (r, i) { if (r.extraCents) parts.push([nameOf(i), r.extraCents]); }); if (res.unallocated && res.unallocated.extraCents) parts.push([C.unallocatedRow, res.unallocated.extraCents]);
+    parts.forEach(function (p) { n += p[1]; }); if (!n) return C.residualNone;
+    if (parts.every(function (p) { return p[1] === 1; })) return M.plural(C.residualLine, n, { names: parts.map(function (p) { return p[0]; }).join(', ') });
+    return M.plural(C.residualLineMixed, n, { names: parts.map(function (p) { return M.plural(C.residualShare, p[1], { name: p[0] }); }).join(', ') });
   }
   function proposal(res) {
-    var u = unit(), out = [C.proposalHeading + ': ' + M.strip(st.n), C.packageQtyLabel + ': ' + S.fmtQty(res.pkgQty) + ' ' + u + ' · ' + C.priceLabel + ': ' + money(res.price) + ' · ' + C.feeLabel + ': ' + money(res.fee), ''];
+    var u = unit(), out = [M.fill(C.shareTextTyped, { item: M.strip(st.n) }), C.packageQtyLabel + ': ' + S.fmtQty(res.pkgQty) + ' ' + u + ' · ' + C.priceLabel + ': ' + money(res.price) + ' · ' + C.feeLabel + ': ' + money(res.fee), ''];
     res.rows.forEach(function (r, i) { out.push(nameOf(i) + ': ' + S.fmtQty(r.qty) + ' ' + u + ' · ' + C.colItem + ' ' + money(r.goods) + ' + ' + C.colFee + ' ' + money(r.fee) + ' = ' + C.colPays + ' ' + money(r.total)); });
     out.push(C.unallocatedRow + ': ' + M.fill(C.unallocatedLine, { qty: S.fmtQty(res.unallocated.qty), unit: u, cost: money(res.unallocated.total) }));
     out.push(C.rowTotal + ': ' + S.fmtQty(res.pkgQty) + ' ' + u + ' · ' + money(res.total), '');
@@ -167,7 +174,9 @@
     $('editor').hidden = m !== 'own'; $('recv').hidden = m === 'own'; $('changebox').hidden = m !== 'change'; $('change').hidden = m === 'change';
     $('from').hidden = m === 'own'; $('from').textContent = C.senderTextLabel; $('caption').hidden = m === 'own'; $('caption').textContent = C.senderNamesCaption;
     if (m !== 'change') { $('rlinkbox').hidden = true; $('rlink').value = ''; }
-    if (m !== 'own') recvPanel(); render();
+    if (m === 'own') $('editor').querySelectorAll('input,select,textarea,button').forEach(function (e) { e.disabled = false; });
+    $('editor').inert = m !== 'own'; $('recv').inert = m === 'own';
+    if (m === 'own') { orig = null; pick = -1; $('pick').textContent = ''; $('owncost').textContent = ''; $('change-err').textContent = ''; $('amt').textContent = ''; $('amt-l').textContent = ''; } else recvPanel(); render();
   }
   function recvPanel() {
     var sel = $('pick'), v = pick; sel.textContent = ''; var o0 = el('option', null, '—'); o0.value = ''; sel.appendChild(o0);
@@ -197,10 +206,10 @@
   }
   function share() {
     var url = makeLink(); if (!url) return;
-    if (navigator.share) navigator.share({ title: C.title, text: M.fill(C.shareText, { item: M.strip(st.n) }), url: url }).catch(function (e) { if (e && e.name === 'AbortError') toast(C.shareCancel); else toast(C.copyFail); $('link').focus(); $('link').select(); });
+    if (navigator.share) navigator.share({ title: C.title, text: M.fill(C.shareTextTyped, { item: M.strip(st.n) }), url: url }).catch(function (e) { if (e && e.name === 'AbortError') toast(C.shareCancel); else toast(C.copyFail); $('link').focus(); $('link').select(); });
     else copy(url, $('link'));
   }
-  function reset() { if (!confirm(C.resetConfirm)) return; st = blank(); lastLink = ''; $('link').value = ''; history.replaceState(null, '', location.pathname); $('linkbox').hidden = true; $('banner').hidden = true; setMode('own'); toForm(); render(); toast(C.resetDone); $('item').focus(); }
+  function reset() { if (mode !== 'own') return; if (!confirm(C.resetConfirm)) return; st = blank(); orig = null; pick = -1; lastLink = ''; $('link').value = ''; history.replaceState(null, '', location.pathname); $('linkbox').hidden = true; $('banner').hidden = true; setMode('own'); toForm(); render(); toast(C.resetDone); $('item').focus(); }
   function banner(t) { $('banner-h').hidden = true; $('banner-q').hidden = true; $('banner-t').textContent = t; $('banner').hidden = false; }
   function fromHash() {
     $('banner').hidden = true; lastLink = ''; $('link').value = ''; $('linkbox').hidden = true; $('rlink').value = ''; $('rlinkbox').hidden = true;
@@ -216,10 +225,10 @@
     else { st = blank(); setMode('own'); banner(d.why === 'oldVersion' ? C.oldVersion : C.badLink); }
   }
   function bind() {
-    [['item', 'n'], ['q', 'q'], ['inc', 'i'], ['p', 'p'], ['f', 'f'], ['c', 'c'], ['u', 'u']].forEach(function (p) { $(p[0]).addEventListener('input', function (e) { st[p[1]] = e.target.value; edited(); }); });
-    $('bp').addEventListener('click', function () { st.b = 'p'; basisButtons(); edited(); });
-    $('be').addEventListener('click', function () { st.b = 'e'; basisButtons(); edited(); });
-    $('add').addEventListener('click', function () { if (st.h.length >= S.MAX_H) return; st.h.push(['', '']); drawHouseholds(); edited(); var ins = $('hh').querySelectorAll('input'); ins[ins.length - 2].focus(); });
+    [['item', 'n'], ['q', 'q'], ['inc', 'i'], ['p', 'p'], ['f', 'f'], ['c', 'c'], ['u', 'u']].forEach(function (p) { $(p[0]).addEventListener('input', function (e) { if (mode !== 'own') { e.target.value = st[p[1]]; return; } st[p[1]] = e.target.value; edited(); }); });
+    $('bp').addEventListener('click', function () { if (mode !== 'own') return; st.b = 'p'; basisButtons(); edited(); });
+    $('be').addEventListener('click', function () { if (mode !== 'own') return; st.b = 'e'; basisButtons(); edited(); });
+    $('add').addEventListener('click', function () { if (mode !== 'own') return; if (st.h.length >= S.MAX_H) return; st.h.push(['', '']); drawHouseholds(); edited(); var ins = $('hh').querySelectorAll('input'); ins[ins.length - 2].focus(); });
     $('pick').addEventListener('change', function () { pick = $('pick').value === '' ? -1 : +$('pick').value; if (mode === 'change') { st = JSON.parse(JSON.stringify(orig)); } recvPanel(); render(); });
     $('change').addEventListener('click', function () { if (pick < 0) { $('pick').focus(); return; } setMode('change'); $('up').focus(); });
     $('down').addEventListener('click', function () { step(-1); }); $('up').addEventListener('click', function () { step(1); });
