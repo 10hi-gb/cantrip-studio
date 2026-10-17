@@ -28,7 +28,7 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     t = await state(p);
     ck(w + ' typed facts: chip "Your note · not confirmed", someSaidNote, still 5 open; date-specific question', t.chips.place === 'Your note · not confirmed' && t.chips.window === 'Your note · not confirmed' && t.n === '5' && t.s === 'Still open: Place, When, Contact, Instructions, Bring. 3 details are your notes, not confirmed.' && t.qs.includes('What time can I come on Sat Oct 24 2026?'), t);
     ck(w + ' call/text from a clear phone number, labelled with it', t.call && t.sms && t.callTxt === 'Call 412-555-0187' && t.href === 'tel:4125550187', t);
-    for (const [v, want] of [['Listing #123456789 on Marketplace', false], ['Sat 2026-10-24', false], ['5550134 or 5550199', false], ['Text Maria, 555-0134', false], ['Room 101-2020', false], ['Gate code 555-1234', false], ['555-0134', true], ['(415) 555-0134', true]]) { await typeInto(p, '#f-contact', v); const x = await state(p); ck(w + ' D8 Call/Text for "' + v + '": ' + (want ? 'shown' : 'none'), x.call === want && x.sms === want && (want || (await reallyHidden(p, ['#call', '#sms'])).ok), x.callTxt); }
+    for (const [v, want] of [['Listing #123456789 on Marketplace', false], ['Sat 2026-10-24', false], ['5550134 or 5550199', false], ['Text Maria, 555-0134', false], ['Room 101-2020', false], ['++15551234567', false], ['10-24-2026', false], ['12.30-14.00', false], ['555.0100', true], ['Gate code 555-1234', false], ['555-0134', true], ['(415) 555-0134', true]]) { await typeInto(p, '#f-contact', v); const x = await state(p); ck(w + ' D8 Call/Text for "' + v + '": ' + (want ? 'shown' : 'none'), x.call === want && x.sms === want && (want || (await reallyHidden(p, ['#call', '#sms'])).ok), x.callTxt); }
     await typeInto(p, '#f-contact', '412-555-0187');
     // time without date -> windowNeedsDate
     await setVal(p, 'f-window-d', ''); await setVal(p, 'f-window-t', '14:00'); let we = await p.$eval('#e-window', e => e.textContent); await setVal(p, 'f-window-t', ''); await setVal(p, 'f-window-d', '2026-10-24');
@@ -138,8 +138,9 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     ck(w + ' N3: a hash change clears the toast', r.text !== C.windowNeedsDate && (r.hidden || !r.text), r);
     // N9: print leaves out the empty date/time inputs
     await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await typeInto(p, '#pickup', 'Zqx bike'); await setVal(p, 'f-window-d', '2026-10-24'); await sleep(50);
-    await p.emulateMediaType('print'); r = await p.evaluate(() => ['f-window-d', 'f-window-t', 'a-window-d', 'a-window-t'].map(id => document.getElementById(id).parentElement.getClientRects().length > 0)); await p.emulateMediaType(null);
-    ck(w + ' N9: print shows the filled date and leaves out empty date/time boxes', r[0] === true && r[1] === false && r[2] === false && r[3] === false, r);
+    await p.emulateMediaType('print'); r = await p.evaluate(() => ['f-window-d', 'f-window-t', 'a-window-d', 'a-window-t'].map(id => document.getElementById(id).parentElement.getClientRects().length > 0)); const plv = await p.evaluate(() => { const l = document.getElementById('f-window-d').closest('.byg-fact').querySelector('.byg-line'); return l.getClientRects().length > 0; }); await p.emulateMediaType(null); r.push(!plv);
+    const pl = await p.evaluate(() => { const l = document.getElementById('f-window-d').closest('.byg-fact').querySelector('.byg-line'); return l.textContent; });
+    ck(w + ' N9 + N9b: print leaves out every date/time input (empty or filled); the filled date prints once, as the As typed line', r.every(x => x === false) && pl === 'As typed: “Sat Oct 24 2026”', { r, pl });
     // link -> recipient: N2 quoted; N7 own copy resets
     await typeInto(p, '#f-place', 'Zqx corner'); await typeInto(p, '#own-in', 'Zqx lock?'); await p.keyboard.press('Enter'); await setVal(p, 'f-window-t', '15:00'); await typeInto(p, '#a-bring', 'Cash'); await p.click('#ok-bring'); await typeInto(p, '#by', 'Jo'); await sleep(50);
     await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(200); const url = await p.$eval('#link', e => e.value);
@@ -151,6 +152,24 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     a = await typedAudit(q, SEEDS.concat(['Zqx corner']), { copied: await q.$eval('#text', e => e.value), print: await q.$eval('#printq', e => e.textContent) });
     ck(w + ' N2+N7 own copy: pickup stays quoted; nothing "confirmed by the sender"; the sender name is not carried', r.what === '“Zqx bike”' && !/by the sender|Sender's note/.test(r.body) && r.by === '' && a.ok, { r: { what: r.what, by: r.by }, a });
     ck(w + ' N2–N9 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await b.close(); }
+  // QA local-92575f1 follow-ups: N8b pickup wraps in own copy, N10 aria plural, N13 own-copy footer (Writer verbatim)
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const f = await p.evaluate(() => { const st = BYG.blank(); st.k = 'Pneumonoultramicroscopic bike with a very long name for 60c'.slice(0, 60); st.by = 'Jo'; for (const k of ['place', 'window', 'contact', 'bring']) { st.f[k].a = k === 'window' ? '2026-10-24' : 'ok ' + k; st.f[k].c = true; } return { frag: BYG.encode(st), k: st.k }; });
+    await p.goto('about:blank'); await p.goto(BASE + '#' + f.frag, { waitUntil: 'load' }); await sleep(200);
+    let r = await p.evaluate(() => ({ aria: document.getElementById('ready').getAttribute('aria-label'), h: document.getElementById('ready-h').textContent, text: document.getElementById('text').value, foot: document.getElementById('foot').textContent }));
+    ck(w + ' N10: readiness aria-label "1 essential still open" matches the heading', r.aria.startsWith('1 essential still open.') && r.h === 'Not set: 1 essential still open', r);
+    ck(w + ' N13: the received view keeps its footers (textFooter in copied text, printFooter on the page)', r.text.endsWith('\n\n' + C.textFooter) && r.foot === C.printFooter && !r.text.includes(C.ownCopyFooter), { tail: r.text.slice(-120), foot: r.foot });
+    await p.click('#own-copy'); await sleep(150);
+    r = await p.evaluate(() => { const t = document.getElementById('pickup'); return { tag: t.tagName, v: t.value, sh: t.scrollHeight, ch: t.clientHeight, sw: t.scrollWidth, cw: t.clientWidth, dw: document.documentElement.scrollWidth, text: document.getElementById('text').value, foot: document.getElementById('foot').textContent }; });
+    ck(w + ' N8b: own copy shows the full 60-character pickup (wrapping auto-grow textarea, no inner scroll, no sideways scroll)', r.tag === 'TEXTAREA' && r.v === f.k && r.sh <= r.ch + 2 && r.sw <= r.cw + 1 && r.dw <= w, r);
+    ck(w + ' N13: own copy uses ownCopyFooter (Writer verbatim) in copied text and on the page, never "as typed by the sender"', r.text.endsWith('\n\nThese notes started from the link you opened, plus any changes you made.') && !r.text.includes('as typed by the sender') && r.foot.startsWith('These notes started from the link you opened, plus any changes you made.'), { tail: r.text.slice(-120), foot: r.foot });
+    await p.emulateMediaType('print'); const pr = await p.evaluate(() => document.body.innerText); await p.emulateMediaType(null);
+    ck(w + ' N13: own-copy print carries ownCopyFooter and not "as typed by the sender"', pr.includes(C.ownCopyFooter) && !pr.includes('as typed by the sender'), pr.slice(-300));
+    await p.focus('#pickup'); await p.keyboard.press('End'); await p.keyboard.press('Enter'); r = await p.$eval('#pickup', e => e.value.includes('\n')); ck(w + ' N8b: Enter never adds a newline to the pickup', !r, r);
+    await p.evaluate(() => { window.confirm = () => true; }); await p.click('#b-reset'); await sleep(150);
+    r = await p.evaluate(() => ({ text: document.getElementById('text').value, foot: document.getElementById('foot').textContent }));
+    ck(w + ' N13: after Start over (sender view) the footers are back to textFooter / printFooter', r.text.endsWith('\n\n' + C.textFooter) && r.foot === C.printFooter, r);
+    ck(w + ' follow-ups no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   // QA N1 (same tab, all pieces): fill -> Copy link -> open it -> open a bad link: no stale validation errors
   for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
     const r = await sameTabBadLink(p, { errSel: '.byg-err, #own-e, #own-e2, #pickup-e, #by-e', bad: 'b2.broken',

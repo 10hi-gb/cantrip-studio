@@ -44,8 +44,9 @@
   // N4 (QA local-652d0e0, Joshua): Call/Text only when the field is basically just a phone number: digits, spaces and + ( ) - .
   // with 7-15 digits and no letters. "Lee 555-0134", "Room 101-2020" and "Gate code 555-1234" give no button.
   function phone(text) {
-    var num = M.strip(String(text || '')); if (!num || !/^[\d\s+().-]+$/.test(num)) return null;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(num)) return null; if (num.indexOf('+') > 0) return null;
+    // QA N11/N12 (PM exact): optional single leading +, then only digits, spaces, ( ) - . with 7-15 digits; never a date or time shape
+    var num = M.strip(String(text || '')); if (!num || !/^\+?[\d\s().-]+$/.test(num)) return null;
+    if (/^\d{1,2}[-./]\d{1,2}[-./](\d{2}|\d{4})$/.test(num) || /^\d{1,2}[.:]\d{2}(\s*[-\u2013]\s*\d{1,2}[.:]\d{2})?$/.test(num) || /^\d{4}-\d{2}-\d{2}$/.test(num)) return null;
     var d = num.replace(/\D/g, ''); return d.length >= 7 && d.length <= 15 ? num : null;
   }
   function telHref(num) { return 'tel:' + num.replace(/[^\d+]/g, ''); }
@@ -91,7 +92,7 @@
     return mine ? C.printSaidMarker : C.printSaidMarkerSender;
   }
   // Plain-text export (Writer QA-83 templates). Typed text quoted; product text not. Reads complete without the page.
-  function text(st, C, print) {
+  function text(st, C, print, footer) { // footer: override (N13 ownCopyFooter on the recipient's own copy)
     var pk = M.strip(st.k), L = [pk ? M.fill(print ? C.printHeading : C.textHeading, { pickup: pk }) : C.title], open = openEssentials(st);
     if (M.strip(st.by)) L.push(M.fill(C.textByLine, { name: M.quote(M.strip(st.by)) }));
     L.push('', open.length ? M.plural(C.notSetHeading, open.length) + '. ' + M.fill(C.openList, { fields: open.map(function (k) { return C.fields[k]; }).join(', ') }) : C.allConfirmedHeading, '');
@@ -103,7 +104,7 @@
       if (s === 'confirmed' && clean(k, x.v) && clean(k, x.a) !== clean(k, x.v)) L.push(M.fill(C.textAnswerLine, { answer: k === 'window' ? fmtWhen(clean(k, x.a)) : clean(k, x.a) })); }
     CORE.forEach(function (k) { fact(k, C.fields[k]); }); OPTIONAL.forEach(function (k) { fact(k, C.optionalFields[k]); });
     var q = questions(st, C); if (q.length) { L.push('', C.textQuestionsHeading); q.forEach(function (x) { L.push(x.kind === 'own' ? M.fill(C.textOwnQuestionLine, { question: x.text }) : M.fill(C.textQuestionLine, { question: x.text })); }); }
-    L.push('', print ? C.printFooter : C.textFooter);
+    L.push('', footer || (print ? C.printFooter : C.textFooter));
     return L.join('\n');
   }
   return { CORE: CORE, ESSENTIAL: ESSENTIAL, OPTIONAL: OPTIONAL, ALL: ALL, CAP: CAP, VER: VER, FRAG_MAX: FRAG_MAX, URL_MAX: URL_MAX, ORIGIN_BUDGET: ORIGIN_BUDGET, room: room, capOf: capOf, blank: blank, validWhen: validWhen, status: status, shown: shown, display: display, fmtWhen: fmtWhen, fmtDate: fmtDate, datePassed: datePassed, missing: missing, openEssentials: openEssentials, ready: ready, questions: questions, optionalQuestions: optionalQuestions, phone: phone, telHref: telHref, smsHref: smsHref, overCaps: overCaps, encode: encode, decode: decode, text: text, mark: mark, owner: owner };

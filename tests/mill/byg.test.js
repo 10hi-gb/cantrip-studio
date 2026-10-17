@@ -29,6 +29,14 @@ t('D8 + QA N4 phone: Call/Text only when the field is basically just a number (7
   for (const k in ok) assert.equal(B.phone(k), ok[k], k);
   for (const k of ['Room 101-2020', 'Gate code 555-1234', 'Text Maria, 555-0134', 'Call 412-555-0100 to verify', 'Listing #123456789 on Marketplace', 'Sat 2026-10-24', '2026-10-24', '5550134 or 5550199', 'Gate code 1234', 'maria@example.org', 'Order #412-555-0100', 'Maria', '', '123456', '1234567890123456', '555+0134']) assert.equal(B.phone(k), null, k);
   assert.equal(B.telHref('(415) 555-0134'), 'tel:4155550134'); assert.equal(B.smsHref('+44 20 7946 0958'), 'sms:+442079460958'); });
+t('QA N11 + N12 (PM exact): one optional leading +; whole-string date and time/range shapes never get a Call button', () => {
+  for (const k of ['10-24-2026', '1/2/26', '12.30-14.00', '9:00 - 17:30', '12:30', '++1 555 0100', '555-0100 ext 2', '++15551234567', '10.24.2026', '12.30', '12.30 – 14.00', '+1 555 +0100']) assert.equal(B.phone(k), null, k);
+  for (const k of ['+1 (555) 010-0199', '01.23.45.67.89', '555.0100', '555-0134', '(555) 013-4567', '+44 20 7946 0958', '555.013.4567']) assert.equal(B.phone(k), k, k);
+  assert.equal(B.telHref('+1 (555) 010-0199'), 'tel:+15550100199'); });
+t('QA N10: readiness aria plural matches the heading; N13: own-copy footer only when asked (Writer verbatim)', () => {
+  assert.equal(M.plural(C.readinessAria, 1), '1 essential still open'); assert.equal(M.plural(C.readinessAria, 3), '3 essentials still open'); assert.equal(M.plural(C.notSetHeading, 1), 'Not set: 1 essential still open');
+  assert.equal(C.ownCopyFooter, 'These notes started from the link you opened, plus any changes you made.');
+  const s = B.blank(); s.k = 'Bike'; assert.ok(B.text(s, C).endsWith('\n\n' + C.textFooter)); const o = B.text(s, C, false, C.ownCopyFooter); assert.ok(o.endsWith('\n\n' + C.ownCopyFooter) && !o.includes('as typed by the sender')); });
 t('attribution: decoded facts belong to the sender; a recipient confirm changes only that fact; re-encode keeps origins', () => {
   const s = st({ top: { k: 'Bike', by: 'Jo' }, f: { place: { v: 'Pine', a: 'Side gate', c: true }, contact: { v: 'Sam 412-555-0187' }, bring: { v: 'cash', ns: true } } });
   const d = B.decode(B.encode(s)).data; assert.equal(d.f.place.cby, 'sender'); assert.equal(d.f.contact.vby, 'sender'); assert.equal(d.f.bring.nsby, 'sender');

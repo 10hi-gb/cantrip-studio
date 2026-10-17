@@ -131,7 +131,10 @@ const COPY = {
   "printFooter": "Quoted text is as typed. Confirmed means marked confirmed by whoever filled it in. Nothing was looked up.",
   "printAnswerLine": "Answer:",
   "datePassed": "This date has passed.",
-  "readinessAria": "{n} essentials still open",
+  "readinessAria": {
+    "one": "1 essential still open",
+    "other": "{n} essentials still open"
+  },
   "answerAsTyped": "As typed:",
   "linkLabel": "Link",
   "someSaidNoteSender": {
@@ -170,5 +173,6 @@ const COPY = {
   "textQuestionsHeading": "Ask before you go:",
   "textQuestionLine": "• {question}",
   "textOwnQuestionLine": "• “{question}”",
-  "textFooter": "Quoted text is as typed by the sender. Nothing was looked up."
+  "textFooter": "Quoted text is as typed by the sender. Nothing was looked up.",
+  "ownCopyFooter": "These notes started from the link you opened, plus any changes you made."
 };

@@ -7,7 +7,7 @@
   var ICONS = {"place": "<path d=\"M20 36s-11-10-11-19a11 11 0 0 1 22 0c0 9-11 19-11 19z\"/><circle cx=\"20\" cy=\"17\" r=\"4\"/>", "when": "<rect x=\"6\" y=\"9\" width=\"28\" height=\"25\" rx=\"3\"/><path d=\"M6 16h28M13 5v7M27 5v7\"/><path d=\"M20 21v6l4 2\"/>", "contact": "<path d=\"M12 6h6l2 8-4 3a20 20 0 0 0 7 7l3-4 8 2v6a3 3 0 0 1-3 3C18 31 9 22 9 9a3 3 0 0 1 3-3z\"/>", "door": "<rect x=\"10\" y=\"5\" width=\"20\" height=\"31\" rx=\"1\"/><circle class=\"fill\" cx=\"25\" cy=\"21\" r=\"1.8\"/><path d=\"M5 36h30\"/>", "bag": "<path d=\"M8 14h24l-2 21H10z\"/><path d=\"M14 14v-3a6 6 0 0 1 12 0v3\"/>", "id": "<rect x=\"5\" y=\"10\" width=\"30\" height=\"21\" rx=\"3\"/><circle cx=\"14\" cy=\"20\" r=\"3.5\"/><path d=\"M9 27c1-3 9-3 10 0M23 17h8M23 22h8\"/><text x=\"0\" y=\"0\"/>", "appt": "<rect x=\"6\" y=\"9\" width=\"28\" height=\"25\" rx=\"3\"/><path d=\"M6 16h28M13 5v7M27 5v7M14 25l4 4 8-8\"/>", "park": "<rect x=\"7\" y=\"5\" width=\"26\" height=\"30\" rx=\"4\"/><path d=\"M16 29V12h6a5 5 0 0 1 0 10h-6\"/>"}; // Creative's static icon paths (no visitor content)
   var ICON_OF = { place: 'place', window: 'when', contact: 'contact', instructions: 'door', bring: 'bag', id: 'id', appt: 'appt', park: 'park', access: 'door' };
   var SVGNS = 'http://www.w3.org/2000/svg';
-  var st = B.blank(), mode = 'own', rows = {}, toastT = 0, senderName = ''; // senderName: the name typed in the opened link (kept for its facts after Make my own copy)
+  var st = B.blank(), mode = 'own', rows = {}, toastT = 0, ownCopy = false, senderName = ''; // ownCopy: the recipient's own copy (N13 footer); senderName: the name typed in the opened link (kept for its facts after Make my own copy)
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function label(k) { return B.OPTIONAL.indexOf(k) >= 0 ? C.optionalFields[k] : C.fields[k]; }
   function question(k) { var q = B.questions(st, C).filter(function (x) { return x.key === k; })[0]; return q ? q.text : (B.OPTIONAL.indexOf(k) >= 0 ? C.optionalQuestions[k] : C.questions[k]); }
@@ -59,7 +59,7 @@
       if (x.cby !== 'you') { x.v = x.a; x.vby = x.cby; x.a = ''; x.cby = 'you'; } x.c = false; edited(); refresh(); r.ans.focus(); });
     list.appendChild(li); rows[k] = r;
   }
-  function grow(t) { t.style.height = 'auto'; if (t.scrollHeight) t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + 'px'; } // N8: full text visible at 320
+  function grow(t, again) { t.style.height = 'auto'; if (t.scrollHeight) t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + 'px'; else if (!again) requestAnimationFrame(function () { grow(t, true); }); } // not laid out yet (mode switch): measure next frame // N8: full text visible at 320
   function paintRow(k) {
     var r = rows[k], s = B.status(st, k), x = st.f[k], conf = s === 'confirmed', own = mode === 'own', isW = k === 'window';
     if (isW) { r.w.set(x.v); r.wa.set(x.a); } else { if (r.inp.value !== x.v) r.inp.value = x.v; if (r.ans.value !== x.a) r.ans.value = x.a; }
@@ -112,15 +112,16 @@
     $('ready-h').textContent = open.length ? M.plural(C.notSetHeading, open.length) : C.allConfirmedHeading;
     var saidN = B.CORE.filter(function (k) { return B.status(st, k) === 'said'; }), mineN = saidN.filter(function (k) { return B.owner(st, k) === 'you'; }).length, theirN = saidN.length - mineN;
     $('ready-s').textContent = [open.length ? M.fill(C.openList, { fields: open.map(label).join(', ') }) : '', mineN ? M.plural(C.someSaidNote, mineN) : '', theirN ? M.plural(C.someSaidNoteSender, theirN) : ''].filter(Boolean).join(' ');
-    rd.setAttribute('aria-label', open.length ? M.fill(C.readinessAria, { n: open.length }) + '. ' + M.fill(C.openList, { fields: open.map(label).join(', ') }) : C.allConfirmedHeading);
+    rd.setAttribute('aria-label', open.length ? M.plural(C.readinessAria, open.length) /* QA N10: plural matches the heading */ + '. ' + M.fill(C.openList, { fields: open.map(label).join(', ') }) : C.allConfirmedHeading);
     var pk = M.strip(st.k), what = $('what');
     what.textContent = ''; if (!pk) what.textContent = C.emptyState; else what.appendChild(V.typed(pk)); // N2: quoted in own copy too
-    if ($('pickup').value !== st.k) $('pickup').value = st.k; if ($('by').value !== st.by) $('by').value = st.by;
+    if ($('pickup').value !== st.k) $('pickup').value = st.k; if (own) grow($('pickup')); if ($('by').value !== st.by) $('by').value = st.by;
     roomLine($('pickup-c'), $('pickup-e'), st.k, B.CAP.pickup, C.pickupTooLong); roomLine($('by-c'), $('by-e'), st.by, B.CAP.by, C.byTooLong); roomLine($('own-c'), $('own-e2'), $('own-in').value, B.CAP.own, C.ownTooLong);
     $('own-max').textContent = st.o.length >= B.CAP.ownMax ? M.fill(C.ownLimitReached, { max: B.CAP.ownMax }) : '';
     ['pickup-row', 'by-row', 'own-row'].forEach(function (id) { $(id).hidden = !own; }); $('own-e').hidden = !own;
     paintScript();
-    $('text').value = B.text(st, C);
+    $('text').value = B.text(st, C, false, ownCopy ? C.ownCopyFooter : null);
+    $('foot').textContent = ownCopy ? C.ownCopyFooter + ' ' + C.printFooter : C.printFooter; // N13: own copy only
   }
   function setMode(m) {
     mode = m; var ro = m !== 'own';
@@ -140,7 +141,7 @@
   function copy(s, after) { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(function () { toast(C.copied); }, function () { toast(C.copyFail); after(); }); else { toast(C.copyFail); after(); } }
   // Full reset of state and DOM: runs before every load / hashchange, bad links included (QA D1/D2).
   function resetAll() {
-    st = B.blank(); senderName = ''; setMode('own'); V.clearInputs(document);
+    st = B.blank(); senderName = ''; ownCopy = false; setMode('own'); V.clearInputs(document);
     $('linkbox').hidden = true; $('own-e').textContent = ''; $('banner').hidden = true; $('banner-t').textContent = ''; $('banner-n').textContent = ''; $('banner-y').textContent = ''; $('banner-y').hidden = true; $('own-copy').hidden = true;
     B.ALL.forEach(function (k) { rows[k].hint.textContent = ''; rows[k].wtouched = false; });
     V.clearErrors(document, '.byg-err,#own-e,#own-e2,#pickup-e,#by-e');
@@ -151,7 +152,7 @@
       var d = B.decode(h), bn = $('banner');
       if (!d.ok) { if (d.why !== 'empty') { bn.hidden = false; $('banner-t').textContent = d.why === 'oldVersion' ? C.oldVersion : d.why === 'tooLong' ? C.tooLongLink : C.badLink; } }
       else {
-        st = d.data; senderName = M.strip(st.by); setMode('recv');
+        st = d.data; senderName = M.strip(st.by); ownCopy = false; setMode('recv');
         bn.hidden = false; if (M.strip(st.k)) typedInto($('banner-t'), C.receiverIntro, 'pickup', M.strip(st.k)); else $('banner-t').textContent = C.title;
         $('banner-y').textContent = C.typedBySenderMarker; $('banner-y').hidden = false;
         $('banner-n').textContent = C.receiverNote + ' ' + (M.strip(st.by) ? C.receiverEditNote : C.receiverEditNoteAnon); $('own-copy').hidden = false;
@@ -171,7 +172,8 @@
     $('fine').textContent = C.privacy + ' ' + C.noLookupNote; $('snap').textContent = C.snapshotNote; $('foot').textContent = C.printFooter;
     $('link-l').textContent = C.linkLabel; $('text-l').textContent = C.checklistHeading; $('own-copy').textContent = C.receiverPrimary;
     B.CORE.forEach(function (k) { buildRow(k, $('list')); }); B.OPTIONAL.forEach(function (k) { buildRow(k, $('optlist')); });
-    $('pickup').addEventListener('input', function () { if (mode !== 'own') return; st.k = $('pickup').value; edited(); refresh(); });
+    $('pickup').addEventListener('input', function () { if (mode !== 'own') return; st.k = $('pickup').value; grow($('pickup')); edited(); refresh(); });
+    $('pickup').addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); }); // QA N8b: wrapping, auto-growing, never a newline
     $('by').addEventListener('input', function () { if (mode !== 'own') return; st.by = $('by').value; edited(); refresh(); });
     function addOwn() { if (mode !== 'own') return; var v = M.strip($('own-in').value), over = B.room(v) - B.CAP.own; $('own-e').textContent = '';
       if (!v) return; if (st.o.length >= B.CAP.ownMax) { $('own-e').textContent = M.fill(C.ownLimitReached, { max: B.CAP.ownMax }); return; } if (over > 0) { $('own-e').textContent = M.plural(C.ownTooLong, over, { max: B.CAP.own }); return; }
@@ -186,7 +188,7 @@
     $('b-print').addEventListener('click', function () { window.print(); });
     $('b-reset').addEventListener('click', function () { if (mode !== 'own') return; if (!window.confirm(C.resetConfirm)) return; clearHash(); resetAll(); refresh(); toast(C.resetDone); $('pickup').focus(); });
     // Make my own copy: editable; per-fact attribution kept (sender's facts stay "by the sender"); the sender's name is not carried as "Your name".
-    $('own-copy').addEventListener('click', function () { clearHash(); st.by = ''; senderName = ''; // N7: nothing is "confirmed by the sender" in a copy
+    $('own-copy').addEventListener('click', function () { clearHash(); st.by = ''; senderName = ''; ownCopy = true; // N7: nothing is "confirmed by the sender" in a copy
       B.ALL.forEach(function (k) { var x = st.f[k], v = B.shown(st, k); st.f[k] = { v: v || '', a: '', c: false, ns: false, vby: 'you', cby: 'you', nsby: 'you' }; void x; }); setMode('own'); $('banner').hidden = true; refresh(); $('pickup').focus(); });
     V.route(load);
   }

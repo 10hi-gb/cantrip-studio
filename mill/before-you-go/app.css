@@ -50,3 +50,5 @@
 textarea.byg-fv{resize:none;overflow:hidden;min-height:40px;line-height:1.35;font:inherit;width:100%;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:anywhere}
 .byg-acount{margin-left:6px}
 @media print{.byg-when > .is-empty{display:none!important}}
+/* QA local-92575f1 N9b: the sender's print shows a filled date once (the "As typed" line), not the date input as well */
+@media print{.byg-editv .byg-when{display:none!important}}
