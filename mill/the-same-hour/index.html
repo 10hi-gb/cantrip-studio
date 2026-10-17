@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>The Same Hour · Cantrip Studio</title>
+<meta name="description" content="A small tool from Cantrip Studio.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="app.css">
+<script src="copy.js" defer></script>
+<script src="copy-extra.js" defer></script>
+<script src="../shared/core.js" defer></script>
+<script src="tsh.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="tsh">
+<div class="tsh-page">
+ <div class="tsh-strip"><a href="../" id="home"></a><span id="strip"></span></div>
+ <h1 class="tsh-title" id="title"></h1>
+ <p class="tsh-lede" id="lede"></p>
+ <div class="tsh-status tsh-status--info" id="banner" role="status" hidden><p id="banner-t"></p><button type="button" class="tsh-btn" id="own-copy" hidden></button></div>
+ <div class="tsh-grid">
+  <div class="tsh-main">
+   <p class="tsh-zone" id="zone"></p>
+   <div class="tsh-status tsh-status--err" id="fix" role="alert" hidden><p id="fix-t"></p><ul id="fix-l"></ul></div>
+   <section class="tsh-loom" aria-labelledby="loom-h">
+    <div class="tsh-loomhead"><h2 class="tsh-h2" id="loom-h"></h2><button type="button" class="tsh-btn tsh-btn--quiet" id="astext" aria-pressed="false"></button></div>
+    <ul class="tsh-legend" id="legend"></ul>
+    <div id="vis"><div class="tsh-tape" id="tape" aria-hidden="true"></div><div role="list" id="days"></div></div>
+    <div class="tsh-tablewrap" id="tblwrap" hidden><table class="tsh-table" id="tbl"></table></div>
+    <div class="tsh-empty" id="empty" hidden><div class="tsh-spool" aria-hidden="true"><i></i><i></i><i></i></div><p id="empty-t"></p></div>
+    <p class="tsh-fine" id="touchnote" hidden></p>
+   </section>
+   <section class="tsh-results" id="res" aria-labelledby="res-h" tabindex="-1" hidden>
+    <h2 class="tsh-h2" id="res-h"></h2>
+    <p class="tsh-fine" id="res-n"></p>
+    <ol class="tsh-options" id="opts"></ol>
+    <ul class="tsh-shorts" id="shorts"></ul>
+   </section>
+   <section class="tsh-proposal" id="prop" aria-labelledby="prop-h" hidden>
+    <p class="tsh-lab" id="prop-l"></p>
+    <h3 id="prop-h"></h3>
+    <p class="tsh-ptitle" id="prop-title" hidden></p>
+    <p id="prop-z"></p>
+    <p id="prop-n"></p>
+    <p class="tsh-fine" id="prop-s"></p>
+    <div id="prop-x"></div>
+    <div class="tsh-actions"><button type="button" class="tsh-btn tsh-btn--primary" id="b-copy"></button><button type="button" class="tsh-btn" id="b-print"></button><button type="button" class="tsh-btn" id="b-share"></button><button type="button" class="tsh-btn" id="b-reset"></button></div>
+   </section>
+   <section class="tsh-none" id="none" role="status" aria-labelledby="none-h" hidden>
+    <p class="tsh-lab" id="none-l"></p>
+    <h3 id="none-h"></h3>
+    <p id="none-c" hidden></p>
+    <p class="tsh-fine" id="none-u" hidden></p>
+    <p class="tsh-fine" id="none-a"></p>
+    <div class="tsh-actions"><button type="button" class="tsh-btn tsh-btn--primary" id="b-ncopy"></button><button type="button" class="tsh-btn" id="b-nshare"></button><button type="button" class="tsh-btn" id="b-nreset"></button></div>
+   </section>
+   <p class="tsh-fine" id="privacy"></p>
+   <div class="tsh-linkbox" id="linkbox" hidden><label class="tsh-lab" for="link" id="link-l"></label><textarea id="link" readonly rows="3"></textarea></div>
+   <div class="tsh-linkbox" id="fbwrap" hidden><label class="tsh-lab" for="fallback" id="fb-l"></label><textarea id="fallback" readonly rows="6"></textarea></div>
+  </div>
+  <section class="tsh-panel tsh-form" aria-labelledby="form-h">
+   <h2 class="tsh-h2" id="form-h"></h2>
+   <div class="tsh-field"><label for="z" id="l-z"></label><select id="z" aria-describedby="h-z e-z"></select><span class="tsh-hint" id="h-z"></span><span class="tsh-err" id="e-z"></span></div>
+   <div class="tsh-row2">
+    <div class="tsh-field"><label for="w" id="l-w"></label><input type="date" id="w" aria-describedby="e-w"><span class="tsh-err" id="e-w"></span></div>
+    <div class="tsh-field"><label for="n" id="l-n"></label><div class="tsh-need"><input id="n" inputmode="numeric" autocomplete="off" aria-describedby="e-n"><select id="u"></select></div><span class="tsh-err" id="e-n"></span></div>
+   </div>
+   <div class="tsh-field"><label for="t" id="l-t"></label><input id="t" autocomplete="off" aria-describedby="e-t"><span class="tsh-err" id="e-t"></span></div>
+   <p class="tsh-lab tsh-whohead"><span id="who-h"></span> <span id="who-n"></span></p>
+   <ul class="tsh-people" id="people"></ul>
+   <button type="button" class="tsh-btn" id="addp"></button>
+   <p class="tsh-err" id="e-p" aria-live="polite"></p>
+   <p class="tsh-fine" id="unote"></p>
+   <div class="tsh-actions"><button type="button" class="tsh-btn tsh-btn--primary" id="find"></button></div>
+  </section>
+ </div>
+</div>
+<div class="tsh-toast" id="toast" role="status" hidden></div>
+</body>
+</html>
