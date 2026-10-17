@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Split the Sack · Cantrip Studio</title>
+<meta name="description" content="A small tool from Cantrip Studio.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="theme.css">
+<script src="copy.js" defer></script>
+<script src="copy-extra.js" defer></script>
+<script src="../shared/core.js" defer></script>
+<script src="sack.js" defer></script>
+<script src="link.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="sk">
+<header class="sk-top"><a href="../" class="sk-home" data-c="studioName" data-aria="backLabel"></a></header>
+<main class="sk-page" id="main">
+ <h1 class="sk-title" data-c="title"></h1>
+ <p class="sk-lede" data-c="invitation"></p>
+ <div class="sk-banner" id="banner" role="status" hidden><p id="banner-t"></p><p id="banner-n"></p><button type="button" class="sk-btn sk-btn--sm" id="own" data-c="receiverPrimary" hidden></button></div>
+
+ <section class="sk-crate" aria-labelledby="h-item">
+  <h2 id="h-item" data-c="itemHeading"></h2>
+  <div class="sk-grid">
+   <label class="sk-f sk-f--wide"><span data-c="itemLabel"></span><input id="item" maxlength="80" autocomplete="off" data-ph="itemPlaceholder"></label>
+   <label class="sk-f"><span data-c="packageQtyLabel"></span><input id="q" inputmode="decimal" autocomplete="off" data-ph="packageQtyPlaceholder"></label>
+   <label class="sk-f"><span data-c="unitLabel"></span><input id="u" maxlength="32" autocomplete="off" data-ph="unitPlaceholder" aria-describedby="u-h"><small id="u-h" data-c="unitHint"></small></label>
+   <label class="sk-f"><span data-c="incrementLabel"></span><input id="inc" inputmode="decimal" autocomplete="off" data-ph="incrementPlaceholder" aria-describedby="inc-h"><small id="inc-h" data-c="incrementHint"></small></label>
+   <label class="sk-f sk-f--sym"><span data-c="currencyLabel"></span><input id="c" maxlength="6" autocomplete="off" data-ph="currencyPlaceholder" value="$"></label>
+   <label class="sk-f"><span data-c="priceLabel"></span><input id="p" inputmode="decimal" autocomplete="off" data-ph="pricePlaceholder"></label>
+   <label class="sk-f"><span data-c="feeLabel"></span><input id="f" inputmode="decimal" autocomplete="off" data-ph="feePlaceholder" aria-describedby="f-h"><small id="f-h" data-c="feeHint"></small></label>
+   <fieldset class="sk-f sk-f--wide sk-basis"><legend data-c="feeBasisLabel"></legend>
+    <label><input type="radio" name="b" value="p" checked> <span data-c="feeBasis.proportional"></span></label>
+    <label><input type="radio" name="b" value="e"> <span data-c="feeBasis.equal"></span></label>
+   </fieldset>
+  </div>
+  <ul class="sk-msg" id="item-msg" aria-live="polite"></ul>
+ </section>
+
+ <section class="sk-crate" aria-labelledby="h-hh">
+  <h2 id="h-hh" data-c="householdsHeading"></h2>
+  <p class="sk-fine" id="hcount"></p>
+  <ol class="sk-hh" id="hh"></ol>
+  <button type="button" class="sk-btn sk-btn--ghost" id="add" data-c="addHousehold"></button>
+  <ul class="sk-msg" id="hh-msg" aria-live="polite"></ul>
+ </section>
+
+ <section class="sk-table" aria-labelledby="h-res">
+  <h2 id="h-res" data-c="statusHeading"></h2>
+  <p class="sk-status" id="status" aria-live="polite" data-aria="statusAria"></p>
+  <h3 data-c="tableHeading"></h3>
+  <div class="sk-scroll"><table id="tbl"><thead><tr><th scope="col" data-c="colWho"></th><th scope="col" data-c="colQty"></th><th scope="col" data-c="colItem"></th><th scope="col" data-c="colFee"></th><th scope="col" data-c="colPays"></th></tr></thead><tbody id="tb"></tbody><tfoot id="tf"></tfoot></table></div>
+  <p class="sk-fine" id="unhint" data-c="unallocatedHint"></p>
+  <div class="sk-assign" id="assign"></div>
+  <p class="sk-fine sk-rec" id="reconcile"></p>
+  <p class="sk-fine" id="basisline"></p>
+  <p class="sk-fine" data-c="residualNote"></p>
+  <p class="sk-fine" id="residual"></p>
+  <p class="sk-fine" data-c="noPaymentNote"></p>
+ </section>
+
+ <section class="sk-out" aria-labelledby="h-out">
+  <h2 id="h-out" data-c="proposalHeading"></h2>
+  <p class="sk-msg" id="notready"></p>
+  <div class="sk-actions">
+   <button type="button" class="sk-btn" id="share" data-c="share"></button>
+   <button type="button" class="sk-btn sk-btn--ghost" id="copytext" data-c="copyProposal"></button>
+   <button type="button" class="sk-btn sk-btn--ghost" id="print" data-c="printProposal"></button>
+  </div>
+  <div id="linkbox" hidden><label class="sk-f"><span data-c="linkLabel"></span><textarea id="link" readonly rows="3"></textarea></label></div>
+  <label class="sk-f"><span data-c="proposalHeading"></span><textarea id="text" class="sk-text" readonly rows="12"></textarea></label>
+  <p class="sk-fine" data-c="proposalSnapshot"></p>
+  <p class="sk-fine" data-c="privacy"></p>
+  <button type="button" class="sk-btn sk-btn--ghost" id="reset" data-c="reset"></button>
+ </section>
+</main>
+<pre class="sk-print" id="printout"></pre>
+<div class="sk-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

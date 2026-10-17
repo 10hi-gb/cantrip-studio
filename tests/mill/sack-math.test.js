@@ -28,6 +28,9 @@ t('rejects invalid / non-finite / negative / out-of-increment', () => {
   assert.equal(S.compute({ pkgQty: '10', inc: '3', price: 1, requests: [3, 3] }).error, 'pkgNotMultiple');
   assert.equal(S.compute({ pkgQty: '1', inc: '0.0001', price: 1, requests: [0, 0] }).ok, false);
 });
+t('explicit assign: unclaimed 1 unit + 100c goes to chosen household only when asked', () => { const r = S.compute({ pkgQty: 10, inc: 1, price: 1000, requests: [3, 3, 3], assignTo: 1 }); assert.equal(r.status, 'exact'); assert.deepEqual(tot(r), [300, 400, 300]); assert.equal(r.rows[1].requested, 3000); assert.equal(r.unallocated.qty, 0); assert.equal(S.compute({ pkgQty: 10, inc: 1, price: 1, requests: [3, 3], assignTo: 2 }).error, 'assign'); });
+t('equal fee goes only to households that take some', () => { const r = S.compute({ pkgQty: 10, inc: 1, price: 1000, fee: 100, feeBasis: 'equal', requests: [5, 0, 5] }); assert.deepEqual(r.rows.map(x => x.fee), [50, 0, 50]); const z = S.compute({ pkgQty: 10, inc: 1, price: 1000, fee: 100, feeBasis: 'equal', requests: [0, 0] }); assert.equal(z.unallocated.total, 1100); });
+t('extraCents marks residual recipients', () => { const r = S.compute({ pkgQty: 3, inc: 1, price: 1000, requests: [1, 1, 1] }); assert.deepEqual(r.rows.map(x => x.extraCents), [1, 0, 0]); });
 t('parseMoney', () => { assert.equal(S.parseMoney('18.99'), 1899); assert.equal(S.parseMoney('18.9'), 1890); assert.equal(S.parseMoney('18'), 1800); assert.equal(S.parseMoney('18.999'), null); assert.equal(S.parseMoney('-1'), null); assert.equal(S.parseMoney('1,000'), null); });
 t('property: 5000 random cases reconcile money and quantity exactly; shortage blocks', () => {
   let seed = 12345; const rnd = k => { seed = (Math.imul(seed, 1103515245) + 12345) >>> 0; return seed % k; };

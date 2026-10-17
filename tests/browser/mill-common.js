@@ -1,0 +1,29 @@
+// Mill browser self-check helpers, built on qa-lib.js (same open/storage/netCheck patterns).
+const { open, storage: qaStorage, netCheck } = require('./qa-lib');
+// qa-lib storage() needs a secure context (caches/serviceWorker). Use it on https; on local http use the same fields, guarded.
+async function storage(p) {
+  if (await p.evaluate(() => window.isSecureContext)) return qaStorage(p);
+  return p.evaluate(async () => ({ cookie: document.cookie, ls: Object.keys(localStorage), ss: Object.keys(sessionStorage),
+    idb: indexedDB.databases ? (await indexedDB.databases()).map(d => d.name) : 'n/a', caches: [], sw: 0, insecureLocal: true,
+    undef: /undefined|\{\w+\}/.test(document.body.innerText) }));
+}
+const W = [320, 390, 1280];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function session(host, ip, opts = {}) {
+  const s = await open(host, ip); s.p.setDefaultTimeout(15000);
+  s.p.on('dialog', d => (opts.dialog === 'dismiss' ? d.dismiss() : d.accept()).catch(() => {}));
+  // share-cancel path: emulate a share sheet the visitor closes (AbortError). Real devices show the sheet; headless has none.
+  if (opts.shareCancel) await s.p.evaluateOnNewDocument(() => { navigator.share = () => Promise.reject(new DOMException('cancel', 'AbortError')); });
+  return s;
+}
+async function overflow(p) { return p.evaluate(() => { const w = document.documentElement.clientWidth, bad = []; document.querySelectorAll('body *').forEach(e => { if (e.closest('.sk-scroll,[data-scroll]')) return; const r = e.getBoundingClientRect(); if (r.width && (r.right > w + 1 || r.left < -1) && getComputedStyle(e).position !== 'fixed' && e.offsetParent !== null) bad.push((e.id || e.className || e.tagName) + ':' + Math.round(r.right)); }); return { sw: document.documentElement.scrollWidth, w, bad: bad.slice(0, 8) }; }); }
+async function typeInto(p, sel, text) { await p.focus(sel); await p.$eval(sel, e => { e.select && e.select(); }); await p.keyboard.press('Backspace'); if (text) await p.keyboard.type(String(text)); }
+async function tabReach(p, ids, max = 120) { // keyboard: Tab through the page and record which ids get focus
+  await p.evaluate(() => { document.activeElement && document.activeElement.blur(); window.scrollTo(0, 0); });
+  const seen = new Set(); for (let i = 0; i < max; i++) { await p.keyboard.press('Tab'); const id = await p.evaluate(() => document.activeElement && (document.activeElement.id || document.activeElement.getAttribute('data-k') || '')); if (id) seen.add(id); }
+  return ids.filter(x => !seen.has(x));
+}
+function result(rows) { const bad = rows.filter(r => !r.ok); console.log(JSON.stringify(rows, null, 1)); console.log(bad.length ? 'FAIL ' + bad.map(r => r.name).join(', ') : 'PASS ' + rows.length + ' checks'); return bad.length ? 1 : 0; }
+// Local http only: Chrome logs that COOP is ignored on an untrustworthy origin. Not a page error; never filtered on https.
+function errsOf(s, scheme) { return s.errs.filter(e => !(scheme === 'http' && /Cross-Origin-Opener-Policy header has been ignored/.test(e))); }
+module.exports = { errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };

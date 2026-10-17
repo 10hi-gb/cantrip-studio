@@ -1,0 +1,107 @@
+{
+ "title": "Cantrip Studio · Mill sprint 2026-10-16",
+ "note": "Review only, not public. Scores are Joshua's rubric scores from QUEUE.md. Source links are the permalinks recorded in QUEUE.md; none are invented.",
+ "sharedLimits": [
+  "The source thread doesn't directly ask for any of the Wave 1 or Wave 2 tools, so those scores rest on Joshua's scopes, not on commenter demand.",
+  "Every piece is memory-only: nothing is uploaded or stored. A link carries its content, anyone holding the link can read it, and it may stay in browser history.",
+  "Engineer self-check is the builder checking their own work. It is not QA."
+ ],
+ "pieces": [
+  {
+   "id": "P001",
+   "name": "Split the Sack",
+   "score": "8.35",
+   "wave": 1,
+   "path": "split-the-sack/",
+   "sources": [
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf5j98h/"
+   ],
+   "limits": [
+    "Loose support only: the seed comment is about a grocery co-op, and no comment mentions splitting a bulk buy.",
+    "One item, one unit, one currency per split. No savings, purchase or payment features."
+   ],
+   "engineer": "Not deployed yet.",
+   "qa": "Awaiting QA"
+  },
+  {
+   "id": "P003",
+   "name": "Before You Go",
+   "score": "7.75",
+   "wave": 1,
+   "path": null,
+   "sources": [
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf5a6mv/",
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf89iw1/",
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf8nce7/"
+   ],
+   "limits": [
+    "No comment mentions calling ahead.",
+    "Questions come from a fixed generic checklist. It knows nothing about any real place."
+   ],
+   "engineer": "Not built yet.",
+   "qa": "Awaiting QA"
+  },
+  {
+   "id": "P002",
+   "name": "One Small Ask",
+   "score": "7.70",
+   "wave": 1,
+   "path": null,
+   "sources": [
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf5o31i/",
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf6gfqe/",
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pgdhlk9/"
+   ],
+   "limits": [
+    "No comment mentions a counteroffer.",
+    "Replies travel only by a link the recipient chooses to send back. It never tells the asker anything by itself."
+   ],
+   "engineer": "Not built yet.",
+   "qa": "Awaiting QA"
+  },
+  {
+   "id": "P004",
+   "name": "One Less Trip",
+   "score": "7.70",
+   "wave": 2,
+   "path": null,
+   "sources": [],
+   "limits": [
+    "No direct comment in the thread; scope is Joshua's.",
+    "No map, routing or live list."
+   ],
+   "engineer": "Not built yet.",
+   "qa": "Awaiting QA"
+  },
+  {
+   "id": "P005",
+   "name": "The Same Hour",
+   "score": "7.35",
+   "wave": 2,
+   "path": null,
+   "sources": [],
+   "limits": [
+    "No direct comment in the thread; scope is Joshua's.",
+    "Manual entry only. No calendar access."
+   ],
+   "engineer": "Not built yet.",
+   "qa": "Awaiting QA"
+  },
+  {
+   "id": "P006",
+   "name": "Even Up",
+   "score": "7.30",
+   "wave": 2,
+   "path": null,
+   "sources": [
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf7jx23/"
+   ],
+   "limits": [
+    "Undercut in the thread by https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf7kzlb/ and https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf7urxl/.",
+    "No claim of fewest transfers. Moves no money."
+   ],
+   "engineer": "Not built yet.",
+   "qa": "Awaiting QA"
+  }
+ ]
+}
