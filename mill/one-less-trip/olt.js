@@ -2,13 +2,16 @@
 // One Less Trip: pure model. 2–6 households, up to 30 item rows {owner, item, qty, unit, stop}. Regroups rows by stop in
 // first-entered order (grouping only, never a route). Every source row lands exactly once: on one stop ticket, in the
 // unknown-stop tray, or held back (invalid). Rows merge ONLY when the visitor presses Merge, and only if item name AND unit match
-// exactly after trimming, collapsing spaces and lower-casing. Merged lines keep every owner + quantity.
+// exactly after trimming and collapsing spaces (PM: capitals count, "Oat milk" isn't "oat milk"). Stops group on the same rule;
+// stops that differ only in capitals or spacing are NEVER grouped silently: sameStops() offers a "Same stop?" prompt.
+// Merged lines keep every owner + quantity. A merge that an edit dissolves is dropped for good (prune), never re-applied.
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('../shared/core.js'));
   else root.OLT = factory(root.MILL);
 })(this, function (M) {
-  var LIM = { hhMin: 2, hhMax: 6, rows: 30, name: 24, item: 40, unit: 16, stop: 40, qtyMax: 100000 }, FRAG_MAX = 2000;
-  function norm(s) { return M.strip(s).replace(/\s+/g, ' ').toLowerCase(); }
+  var LIM = { hhMin: 2, hhMax: 6, rows: 30, name: 24, item: 40, unit: 16, stop: 40, qtyMax: 100000 }, FRAG_MAX = 2000, URL_MAX = 2000;
+  function norm(s) { return M.strip(s).replace(/\s+/g, ' '); }
+  function fold(s) { return M.strip(s).replace(/\s+/g, '').toLowerCase(); }
   function mkey(item, unit) { return norm(item) + '\u0000' + norm(unit); }
   // quantity: plain decimal, up to 3 places, > 0, <= qtyMax. Returned as integer thousandths.
   function parseQty(s) {
@@ -23,7 +26,7 @@
   function householdErrors(st) {
     var out = [], seen = {};
     if (st.h.length < LIM.hhMin) out.push({ why: 'tooFew' }); if (st.h.length > LIM.hhMax) out.push({ why: 'tooMany' });
-    st.h.forEach(function (h) { var n = norm(h.name); if (!n) out.push({ id: h.id, why: 'empty' }); else if (M.len(M.strip(h.name)) > LIM.name) out.push({ id: h.id, why: 'long', over: M.len(M.strip(h.name)) - LIM.name }); else if (seen[n]) out.push({ id: h.id, why: 'dup' }); seen[n] = 1; });
+    st.h.forEach(function (h) { var n = fold(h.name); if (!n) out.push({ id: h.id, why: 'empty' }); else if (M.len(M.strip(h.name)) > LIM.name) out.push({ id: h.id, why: 'long', over: M.len(M.strip(h.name)) - LIM.name }); else if (seen[n]) out.push({ id: h.id, why: 'dup' }); seen[n] = 1; });
     return out;
   }
   // Validate one row's fields (form or stored row). Returns {} or {field: why}.
@@ -78,25 +81,45 @@
   function unmerge(st, anyId) { var n = st.m.length; st.m = st.m.filter(function (g) { return g.indexOf(anyId) < 0; }); return st.m.length < n; }
   function removeRow(st, id) { st.r = st.r.filter(function (r) { return r.id !== id; }); st.m = st.m.map(function (g) { return g.filter(function (x) { return x !== id; }); }).filter(function (g) { return g.length >= 2; }); }
   function removeHousehold(st, id) { st.h = st.h.filter(function (h) { return h.id !== id; }); st.r.forEach(function (r) { if (r.o === id) r.o = null; }); }
+  // D10: drop any merge group that is no longer whole (a member removed, invalid, or no longer the same item/unit/stop).
+  function prune(st) {
+    var byId = {}; st.r.forEach(function (r) { byId[r.id] = r; }); var n = st.m.length;
+    st.m = st.m.filter(function (g) { var a = byId[g[0]]; return g.length >= 2 && g.every(function (id) { var r = byId[id]; return r && !Object.keys(rowErrors(st, r)).length && mkey(r.i, r.u) === mkey(a.i, a.u) && norm(r.s) === norm(a.s); }); });
+    return st.m.length < n;
+  }
+  // PM 2: stops whose names differ only in capitals or spacing -> a "Same stop?" prompt; nothing is grouped until the visitor says so.
+  // st.ns (memory only, never in the link) holds pairs the visitor said are different.
+  function sameStops(st, c) {
+    c = c || compute(st); var out = [], ns = st.ns || [];
+    for (var i = 0; i < c.stops.length; i++) for (var j = i + 1; j < c.stops.length; j++) {
+      var a = c.stops[i], b = c.stops[j]; if (fold(a.key) === fold(b.key) && ns.indexOf(a.key + '\u0000' + b.key) < 0) out.push({ a: a.key, b: b.key, nameA: a.name, nameB: b.name });
+    }
+    return out;
+  }
+  function sameStop(st, a, b) { var n = 0; st.r.forEach(function (r) { if (norm(r.s) === b) { r.s = a; n++; } }); prune(st); return n; }
+  function notSameStop(st, a, b) { st.ns = (st.ns || []).concat([a + '\u0000' + b]); }
   function canShare(st) { var c = compute(st); return c.rows.length > 0 && !c.held.length && !c.hhErr.length; }
   function qtyUnit(q, u) { return fmtQty(q) + (u ? ' ' + u : ''); }
+  // Plain-text export (Writer QA-83 templates): typed item and stop names quoted; one line per item with who it's for.
   function text(st, C) {
-    var c = compute(st), L = [C.shareText, ''];
+    var c = compute(st), L = [C.textHeader, ''];
+    function sp(t) { return t.replace(/ {2,}/g, ' ').replace(/ ·/g, ' ·'); }
     function lines(b) { b.lines.forEach(function (l) {
-      if (l.merged) L.push('[ ] ' + M.fill(C.mergedLine, { item: l.item, qty: fmtQty(l.q), unit: l.unit }).replace(/  +/g, ' ') + ' — ' + M.fill(C.mergedTrace, { traces: l.traces.map(function (t) { return M.fill(C.traceLine, { owner: t.owner, qty: fmtQty(t.q), unit: t.unit }).trim() + ' (' + t.tag + ')'; }).join(', ') }));
-      else { var t = l.traces[0]; L.push('[ ] ' + l.item + ' — ' + M.fill(C.traceLine, { owner: t.owner, qty: fmtQty(t.q), unit: t.unit }).trim() + ' (' + t.tag + ')'); }
+      if (l.merged) L.push(sp(M.fill(C.textMergedItemLine, { item: l.item, qty: fmtQty(l.q), unit: l.unit || '', owners: l.traces.map(function (t) { return t.owner; }).join(', ') })));
+      else { var t = l.traces[0]; L.push(sp(M.fill(C.textItemLine, { item: l.item, qty: fmtQty(t.q), unit: t.unit || '', owner: t.owner }))); }
     }); }
-    c.stops.forEach(function (s) { L.push((s.n < 10 ? '0' : '') + s.n + ' · ' + M.fill(C.stopTicket, { stop: s.name })); lines(s); L.push(''); });
-    if (c.unknown.lines.length) { L.push('? · ' + C.unknownStop + ' — ' + C.unknownStopHint); lines(c.unknown); L.push(''); }
+    c.stops.forEach(function (s) { L.push(M.fill(C.textStopLine, { stop: s.name })); lines(s); L.push(''); });
+    if (c.unknown.lines.length) { L.push(C.textUnknownStopLine); lines(c.unknown); L.push(''); }
     L.push(C.notOrdered, C.allSourceNote, '', C.printFooter);
     return L.join('\n');
   }
   // Link "#t1.<b64url>.<ck>": {h:[names], r:[[ownerIdx,item,qty,unit,stop]], m:[[rowIdx..]]}. Only for a fully valid list.
-  function encode(st) {
+  // maxLen: room left for the fragment so the WHOLE URL stays within URL_MAX (2,000). '' = too long, null = not shareable.
+  function encode(st, maxLen) {
     if (!canShare(st)) return null; var hi = {}; st.h.forEach(function (h, i) { hi[h.id] = i; }); var ri = {}; st.r.forEach(function (r, i) { ri[r.id] = i; });
     var c = compute(st), groups = []; c.stops.concat([c.unknown]).forEach(function (b) { b.lines.forEach(function (l) { if (l.merged) groups.push(l.traces.map(function (t) { return ri[t.id]; })); }); });
     var f = M.pack('t', 1, { h: st.h.map(function (h) { return M.strip(h.name); }), r: st.r.map(function (r) { return [hi[r.o], M.strip(r.i), fmtQty(r.q), M.strip(r.u), M.strip(r.s)]; }), m: groups });
-    return f.length <= FRAG_MAX ? f : '';
+    return f.length <= Math.min(FRAG_MAX, maxLen == null ? FRAG_MAX : maxLen) ? f : '';
   }
   function decode(frag) {
     var u = M.unpack(frag, 't', 1, FRAG_MAX); if (!u.ok) return u; var d = u.data, bad = { ok: false, why: 'bad' };
@@ -118,5 +141,5 @@
     st.next = id; if (!canShare(st)) return bad;
     return { ok: true, data: st };
   }
-  return { LIM: LIM, FRAG_MAX: FRAG_MAX, norm: norm, mkey: mkey, parseQty: parseQty, fmtQty: fmtQty, tag: tag, blank: blank, householdErrors: householdErrors, rowErrors: rowErrors, compute: compute, merge: merge, unmerge: unmerge, removeRow: removeRow, removeHousehold: removeHousehold, canShare: canShare, qtyUnit: qtyUnit, text: text, encode: encode, decode: decode };
+  return { LIM: LIM, FRAG_MAX: FRAG_MAX, URL_MAX: URL_MAX, fold: fold, prune: prune, sameStops: sameStops, sameStop: sameStop, notSameStop: notSameStop, norm: norm, mkey: mkey, parseQty: parseQty, fmtQty: fmtQty, tag: tag, blank: blank, householdErrors: householdErrors, rowErrors: rowErrors, compute: compute, merge: merge, unmerge: unmerge, removeRow: removeRow, removeHousehold: removeHousehold, canShare: canShare, qtyUnit: qtyUnit, text: text, encode: encode, decode: decode };
 });

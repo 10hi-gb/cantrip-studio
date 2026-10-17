@@ -21,4 +21,16 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .olt-label{display:block;font:500 11px var(--olt-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--olt-mute);margin:10px 0 2px}
 .olt-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--olt-ink);color:#fff;padding:10px 16px;border-radius:4px;max-width:calc(100% - 32px);z-index:5;font:700 14px var(--olt-sans)}
 .olt-divider{font-size:0}
+/* QA 83a2ebcd D7–D9, D12, D13 and PM scope */
+.olt-hh li .olt-mini{margin-top:0;min-height:40px;white-space:nowrap}
+.olt-tag{white-space:normal;max-width:100%;flex-wrap:wrap;line-height:1.25}
+.olt-stub{height:auto;min-height:62px}
+.olt-row .olt-where.is-unknown{color:var(--olt-mute)}
+.olt-typedstop{font:500 16px/1.25 var(--olt-sans)}
+.olt-hint{display:block;font:400 12px/1.35 var(--olt-sans);color:var(--olt-mute);text-transform:none;letter-spacing:0;margin-top:2px}
+#hh-hint{margin:0 0 6px}
+#linkroom.is-over{color:var(--olt-alert);font-weight:500}
+.olt-same{margin:0 0 8px;grid-column:auto}
+.olt-same .olt-mini{margin-right:6px}
+@media print{#linkroom,#samestop,#limits,.olt-hint{display:none!important}}
 @media print{.olt-toast,.olt-linkbox,.olt-skip,.olt-status--info,.olt-note--merge{display:none!important}}
