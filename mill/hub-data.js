@@ -237,13 +237,13 @@ window.MILL_HUB = {
     "A link carries the questions and the choosing method, never the answers; anyone with the link can read them."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 2a8c67b7f480614d4c25584a42d7574d5ed8fcb4: unit 42/42; browser 543/543 at 320/390/1280 plus a classic-scrollbar sweep at 320/360/390/700/1280/1440 (synthetic keys and mouse only; single-word fewest-pieces oracle, Japanese breaks, rendered focus-ring audit of every Tab stop at 390 and 1280, bad-link path-only writes, no-?query checks). f66fb8e superseded by 2a8c67b for the single-word rule (and L8–L10) only. Not QA, and not a switch or dwell check.",
-   "status": "NOT READY (L8–L10 fixed; open L11 Low, L12 Low, L13 Low (reopened per Creative 07:02; fix in progress); shared wrap f893087, recheck pending)",
+   "status": "NOT READY (L8–L10 fixed; open L11 Med, L12 Low, L13 Low (reopened per Creative 07:02; fix in progress); shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "2a8c67b7f480614d4c25584a42d7574d5ed8fcb4",
     "report": "qa/left-or-right/local-2a8c67b/QA-local-2a8c67b.md",
-    "note": "L8–L10 fixed; open L11 Low, L12 Low, L13 Low (reopened per Creative 07:02; fix in progress)"
+    "note": "L8–L10 fixed; open L11 Med, L12 Low, L13 Low (reopened per Creative 07:02; fix in progress)"
    },
    "qaPrevious": {
     "verdict": "NOT READY",
