@@ -140,3 +140,13 @@ body{overflow-wrap:break-word}
  #sheet-t tr:last-child,#stamp-4{break-after:avoid;page-break-after:avoid}
  #stamp-4,#sheet-note{break-before:avoid;page-break-before:avoid;break-inside:avoid}
 }
+/* Creative 05:42 (C14 follow-up): with the check stacked, the tag column lays its tags out as a grid once it is at least 720px wide: auto-fill
+   300px+ columns, 10px gap, DOM order = reading order (row by row); a Double tag spans the full row. Under 720px: one column, as before.
+   The per-helper list goes in two columns (row by row) at the same width. The Edit / Copy buttons stay under the quilt (left column markup). */
+.cr-check>div:last-child{container-type:inline-size;min-width:0}
+@container (min-width:720px){
+ #tags{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin:10px 0}
+ #tags .tag{margin:0;min-width:0}
+ #tags .cr-tag-dbl{grid-column:1/-1}
+ #per-l{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+}

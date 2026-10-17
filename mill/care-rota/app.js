@@ -89,9 +89,9 @@
     case 'twoNeeds': return M.fill(C.tagTwoNeeds, { line: i.line }); case 'twoNames': return M.fill(C.tagTwoNames, { line: i.line });
     case 'noDay': return M.fill(C.tagNoDay, { line: i.line }); case 'nameTooLong': return M.fill(C.tagNameTooLong, { line: i.line, max: i.max }); case 'ambiguous': return M.fill(C.tagAmbiguous, { line: i.line, n: i.n });
     default: return M.fill(C.tagCouldntRead, { line: i.line }); } }
-  function tags(r) { var host = $('tags'); host.textContent = ''; var add = function (txt, info) { var d = el('div', 'tag' + (info ? ' info' : '')); d.append(el('p', null, txt)); host.append(d); };
+  function tags(r) { var host = $('tags'); host.textContent = ''; var add = function (txt, info, cls) { var d = el('div', 'tag' + (info ? ' info' : '') + (cls ? ' ' + cls : '')); d.append(el('p', null, txt)); host.append(d); };
     r.issues.forEach(function (i) { add(issueText(i)); });
-    r.dbl.forEach(function (x) { add(M.fill(C.tagDouble, { date: CR.d2(x.t), need: needShown(r, x.need), names: M.raw(x.names.map(function (n) { return q(n); }).join(', ')) })); });
+    r.dbl.forEach(function (x) { add(M.fill(C.tagDouble, { date: CR.d2(x.t), need: needShown(r, x.need), names: M.raw(x.names.map(function (n) { return q(n); }).join(', ')) }), false, 'cr-tag-dbl'); }); // Creative 05:42: spans the full row in the tag grid
     r.gaps.forEach(function (k) { add(M.fill(C.tagGap, { date: CR.d2(k[0]), need: needShown(r, k[1]) })); });
     r.notneeded.forEach(function (x) { add(M.fill(C.tagNotNeeded, { line: x.line, need: needShown(r, x.need), date: CR.d2(x.t) })); });
     r.readas.forEach(function (x) { if (x.onlyWeekday) add(M.fill(C.tagReadAs, { line: x.line, date: CR.d2(x.t), weekday: x.onlyWeekday, need: needShown(r, x.need), name: q(x.name) }), true); });
