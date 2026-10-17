@@ -20,6 +20,28 @@ async function textCR(p, b, sel) {
       return [...new Set(all)].map(v => [v >> 16 & 255, v >> 8 & 255, v & 255]); }); }, png, runs, dpr); await q.close();
   return runs.map((r, i) => { const m = r.color.match(/[\d.]+/g).map(Number), col = m.slice(0, 3), a = (m.length > 3 ? m[3] : 1) * r.op; let worst = 99, bg = null; px[i].forEach(c => { const k = crOf(col.map((v, j) => a * v + (1 - a) * c[j]), c); /* text alpha x ancestor opacity, composited over each pixel */ if (k < worst) { worst = k; bg = c; } });
     return { t: r.t, color: r.color, op: +r.op.toFixed(2), fs: r.fs, fw: r.fw, n: px[i].length, worst: +worst.toFixed(2), bg }; }); }
+// QA local-b8da1ad W-8a (PM 08:24): Tab through every stop; for each, the 3px focus ring (offset 2px) must be drawn along ≥95% of its straight run on all four sides,
+// and the ring colour ≥3:1 against everything next to it: the gap between ring and control (ground / group edge / neighbouring button), the ground outside the ring,
+// and the control's own fill (all sampled from rendered pixels).
+async function ringWalk(p, b, max = 60) { const out = []; await p.evaluate(() => { window.scrollTo(0, 0); const d = document.createElement('span'); d.tabIndex = -1; document.body.prepend(d); d.focus(); d.blur(); d.remove(); });
+  let first = null;
+  for (let i = 0; i < max; i++) { await p.keyboard.press('Tab'); await new Promise(r => setTimeout(r, 30));
+    const f = await p.evaluate(() => { const e = document.activeElement; if (!e || e === document.body) return null; e.scrollIntoView({ block: 'center' }); const r = e.getBoundingClientRect(), c = getComputedStyle(e);
+      return { id: e.id || (e.tagName + '.' + e.className).slice(0, 40), name: (e.textContent || e.value || '').trim().slice(0, 30), fv: e.matches(':focus-visible'), os: c.outlineStyle, ow: parseFloat(c.outlineWidth), oo: parseFloat(c.outlineOffset), oc: c.outlineColor, rad: parseFloat(c.borderTopLeftRadius) || 0, l: r.left, t: r.top, r: r.right, b: r.bottom }; });
+    if (!f) break; if (first === f.id) break; first = first || f.id; await new Promise(r => setTimeout(r, 30));
+    const g = await p.evaluate(() => { const r = document.activeElement.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom, scrollX, scrollY]; }); [f.l, f.t, f.r, f.b] = g;
+    const m = (f.ow || 3) + (f.oo || 2) + 6, clip = { x: Math.max(0, Math.floor(f.l - m)) + g[4], y: Math.max(0, Math.floor(f.t - m)) + g[5], width: Math.ceil(f.r - f.l + 2 * m), height: Math.ceil(f.b - f.t + 2 * m) };
+    const png = await p.screenshot({ encoding: 'base64', clip, captureBeyondViewport: false }), ox = clip.x - g[4], oy = clip.y - g[5];
+    const o = f.oo || 2, w = f.ow || 3, cm = f.rad + o + w + 2, pts = []; // [kind, x, y] in viewport coords: ring mid-line, gap, outside, fill
+    for (let x = Math.ceil(f.l + cm); x < f.r - cm; x++) for (const [y, s] of [[f.t, -1], [f.b, 1]]) pts.push(['ring', x, y + s * (o + w / 2)], ['gap', x, y + s * (o / 2)], ['out', x, y + s * (o + w + .5)], ['fill', x, y - s * 2]);
+    for (let y = Math.ceil(f.t + cm); y < f.b - cm; y++) for (const [x, s] of [[f.l, -1], [f.r, 1]]) pts.push(['ring', x + s * (o + w / 2), y], ['gap', x + s * (o / 2), y], ['out', x + s * (o + w + .5), y], ['fill', x - s * 2, y]);
+    const q = await b.newPage(); const px = await q.evaluate(async (png, pts, ox, oy) => { const im = new Image(); im.src = 'data:image/png;base64,' + png; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, c.height).data;
+      return pts.map(([k, X, Y]) => { const i = (Math.floor(Y - oy) * c.width + Math.floor(X - ox)) * 4; return [k, d[i], d[i + 1], d[i + 2]]; }); }, png, pts, ox, oy); await q.close();
+    const RC = f.oc.match(/\d+/g).slice(0, 3).map(Number), near = (a, b2) => Math.hypot(a[0] - b2[0], a[1] - b2[1], a[2] - b2[2]) <= 40;
+    const ring = px.filter(x => x[0] === 'ring'), hit = ring.filter(x => near(x.slice(1), RC)).length; let worst = 99, worstWith = null;
+    for (const x of px) if (x[0] !== 'ring') { const k = crOf(RC, x.slice(1)); if (k < worst) { worst = k; worstWith = x; } }
+    out.push({ id: f.id, name: f.name, fv: f.fv, outline: f.os + ' ' + f.ow + 'px ' + f.oc + ' +' + f.oo, ringPx: ring.length, drawn: hit, pct: +(100 * hit / Math.max(1, ring.length)).toFixed(1), worst: +worst.toFixed(2), worstWith }); }
+  return out; }
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
   for (const w of W) {
@@ -565,5 +587,17 @@ async function textCR(p, b, sel) {
       /is-zero/.test(z.cls) && z.bg === 'rgb(255, 255, 255)' && z.bs === 'dashed' && z.bc === 'rgb(79, 92, 102)' && z.edgeCR >= 3 && z.who === 'rgb(24, 36, 48)' && +z.bin < 1 && z.binStroke === 'rgb(79, 92, 102)' && z.binDash !== 'none' && z.text.length >= 3 && z.text.every(r => r.op === 1 && !/rgba/.test(r.color) && r.worst >= 4.5), z);
     ck(w + ' Creative 07:25: 1+ unclaimed unchanged: tint #FFF3E9, dashed #AD531A edge, "Unclaimed" #AD531A, bin at full strength with its dashed outline #AD531A', !/is-zero/.test(u.cls) && u.bg === 'rgb(255, 243, 233)' && u.bs === 'dashed' && u.bc === 'rgb(173, 83, 26)' && u.who === 'rgb(173, 83, 26)' && +u.bin === 1 && u.binStroke === 'rgb(173, 83, 26)' && u.binDash !== 'none' && u.text.every(r => r.worst >= 4.5), u);
     ck(w + ' Creative 07:25: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA local-b8da1ad W-8a / PM 08:24: every Tab stop in the sender form and the received view shows its whole focus ring (≥95% of the ring's straight run drawn,
+  // from rendered pixels) at ≥3:1 against the gap, the ground outside and the control's fill, at 320/390/1280
+  for (const w of [320, 390, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
+    await p.evaluate(() => Promise.all([document.fonts.ready, ...document.getAnimations().map(a => a.finished)])); const sender = await ringWalk(p, s.b);
+    const st = { n: 'Rice', u: 'kilograms-ish', c: '$', q: '10', i: '1', p: '20.03', f: '1.00', b: 'p', x: -1, h: Array.from({ length: 7 }, (_, i) => ['Home ' + (i + 1), '1']) };
+    const f = await p.evaluate(o => SACKLINK.encode(o), st); await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(300); await p.evaluate(() => Promise.all([document.fonts.ready, ...document.getAnimations().map(a => a.finished)]));
+    const recv = await ringWalk(p, s.b); await p.select('#pick', '0'); await sleep(150); const picked = await ringWalk(p, s.b);
+    await p.focus('#change'); await p.keyboard.press('Enter'); await sleep(250); const change = await ringWalk(p, s.b);
+    const all = sender.map(r => Object.assign(r, { view: 'sender' })).concat(recv.map(r => Object.assign(r, { view: 'received' })), picked.map(r => Object.assign(r, { view: 'received, picked' })), change.map(r => Object.assign(r, { view: 'change my amount' }))), bad = all.filter(r => !r.fv || r.pct < 95 || r.worst < 3);
+    ck(w + ' QA W-8a (PM 08:24): every Tab stop (' + sender.length + ' sender, ' + recv.length + '/' + picked.length + ' received (before/after a pick), ' + change.length + ' change-my-amount, incl. By amount / Equally per household) shows ≥95% of its focus ring at ≥3:1 against everything next to it (worst ' + Math.min(...all.map(r => r.worst)).toFixed(2) + ':1, least drawn ' + Math.min(...all.map(r => r.pct)) + '%)',
+      sender.some(r => r.id === 'bp') && sender.some(r => r.id === 'be') && recv.length > 0 && !bad.length, { bad, all: all.map(r => r.view + ' ' + r.id + ' ' + r.pct + '% ' + r.worst) });
+    ck(w + ' QA W-8a: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
