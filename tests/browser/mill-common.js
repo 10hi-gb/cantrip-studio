@@ -26,4 +26,8 @@ async function tabReach(p, ids, max = 120) { // keyboard: Tab through the page a
 function result(rows) { const bad = rows.filter(r => !r.ok); console.log(JSON.stringify(rows, null, 1)); console.log(bad.length ? 'FAIL ' + bad.map(r => r.name).join(', ') : 'PASS ' + rows.length + ' checks'); return bad.length ? 1 : 0; }
 // Local http only: Chrome logs that COOP is ignored on an untrustworthy origin. Not a page error; never filtered on https.
 function errsOf(s, scheme) { return s.errs.filter(e => !(scheme === 'http' && /Cross-Origin-Opener-Policy header has been ignored/.test(e))); }
-module.exports = { errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };
+// Text-level overlap: measures the painted text (Range rects) of every element matching sel and reports pairs whose text boxes intersect.
+async function textOverlap(p, sel) { return p.evaluate(sel => { const els = [...document.querySelectorAll(sel)].filter(e => e.offsetParent !== null && e.textContent.trim()); const boxes = els.map(e => { const r = document.createRange(); r.selectNodeContents(e); return { id: e.id || e.className, rs: [...r.getClientRects()] }; });
+  const bad = []; for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) for (const a of boxes[i].rs) for (const b of boxes[j].rs) if (a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5) bad.push(boxes[i].id + '×' + boxes[j].id);
+  return [...new Set(bad)]; }, sel); }
+module.exports = { textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };

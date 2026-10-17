@@ -22,21 +22,36 @@
  <div class="ss-top"><a href="../" data-c="studioLabel" data-aria="backLabel"></a></div>
  <h1 class="ss-title" data-c="title"></h1>
  <p class="ss-lede" data-c="invitation"></p>
- <div class="ss-banner" id="banner" role="status" hidden><p id="banner-t"></p><p id="banner-n"></p><button type="button" class="ss-btn" id="own" data-c="receiverPrimary" hidden></button></div>
+ <div class="ss-banner" id="banner" role="status" hidden><h2 class="ss-lab" id="banner-h" hidden></h2><p id="banner-t"></p><p id="banner-q" class="ss-quote" hidden><span class="ss-from-l" id="banner-ql"></span> <span id="banner-qv"></span></p></div>
  <div class="ss-grid">
   <section class="ss-table" aria-labelledby="h-table">
    <div class="ss-head">
     <div class="ss-sack"><svg viewBox="0 0 96 120" aria-hidden="true"><path class="bag" d="M10 14 Q48 4 86 14 L90 110 Q48 118 6 110 Z"/><line class="weave" x1="16" y1="12" x2="14" y2="112"/><line class="weave" x1="28" y1="12" x2="26" y2="112"/><line class="weave" x1="40" y1="12" x2="38" y2="112"/><line class="weave" x1="52" y1="12" x2="50" y2="112"/><line class="weave" x1="64" y1="12" x2="62" y2="112"/><line class="weave" x1="76" y1="12" x2="74" y2="112"/><rect class="band" x="12" y="46" width="72" height="26" rx="2"/><rect class="band2" x="12" y="72" width="72" height="6"/><path d="M16 14 Q30 22 48 14 Q66 22 80 14" fill="none" stroke="#A9AA9E" stroke-width="2"/></svg></div>
-    <div><div class="ss-lcd"><span class="k" data-c="packageQtyLabel"></span><span class="k" data-c="priceLabel"></span><span class="k" data-c="feeLabel"></span><span class="v" id="lcd-q"></span><span class="v" id="lcd-p"></span><span class="v" id="lcd-f"></span></div><p class="ss-name" id="sname"></p></div>
+    <div><div class="ss-lcd"><span class="k" data-c="packageQtyLabel"></span><span class="k" data-c="priceLabel"></span><span class="k" data-c="feeLabel"></span><span class="v" id="lcd-q"></span><span class="v" id="lcd-p"></span><span class="v" id="lcd-f"></span></div><p class="ss-from" id="from" hidden></p><p class="ss-name" id="sname"></p></div>
    </div>
    <h2 class="ss-lab" id="h-table" data-c="tableHeading"></h2>
+   <p class="ss-hint" id="caption" hidden></p>
    <div class="ss-rows" id="rows" role="table"></div>
    <div class="ss-status" id="status" role="status"></div>
    <div class="ss-assign" id="assign"></div>
    <div class="ss-why"><h3 data-c="residualHeading"></h3><p data-c="residualNote"></p><p id="residual"></p><p id="reconcile"></p></div>
    <div class="ss-print-only" id="printout"></div>
   </section>
-  <section class="ss-panel" aria-labelledby="h-item">
+  <section class="ss-panel ss-recv" id="recv" aria-labelledby="pick-l" hidden>
+   <div class="ss-field"><label for="pick" id="pick-l" data-c="receiverPickLabel"></label><select id="pick"></select></div>
+   <p class="ss-you" id="owncost" aria-live="polite"></p>
+   <div class="ss-actions"><button type="button" class="ss-btn ss-btn--primary" id="change" data-c="answerChange"></button></div>
+   <div id="changebox" hidden>
+    <p class="ss-fine" id="changenote" data-c="changeNote"></p>
+    <div class="ss-lab" id="amt-l"></div>
+    <div class="ss-stepper" role="group" aria-labelledby="amt-l"><button type="button" id="down">−</button><output id="amt" aria-live="polite"></output><button type="button" id="up">+</button></div>
+    <p class="ss-err" id="change-err" aria-live="polite"></p>
+    <div class="ss-actions"><button type="button" class="ss-btn ss-btn--primary" id="makelink" data-c="changeMakeLink"></button><button type="button" class="ss-btn" id="cancel" data-c="changeCancel"></button></div>
+    <div class="ss-linkbox" id="rlinkbox" hidden><div class="ss-field"><label for="rlink" data-c="linkLabel"></label><textarea id="rlink" readonly rows="3"></textarea></div></div>
+   </div>
+   <p class="ss-fine" data-c="privacy"></p>
+  </section>
+  <section class="ss-panel" id="editor" aria-labelledby="h-item">
    <h2 class="ss-lab" id="h-item" data-c="itemHeading"></h2>
    <div class="ss-field"><label for="item" data-c="itemLabel"></label><input id="item" maxlength="80" autocomplete="off" data-ph="itemPlaceholder"></div>
    <div class="ss-row3">

@@ -1,6 +1,6 @@
 // node tests/browser/mill-byg.qa.js <host[:port]> <ip> [scheme] — Before You Go @320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const BASE = `${SCHEME}://${H}/mill/before-you-go/`;
 const state = p => p.evaluate(() => ({ ready: document.getElementById('ready').className, n: document.getElementById('ready-n').textContent, h: document.getElementById('ready-h').textContent, s: document.getElementById('ready-s').textContent,
   rows: [...document.querySelectorAll('#list .byg-fact')].map(e => e.className.replace('byg-fact ', '') + ':' + e.querySelector('.byg-chip').textContent),
@@ -71,5 +71,12 @@ const state = p => p.evaluate(() => ({ ready: document.getElementById('ready').c
     t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, sel: document.activeElement.id, len: document.activeElement.selectionEnd - document.activeElement.selectionStart }));
     ck('390 over-cap link => tooLongLink, notes selected', t.toast === 'Too much to fit in a link. Copy or print the notes instead.' && t.sel === 'text' && t.len > 100, t);
     ck('390 share-cancel/over-cap no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // D1/D2 pattern checks carried over from Split the Sack QA: long unbroken values wrap inside their cards, nothing overlaps
+  for (const w of [320, 390, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' });
+    const g = await p.evaluate(() => { const s = BYG.blank(); s.k = 'Pneumonoultramicroscopic ' + 'x'.repeat(35); s.by = 'Pneumonoultramicroscopic'; for (const k of BYG.ALL) { s.f[k].v = '9'.repeat(60); s.f[k].a = 'A'.repeat(60); s.f[k].c = k !== 'bring'; } return BYG.encode(s); });
+    await p.goto(BASE + '#' + g, { waitUntil: 'load' }); await sleep(150);
+    const r = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, wide: [...document.querySelectorAll('.byg-fact')].filter(e => e.getBoundingClientRect().right > document.documentElement.clientWidth).length }));
+    const ov = await textOverlap(p, '#kicker, #title, #what, #ready-h, #ready-s, .byg-chip, .byg-lab label, .byg-val, .byg-said, .byg-confirmed span');
+    ck(w + ' byg long unbroken values: cards fit, no overlap', r.sw <= w && !r.wide && !ov.length, { r, ov }); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

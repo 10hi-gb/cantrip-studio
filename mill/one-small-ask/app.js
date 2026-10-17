@@ -12,7 +12,7 @@
   function draftAsk(d) { var t = draftTerms(d); t.f = d.f; t.o = d.o; return t; }
   // ---------- generic pieces ----------
   function input(cls, val, aria, opts) { var e = el(opts && opts.area ? 'textarea' : 'input', 'osa-in ' + cls); e.value = val; if (aria) e.setAttribute('aria-label', aria); if (opts) { if (opts.type) e.type = opts.type; if (opts.ph) e.placeholder = opts.ph; if (opts.mode) e.inputMode = opts.mode; if (opts.id) e.id = opts.id; } e.autocomplete = 'off'; return e; }
-  function head(side, ini, b, small, extra) { var d = el('div', 'is-' + side), w = el('div', 'osa-who'), i = el('span', 'osa-ini', ini); i.setAttribute('aria-hidden', 'true'); var sp = el('span'); sp.appendChild(el('b', null, b)); if (small) sp.appendChild(el('small', null, small)); w.appendChild(i); w.appendChild(sp); d.appendChild(w); if (extra) d.appendChild(extra); return d; }
+  function head(side, ini, b, small, extra) { var d = el('div', 'is-' + side), w = el('div', 'osa-who'), i = el('span', 'osa-ini', ini); i.setAttribute('aria-hidden', 'true'); var sp = el('span'); var bb = el('b', null, b); bb.title = b; sp.appendChild(bb); if (small) sp.appendChild(el('small', null, small)); w.appendChild(i); w.appendChild(sp); d.appendChild(w); if (extra) d.appendChild(extra); return d; }
   function heads(a, b) { var h = el('div', 'osa-heads'); h.appendChild(a); h.appendChild(el('div', 'gap')); h.appendChild(b || el('div', 'is-ans')); return h; }
   var rowN = 0;
   function term(state, label, askNode, seam, ansNode, srText) {

@@ -19,9 +19,11 @@ window.MILL_HUB = {
    ],
    "limits": [
     "Loose support only: the seed comment is about a grocery co-op, and no comment mentions splitting a bulk buy.",
-    "One item, one unit, one currency per split. No savings, purchase or payment features."
+    "One item, one unit, one currency per split. No savings, purchase or payment features.",
+    "Fee rule: by amount, the fee is split over all quantity and the unclaimed row carries its own fee share until someone takes it or the sender assigns it; equal, the fee is split among households taking some, and with no takers the split is blocked.",
+    "Recipients see a read-only split. \"Change my amount\" makes a new link on the recipient's device; it does not update or notify the sender."
    ],
-   "engineer": "ENGINEER SELF-CHECK on deploy 05065881 (commit 39ca5078): unit tests 18+5 pass; live browser check 68/68 at 320/390/1280; byte-compare 47/47. Not QA.",
+   "engineer": "Fresh ENGINEER SELF-CHECK pending for this build. Not QA.",
    "qa": "Awaiting QA"
   },
   {
@@ -39,7 +41,7 @@ window.MILL_HUB = {
     "No comment mentions calling ahead.",
     "Questions come from a fixed generic checklist. It knows nothing about any real place."
    ],
-   "engineer": "ENGINEER SELF-CHECK on deploy 05065881 (commit 39ca5078): unit tests 9 pass; live browser check 78/78 at 320/390/1280; byte-compare 47/47. Not QA.",
+   "engineer": "Fresh ENGINEER SELF-CHECK pending for this build. Not QA.",
    "qa": "Awaiting QA"
   },
   {
@@ -57,7 +59,7 @@ window.MILL_HUB = {
     "No comment mentions a counteroffer.",
     "Replies travel only by a link the recipient chooses to send back. It never tells the asker anything by itself."
    ],
-   "engineer": "ENGINEER SELF-CHECK on deploy 05065881 (commit 39ca5078): unit tests 11 pass; live sender→recipient→reply browser check 78/78 at 320/390/1280; byte-compare 47/47. Not QA.",
+   "engineer": "Fresh ENGINEER SELF-CHECK pending for this build. Not QA.",
    "qa": "Awaiting QA"
   },
   {
@@ -73,7 +75,7 @@ window.MILL_HUB = {
     "Stop names that differ only in capital letters or spaces are treated as the same stop.",
     "Merging needs an exact item name and unit match; near-matches (\"Oat milks\", \"litre\" vs \"l\") stay separate."
    ],
-   "engineer": "ENGINEER SELF-CHECK: unit tests 15 pass; local browser check 84/84 at 320/390/1280. Live check pending on its deploy. Not QA.",
+   "engineer": "Fresh ENGINEER SELF-CHECK pending for this build. Not QA.",
    "qa": "Awaiting QA"
   },
   {

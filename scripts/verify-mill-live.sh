@@ -3,6 +3,7 @@
 set -uo pipefail
 BASE="$1"; REPO="$(cd "$(dirname "$0")/.." && pwd)"; ok=0; bad=0
 while read -r f; do
+  if [ "$f" = "mill/build-info.js" ]; then if curl -sfL "$BASE/$f" | grep -q "$(git -C "$REPO" rev-parse HEAD)"; then ok=$((ok+1)); echo "build-info.js stamped with HEAD"; else bad=$((bad+1)); echo "MISMATCH $f (not stamped with HEAD)"; fi; continue; fi
   url="$BASE/$f"; case "$f" in */index.html) url="$BASE/${f%index.html}";; *.html) url="$BASE/${f%.html}";; esac
   want=$(git -C "$REPO" show "HEAD:$f" | sha256sum | cut -c1-64); got=$(curl -sfL "$url" | sha256sum | cut -c1-64)
   if [ "$want" = "$got" ]; then ok=$((ok+1)); else bad=$((bad+1)); echo "MISMATCH $f"; fi

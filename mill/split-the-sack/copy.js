@@ -1,4 +1,4 @@
-// split-the-sack — visitor copy (Writing Bot, 2026-10-16). Matches the Wave 1-2 scope brief in briefs/ (scopes proposed by the Cantrip agents under Joshua's authorization). App reads all text from COPY.
+// split-the-sack v2 — visitor copy (Writing Bot, 2026-10-16 ~9:50 PM PT). v1 is copy.js. Per QUEUE.md P001 scope calls 9:44 + QA D4. App reads all text from COPY.
 const COPY = {
   "title": "Split the Sack",
   "studioName": "Cantrip Studio",
@@ -35,12 +35,12 @@ const COPY = {
   "feeHint": "Delivery, membership, bag fee. Leave blank if none.",
   "feeBasisLabel": "Split the fee",
   "feeBasis": {
-    "proportional": "By amount taken",
+    "proportional": "By amount",
     "equal": "Equally per household"
   },
   "feeBasisLine": {
-    "proportional": "Fee split by amount taken.",
-    "equal": "Fee split equally between households that take some."
+    "proportional": "Fee split by amount, unclaimed included. The unclaimed share stays on its row until someone takes it or the sender assigns it.",
+    "equal": "Fee split equally between households that take some. Unclaimed carries no fee."
   },
   "householdsHeading": "Who's in",
   "householdLabel": "Household",
@@ -100,12 +100,10 @@ const COPY = {
   "copyProposal": "Copy the proposal",
   "printProposal": "Print it",
   "share": "Send as a link",
-  "shareText": "Proposed split for {item}.",
+  "shareText": "Proposed split: {item}",
   "shareCancel": "Not sent. The split is still here.",
   "privacy": "Nothing here is uploaded or saved. A link carries the whole split, so anyone who has it can read it, and it may stay in browser history.",
-  "receiverIntro": "A proposed split for {item}.",
-  "receiverNote": "This is the split as it was when the link was made.",
-  "receiverPrimary": "Start my own from this",
+  "receiverIntro": "The sender's proposal, as it was when the link was made.",
   "emptyState": "Name the item, the package, and who's in.",
   "reset": "Clear the table",
   "resetConfirm": "Clear everything? This also clears the link in the address bar.",
@@ -121,8 +119,7 @@ const COPY = {
   "shortRow": "Short",
   "reconcileLabel": "Adds up",
   "noProrateNote": "Nothing gets scaled down automatically.",
-  "feeUnallocatedNote": "Unclaimed carries no fee.",
-  "errorFeeNoBasis": "Someone has to take some before the fee can be split.",
+  "errorFeeNoBasis": "An equal split needs at least one household taking some.",
   "errorRange": "Up to {max}.",
   "pennyTag": {
     "one": "+1¢ rounding",
@@ -133,17 +130,22 @@ const COPY = {
   "receiverPickLabel": "Which household is yours?",
   "receiverOwnCost": "You take {qty} {unit}: {item} for the item plus {fee} fee. {total} in all.",
   "receiverOwnCostNoFee": "You take {qty} {unit}: {total}.",
-  "answerRight": "This is right",
   "answerChange": "Change my amount",
   "answerAmountLabel": "My amount (steps of {increment} {unit})",
   "stepDownAria": "Less for {name}",
   "stepUpAria": "More for {name}",
   "changedWas": "was {qty} {unit}",
-  "answerNote": "Your answer is a link or text you send back yourself. It speaks for your household only.",
-  "answerCopy": "Copy my answer",
-  "answerTextRight": "{name}: the split for {item} works for me. {qty} {unit}, {total}.",
-  "answerTextChange": "{name}: for {item}, I'd like {qty} {unit} instead of {was} {unit}.",
-  "answerSnapshotLabel": "Proposal from the sender",
   "editAmounts": "Edit amounts",
-  "copyAsText": "Copy as text"
+  "copyAsText": "Copy as text",
+  "receiverHeader": "Proposed split",
+  "receiverIntroNamed": "{organizer}'s proposal, as it was when the link was made.",
+  "senderTextLabel": "From the sender:",
+  "senderTextLabelNamed": "From {organizer}:",
+  "senderNamesCaption": "Households, as the sender typed them",
+  "senderNamesCaptionNamed": "Households, as {organizer} typed them",
+  "changeNote": "This makes a new link for you to send back. It doesn't change the sender's copy or tell them anything.",
+  "changeNoteNamed": "This makes a new link for you to send back. It doesn't change {organizer}'s copy or tell them anything.",
+  "changeMakeLink": "Make my new link",
+  "changeShareText": "A changed amount for the split",
+  "changeCancel": "Back to the proposal"
 };

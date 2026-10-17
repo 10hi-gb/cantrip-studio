@@ -19,5 +19,12 @@
 .byg-text{min-height:12rem}
 .byg-toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:6px;max-width:calc(100% - 32px);z-index:5;font:800 14px var(--byg-font)}
 .byg-val,.byg-q,.byg-what{overflow-wrap:anywhere;unicode-bidi:plaintext}
-.byg-confirmed{grid-column:2/span 2;margin-top:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font:600 13px var(--byg-font)}
+.byg-confirmed{grid-column:2/-1;margin-top:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font:600 13px var(--byg-font)}
 @media print{.byg-banner,.byg-toast,.byg-linkbox,.byg-edit,.byg-own,.byg-rm,.byg-fieldrow,.byg-fv,.byg-confirmed button,.byg-top a,.byg-textwrap{display:none!important}}
+/* D1 pattern: Creative's line-height:1 lets title glyph boxes touch the line below by 1px; give it room. */
+.byg-title{line-height:1.25}
+/* D1 pattern: a long unbroken value must wrap inside its card, not stretch the card past the page. */
+.byg-list{grid-template-columns:minmax(0,1fr)}
+.byg-fact,.byg-fact>*{min-width:0}
+.byg-said{overflow-wrap:anywhere}
+#banner-t,#banner-h{overflow-wrap:anywhere;min-width:0}

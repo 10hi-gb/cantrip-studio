@@ -40,9 +40,10 @@
   }
   // input: { pkgQty, inc, price, fee, feeBasis:'proportional'|'equal', requests:[qty...], assignTo: index|-1 }
   //   assignTo: optional explicit choice to give the whole unallocated quantity (and its cost) to one household.
-  //   FEE (Creative decision 2026-10-16): the fee is split only across households' taken amounts; the unallocated row carries its
-//   share of the price but none of the fee. Proportional = by amount taken (default); equal = equally among households that take
-//   some (qty > 0). Only if nobody takes anything does the fee sit on the unallocated row, so totals still reconcile.
+  //   FEE (PM scope call (b), 2026-10-16 9:44 PM PT; replaces the earlier "unallocated carries no fee" rule):
+  //   proportional (default) = by quantity over ALL rows including the unallocated row, which shows its item cost plus fee share;
+  //   equal = equally among households that take some (qty > 0); the unallocated row carries none. Equal with a fee > 0 and no
+  //   household taking any -> status 'nobasis' (complete:false; the UI shows errorFeeNoBasis). Each a separate largest-remainder pass.
   //   pkgQty/inc/requests: decimal strings or finite numbers in units; price/fee: integer cents.
   function compute(inp) {
     if (!inp || typeof inp !== 'object') return err('input');
@@ -73,8 +74,11 @@
     if (a >= 0 && unQty > 0) { take[a] += unQty; unQty = 0; assigned = true; }
     var wts = take.concat([unQty]);                      // last row = unallocated
     var g = allocateX(price, wts), fx;
-    if (basis === 'equal') { var takers = take.map(function (q) { return q > 0 ? 1 : 0; }); fx = takers.some(Boolean) ? allocateX(fee, takers.concat([0])) : allocateX(fee, take.map(function () { return 0; }).concat([1])); }
-    else fx = take.some(function (q) { return q > 0; }) ? allocateX(fee, take.concat([0])) : allocateX(fee, take.map(function () { return 0; }).concat([1]));
+    if (basis === 'equal') {
+      var takers = take.map(function (q) { return q > 0 ? 1 : 0; });
+      if (!takers.some(Boolean)) { if (fee > 0) { base.status = 'nobasis'; base.complete = false; base.shortage = 0; return base; } fx = { shares: wts.map(function () { return 0; }), extra: wts.map(function () { return 0; }) }; }
+      else fx = allocateX(fee, takers.concat([0]));
+    } else fx = allocateX(fee, wts);
     var rows = wts.map(function (q, k) { return { qty: q, requested: k < r.length ? r[k] : 0, goods: g.shares[k], fee: fx.shares[k], total: g.shares[k] + fx.shares[k], extraCents: g.extra[k] + fx.extra[k], unallocated: k === r.length }; });
     base.assigned = assigned ? a : -1;
     base.rows = rows.slice(0, r.length); base.unallocated = rows[r.length];

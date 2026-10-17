@@ -1,6 +1,6 @@
 // node tests/browser/mill-ask.qa.js <host[:port]> <ip> [scheme] — One Small Ask end to end: sender -> recipient -> reply, @320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
@@ -75,5 +75,12 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     await p.focus('#f-note'); await p.keyboard.type('Happy to.'); const nt = await p.evaluate(() => ({ vis: document.getElementById('f-note').getBoundingClientRect().height > 20, text: document.getElementById('text').textContent })); ck('390 yes + optional note visible and exported', nt.vis && nt.text.endsWith('Note: Happy to.'), nt); await p.focus('#b-rshare'); await p.keyboard.press('Enter'); await sleep(300);
     const t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, sel: document.activeElement.id, link: document.getElementById('link').value }));
     ck('390 reply share cancel keeps link selectable', t.toast === 'Not sent. Your reply is still here.' && t.sel === 'link' && /#r1\./.test(t.link), t); ck('390 share-cancel no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // D1/D2/D4 pattern checks carried over from Split the Sack QA: long single-word sender values never widen the page or overlap; full name kept in title
+  for (const w of [320, 390, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' });
+    const L = 'Pneumonoultramicroscopic'; const f = await p.evaluate(l => ASK.encodeAsk({ w: 'W'.repeat(120), e: 600, u: 'min', d: 'D'.repeat(40), s: '09:00', t: '10:00', h: 'H'.repeat(80), f: l, o: l }), L);
+    await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(150);
+    const sw = await p.evaluate(() => document.documentElement.scrollWidth); const ov = await textOverlap(p, '#title, .osa-who b, .osa-who small, .osa-term .k1, .osa-term .ask, .osa-choice');
+    const ttl = await p.$$eval('.osa-who b', bs => bs.map(b => b.title));
+    ck(w + ' ask long single-word values: no overflow, no overlap, full name in title attr', sw <= w && !ov.length && ttl.includes(L), { sw, ov, ttl }); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

@@ -13,3 +13,9 @@ select.osa-in{appearance:auto}
 .osa-copytext:focus-visible{outline:3px solid var(--osa-focus)}
 @media print{.osa-banner,.osa-linkbox,.osa-toast,.osa-top a{display:none!important}}
 .osa-in.osa-note-in{border-color:var(--osa-ans-ink);margin:4px 0 8px}
+/* D2 pattern (from Split the Sack QA): a long single-word name must not widen the card; full name stays in the text and title attribute. */
+.osa-who>span{min-width:0;flex:1 1 auto}
+.osa-who b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.osa-term,.osa-term>div{min-width:0}
+@media (max-width:720px){.osa-heads,.osa-foot,.osa-term{grid-template-columns:minmax(0,1fr)}}
+.osa-title{overflow-wrap:anywhere;min-width:0}
