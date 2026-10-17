@@ -33,8 +33,8 @@ window.MILL_HUB = {
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "652d0e038d7033812cf6954e32576cd794ad896e",
-    "report": "qa/split-the-sack/local-652d0e0/QA-local-652d0e0.md"
+    "sha": "7b5ceebe537f5f0e88827800af3a0579dcb089a9",
+    "report": "qa/split-the-sack/local-7b5ceeb/QA-local-7b5ceeb.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -67,8 +67,8 @@ window.MILL_HUB = {
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "652d0e038d7033812cf6954e32576cd794ad896e",
-    "report": "qa/before-you-go/local-652d0e0/QA-local-652d0e0.md"
+    "sha": "92575f199084d598f107bc98fa22e7bb4aae6be2",
+    "report": "qa/before-you-go/local-92575f1/QA-local-92575f1.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -101,8 +101,8 @@ window.MILL_HUB = {
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "652d0e038d7033812cf6954e32576cd794ad896e",
-    "report": "qa/one-small-ask/local-652d0e0/QA-local-652d0e0.md"
+    "sha": "4b7fdf8128cdb011353171950cc19439c4af4c7f",
+    "report": "qa/one-small-ask/local-4b7fdf8/QA-local-4b7fdf8.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
