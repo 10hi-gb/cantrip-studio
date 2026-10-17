@@ -236,13 +236,13 @@
     "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview cde64e3b02ca689ee7442fa3bc5bf48434c79c1c: unit 24/24 (every proto r1d assert, QA C3/C4/C7/C10, PM C9 as narrowed 04:38, regression names, codec agreement, 6,000-case reference sweep; QA 400 reference cases 400/400); browser 189/189 at 305/320/390/1280/1440. Not QA.",
-   "status": "NOT READY (QA open: C11, C12, C13)",
+   "status": "NOT READY (QA open: C11–C13; PM-added: C14)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "cde64e3b02ca689ee7442fa3bc5bf48434c79c1c",
-    "report": "qa/care-rota/local-cde64e3/QA-local-cde64e3.md",
-    "note": "open: C11 (Med), C12 (Low), C13 (Low)"
+    "report": "qa/care-rota/local-cde64e3/QA-local-cde64e3.md (C14 added by PM, not in this file)",
+    "note": "open: C11 (Med), C12 (Low), C13 (Low) per QA; C14 (Low, PM-added): at 1280+ a 10-grapheme quoted name fits on one line"
    }
   },
   {
@@ -264,13 +264,13 @@
     "The optional link holds only task names, minutes and helper names. Anyone with the link can read it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview d68094ade9c8d49edd528b278dcf2583711c78c0: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 247/247 at 320/360/390/641/1024/1280/1440 (incl. Creative check 5f127ab items 1–6; QA local-8206084 H1–H3; QA local-08b466c/2a02a48 H5 tiny and huge sticks in Suggest and Check, H6 tip and capacity-bar contrast and H7 over-text contrast sampled on the rendered page, H8 rolled-up label on phones). Not QA.",
-   "status": "NOT READY (QA open: H9, H10, H11, H12)",
+   "status": "NOT READY (QA open: H9–H14)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "d68094ade9c8d49edd528b278dcf2583711c78c0",
-    "report": "qa/five-hands/local-d68094a/QA-local-d68094a.md",
-    "note": "open: H9 (Med), H10 (Med), H11 (Low), H12 (Low)"
+    "report": "qa/five-hands/local-d68094a/QA-local-d68094a.md (H13–H14 per a later QA message, not yet in this file)",
+    "note": "open: H9 (Med), H10 (Med), H11 (Low), H12 (Low) per report; H13 (Low) error text on --red 4.24–4.36:1, H14 (Med) drop the 104px minimum so bars stay proportional, labels beside/outside the bar, per a later QA message, not yet in report file"
    }
   }
  ]
