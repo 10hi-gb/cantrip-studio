@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Left or Right · Cantrip Studio</title>
+<meta name="description" content="A small tool from Cantrip Studio.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="app.css">
+<script src="copy.js" defer></script>
+<script src="copy-extra.js" defer></script>
+<script src="../shared/core.js" defer></script>
+<script src="../shared/view.js" defer></script>
+<script src="lr.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="lr">
+<main class="lr-page" id="s1">
+ <div class="lr-main">
+  <div class="lr-top"><a href="../" id="home"></a><span class="studio" id="strip"></span></div>
+  <h1 id="title"></h1>
+  <p class="lr-banner" id="limit1"></p>
+  <div class="lr-status" id="banner" role="alert" hidden><p id="banner-t"></p></div>
+  <div id="edit">
+   <p class="lede" id="lede"></p>
+   <p class="limit" id="required"></p>
+   <p class="lr-fair" id="fair"></p>
+   <div class="lr-field lr-from"><label for="from" id="l-from"></label><input type="text" id="from" autocomplete="off"><span class="lr-err" id="e-from"></span></div>
+   <div id="qs"></div>
+   <div class="lr-actions lr-add"><button type="button" class="btn btn-ghost" id="add"></button></div>
+   <p class="lr-meta" id="qcount" aria-live="polite"></p>
+   <p class="lr-lab" id="l-method"></p>
+   <div class="modes" role="group" aria-labelledby="l-method" id="modes">
+    <button type="button" class="mode" id="m-tap" aria-pressed="true"></button>
+    <button type="button" class="mode" id="m-switch" aria-pressed="false"></button>
+    <button type="button" class="mode" id="m-hold" aria-pressed="false"></button>
+   </div>
+   <p class="lr-fine" id="helper"></p>
+   <div class="lr-set" id="sw-set" hidden>
+    <div class="lr-field"><label for="key" id="l-key"></label><select id="key"></select></div>
+    <div class="lr-field"><label for="scan" id="l-scan"></label><select id="scan"></select></div>
+    <div class="lr-field" id="every-f"><label for="every" id="l-every"></label><select id="every"></select></div>
+   </div>
+   <div class="lr-set" id="hold-set" hidden>
+    <div class="lr-field"><label for="dwell" id="l-dwell"></label><select id="dwell"></select></div>
+   </div>
+   <div class="lr-actions">
+    <button type="button" class="btn btn-main" id="go"></button>
+    <button type="button" class="btn btn-ghost" id="mk"></button>
+   </div>
+   <div class="lr-box" id="linkbox" hidden>
+    <label for="link" id="l-link"></label><textarea id="link" readonly rows="3"></textarea>
+    <div class="lr-actions"><button type="button" class="btn btn-ghost" id="send"></button></div>
+   </div>
+  </div>
+  <div id="recv" hidden>
+   <p class="lede" id="recv-intro"></p>
+   <ol class="lr-list" id="recv-list"></ol>
+   <div class="lr-actions"><button type="button" class="btn btn-main" id="r-go"></button></div>
+  </div>
+  <section class="lr-answers" id="answers" aria-labelledby="ans-h" hidden>
+   <h2 id="ans-h" tabindex="-1"></h2>
+   <p class="lr-fine" id="ans-note"></p>
+   <ul class="lr-list" id="ans-list"></ul>
+   <div class="lr-actions"><button type="button" class="btn btn-ghost" id="copy-ans"></button><button type="button" class="btn btn-ghost" id="print"></button></div>
+   <div class="lr-box" id="ans-fb" hidden><label for="ans-fbt" id="l-ans-fbt"></label><textarea id="ans-fbt" readonly rows="5"></textarea></div>
+  </section>
+  <div class="lr-actions lr-reset"><button type="button" class="btn btn-ghost" id="reset"></button></div>
+  <p class="privacy" id="privacy"></p>
+ </div>
+ <div class="lr-preview felt" id="preview">
+  <div class="lr-pv-strip"><p class="q" id="pv-q"></p></div>
+  <div class="lr-pv-halves"><div class="lr-pv l"><span class="arrow" id="pv-la"></span><span id="pv-l"></span></div><div class="lr-pv r"><span class="arrow" id="pv-ra"></span><span id="pv-r"></span></div></div>
+ </div>
+</main>
+<section class="board lr-board" id="s2" hidden>
+ <div class="qstrip"><p class="from" id="b-from"></p><p class="q" id="b-q"></p></div>
+ <div class="halves" id="halves" tabindex="-1">
+  <button type="button" class="half l" id="h-l"><span class="lr-ring"></span><span class="arrow" id="h-l-s"></span><span class="sym" id="h-l-e"></span><span class="lr-ans" id="h-l-a"></span></button>
+  <button type="button" class="half r" id="h-r"><span class="lr-ring"></span><span class="arrow" id="h-r-s"></span><span class="sym" id="h-r-e"></span><span class="lr-ans" id="h-r-a"></span></button>
+ </div>
+ <div class="hint lr-hint"><p id="hint" aria-live="polite"></p><p class="lr-banner lr-banner--dark" id="limit2"></p><button type="button" class="btn lr-back" id="b-back"></button></div>
+</section>
+<div class="lr-clip">
+<section class="chosen lr-chosen" id="s3" hidden>
+ <p class="q" id="c-q"></p>
+ <p class="ans" id="c-a"></p>
+ <p class="q" id="c-tag"></p>
+ <p class="lr-done" id="c-done" hidden></p>
+ <div class="row">
+  <button type="button" class="btn btn-main" id="c-next"></button>
+  <button type="button" class="btn btn-ghost" id="c-send"></button>
+  <button type="button" class="btn btn-ghost" id="c-again"></button>
+  <button type="button" class="btn btn-ghost" id="c-back"></button>
+ </div>
+ <div class="lr-box" id="c-fb" hidden><label for="c-fbt" id="l-c-fbt"></label><textarea id="c-fbt" readonly rows="3"></textarea></div>
+ <p class="lr-banner lr-banner--on" id="limit3"></p>
+</section>
+</div>
+<p class="lr-sr" id="live" aria-live="assertive"></p>
+<div class="lr-toast" id="toast" role="status" hidden></div>
+</body>
+</html>
