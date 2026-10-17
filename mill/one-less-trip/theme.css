@@ -18,7 +18,7 @@
   --olt-ticket:#FFFDF6;       /* ticket stock */
   --olt-ticket-edge:#E6E1D2;
   --olt-ink:#1D2321;          /* ink */
-  --olt-mute:#5B655F;
+  --olt-mute:#4C5550;          /* QA all9 W-6: was #5B655F (3.72:1 on the counter speckle #C3CEBF); now 4.74:1 on the worst speck pixel */
   --olt-divider:#B9C2BD;      /* divider bar plastic */
   --olt-stop-1:#E4572E;       /* stop bands, assigned in first-seen order */
   --olt-stop-2:#2E86AB;
