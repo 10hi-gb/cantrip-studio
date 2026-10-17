@@ -111,3 +111,32 @@ body{overflow-wrap:break-word}
  .qgrid .patch .d{flex-shrink:0}
  .qgrid .patch .need,.qgrid .patch .who{min-width:0;max-width:100%}
 }
+/* QA local-cde64e3 C11: every text colour at least 4.5:1 against the rendered pixels under it, pattern included (theme.css stays verbatim;
+   these override it). Dinner fill darkened and its dots softened; Ride a shade darker with softer stripes; the double's second fabric
+   darkened to stay distinct; muted grey darkened for the header, footer and labels on the page ground; tally separators use it too. */
+:root{--meal:#A14832;--ride:#43659A;--muted:#5E5648}
+.patch.meal{background-image:radial-gradient(rgba(255,255,255,.10) 18%,transparent 20%)}
+.patch.ride{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.08) 0 2px,transparent 2px 7px)}
+.patch.dbl{background:linear-gradient(135deg,var(--meal) 0 50%,#74301F 50% 100%)}
+.cr-sw--double{background:#74301F}
+.cr-sep{color:var(--muted)}
+/* QA local-cde64e3 C12: a helper-card button grows no wider than its card; a long one-word name wraps inside it (C8 pattern: min-width:0 +
+   break-word, mid-word only when the word can't fit on its own line). */
+.btnrow .btn{min-width:0;max-width:100%;overflow-wrap:break-word;word-break:normal;white-space:normal;line-height:1.2}
+/* QA local-cde64e3 C14: the check's two columns stack at every width, so a week square at 1280/1440 is wide enough for a quoted 10-grapheme
+   name on one line (app.js fitNames steps the size down, never under 10px). The tags, pocket and per-helper list follow below the quilt. */
+.cols.rev.cr-check{grid-template-columns:minmax(0,1fr)}
+/* ...and its text keeps clear of the dashed stitching (inset 4–5px + 2px) so no glyph sits on a stitch (C11 measured per glyph pixel) */
+@media (min-width:561px){.qgrid .patch{padding:9px 9px}}
+/* QA local-cde64e3 C13: a long sheet (15–28 days) keeps its closing lines with the table and fits one Letter page even with every name at the
+   cap in the widest letters: tighter print spacing, and the stamp + "Plans can change" note never start a page on their own. */
+@media print{
+ .sheet.is-long h2{font-size:22px}
+ .sheet.is-long .lede{margin:0 0 4px;font-size:14px}
+ .sheet.is-long td{padding:1px 6px}
+ .sheet.is-long table,.sheet.is-long td.day{font-size:12px;line-height:1.15}
+ .sheet.is-long .stamp{font-size:12px;margin-top:3px;padding-top:3px}
+ .sheet.is-long #sheet-note{font-size:12px;margin:2px 0 0}
+ #sheet-t tr:last-child,#stamp-4{break-after:avoid;page-break-after:avoid}
+ #stamp-4,#sheet-note{break-before:avoid;page-break-before:avoid;break-inside:avoid}
+}

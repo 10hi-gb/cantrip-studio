@@ -193,9 +193,9 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
           if (r.width && (r.left < c.left - 1 || r.right > c.right + 1 || r.top < c.top - 1 || r.bottom > c.bottom + 1)) out.clipped.push(tag + ' text outside ' + (cl ? cl.className : 'patch')); }
         const er = e.getBoundingClientRect(); if (er.left < pr.left - .5 || er.right > pr.right + .5 || er.top < pr.top - .5 || er.bottom > pr.bottom + .5) out.outside.push(tag);
         if (e.matches('.d,.wd')) continue; const map = [], tw = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) for (let i = 0; i < n.data.length; i++) map.push([n, i]);
-        const text = map.map(([n, i]) => n.data[i]).join(''), rg = (a, b) => { const r = document.createRange(); r.setStart(map[a][0], map[a][1]); r.setEnd(map[b - 1][0], map[b - 1][1] + 1); return r; }, box = e.clientWidth;
+        const text = map.map(([n, i]) => n.data[i]).join(''), rg = (a, b) => { const r = document.createRange(); r.setStart(map[a][0], map[a][1]); r.setEnd(map[b - 1][0], map[b - 1][1] + 1); return r; }, box = e.getBoundingClientRect().width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight); // exact box, not the rounded clientWidth
         const re = /[^\s-]+-?|-/g; let m; while ((m = re.exec(text))) { const rs = [...rg(m.index, m.index + m[0].length).getClientRects()].filter(r => r.width > 0), tops = new Set(rs.map(r => Math.round(r.top)));
-          if (tops.size > 1) { const w = rs.reduce((x, r) => x + r.width, 0); if (w <= box + .5) out.midword.push({ t: m[0], w: Math.round(w), box, cls: e.className }); } }
+          if (tops.size > 1) { const w = rs.reduce((x, r) => x + r.width, 0); if (w <= box + .05) out.midword.push({ t: m[0], w: Math.round(w * 100) / 100, box: Math.round(box * 100) / 100, cls: e.className }); } }
         for (let i = 0; i < text.length; i++) if (text[i] === '\u201D') { const q = rg(i, i + 1).getClientRects()[0], pv = i ? rg(i - 1, i).getClientRects()[0] : null; if (!pv || Math.round(pv.top) !== Math.round(q.top)) out.loneQuote.push(text); } } }
     out.ok = out.patches > 0 && !out.clipped.length && !out.outside.length && !out.small.length && !out.midword.length && !out.loneQuote.length; return out; });
   {
@@ -364,5 +364,99 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     ck('query ruling: received link + ?q=<marker>, normal path: opens; marker nowhere; links generated onward carry no query', rcv.opened && !rcv.mark && !rcv.genQ, rcv);
     ck('query ruling: 2,002-char total incl. ?q=<marker> (long path; ' + l2002.lenNoQ + ' without the query, so within 2,000): opens; marker nowhere; no query onward', l2002.len === 2002 && l2002.lenNoQ <= 2000 && l2002.opened && !l2002.mark && !l2002.genQ, l2002);
     ck('query ruling: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // ================= QA local-cde64e3 C11–C14 + PM 04:57/05:15 query strip =================
+  // C11: every visible text run has at least 4.5:1 against the rendered pixels under its glyphs (pattern, stripes, dots and stitching included):
+  // shot A as rendered, shot B with all text made transparent (CSSOM; the CSP blocks a <style>); glyph pixels = where A and B differ; each one's
+  // background pixel in B is compared with the text colour. Organizer (all four needs, a double, gaps, not-needed) and recipient, 320/390/1280.
+  const pxContrast = async (p) => {
+    const items = await p.evaluate(() => { const out = [], sx = scrollX, sy = scrollY, wk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = wk.nextNode(); n; n = wk.nextNode()) { if (!n.nodeValue.trim()) continue; const e = n.parentElement; if (!e || e.closest('script,style,noscript,option,select,textarea,[hidden]')) continue;
+        const cs = getComputedStyle(e); if (cs.visibility !== 'visible') continue; const m = /rgba?\(([\d.]+), ([\d.]+), ([\d.]+)(?:, ([\d.]+))?\)/.exec(cs.color); if (!m || (m[4] != null && +m[4] < 0.99)) continue;
+        const rg = document.createRange(); rg.selectNodeContents(n); const rs = [...rg.getClientRects()].filter(r => r.width > 2 && r.height > 4).map(r => [r.left + sx, r.top + sy, r.right + sx, r.bottom + sy]); if (!rs.length) continue;
+        out.push({ t: n.nodeValue.trim().slice(0, 40), cls: String(e.className || e.tagName).slice(0, 30), c: [+m[1], +m[2], +m[3]], rs }); }
+      return out; });
+    const a64 = await p.screenshot({ fullPage: true, encoding: 'base64' });
+    await p.evaluate(() => { window.__pxc = []; document.querySelectorAll('*').forEach(e => { if (!e.style) return; window.__pxc.push([e, e.style.getPropertyValue('color'), e.style.getPropertyPriority('color')]);
+      for (const [k, v] of [['color', 'transparent'], ['-webkit-text-fill-color', 'transparent'], ['text-shadow', 'none'], ['caret-color', 'transparent'], ['animation', 'none']]) e.style.setProperty(k, v, 'important'); }); });
+    await sleep(120); const b64 = await p.screenshot({ fullPage: true, encoding: 'base64' });
+    await p.evaluate(() => { for (const [e, c, cp] of window.__pxc) { ['-webkit-text-fill-color', 'text-shadow', 'caret-color', 'animation'].forEach(k => e.style.removeProperty(k)); c ? e.style.setProperty('color', c, cp) : e.style.removeProperty('color'); } delete window.__pxc; });
+    return p.evaluate(async (a64, b64, items) => {
+      const px = async s => { const img = new Image(); img.src = 'data:image/png;base64,' + s; await img.decode(); const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const g = cv.getContext('2d'); g.drawImage(img, 0, 0); return { w: cv.width, h: cv.height, D: g.getImageData(0, 0, cv.width, cv.height).data }; };
+      const B = await px(b64), A = (await px(a64)).D, D = B.D, lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }, L = (r, g, b) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+      const res = []; for (const it of items) { const lt = L(...it.c); let worst = 99, n = 0;
+        for (const [x0, y0, x1, y1] of it.rs) for (let y = Math.max(0, Math.floor(y0)); y < Math.min(B.h, Math.ceil(y1)); y++) for (let x = Math.max(0, Math.floor(x0)); x < Math.min(B.w, Math.ceil(x1)); x++) { const k = (y * B.w + x) * 4;
+          if (Math.abs(A[k] - D[k]) + Math.abs(A[k + 1] - D[k + 1]) + Math.abs(A[k + 2] - D[k + 2]) < 24) continue; const lb = L(D[k], D[k + 1], D[k + 2]), c = (Math.max(lt, lb) + 0.05) / (Math.min(lt, lb) + 0.05); n++; if (c < worst) worst = c; }
+        if (n) res.push({ t: it.t, cls: it.cls, worst: Math.round(worst * 100) / 100, n }); }
+      return res; }, a64, b64, items); };
+  { const s = await session(H, IP); const { p } = s; await p.evaluateOnNewDocument(clipStub);
+    const CT = { forName: 'Priya & Sam', org: 'Jess', first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', rule: 'every' }, { key: 'ride', rule: 'every' }, { key: 'walk', rule: 'weekdays' }, { key: 'other', rule: 'every', label: 'Meds' }],
+      lines: ['Mon 19 dinner Ana', 'Mon 19 ride Ben', 'Tue 20 walk Carla', 'Wed 21 meds Dev', 'Thu 22 dinner Ellie', 'Thu 22 dinner Fatima', 'Fri 23 ride Gus', 'Sat 24 dinner MWMWMWMWMW', 'Thu 30 dinner Ana', 'Mon 19 dinner and walk Ana'] };
+    for (const w of [320, 390, 1280]) { await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await form(p, CT); await check(p); await sleep(800);
+      const org = await pxContrast(p), obad = org.filter(x => x.worst < 4.5), seen = k => org.some(x => x.cls.includes(k));
+      ck(w + ' QA C11 organizer: every text run ≥ 4.5:1 against the rendered pixels under its glyphs (Dinner/Ride/Walk/Other squares, double, gaps, chips, header, footer, separators)', org.length > 200 && !obad.length && seen('need') && seen('mill-typed') && seen('chip') && seen('studio') && seen('privacy') && seen('cr-sep'), { n: org.length, bad: obad.slice(0, 12) });
+      await p.click('#b-link'); await sleep(200); const lk = await p.$eval('#link', e => e.value); await p.goto('about:blank'); await p.goto(lk, { waitUntil: 'load' }); await sleep(700);
+      const rc = await pxContrast(p), rbad = rc.filter(x => x.worst < 4.5);
+      ck(w + ' QA C11 recipient sheet: every text run ≥ 4.5:1 against the rendered pixels under its glyphs', rc.length > 20 && !rbad.length && await p.evaluate(() => !document.getElementById('recv').hidden), { n: rc.length, bad: rbad.slice(0, 12) }); }
+    ck('QA C11: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // C12: the "Copy the message for “<name>”" button wraps a long one-word name inside its card (min-width:0 + break-word, the C8 pattern):
+  // 305/320/390, 26/36/40-letter plain names and wide-letter names; document scrollWidth ≤ innerWidth, the button inside its card, its label inside the button.
+  { const s = await session(H, IP); const { p } = s; await p.evaluateOnNewDocument(clipStub); const AZ = 'Abcdefghijklmnopqrstuvwxyzabcdefghijklmn', out = [];
+    const NAMES = [AZ.slice(0, 26), AZ.slice(0, 36), AZ, 'M'.repeat(16), 'M'.repeat(20), 'W'.repeat(24), 'MWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMW'];
+    for (const w of [305, 320, 390]) { await p.setViewport({ width: w, height: 900 }); for (const nm of NAMES) { await p.goto(BASE, { waitUntil: 'load' }); await sleep(120);
+      await form(p, { forName: 'Q', org: 'Jo', first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', rule: 'every' }], lines: ['Mon 19 dinner ' + nm] }); await check(p);
+      const r = await p.evaluate(nm => { const b = [...document.querySelectorAll('#cards .hcard button')].find(x => x.textContent.includes(nm)), c = b && b.closest('.hcard'), bb = b && b.getBoundingClientRect(), cb = c && c.getBoundingClientRect();
+        return { found: !!b, sw: document.documentElement.scrollWidth, iw: innerWidth, inCard: !!b && bb.left >= cb.left - 0.5 && bb.right <= cb.right + 0.5, label: !!b && b.scrollWidth <= b.clientWidth + 1, lines: b ? Math.round(bb.height / parseFloat(getComputedStyle(b).lineHeight)) : 0 }; }, nm);
+      out.push(Object.assign({ w, len: nm.length, nm: nm.slice(0, 6) }, r)); } }
+    ck('QA C12: copy-message button wraps long one-word names in its card at 305/320/390 (26/36/40 plain, M×16/20, W×24, MW×20): no sideways scroll, button inside card, label inside button', out.length === 21 && out.every(x => x.found && x.sw <= x.iw && x.inCard && x.label), out.filter(x => !(x.found && x.sw <= x.iw && x.inCard && x.label)));
+    ck('QA C12: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // C13: QA's max organizer plan in the widest letters (set A: who-for W×40, organizer W×24, Oct 1–28, four needs every day, 60 lines) prints on ONE
+  // Letter page, closing "Plans can change…" line included; and set B (hyphens, emoji/flags/ZWJ, RTL, CJK) too.
+  { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: 1280, height: 900 }); const res = {};
+    const SETS = { A: { for: 'W'.repeat(40), org: 'W'.repeat(24), other: 'MWMWMWMWMWMWMWMW', names: ['W'.repeat(16), 'Supercalifragilisticexpialidociousnessxy', 'Wolfeschlegelsteinhausen', 'WWWWWWWWWWWWWWWW WWWWWWWWWWWWWWWW', 'M'.repeat(40), 'Wolfeschlegelsteinhausen Wolfeschlegel', 'WMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWM'] },
+      B: { for: 'Featherstonehaugh-Smythe-Montgomery-Jo', org: 'محمد عبد الرحمن', other: 'Groceries-Pharm1', names: ['Featherstonehaugh-Smythe-Montgomery-Jo', 'Anne-Marie Sophia-Louise de la Croix', '🇺🇦🇯🇵🇧🇷🇮🇳🇳🇬🇲🇽 Ana', '👩‍👩‍👧‍👦👨‍👨‍👦 Familia', 'محمد عبد الرحمن الفاروق', 'שרה בת אברהם כהן', 'Ana محمد Ben', '王小明李华张伟', 'Zoë Ångström-Øberg', '😀'.repeat(20)] } };
+    const plan = n => { const P = []; for (let d = 1; d <= 28; d++) P.push(`10/${d} dinner ${n[d % n.length]}`); for (let d = 1; d <= 14; d++) P.push(`10/${d} ride ${n[(d + 3) % n.length]}`); for (let d = 15; d <= 28; d++) P.push(`10/${d} walk ${n[(d + 5) % n.length]}`); for (let d = 1; d <= 4; d++) P.push(`10/${d} dinner ${n[(d + 1) % n.length]}`); return P; };
+    for (const [k, S] of Object.entries(SETS)) { await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+      await form(p, { forName: S.for, org: S.org, first: '2026-10-01', last: '2026-10-28', needs: [{ key: 'dinner', rule: 'every' }, { key: 'ride', rule: 'every' }, { key: 'walk', rule: 'every' }, { key: 'other', rule: 'every', label: S.other }], lines: plan(S.names) }); await check(p);
+      const pdf = await p.pdf({ format: 'letter', printBackground: true }), pages = pdfPages(pdf), txt = require('child_process').execFileSync('pdftotext', ['-', '-'], { input: pdf }).toString();
+      res[k] = { pages, rows: await p.$$eval('#sheet-t tr', r => r.length), note: /Plans can change/.test(txt), stamp: /Plan checked/.test(txt) }; }
+    ck('QA C13: max plan, widest letters (set A) and set B: the 28-day organizer sheet prints on one Letter page with its stamp and "Plans can change…" line', res.A.pages === 1 && res.B.pages === 1 && res.A.rows === 28 && res.A.note && res.B.note && res.A.stamp && res.B.stamp, res);
+    await s.b.close(); }
+  // C14: at 1280/1440 a quoted name of up to 10 graphemes stays on one line in every square type (Dinner, Ride, Walk, Other, double), never under 10px,
+  // inside its square; wide letters (MWMWMWMWMW, WMWMWMWMWM), "Fatima", accented/emoji (ÅngströmØy, Renée😀Øyå). No sideways scroll.
+  { const s = await session(H, IP); const { p } = s; const NM = ['Fatima', 'MWMWMWMWMW', 'ÅngströmØy', 'WMWMWMWMWM', 'Renée😀Øyå'], out = {};
+    const days = ['Mon 19', 'Tue 20', 'Wed 21', 'Thu 22', 'Fri 23', 'Sat 24', 'Sun 25'], lines = [];
+    days.forEach((d, i) => { lines.push(d + ' dinner ' + NM[i % 5], d + ' ride ' + NM[(i + 1) % 5], d + ' walk ' + NM[(i + 2) % 5], d + ' meds ' + NM[(i + 3) % 5]); });
+    lines.push('Mon 19 dinner WMWMWMWMWM', 'Tue 20 ride Fatima', 'Wed 21 meds MWMWMWMWMW'); // doubles: two names in one square
+    for (const w of [1280, 1440]) { await p.setViewport({ width: w, height: 1000 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+      await form(p, { forName: 'Priya', org: 'Jess', first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', rule: 'every' }, { key: 'ride', rule: 'every' }, { key: 'walk', rule: 'every' }, { key: 'other', rule: 'every', label: 'Meds' }], lines }); await check(p); await sleep(300);
+      out[w] = await p.evaluate(() => { const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' }), r = []; document.querySelectorAll('#quilts .patch .who .mill-typed').forEach(e => { const pt = e.closest('.patch'), cs = getComputedStyle(pt), rg = document.createRange(); rg.selectNodeContents(e);
+          const tops = new Set([...rg.getClientRects()].filter(x => x.width > 0.5).map(x => Math.round(x.top))), pr = pt.getBoundingClientRect(), er = rg.getBoundingClientRect();
+          r.push({ type: pt.className.replace(/patch |new/g, '').trim(), t: e.textContent, g: [...seg.segment(e.textContent)].length - 2, lines: tops.size, fs: parseFloat(getComputedStyle(e).fontSize), inside: er.left >= pr.left + parseFloat(cs.paddingLeft) - 0.5 && er.right <= pr.right - parseFloat(cs.paddingRight) + 0.5 }); });
+        return { r, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }; }); }
+    const all = [1280, 1440].flatMap(w => out[w].r.map(x => Object.assign({ w }, x))), types = new Set(all.map(x => x.type)), bad = all.filter(x => x.g <= 10 && !(x.lines === 1 && x.fs >= 10 && x.inside));
+    ck('QA C14: 1280/1440 week squares: every quoted name of ≤10 graphemes on one line, ≥10px, inside its square, in every square type (Dinner, Ride, Walk, Other, double); no sideways scroll', all.length >= 60 && !bad.length && ['taken meal', 'taken ride', 'taken walk', 'taken other', 'dbl'].every(t => types.has(t)) && [1280, 1440].every(w => out[w].sw <= out[w].cw) && all.some(x => /MWMW/.test(x.t)) && all.some(x => /😀/.test(x.t)),
+      { n: all.length, types: [...types], bad: bad.slice(0, 10), sw: [out[1280].sw, out[1440].sw] });
+    ck('QA C14: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // PM 04:57 / 05:15 query strip: load and hashchange leave path + #fragment, edit / Edit lines / reset / Make my own rota leave the path only; a ?query never
+  // survives a step. For each ?q= (short; HTML/script with a visitor name; a 2,100-char pad): location.search is '', the marker is not in location.href or
+  // the page text, location.hash is exactly as expected, and the made link carries no '?'.
+  for (const [QN, QQ] of [['short', '?q=Qzcr57'], ['html+script with a visitor name', '?q=' + encodeURIComponent('<script>alert("Ana")</script><b onclick=x>Ana Qzcr57</b>')], ['2,100-char pad', '?q=Qzcr57' + 'p'.repeat(2100)]]) {
+    const QM = 'Qzcr57', s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 }); await p.evaluateOnNewDocument(clipStub);
+    const steps = [], at = async (step, did, exp) => { const l = await p.evaluate(M => ({ search: location.search, hash: location.hash, mark: location.href.includes(M) || document.body.innerText.includes(M) }), QM); steps.push(Object.assign({ step, did: did !== false, exp, hashOk: l.hash === exp }, l)); };
+    const open = async url => { await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(250); };
+    await open(BASE + QQ); await at('load (organizer)', true, '');
+    await form(p, Object.assign({}, JESS, { lines: [] })); await p.$eval('#f-plan', (e, v) => { e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }, PLAN.join('\n')); await at('edit', true, '');
+    await check(p); await at('check', await p.evaluate(() => document.getElementById('s2').classList.contains('on')), '');
+    await p.click('#b-link'); await sleep(200); const lk = await p.$eval('#link', e => e.value), F = (lk.match(/#.*$/) || [''])[0]; await at('make link', /#cr2\./.test(lk) && !lk.includes('?'), '');
+    await p.evaluate(Q => history.replaceState(null, '', location.pathname + Q), QQ); await p.click('#b-edit'); await sleep(100); await at('Edit lines (query put back first)', true, '');
+    await p.evaluate(Q => history.replaceState(null, '', location.pathname + Q), QQ); await typeInto(p, '#f-org', 'Jessie'); await at('typing in the form (query put back first)', true, '');
+    await p.evaluate(Q => history.replaceState(null, '', location.pathname + Q), QQ); await p.click('#b-reset'); await sleep(200); await at('reset (query put back first)', await p.$eval('#f-plan', e => e.value === ''), '');
+    await open(BASE + QQ + F); await at('load received link', await p.evaluate(() => !document.getElementById('recv').hidden), F);
+    const F2 = F.replace(/\.[^.]*$/, '.x'); await p.evaluate((Q, f) => { history.replaceState(null, '', location.pathname + Q + location.hash); location.hash = f; }, QQ, F2); await sleep(250); await at('hashchange (damaged link, query put back first)', await p.evaluate(() => !document.getElementById('bad').hidden), F2);
+    await p.evaluate((Q, f) => { history.replaceState(null, '', location.pathname + Q + location.hash); location.hash = f; }, QQ, F); await sleep(250); await at('hashchange (valid link, query put back first)', await p.evaluate(() => !document.getElementById('recv').hidden), F);
+    await p.evaluate(Q => history.replaceState(null, '', location.pathname + Q + location.hash), QQ); await p.click('#own'); await sleep(200); await at('Make my own rota (query put back first)', await p.evaluate(() => document.getElementById('recv').hidden && document.getElementById('s1').classList.contains('on')), '');
+    ck('PM 04:57/05:15 query strip (' + QN + '): ' + steps.map(x => x.step).join(' -> ') + ': every step happened; location.search empty, no marker in location.href or page text, hash = path+#fragment on load/hashchange and none after edit/reset/make-own',
+      steps.length === 11 && steps.every(x => x.did && x.search === '' && !x.mark && x.hashOk), steps.map(x => Object.assign({}, x, { hash: x.hash.slice(0, 40), exp: x.exp.slice(0, 40) })));
+    ck('PM 04:57/05:15 query strip (' + QN + '): no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })();
