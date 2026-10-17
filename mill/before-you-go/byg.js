@@ -41,15 +41,12 @@
     return q;
   }
   function optionalQuestions(st, C) { return OPTIONAL.filter(function (k) { return status(st, k) !== 'confirmed'; }).map(function (k) { return { key: k, text: C.optionalQuestions[k], kind: 'optional' }; }); }
-  // D8: a Call/Text target only for text that is clearly a phone number: a leading + with 8-15 digits, or groups split by
-  // common separators (555-0134, 412-555-0100, (415) 555-0134, 412.555.0100). Never after '#', never a date.
-  var PHONE = [/(?:^|[\s:;,(])(\+\d[\d ().-]{6,18}\d)(?=$|[\s,;.)])/, /(?:^|[\s:;,])((?:\(\d{3}\)\s?|\d{3}[ .-])\d{3}[ .-]\d{4})(?=$|[\s,;.)])/, /(?:^|[\s:;,])(\d{3}-\d{4})(?=$|[\s,;.)])/];
+  // N4 (QA local-652d0e0, Joshua): Call/Text only when the field is basically just a phone number: digits, spaces and + ( ) - .
+  // with 7-15 digits and no letters. "Lee 555-0134", "Room 101-2020" and "Gate code 555-1234" give no button.
   function phone(text) {
-    var s = ' ' + String(text || '') + ' ';
-    for (var i = 0; i < PHONE.length; i++) { var m = PHONE[i].exec(s); if (!m) continue; var num = m[1].trim(), d = num.replace(/\D/g, '');
-      if (s.charAt(m.index + m[0].indexOf(m[1]) - 1) === '#') continue; if (/^\d{4}-\d{2}-\d{2}$/.test(num)) continue;
-      if (d.length >= 7 && d.length <= 15) return num; }
-    return null;
+    var num = M.strip(String(text || '')); if (!num || !/^[\d\s+().-]+$/.test(num)) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(num)) return null; if (num.indexOf('+') > 0) return null;
+    var d = num.replace(/\D/g, ''); return d.length >= 7 && d.length <= 15 ? num : null;
   }
   function telHref(num) { return 'tel:' + num.replace(/[^\d+]/g, ''); }
   function smsHref(num) { return 'sms:' + num.replace(/[^\d+]/g, ''); }

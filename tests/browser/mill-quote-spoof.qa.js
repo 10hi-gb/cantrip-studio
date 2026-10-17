@@ -7,8 +7,7 @@ const { typedAudit, W, sleep, session, result, errsOf } = require('./mill-common
 const M = (slug) => `${SCHEME}://${H}/mill/${slug}/`;
 const SP = 'Milk\u201D from \u201CYour bank', G = '\u00ABBank\u00BB \u201Ex\u201F';
 const CASES = [
-  { slug: 'before-you-go', make: (SP, G) => { const st = BYG.blank(); st.k = SP; st.by = 'Jo'; st.f.place.v = G; st.f.bring.a = SP; st.f.bring.c = true; st.o = [SP]; return BYG.encode(st); },
-    known: ['BYG N2 (queued next: own questions + own-copy pickup unquoted)', h => /^visible$|^aria-label@BUTTON$/.test(h.where) && h.seed.startsWith('Milk') && (/\nMilk” from “Your bank\n/.test(h.ctx) || /^raw quote marks shown \(spoofable\): Remove: /.test(h.ctx) || /Before You Go\n\nMilk/.test(h.ctx))] },
+  { slug: 'before-you-go', make: (SP, G) => { const st = BYG.blank(); st.k = SP; st.by = 'Jo'; st.f.place.v = G; st.f.bring.a = SP; st.f.bring.c = true; st.o = [SP]; return BYG.encode(st); } },
   { slug: 'one-less-trip', make: (SP, G) => MILL.pack('t', 1, { h: [G, 'Ben'], r: [[0, SP, '2', 'carton', 'Corner Co-op'], [1, 'Stamps', '1', 'book', G]], m: [] }) },
   { slug: 'the-same-hour', make: (SP, G) => TSH.encode({ w: '2026-10-19', z: 'America/New_York', n: '60', u: 'min', t: SP, p: [{ id: 1, n: G, iv: [{ id: 3, d: 0, s: '18:00', e: '20:00' }] }, { id: 2, n: 'Sol', iv: [{ id: 4, d: 0, s: '19:00', e: '21:00' }] }], next: 5 }),
     known: ['TSH D3 (queued: names and title unquoted in 187 of 189 places)', h => true] },

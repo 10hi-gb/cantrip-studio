@@ -1,7 +1,7 @@
 // node tests/browser/mill-byg.qa.js <host[:port]> <ip> [scheme] — Before You Go @320/390/1280 (ENGINEER SELF-CHECK)
 // QA 83a2ebcd D1–D10 + PM 10:33 scope + Writer QA-83 strings (exact). Rendered visibility via reallyHidden (computed style/box + a11y tree).
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { typedAudit, sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/before-you-go/copy.js', 'utf8') + ';COPY');
 const M = require('../../mill/shared/core.js');
 const BASE = `${SCHEME}://${H}/mill/before-you-go/`;
@@ -24,12 +24,12 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     const ph = await p.evaluate(() => ({ place: document.getElementById('f-place').placeholder, contact: document.getElementById('f-contact').placeholder, instructions: document.getElementById('f-instructions').placeholder, bring: document.getElementById('f-bring').placeholder, by: document.getElementById('by').placeholder, hints: [...document.querySelectorAll('.byg-hintline')].filter(e => e.textContent === COPY.privateDetailsHint && e.getClientRects().length).length, cnt: document.getElementById('c-place').textContent }));
     ck(w + ' D10: neutral placeholders (Writer), privateDetailsHint shown once, limit counter shown', ph.place === 'The pickup spot' && ph.contact === 'Who to ask' && ph.instructions === 'What to do when you get there' && ph.bring === 'What to bring' && ph.by === 'First name' && ph.hints === 1 && ph.cnt === '0/120' && !/\d{3}-\d{4}|Maria|Pine/.test(JSON.stringify(ph)), ph);
     const miss = await tabReach(p, ['pickup', 'f-place', 'a-place', 'ok-place', 'ns-place', 'f-window-d', 'f-window-t', 'f-contact', 'f-bring', 'f-id', 'own-in', 'own-add', 'by', 'b-link', 'b-share', 'b-text', 'b-print', 'b-reset']); ck(w + ' keyboard reach', !miss.length, miss);
-    await typeInto(p, '#pickup', 'Used bike'); await typeInto(p, '#f-place', 'Corner of 5th and Main, by the blue mailbox'); await setVal(p, 'f-window-d', '2026-10-24'); await typeInto(p, '#f-contact', 'Message Sam on Marketplace or call 412-555-0187');
+    await typeInto(p, '#pickup', 'Used bike'); await typeInto(p, '#f-place', 'Corner of 5th and Main, by the blue mailbox'); await setVal(p, 'f-window-d', '2026-10-24'); await typeInto(p, '#f-contact', '412-555-0187');
     t = await state(p);
     ck(w + ' typed facts: chip "Your note · not confirmed", someSaidNote, still 5 open; date-specific question', t.chips.place === 'Your note · not confirmed' && t.chips.window === 'Your note · not confirmed' && t.n === '5' && t.s === 'Still open: Place, When, Contact, Instructions, Bring. 3 details are your notes, not confirmed.' && t.qs.includes('What time can I come on Sat Oct 24 2026?'), t);
     ck(w + ' call/text from a clear phone number, labelled with it', t.call && t.sms && t.callTxt === 'Call 412-555-0187' && t.href === 'tel:4125550187', t);
-    for (const [v, want] of [['Listing #123456789 on Marketplace', false], ['Sat 2026-10-24', false], ['5550134 or 5550199', false], ['Text Maria, 555-0134', true]]) { await typeInto(p, '#f-contact', v); const x = await state(p); ck(w + ' D8 Call/Text for "' + v + '": ' + (want ? 'shown' : 'none'), x.call === want && x.sms === want && (want || (await reallyHidden(p, ['#call', '#sms'])).ok), x.callTxt); }
-    await typeInto(p, '#f-contact', 'Message Sam on Marketplace or call 412-555-0187');
+    for (const [v, want] of [['Listing #123456789 on Marketplace', false], ['Sat 2026-10-24', false], ['5550134 or 5550199', false], ['Text Maria, 555-0134', false], ['Room 101-2020', false], ['Gate code 555-1234', false], ['555-0134', true], ['(415) 555-0134', true]]) { await typeInto(p, '#f-contact', v); const x = await state(p); ck(w + ' D8 Call/Text for "' + v + '": ' + (want ? 'shown' : 'none'), x.call === want && x.sms === want && (want || (await reallyHidden(p, ['#call', '#sms'])).ok), x.callTxt); }
+    await typeInto(p, '#f-contact', '412-555-0187');
     // time without date -> windowNeedsDate
     await setVal(p, 'f-window-d', ''); await setVal(p, 'f-window-t', '14:00'); let we = await p.$eval('#e-window', e => e.textContent); await setVal(p, 'f-window-t', ''); await setVal(p, 'f-window-d', '2026-10-24');
     ck(w + ' When needs a real date (windowNeedsDate)', we === 'Add the date, not just a weekday or a time.', we);
@@ -49,11 +49,11 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     ck(w + ' D9: over-limit fields say "Up to {max} characters. {n} over."; Copy link names the field (tooLongToShare); nothing cleared; never "Something broke"', pe === 'Up to 60 characters. 1 over.' && be === 'Up to 24 characters. 1 over.' && tl === 'Too long for a link: Your name (optional). Shorten it and try again. Nothing was cleared.' && focus === 'by' && kept.startsWith('Corner') && !/Something broke/.test(tl + pe + be), { pe, be, tl, focus });
     await typeInto(p, '#by', 'Jo');
     for (const q of ['Q2?', 'Q3?', 'Q4?', 'Q5?', 'Q6?']) { await typeInto(p, '#own-in', q); await p.keyboard.press('Enter'); await sleep(30); }
-    const oe = await p.$eval('#own-e', e => e.textContent); const nq = await p.evaluate(() => [...document.querySelectorAll('#script li .t')].filter(e => /^Q\d\?$|lock/.test(e.textContent)).length);
+    const oe = await p.$eval('#own-e', e => e.textContent); const nq = await p.evaluate(() => [...document.querySelectorAll('#script li .t')].filter(e => /^“Q\d\?”$|lock/.test(e.textContent)).length);
     ck(w + ' 6th own question: ownLimitReached, 5 kept', oe === 'Up to 5 questions.' && nq === 5, { oe, nq });
     for (let i = 0; i < 4; i++) { await p.evaluate(() => [...document.querySelectorAll('#script .byg-rm')].pop().click()); await sleep(20); }
     t = await state(p);
-    ck(w + ' copy text: Writer templates exactly', t.text.split('\n').slice(0, 13).join('\n') === ['Pickup notes for “Used bike”', 'Notes by: “Jo”', '', 'Not set: 3 essentials still open. Still open: When, Contact, Instructions.', '', 'Place: “Corner of 5th and Main, by the blue mailbox” · Confirmed', 'Answer: “Side gate, ring twice”', 'When: “Sat Oct 24 2026” · Your note, not confirmed', 'Contact: “Message Sam on Marketplace or call 412-555-0187” · Your note, not confirmed', 'Instructions: Not sure', 'Bring: “Cash, $80” · Confirmed', '', 'Ask before you go:'].join('\n') && t.text.includes('• “Is the lock included?”') && t.text.endsWith(C.textFooter), t.text);
+    ck(w + ' copy text: Writer templates exactly', t.text.split('\n').slice(0, 13).join('\n') === ['Pickup notes for “Used bike”', 'Notes by: “Jo”', '', 'Not set: 3 essentials still open. Still open: When, Contact, Instructions.', '', 'Place: “Corner of 5th and Main, by the blue mailbox” · Confirmed', 'Answer: “Side gate, ring twice”', 'When: “Sat Oct 24 2026” · Your note, not confirmed', 'Contact: “412-555-0187” · Your note, not confirmed', 'Instructions: Not sure', 'Bring: “Cash, $80” · Confirmed', '', 'Ask before you go:'].join('\n') && t.text.includes('• “Is the lock included?”') && t.text.endsWith(C.textFooter), t.text);
     // link -> recipient
     await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(250);
     const url = await p.$eval('#link', e => e.value); ck(w + ' link made (#b2), <= 2000 chars, address bar untouched', /#b2\./.test(url) && url.length <= 2000 && (await p.evaluate(() => location.hash)) === '', url.length);
@@ -68,15 +68,16 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     const hid = await reallyHidden(q, ['#f-place', '#a-place', '#ok-place', '#un-place', '#pickup', '#by', '#own-in', '#b-reset', '#b-link', '#b-share', '#ns-place']);
     ck(w + ' recipient view is read-only in the DOM (no editable inputs, no enabled destructive/edit buttons) and those controls are not rendered or in the a11y tree', !dom.editable.length && !dom.destructive.length && hid.ok, { dom, hid: hid.ok ? 'ok' : hid });
     const lines = await q.evaluate(() => [...document.querySelectorAll('.byg-line')].filter(e => e.getClientRects().length).map(e => ({ t: e.textContent, clip: e.scrollWidth > e.clientWidth + 1 })));
-    ck(w + ' D7 recipient: unconfirmed values are full wrapping text ("As typed:" + quotes), nothing clipped', lines.some(l => l.t === 'As typed: “Sat Oct 24 2026”') && lines.some(l => l.t === 'As typed: “Message Sam on Marketplace or call 412-555-0187”') && lines.every(l => !l.clip), lines);
+    ck(w + ' D7 recipient: unconfirmed values are full wrapping text ("As typed:" + quotes), nothing clipped', lines.some(l => l.t === 'As typed: “Sat Oct 24 2026”') && lines.some(l => l.t === 'As typed: “412-555-0187”') && lines.every(l => !l.clip), lines);
     await q.emulateMediaType('print'); const pv = await q.evaluate(() => ({ lines: [...document.querySelectorAll('.byg-line')].filter(e => e.getClientRects().length).map(e => e.textContent), qs: [...document.querySelectorAll('#printq li')].filter(e => e.getClientRects().length).map(e => e.textContent), qh: document.getElementById('printq-h').getClientRects().length > 0 })); await q.emulateMediaType(null);
-    ck(w + ' D6 print: typed-but-unconfirmed values (labelled) and the Ask list incl. own question print', pv.lines.includes('As typed: “Message Sam on Marketplace or call 412-555-0187”') && pv.lines.includes('As typed: “Sat Oct 24 2026”') && pv.qh && pv.qs.some(x => x.startsWith('Is the lock included?')) && pv.qs.some(x => x.startsWith('Who do I contact')), pv);
+    ck(w + ' D6 print: typed-but-unconfirmed values (labelled) and the Ask list incl. own question print', pv.lines.includes('As typed: “412-555-0187”') && pv.lines.includes('As typed: “Sat Oct 24 2026”') && pv.qh && pv.qs.some(x => x.startsWith('“Is the lock included?”')) && pv.qs.some(x => x.startsWith('Who do I contact')), pv);
     // Make my own copy: empty name; recipient confirms one fact -> only that fact is "by you"
     await q.click('#own-copy'); await sleep(100);
     const byv = await q.$eval('#by', e => e.value); await setVal(q, 'a-window-d', '2026-10-24'); await setVal(q, 'a-window-t', '15:00'); await q.click('#ok-window'); await sleep(80);
     t = await state(q);
-    ck(w + ' D3 own copy: name field empty; recipient confirm changes only that fact; sender\'s confirmations keep their credit', byv === '' && t.by.window === 'Confirmed by you' && t.by.place === 'Marked confirmed by the sender: “Jo”' && t.by.bring === 'Marked confirmed by the sender: “Jo”' && t.chips.contact === "Sender's note · not confirmed", t.by);
-    ck(w + ' D3 own-copy export keeps per-fact attribution', t.text.includes('When: “Sat Oct 24 2026” · Sender\'s note, not confirmed') === false && t.text.includes('When: “Sat Oct 24 2026” · Confirmed') && t.text.includes('Answer: “Sat Oct 24 2026, 3 PM”') && t.text.includes('Place: “Side gate, ring twice” · Confirmed by the sender') && t.text.includes("Contact: “Message Sam on Marketplace or call 412-555-0187” · Sender's note, not confirmed") && !t.text.includes('Notes by: “Jo”'), t.text);
+    const own = await q.evaluate(() => ({ body: document.body.innerText, what: document.getElementById('what').textContent }));
+    ck(w + ' N7 own copy: name field empty; every carried fact resets to "Your note · not confirmed" (nothing "Marked confirmed by the sender"); the recipient\'s own confirm is "Confirmed by you"', byv === '' && t.by.window === 'Confirmed by you' && t.by.place === '' && t.by.bring === '' && t.chips.place === 'Your note · not confirmed' && t.chips.bring === 'Your note · not confirmed' && t.chips.contact === 'Your note · not confirmed' && t.chips.instructions === 'Unknown' && !/by the sender|Sender's note/.test(own.body) && own.what === '“Used bike”', { by: t.by, chips: t.chips, what: own.what });
+    ck(w + ' N7 own-copy export: carried facts are "Your note, not confirmed"; no sender credit; no "Notes by"', t.text.includes('When: “Sat Oct 24 2026” · Confirmed') && t.text.includes('Answer: “Sat Oct 24 2026, 3 PM”') && t.text.includes('Place: “Side gate, ring twice” · Your note, not confirmed') && t.text.includes('Contact: “412-555-0187” · Your note, not confirmed') && t.text.includes('Bring: “Cash, $80” · Your note, not confirmed') && !/confirmed by the sender|Sender's note|Notes by/i.test(t.text), t.text);
     // D1/D2 same tab: half-typed question + link box, then bad / old / empty links reset everything
     await typeInto(q, '#own-in', 'half typed'); await q.focus('#b-link'); await q.keyboard.press('Enter'); await sleep(150);
     const lb = await q.evaluate(() => !document.getElementById('linkbox').hidden && document.getElementById('link').value.length > 0);
@@ -112,6 +113,44 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     const r = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, wide: [...document.querySelectorAll('.byg-fact')].filter(e => e.getBoundingClientRect().right > document.documentElement.clientWidth + 1).length, clip: [...document.querySelectorAll('.byg-line')].filter(e => e.getClientRects().length && e.scrollWidth > e.clientWidth + 1).length }));
     const ov = await textOverlap(p, '#kicker, #title, #what, #ready-h, #ready-s, .byg-chip, .byg-lab > span, .byg-lab > label, .byg-line, .byg-by');
     ck(w + ' long unbroken values on the recipient view: cards fit, full text wraps, no overlap', r.sw <= w && !r.wide && !r.clip && !ov.length, { r, ov }); await s.b.close(); }
+  // QA local-652d0e0 N2–N9 regressions (N1 readOnly: tests/browser/mill-recipient-a11y.qa.js; N4 phone rule: the D8 loop above)
+  for (const w of W) { const s = await session(H, IP); const { p, b } = s; await p.setViewport({ width: w, height: 900 });
+    await p.evaluateOnNewDocument(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); });
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const cap = await p.evaluate(() => BYG.CAP.place);
+    let r = await p.evaluate(() => { const c = document.getElementById('ac-place'), a = document.getElementById('a-place'); return { t: c.textContent, vis: c.getClientRects().length > 0, desc: a.getAttribute('aria-describedby') }; });
+    ck(w + ' N6: the answer limit shows up front (before typing) and is announced with the answer field', r.t === '0/' + cap && r.vis && r.desc.split(' ').includes('ac-place'), r);
+    const LONG = 'Zqx corner ' + 'behind the long brick building '.repeat(3);
+    await typeInto(p, '#pickup', 'Zqx bike'); await typeInto(p, '#f-place', LONG.slice(0, cap)); await typeInto(p, '#own-in', 'Zqx lock?'); await p.keyboard.press('Enter'); await sleep(60);
+    r = await p.evaluate(() => { const t = document.getElementById('f-place'); return { tag: t.tagName, sh: t.scrollHeight, ch: t.clientHeight, sw: document.documentElement.scrollWidth }; });
+    ck(w + ' N8: facts are auto-growing textareas; the full text is visible (no inner scroll), no sideways scroll', r.tag === 'TEXTAREA' && r.sh <= r.ch + 2 && r.ch > 30 && r.sw <= w, r);
+    await p.focus('#f-place'); await p.keyboard.press('Enter'); r = await p.$eval('#f-place', e => e.value.includes('\n')); ck(w + ' N8: Enter never adds a line break to a fact', !r, r);
+    const SEEDS = ['Zqx bike', 'Zqx lock?'];
+    let a = await typedAudit(p, SEEDS, { copied: await p.$eval('#text', e => e.value), print: await p.$eval('#printq', e => e.textContent) });
+    ck(w + ' N2 own view: pickup and typed questions quoted on screen, in aria (Remove), print list and copied text', a.ok && (await p.$eval('#what', e => e.textContent)) === '“Zqx bike”', a);
+    // N5: time without a date blocks Copy link, names why, focuses the date
+    await setVal(p, 'f-window-t', '15:00'); await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(150);
+    r = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, box: !document.getElementById('linkbox').hidden && !!document.getElementById('link').value, focus: document.activeElement.id, err: document.getElementById('e-window').textContent }));
+    ck(w + ' N5: a time without a date blocks Copy link (windowNeedsDate), never drops the time silently', r.toast === C.windowNeedsDate && !r.box && r.focus === 'f-window-d' && r.err === C.windowNeedsDate, r);
+    // N3: route reset clears the toast and its timer
+    await p.evaluate(() => { location.hash = 'b2.broken'; }); await sleep(200);
+    r = await p.evaluate(() => { const t = document.getElementById('toast'); return { text: t.textContent, hidden: t.hidden }; });
+    ck(w + ' N3: a hash change clears the toast', r.text !== C.windowNeedsDate && (r.hidden || !r.text), r);
+    // N9: print leaves out the empty date/time inputs
+    await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await typeInto(p, '#pickup', 'Zqx bike'); await setVal(p, 'f-window-d', '2026-10-24'); await sleep(50);
+    await p.emulateMediaType('print'); r = await p.evaluate(() => ['f-window-d', 'f-window-t', 'a-window-d', 'a-window-t'].map(id => document.getElementById(id).parentElement.getClientRects().length > 0)); await p.emulateMediaType(null);
+    ck(w + ' N9: print shows the filled date and leaves out empty date/time boxes', r[0] === true && r[1] === false && r[2] === false && r[3] === false, r);
+    // link -> recipient: N2 quoted; N7 own copy resets
+    await typeInto(p, '#f-place', 'Zqx corner'); await typeInto(p, '#own-in', 'Zqx lock?'); await p.keyboard.press('Enter'); await setVal(p, 'f-window-t', '15:00'); await typeInto(p, '#a-bring', 'Cash'); await p.click('#ok-bring'); await typeInto(p, '#by', 'Jo'); await sleep(50);
+    await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(200); const url = await p.$eval('#link', e => e.value);
+    const q = await b.newPage(); await q.setViewport({ width: w, height: 900 }); await q.goto(url, { waitUntil: 'load' }); await sleep(250);
+    a = await typedAudit(q, SEEDS.concat(['Zqx corner']), { copied: await q.$eval('#text', e => e.value), print: await q.$eval('#printq', e => e.textContent) });
+    ck(w + ' N2 received: pickup, place and typed question quoted (screen, aria, print, copied text)', a.ok, a);
+    await q.click('#own-copy'); await sleep(150);
+    r = await q.evaluate(() => ({ what: document.getElementById('what').textContent, body: document.body.innerText, by: document.getElementById('by').value }));
+    a = await typedAudit(q, SEEDS.concat(['Zqx corner']), { copied: await q.$eval('#text', e => e.value), print: await q.$eval('#printq', e => e.textContent) });
+    ck(w + ' N2+N7 own copy: pickup stays quoted; nothing "confirmed by the sender"; the sender name is not carried', r.what === '“Zqx bike”' && !/by the sender|Sender's note/.test(r.body) && r.by === '' && a.ok, { r: { what: r.what, by: r.by }, a });
+    ck(w + ' N2–N9 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await b.close(); }
   // QA N1 (same tab, all pieces): fill -> Copy link -> open it -> open a bad link: no stale validation errors
   for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
     const r = await sameTabBadLink(p, { errSel: '.byg-err, #own-e, #own-e2, #pickup-e, #by-e', bad: 'b2.broken',

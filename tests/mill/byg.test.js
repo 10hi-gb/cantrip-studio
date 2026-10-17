@@ -24,10 +24,10 @@ t('When is a specific date with an optional time; weekday-only or time-only refu
   s.f.window.v = '2026-10-24 14:30'; assert.equal(B.questions(s, C).find(q => q.key === 'window').text, C.questions.window); assert.equal(B.display(s, 'window'), 'Sat Oct 24 2026, 2:30 PM');
   assert.equal(B.encode(st({ f: { window: { v: 'Sat 10-12' } } })), null);
   assert.equal(B.datePassed(s, '2026-10-25'), true); assert.equal(B.datePassed(s, '2026-10-24'), false); });
-t('D8 phone: only clear numbers; never listing numbers, dates or bare digit runs', () => {
-  const ok = { 'Text Maria, 555-0134': '555-0134', 'Call 412-555-0100 to verify': '412-555-0100', 'Maria (415) 555-0134': '(415) 555-0134', '+44 20 7946 0958': '+44 20 7946 0958', 'call 412.555.0187': '412.555.0187' };
+t('D8 + QA N4 phone: Call/Text only when the field is basically just a number (7-15 digits, + ( ) - . and spaces, no letters)', () => {
+  const ok = { '555-0134': '555-0134', '412-555-0100': '412-555-0100', '(415) 555-0134': '(415) 555-0134', '+44 20 7946 0958': '+44 20 7946 0958', '412.555.0187': '412.555.0187', '  555 0134 ': '555 0134' };
   for (const k in ok) assert.equal(B.phone(k), ok[k], k);
-  for (const k of ['Listing #123456789 on Marketplace', 'Sat 2026-10-24', '5550134 or 5550199', 'Gate code 1234', 'maria@example.org', 'Order #412-555-0100', 'Maria', '']) assert.equal(B.phone(k), null, k);
+  for (const k of ['Room 101-2020', 'Gate code 555-1234', 'Text Maria, 555-0134', 'Call 412-555-0100 to verify', 'Listing #123456789 on Marketplace', 'Sat 2026-10-24', '2026-10-24', '5550134 or 5550199', 'Gate code 1234', 'maria@example.org', 'Order #412-555-0100', 'Maria', '', '123456', '1234567890123456', '555+0134']) assert.equal(B.phone(k), null, k);
   assert.equal(B.telHref('(415) 555-0134'), 'tel:4155550134'); assert.equal(B.smsHref('+44 20 7946 0958'), 'sms:+442079460958'); });
 t('attribution: decoded facts belong to the sender; a recipient confirm changes only that fact; re-encode keeps origins', () => {
   const s = st({ top: { k: 'Bike', by: 'Jo' }, f: { place: { v: 'Pine', a: 'Side gate', c: true }, contact: { v: 'Sam 412-555-0187' }, bring: { v: 'cash', ns: true } } });
