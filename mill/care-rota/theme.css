@@ -121,7 +121,7 @@ textarea.plan{min-height:300px;font:400 17px/1.5 ui-monospace,"Courier New",mono
 .pocket h4{font:800 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
 .readas{width:100%;border-collapse:collapse;font:400 16px/1.35 var(--sans)}
 .readas th{text-align:left;font:700 12px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:6px 6px;border-bottom:2px solid var(--ink)}
-.readas td{padding:7px 6px;border-bottom:1px dashed #C9BC9E;vertical-align:top;overflow-wrap:anywhere}
+.readas td{padding:7px 6px;border-bottom:1px dashed #C9BC9E;vertical-align:top;overflow-wrap:break-word;word-break:normal}
 .readas td.l{font:400 15px/1.35 ui-monospace,"Courier New",monospace}
 .readas .st{font:800 12px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;border-radius:999px;border:2px solid currentColor;white-space:nowrap;display:inline-block}
 .st.placed{color:#2D5A3A}.st.dup{color:#6A6152}.st.dbl{color:#9E2A1C}
