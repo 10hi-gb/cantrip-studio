@@ -187,12 +187,21 @@ window.MILL_HUB = {
   {
    "id": "P018",
    "name": "Left or Right (original scope)",
-   "status": "QUEUED, NOT BUILT",
-   "path": null,
+   "score": "7.05",
+   "wave": 3,
+   "path": "left-or-right/",
+   "sources": [
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pgern0r/"
+   ],
    "limits": [
-    "Not a communication aid.",
-    "A real switch and dwell accessibility check has not been done; synthetic tests don't count as that check."
-   ]
+    "A simple two-choice screen for people who know each other. It isn't a communication aid and doesn't replace one.",
+    "Real switch and dwell checks weren't done. Switch scanning and hold to choose haven't been tried with switch users, a real switch or switch interface, iOS Switch Control, Android Switch Access, a head pointer or a screen reader. Synthetic tests don't count as that check.",
+    "Secondhand source: the comment describes someone else's post about a game for a brother who can only turn his head left and right. The question tool is our idea.",
+    "Up to 6 questions, each with a left and a right answer (and an optional emoji). Answers chosen stay on the page for this visit only; nothing reports back. Send the answer back makes plain text to copy or send by hand.",
+    "A link carries the questions and the choosing method, never the answers; anyone with the link can read them."
+   ],
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview f9a48fa: unit 18; browser 240/240 at 320/390/1280 (synthetic keys and mouse only). Not QA, and not a switch or dwell check.",
+   "status": "No QA verdict, NOT READY"
   },
   {
    "id": "P017",
