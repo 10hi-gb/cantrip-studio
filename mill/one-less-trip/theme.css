@@ -1,0 +1,163 @@
+/* One Less Trip — "Checkout Belt & Stop Tickets" (P004). Direction theme, not production code.
+   A rubber checkout conveyor carries deli-style tear-off STOP TICKETS, one per stop, separated by
+   checkout divider bars. Items with no stop wait in the off-belt "set-aside tray".
+   Fonts are self-hosted OFL woff2 in fonts/. No remote assets, no storage. */
+@font-face{font-family:"Zilla Slab";src:url(fonts/zilla-slab-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Zilla Slab";src:url(fonts/zilla-slab-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Red Hat Text";src:url(fonts/red-hat-text-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Red Hat Text";src:url(fonts/red-hat-text-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Red Hat Text";src:url(fonts/red-hat-text-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Red Hat Mono";src:url(fonts/red-hat-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Red Hat Mono";src:url(fonts/red-hat-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+:root{
+  --olt-counter:#DCE4D8;      /* checkout counter laminate, sage */
+  --olt-speck:#C3CEBF;        /* laminate speckle */
+  --olt-belt:#2C2F2B;         /* rubber conveyor */
+  --olt-belt-rib:#383C37;     /* belt ribs */
+  --olt-roller:#9AA39E;       /* steel roller / belt edge */
+  --olt-ticket:#FFFDF6;       /* ticket stock */
+  --olt-ticket-edge:#E6E1D2;
+  --olt-ink:#1D2321;          /* ink */
+  --olt-mute:#5B655F;
+  --olt-divider:#B9C2BD;      /* divider bar plastic */
+  --olt-stop-1:#E4572E;       /* stop bands, assigned in first-seen order */
+  --olt-stop-2:#2E86AB;
+  --olt-stop-3:#5B8E3E;
+  --olt-stop-4:#C9A227;
+  --olt-stop-5:#9C4F96;
+  --olt-stop-6:#2F5D50;
+  --olt-unknown:#8B8F86;      /* unknown stop: grey + hatch, never a stop color */
+  --olt-tag:#F1EBDB;          /* owner/source tag stock */
+  --olt-alert:#B3261E;        /* invalid row */
+  --olt-alert-bg:#FBE7E4;
+  --olt-ok:#2F6B3A;
+  --olt-focus:#1F5FD1;
+  --olt-slab:"Zilla Slab",Rockwell,Georgia,serif;
+  --olt-sans:"Red Hat Text",system-ui,sans-serif;
+  --olt-mono:"Red Hat Mono",ui-monospace,monospace;
+  --olt-radius:4px;
+}
+.olt{margin:0;min-height:100dvh;color:var(--olt-ink);font:400 16px/1.45 var(--olt-sans);font-variant-numeric:tabular-nums;
+  background-color:var(--olt-counter);
+  background-image:radial-gradient(var(--olt-speck) 1px,transparent 1.4px),radial-gradient(var(--olt-speck) .8px,transparent 1.2px);
+  background-size:23px 19px,31px 27px;background-position:0 0,11px 7px}
+.olt *,.olt *::before,.olt *::after{box-sizing:border-box}
+.olt-page{max-width:1400px;margin:0 auto;padding:12px 16px 40px}
+.olt-strip{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font:500 11px/1.3 var(--olt-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--olt-mute)}
+.olt-draft{background:var(--olt-ink);color:var(--olt-ticket);padding:1px 6px;border-radius:2px}
+.olt-title{font:700 clamp(34px,6vw,64px)/.95 var(--olt-slab);margin:10px 0 4px;letter-spacing:-.01em}
+.olt-lede{margin:0 0 14px;max-width:52ch;color:var(--olt-ink)}
+.olt-grid{display:grid;gap:18px}
+@media(min-width:1000px){.olt-grid{grid-template-columns:minmax(330px,380px) minmax(0,1fr);gap:28px;align-items:start}}
+/* ---------- intake: source rows ---------- */
+.olt-intake{background:var(--olt-ticket);border:1px solid var(--olt-ticket-edge);border-radius:var(--olt-radius);padding:12px;box-shadow:0 1px 0 var(--olt-ticket-edge),0 10px 18px -16px rgba(0,0,0,.5)}
+.olt-h2{font:700 20px/1.1 var(--olt-slab);margin:0 0 2px}
+.olt-meta{font:400 12px/1.4 var(--olt-mono);color:var(--olt-mute);margin:0 0 8px}
+.olt-rows{list-style:none;margin:0 0 10px;padding:0;border-top:1px dashed var(--olt-ticket-edge)}
+.olt-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 8px;align-items:baseline;padding:5px 0;border-bottom:1px dashed var(--olt-ticket-edge);font-size:14px}
+.olt-row .olt-src{font:500 11px var(--olt-mono);color:var(--olt-mute)}
+.olt-row .olt-what{overflow-wrap:anywhere}
+.olt-row .olt-where{font:500 12px var(--olt-mono);color:var(--olt-mute);text-align:right;overflow-wrap:anywhere;max-width:15ch}
+.olt-row .olt-where.is-unknown{color:var(--olt-unknown);font-style:italic}
+.olt-row.is-invalid{background:var(--olt-alert-bg);box-shadow:inset 3px 0 var(--olt-alert);padding-left:6px}
+.olt-row .olt-err{grid-column:2/-1;color:var(--olt-alert);font-size:13px;font-weight:500}
+.olt-form{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:6px}
+.olt-field{display:flex;flex-direction:column;gap:2px;grid-column:span 3;min-width:0}
+.olt-field.is-s{grid-column:span 2}.olt-field.is-l{grid-column:span 6}
+.olt-field label{font:500 11px var(--olt-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--olt-mute)}
+.olt-field input,.olt-field select{font:400 15px var(--olt-sans);color:var(--olt-ink);background:#fff;border:1.5px solid #B7BFB9;border-radius:3px;padding:7px 8px;min-height:40px;width:100%;min-width:0}
+.olt-field input[aria-invalid=true]{border-color:var(--olt-alert);background:var(--olt-alert-bg)}
+.olt-field .olt-err{color:var(--olt-alert);font-size:12px;font-weight:500}
+/* ---------- buttons ---------- */
+.olt-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.olt-btn{font:700 14px/1 var(--olt-sans);min-height:44px;padding:0 14px;border-radius:3px;border:2px solid var(--olt-ink);background:var(--olt-ticket);color:var(--olt-ink);cursor:pointer}
+.olt-btn--primary{background:var(--olt-ink);color:var(--olt-ticket)}
+.olt-btn[disabled]{opacity:.45;cursor:not-allowed}
+.olt-btn--quiet{border-color:transparent;background:transparent;text-decoration:underline;text-underline-offset:3px;padding:0 6px}
+.olt :focus-visible{outline:3px solid var(--olt-focus);outline-offset:2px}
+/* ---------- conservation ledger ---------- */
+.olt-ledger{display:flex;flex-wrap:wrap;gap:4px 14px;font:500 13px var(--olt-mono);background:var(--olt-ticket);border:1px solid var(--olt-ticket-edge);border-radius:3px;padding:7px 10px;margin:0 0 12px}
+.olt-ledger b{font-weight:500;color:var(--olt-ok)}
+.olt-ledger .is-off{color:var(--olt-alert)}
+/* ---------- the belt ---------- */
+.olt-belt{position:relative;border-radius:12px;padding:18px 16px;background-color:var(--olt-belt);
+  background-image:repeating-linear-gradient(90deg,var(--olt-belt-rib) 0 3px,transparent 3px 14px);
+  box-shadow:inset 0 0 0 5px var(--olt-roller),inset 0 0 0 7px #6F7873,0 14px 24px -18px rgba(0,0,0,.6)}
+.olt-belt-lane{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px}
+.olt-divider{align-self:stretch;width:16px;flex:0 0 16px;border-radius:3px;background:linear-gradient(90deg,#D3DAD6,var(--olt-divider) 55%,#8F9893);
+  writing-mode:vertical-rl;font:700 10px/16px var(--olt-mono);letter-spacing:.16em;color:#4C5550;text-align:center;text-transform:uppercase;overflow:hidden}
+/* mobile: belt runs top→bottom, ribs horizontal, dividers horizontal */
+@media(max-width:699px){
+  .olt-belt{padding:14px 10px;background-image:repeating-linear-gradient(0deg,var(--olt-belt-rib) 0 3px,transparent 3px 14px)}
+  .olt-belt-lane{flex-direction:column;align-items:stretch;gap:10px}
+  .olt-divider{writing-mode:horizontal-tb;width:auto;height:16px;flex-basis:16px;background:linear-gradient(180deg,#D3DAD6,var(--olt-divider) 55%,#8F9893)}
+}
+/* ---------- stop ticket ---------- */
+.olt-ticket{--stop:var(--olt-stop-1);position:relative;flex:1 1 230px;max-width:340px;min-width:0;background:var(--olt-ticket);color:var(--olt-ink);border-radius:2px;
+  box-shadow:0 2px 0 rgba(0,0,0,.25),0 8px 14px -8px rgba(0,0,0,.6);
+  /* deli-ticket side notches at the perforation */
+  -webkit-mask:radial-gradient(circle 7px at 0 62px,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 7px at 100% 62px,transparent 98%,#000) right/51% 100% no-repeat;
+          mask:radial-gradient(circle 7px at 0 62px,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 7px at 100% 62px,transparent 98%,#000) right/51% 100% no-repeat}
+@media(max-width:699px){.olt-ticket{max-width:none;flex-basis:auto}}
+.olt-ticket[data-stop="2"]{--stop:var(--olt-stop-2)}.olt-ticket[data-stop="3"]{--stop:var(--olt-stop-3)}.olt-ticket[data-stop="4"]{--stop:var(--olt-stop-4)}.olt-ticket[data-stop="5"]{--stop:var(--olt-stop-5)}.olt-ticket[data-stop="6"]{--stop:var(--olt-stop-6)}
+.olt-stub{height:62px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 10px;align-items:center;padding:6px 12px 6px 0;border-bottom:2px dotted #B8B2A0}
+.olt-num{height:100%;min-width:62px;display:grid;place-items:center;background:var(--stop);color:#fff;font:700 34px/1 var(--olt-slab);letter-spacing:-.02em;padding:0 8px;border-radius:0 0 0 0}
+.olt-ticket[data-stop="4"] .olt-num{color:var(--olt-ink)} /* #C9A227 fails with white (2.4:1) */
+.olt-stopname{font:700 19px/1.1 var(--olt-slab);overflow-wrap:anywhere;margin:0}
+.olt-stopmeta{font:400 11px var(--olt-mono);color:var(--olt-mute)}
+.olt-items{list-style:none;margin:0;padding:6px 12px 4px}
+.olt-item{display:grid;grid-template-columns:24px minmax(0,1fr);gap:2px 8px;padding:7px 0;border-bottom:1px solid #EFEAD9}
+.olt-item:last-child{border-bottom:0}
+.olt-check{width:22px;height:22px;margin:1px 0 0;accent-color:var(--olt-ink);cursor:pointer}
+.olt-line{min-width:0}
+.olt-qty{font:700 15px var(--olt-sans);white-space:nowrap}
+.olt-name{font:500 15px var(--olt-sans);overflow-wrap:anywhere}
+.olt-item.is-done .olt-name,.olt-item.is-done .olt-qty{text-decoration:line-through;text-decoration-thickness:2px;color:var(--olt-mute)}
+.olt-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.olt-tag{display:inline-flex;align-items:center;gap:4px;font:500 11px/1 var(--olt-mono);background:var(--olt-tag);border:1px solid #D8CFB6;border-radius:2px 9px 9px 2px;padding:3px 8px 3px 6px;white-space:nowrap}
+.olt-tag::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--olt-ticket);box-shadow:0 0 0 1px #B9AE90}
+.olt-note{grid-column:2;font:400 12px/1.35 var(--olt-sans);color:var(--olt-mute);margin-top:3px}
+.olt-note--merge{color:var(--olt-ink);background:#FFF3C4;border-left:3px solid var(--olt-stop-4);padding:4px 6px}
+.olt-note--kept{border-left:3px solid var(--olt-unknown);padding:2px 6px}
+.olt-merged{font:700 10px var(--olt-mono);letter-spacing:.1em;text-transform:uppercase;border:1.5px solid var(--olt-ink);padding:1px 4px;border-radius:2px;margin-left:4px;vertical-align:2px}
+.olt-mini{font:700 12px var(--olt-sans);border:1.5px solid var(--olt-ink);background:#fff;border-radius:3px;min-height:32px;padding:0 9px;margin-top:4px;cursor:pointer}
+.olt-foot{font:400 11px var(--olt-mono);color:var(--olt-mute);padding:6px 12px 10px;border-top:1px dashed #E3DDCB}
+/* ---------- unknown stop: set-aside tray ---------- */
+.olt-tray{margin-top:14px;border:2px dashed var(--olt-unknown);border-radius:8px;padding:12px;background:rgba(255,255,255,.35)}
+.olt-tray-h{font:700 12px var(--olt-mono);letter-spacing:.12em;text-transform:uppercase;color:#4E534C;margin:0 0 8px}
+.olt-ticket.is-unknown{--stop:var(--olt-unknown);max-width:420px}
+.olt-ticket.is-unknown .olt-num{background:repeating-linear-gradient(135deg,#8B8F86 0 6px,#A3A79E 6px 12px)}
+/* ---------- states ---------- */
+.olt-status{border-radius:3px;padding:8px 10px;margin:0 0 12px;font-weight:500}
+.olt-status--err{background:var(--olt-alert-bg);color:var(--olt-alert);border:1.5px solid var(--olt-alert)}
+.olt-status--info{background:var(--olt-ticket);border:1.5px solid var(--olt-ink)}
+.olt-empty{display:grid;place-items:center;text-align:center;min-height:260px;color:#DDE3DF;padding:20px}
+.olt-ghost{width:min(240px,100%);height:150px;border:2px dashed #7E8782;border-radius:3px;display:grid;place-items:center;font:700 40px var(--olt-slab);color:#7E8782;margin:0 auto 12px}
+.olt-fallback{width:100%;min-height:150px;font:400 13px/1.45 var(--olt-mono);border:2px solid var(--olt-ink);border-radius:3px;padding:8px;background:#fff;color:var(--olt-ink);resize:vertical}
+.olt-fine{font-size:13px;color:var(--olt-mute);margin:8px 0 0;max-width:62ch}
+.olt-print-only{display:none}
+/* ---------- motion ---------- */
+@media(prefers-reduced-motion:no-preference){
+  .olt-belt.is-advancing{animation:olt-belt 600ms cubic-bezier(.3,.7,.3,1)}
+  .olt-ticket.is-arriving{animation:olt-arrive 420ms cubic-bezier(.2,.8,.3,1.1) both}
+  .olt-divider.is-dropping{animation:olt-drop 260ms ease-out both}
+  .olt-item .olt-check:checked + .olt-line .olt-name{transition:color 160ms}
+}
+@keyframes olt-belt{from{background-position:-28px 0}to{background-position:0 0}}
+@keyframes olt-arrive{from{transform:translateX(-36px);opacity:0}to{transform:none;opacity:1}}
+@keyframes olt-drop{from{transform:translateY(-10px) scaleY(.6);opacity:0}to{transform:none;opacity:1}}
+/* ---------- print: tickets become a plain checklist, one stop per block ---------- */
+@media print{
+  .olt{background:#fff}
+  .olt-strip,.olt-intake,.olt-actions,.olt-btn,.olt-mini,.olt-divider,.olt-fallback{display:none!important}
+  .olt-grid{display:block}
+  .olt-belt{background:none;box-shadow:none;padding:0}
+  .olt-belt-lane{display:block}
+  .olt-ticket{-webkit-mask:none;mask:none;box-shadow:none;border:1.5px solid #000;max-width:none;margin:0 0 10px;break-inside:avoid}
+  .olt-num{color:#000;background:none!important;border-right:3px solid #000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .olt-check{appearance:none;-webkit-appearance:none;border:1.5px solid #000;width:14px;height:14px}
+  .olt-tray{border-color:#000}
+  .olt-ticket,.olt-tag{background:#fff}
+  .olt-note--merge{display:none}
+  .olt-print-only{display:block}
+}

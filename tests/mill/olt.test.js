@@ -1,0 +1,47 @@
+// node tests/mill/olt.test.js — One Less Trip model: every row once, explicit merges only, ownership conserved, link codec
+const assert = require('assert'); const O = require('../../mill/one-less-trip/olt.js'), M = require('../../mill/shared/core.js');
+const C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/one-less-trip/copy.js', 'utf8') + ';COPY');
+let n = 0; const t = (name, f) => { f(); n++; console.log('ok', n, name); };
+function mk(hh, rows) { const s = { h: hh.map((x, i) => ({ id: i + 1, name: x })), r: [], m: [], next: 0 }; let id = 100; for (const [o, i, q, u, st] of rows) s.r.push({ id: id++, o, i, q: O.parseQty(q).v, u, s: st }); s.next = id; return s; }
+const ex = () => mk(['Ana', 'Ben', 'Cy'], [[1, 'Oat milk', '2', 'carton', 'Corner Co-op'], [2, 'Oat milk', '1', 'carton', 'corner  co-op '], [3, 'Oat milk', '1', 'litre', 'Corner Co-op'], [2, 'Brown rice', '2', 'kg', 'Corner Co-op'], [2, 'Stamps', '1', 'book', 'Post office'], [1, 'Picture hooks', '1', 'pack', 'Hardware store'], [3, 'Parcel to return', '1', '', 'Post office'], [1, 'AA batteries', '8', '', ''], [3, 'Sourdough', '1', 'loaf', ''], [3, 'Wood glue', '1', 'bottle', 'Hardware store']]);
+const placements = c => { const ids = []; for (const b of [...c.stops, c.unknown]) for (const l of b.lines) for (const tr of l.traces) ids.push(tr.id); for (const h of c.held) ids.push(h.id); return ids; };
+t('Creative s1 example: stops in first-entered order, unknown bucket, ledger reconciles', () => {
+  const c = O.compute(ex()); assert.deepEqual(c.stops.map(s => s.name + ':' + s.lines.length), ['Corner Co-op:4', 'Post office:2', 'Hardware store:2']);
+  assert.deepEqual(c.unknown.lines.map(l => l.item), ['AA batteries', 'Sourdough']); assert.deepEqual(c.ledger, { inn: 10, placed: 8, aside: 2, held: 0 }); });
+t('every source row appears exactly once (placement multiset == rows)', () => { const s = ex(), c = O.compute(s); assert.deepEqual(placements(c).sort(), s.r.map(r => r.id).sort()); });
+t('exact name+unit duplicates offered, never auto-merged; different unit kept separate with note', () => {
+  const c = O.compute(ex()), co = c.stops[0]; assert.equal(co.lines.filter(l => l.item === 'Oat milk').length, 3); assert.ok(co.lines.every(l => !l.merged));
+  assert.equal(co.offers.length, 1); assert.deepEqual(co.offers[0].ids, [100, 101]); assert.deepEqual(co.lines[2].kept, { unit1: 'litre', unit2: 'carton' }); });
+t('similar names are never offered (Oat milk vs Oat milks, Oatmilk)', () => { const c = O.compute(mk(['A', 'B'], [[1, 'Oat milk', '1', 'carton', 'X'], [2, 'Oat milks', '1', 'carton', 'X'], [2, 'Oatmilk', '1', 'carton', 'X']])); assert.equal(c.stops[0].offers.length, 0); assert.ok(c.stops[0].lines.every(l => !l.kept)); });
+t('same item+unit at different stops is not offered (would change a stop)', () => { const c = O.compute(mk(['A', 'B'], [[1, 'Milk', '1', 'l', 'X'], [2, 'Milk', '1', 'l', 'Y']])); assert.equal(c.stops[0].offers.length + c.stops[1].offers.length, 0); });
+t('explicit merge: one line, qty summed, both owners + quantities kept; unmerge restores', () => {
+  const s = ex(); assert.ok(O.merge(s, 'corner co-op', O.mkey('oat MILK', ' Carton'))); let c = O.compute(s), l = c.stops[0].lines[0];
+  assert.equal(c.stops[0].lines.length, 3); assert.ok(l.merged); assert.equal(O.fmtQty(l.q), '3'); assert.deepEqual(l.traces.map(x => x.owner + ' ' + x.tag + ' ' + O.fmtQty(x.q)), ['Ana r01 2', 'Ben r02 1']);
+  assert.deepEqual(placements(c).sort(), s.r.map(r => r.id).sort()); assert.equal(c.stops[0].offers.length, 0); assert.ok(O.unmerge(s, 101)); c = O.compute(s); assert.equal(c.stops[0].lines.length, 4); });
+t('a row edited away from its group leaves it; group of 1 dissolves', () => { const s = ex(); O.merge(s, 'corner co-op', O.mkey('oat milk', 'carton')); s.r[1].u = 'litre'; const c = O.compute(s); assert.ok(c.stops[0].lines.every(l => !l.merged)); assert.deepEqual(placements(c).sort(), s.r.map(r => r.id).sort()); });
+t('ownership conserved: per-owner qty totals identical before/after any merge', () => {
+  const tot = c => { const o = {}; for (const b of [...c.stops, c.unknown]) for (const l of b.lines) for (const x of l.traces) o[x.owner + '|' + O.norm(l.item) + '|' + O.norm(x.unit)] = (o[x.owner + '|' + O.norm(l.item) + '|' + O.norm(x.unit)] || 0) + x.q; return o; };
+  const s = ex(), before = tot(O.compute(s)); O.merge(s, 'corner co-op', O.mkey('oat milk', 'carton')); assert.deepEqual(tot(O.compute(s)), before); });
+t('property: 2000 random lists, random merges/removals — rows placed exactly once, ledger reconciles, owners conserved', () => {
+  let seed = 7; const r = k => { seed = (Math.imul(seed, 1103515245) + 12345) >>> 0; return (seed >>> 8) % k; };
+  const items = ['Milk', 'milk', 'Milk ', 'Eggs', 'Bread'], units = ['l', 'L', 'carton', ''], stops = ['A', 'a', 'B', '', 'C'];
+  for (let k = 0; k < 2000; k++) { const hh = ['H1', 'H2', 'H3'].slice(0, 2 + r(2)); const rows = []; for (let i = 0, nr = 1 + r(30); i < nr; i++) rows.push([1 + r(hh.length), items[r(5)], String(1 + r(5)) + (r(3) ? '' : '.5'), units[r(4)], stops[r(5)]]);
+    const s = mk(hh, rows); for (let j = 0; j < 3; j++) { const c = O.compute(s), bs = [...c.stops, c.unknown].filter(b => b.offers.length); if (bs.length) { const b = bs[r(bs.length)], o = b.offers[r(b.offers.length)]; O.merge(s, o.stopKey, o.key); } }
+    if (r(4) === 0) O.removeRow(s, s.r[r(s.r.length)].id); if (r(5) === 0) O.removeHousehold(s, 1);
+    const c = O.compute(s); assert.deepEqual(placements(c).sort(), s.r.map(x => x.id).sort()); assert.equal(c.ledger.inn, c.ledger.placed + c.ledger.aside + c.ledger.held);
+    for (const b of [...c.stops, c.unknown]) for (const l of b.lines) { assert.equal(l.q, l.traces.reduce((a, x) => a + x.q, 0)); if (l.merged) assert.ok(l.traces.every(x => O.mkey(l.item, l.unit) === O.mkey(s.r.find(y => y.id === x.id).i, x.unit))); } } });
+t('removing a household holds its rows back (not dropped), copy/link blocked', () => { const s = ex(); O.removeHousehold(s, 2); const c = O.compute(s); assert.equal(c.ledger.held, 3); assert.equal(c.held[0].err.o, 'missing'); assert.equal(c.ledger.inn, 10); assert.equal(O.encode(s), null); assert.equal(O.canShare(s), false); });
+t('household rules: 2–6, non-empty, ≤24, unique (case-insensitive)', () => { const s = O.blank(); assert.deepEqual(O.householdErrors(s).map(e => e.why), ['empty', 'empty']); s.h = [{ id: 1, name: 'Ana' }, { id: 2, name: 'ana ' }]; assert.deepEqual(O.householdErrors(s).map(e => e.why), ['dup']);
+  s.h = [{ id: 1, name: 'Ana' }]; assert.ok(O.householdErrors(s).some(e => e.why === 'tooFew')); s.h = [1, 2, 3, 4, 5, 6, 7].map(i => ({ id: i, name: 'H' + i })); assert.ok(O.householdErrors(s).some(e => e.why === 'tooMany')); });
+t('quantity parsing: plain numbers only, >0, ≤100000, ≤3 decimals', () => { assert.equal(O.parseQty('2').v, 2000); assert.equal(O.parseQty('0.5').v, 500); assert.equal(O.parseQty('.25').v, 250); assert.equal(O.fmtQty(1250), '1.25');
+  for (const [s, w] of [['1e9', 'nan'], ['-2', 'nan'], ['0', 'zero'], ['0.000', 'zero'], ['100001', 'big'], ['abc', 'nan'], ['1,5', 'nan'], ['1.2345', 'nan'], ['', 'nan'], ['Infinity', 'nan']]) assert.equal(O.parseQty(s).why, w, s); assert.ok(O.parseQty('100000').ok); });
+t('text export: stops numbered, trace tags, unknown bucket last, not-a-route footer', () => { const s = ex(); O.merge(s, 'corner co-op', O.mkey('oat milk', 'carton')); const x = O.text(s, C);
+  assert.ok(x.includes('01 · Corner Co-op\n[ ] Oat milk: 3 carton total — From Ana: 2 carton (r01), Ben: 1 carton (r02)')); assert.ok(x.includes('[ ] Parcel to return — Cy: 1 (r07)')); assert.ok(x.indexOf('? · Stop unknown') > x.indexOf('03 · Hardware store')); assert.ok(x.endsWith(C.printFooter)); });
+t('link round-trip incl. merges; malformed/forged links refused', () => { const s = ex(); O.merge(s, 'corner co-op', O.mkey('oat milk', 'carton')); const f = O.encode(s); assert.ok(f.startsWith('t1.')); const d = O.decode('#' + f); assert.ok(d.ok);
+  assert.equal(O.text(d.data, C), O.text(s, C)); const P = o => M.pack('t', 1, o), base = { h: ['A', 'B'], r: [[0, 'Milk', '1', 'l', 'X'], [1, 'Milk', '2', 'l', 'X'], [1, 'Milk', '2', 'kg', 'X']], m: [] };
+  assert.ok(O.decode(P(base)).ok); assert.equal(O.decode(P({ ...base, m: [[0, 2]] })).why, 'bad'); assert.equal(O.decode(P({ ...base, m: [[0, 1], [1, 0]] })).why, 'bad'); assert.equal(O.decode(P({ ...base, r: [[2, 'Milk', '1', 'l', 'X']] })).why, 'bad');
+  assert.equal(O.decode(P({ ...base, r: [[0, 'Milk', '-1', 'l', 'X']] })).why, 'bad'); assert.equal(O.decode(P({ ...base, h: ['A'] })).why, 'bad'); assert.equal(O.decode(P({ ...base, h: ['A', 'a'] })).why, 'bad');
+  assert.equal(O.decode(P({ ...base, r: Array(31).fill([0, 'M', '1', '', '']) })).why, 'bad'); assert.equal(O.decode(M.pack('t', 2, base)).why, 'oldVersion'); assert.equal(O.decode(f.slice(0, 30)).ok, false); assert.equal(O.decode('t1.' + 'A'.repeat(2100) + '.aaaaaa').why, 'tooLong');
+  const big = mk(['A'.repeat(24), 'B'.repeat(24)], Array.from({ length: 30 }, (_, i) => [1 + i % 2, '😀'.repeat(40), '1', 'u'.repeat(16), 'S'.repeat(40)])); assert.strictEqual(O.encode(big), ''); });
+t('reset model: blank() has no rows, merges or names', () => { const b = O.blank(); assert.equal(b.r.length + b.m.length, 0); assert.ok(b.h.every(h => h.name === '')); assert.deepEqual(O.compute(b).ledger, { inn: 0, placed: 0, aside: 0, held: 0 }); });
+console.log('PASS ' + n + ' tests');
