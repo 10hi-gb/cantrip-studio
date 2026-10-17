@@ -10,7 +10,7 @@
 .ss-x{width:46px;height:46px;border-radius:8px;border:2px solid var(--ss-ink);background:#fff;font:700 20px var(--ss-sans);color:var(--ss-ink);cursor:pointer}
 .ss-x:disabled{opacity:.35;cursor:not-allowed}
 .ss-x:focus-visible{outline:3px solid var(--ss-penny);outline-offset:2px}
-.ss-wants{display:flex;align-items:center;gap:6px}.ss-wants input{flex:1 1 auto;min-width:0}.ss-wants .u{font:600 14px var(--ss-sans);color:var(--ss-mute);flex:none;max-width:8ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ss-wants{display:flex;align-items:center;gap:6px}.ss-wants input{flex:1 1 auto;min-width:0}.ss-wants .u{font:600 14px var(--ss-sans);color:var(--ss-mute);flex:none;max-width:45%;overflow-wrap:anywhere} /* D10: quoted unit never clipped */
 .ss-errs{margin:0;padding-left:1.1rem}.ss-errs:empty{display:none}
 .ss-assign{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}.ss-assign p{margin:0;width:100%;font:600 13px var(--ss-sans)}
 .ss-assign .ss-btn{min-height:44px;padding:8px 12px;font-size:14px}
@@ -59,3 +59,5 @@ body.is-recv .ss-alloc .who{text-transform:none;letter-spacing:0}
 
 /* QA local-652d0e0 D13 (optional): long money values ($9999999.99) fit inside their own LCD cell on narrow phones */
 @media (max-width:360px){.ss-lcd .v.is-long{font-size:13px;letter-spacing:0}}
+
+.ss-alloc .qty .qu{white-space:nowrap;display:inline-block} /* D10: the quoted unit is one unbroken token */

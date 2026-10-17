@@ -19,17 +19,17 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     // Joshua case 4,4,4 -> shortage 2, blocked
     for (const r of rq) { await r.focus(); await p.keyboard.type('4'); }
     let t = await p.evaluate(() => ({ st: document.getElementById('status').textContent, role: document.getElementById('status').getAttribute('role'), dis: document.getElementById('share').disabled, money: [...document.querySelectorAll('#rows .ss-alloc .tot')].map(e => e.textContent), short: !!document.querySelector('#rows .is-short') }));
-    ck(w + ' 4,4,4 shortage 2 blocks, costs hidden', /2 lb short/.test(t.st) && t.role === 'alert' && t.dis && t.short && t.money.every(m => m === '—'), t);
+    ck(w + ' 4,4,4 shortage 2 blocks, costs hidden', /2 “lb” short/.test(t.st) && t.role === 'alert' && t.dis && t.short && t.money.every(m => m === '—'), t);
     // 3,3,3 -> 1 lb + $1.00 unclaimed
     for (const r of rq) { await r.click({ clickCount: 3 }); await p.keyboard.type('3'); }
     t = await p.evaluate(() => ({ st: document.getElementById('status').textContent, tb: [...document.querySelectorAll('#rows .ss-alloc')].map(r => r.textContent.replace(/\s+/g, ' ')), dis: document.getElementById('share').disabled, rec: document.getElementById('reconcile').textContent }));
-    ck(w + ' 3,3,3 unclaimed 1 lb $1.00', /1 lb unclaimed/.test(t.st) && t.tb[3].includes('1 lb') && t.tb[3].includes('$1.00') && !t.dis && /10 lb, \$10\.00/.test(t.rec), t);
+    ck(w + ' 3,3,3 unclaimed 1 “lb” $1.00', /1 “lb” unclaimed/.test(t.st) && t.tb[3].includes('1 “lb”') && t.tb[3].includes('$1.00') && !t.dis && /10 “lb”, \$10\.00/.test(t.rec), t);
     // 3,3,4 -> 300/300/400
     await rq[2].click({ clickCount: 3 }); await p.keyboard.type('4');
     t = await p.evaluate(() => [...document.querySelectorAll('#rows .ss-alloc')].map(r => r.querySelector('.tot').firstChild.textContent)); ck(w + ' 3,3,4 -> 3.00/3.00/4.00', t.join() === '$3.00,$3.00,$4.00,$0.00', t);
     // off-increment and negative input rejected with Writer strings
     await rq[0].click({ clickCount: 3 }); await p.keyboard.type('2.5');
-    t = await p.evaluate(() => document.getElementById('hh-msg').textContent + '|' + document.getElementById('share').disabled); ck(w + ' off-increment rejected', /Use steps of 1 lb/.test(t) && t.endsWith('true'), t);
+    t = await p.evaluate(() => document.getElementById('hh-msg').textContent + '|' + document.getElementById('share').disabled); ck(w + ' off-increment rejected', /Use steps of 1 “lb”/.test(t) && t.endsWith('true'), t);
     await rq[0].click({ clickCount: 3 }); await p.keyboard.type('-1');
     t = await p.evaluate(() => document.getElementById('hh-msg').textContent); ck(w + ' negative rejected', /negative/.test(t), t);
     await rq[0].click({ clickCount: 3 }); await p.keyboard.type('3');
@@ -46,7 +46,7 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     // share (no navigator.share headless -> clipboard path; failure must leave selectable link)
     await p.focus('#share'); await p.keyboard.press('Enter'); await sleep(300);
     t = await p.evaluate(() => ({ link: document.getElementById('link').value, hash: location.hash, text: document.getElementById('text').value, toast: document.getElementById('toast').textContent }));
-    ck(w + ' link made + text proposal', /#s1\./.test(t.link) && t.hash.startsWith('#s1.') && /^Proposed split for “Jasmine rice” \(typed by the sender\)\n/.test(t.text) && /Unclaimed: 7 lb/.test(t.text), { len: t.link.length, toast: t.toast });
+    ck(w + ' link made + text proposal', /#s1\./.test(t.link) && t.hash.startsWith('#s1.') && /^Proposed split for “Jasmine rice” \(typed by the sender\)\n/.test(t.text) && /Unclaimed: 7 “lb”/.test(t.text), { len: t.link.length, toast: t.toast });
     // recipient opens the link in a fresh tab
     const q = await s.b.newPage(); await q.setViewport({ width: w, height: 800 }); const qerr = []; q.on('pageerror', e => qerr.push(String(e)));
     await q.goto(t.link || BASE, { waitUntil: 'load' }); await sleep(200);
@@ -54,10 +54,10 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     ck(w + ' recipient: read-only view, header + intro, sender text labelled (D4, scope a)', /^Proposed split\nThe sender's proposal, as it was when the link was made\.\nFrom the sender: “Jasmine rice”/.test(r.b) && !/proposed split for/i.test(r.b) && r.editor && r.recv && r.from === 'From the sender:' && r.cap === 'Households, as the sender typed them' && !r.assign && r.buttons.join() === 'Change my amount' && r.pays.join() === '$1.00,$1.00,$1.00,$7.00' && !qerr.length, r);
     await q.select('#pick', '1'); await sleep(50);
     r = await q.evaluate(() => ({ own: document.getElementById('owncost').textContent, you: !!document.querySelector('.ss-alloc.is-you') }));
-    ck(w + ' recipient picks household -> own cost line', r.own === 'You take 1 lb: $1.00.' && r.you, r);
+    ck(w + ' recipient picks household -> own cost line', r.own === 'You take 1 “lb”: $1.00.' && r.you, r);
     await q.focus('#change'); await q.keyboard.press('Enter'); await sleep(50); await q.keyboard.press('Enter'); await sleep(80);
     r = await q.evaluate(() => ({ note: document.getElementById('changenote').textContent, vis: !document.getElementById('changebox').hidden, amt: document.getElementById('amt').textContent, was: { was: (document.querySelector('.ss-alloc.is-changed .qty') || { getAttribute: () => null }).getAttribute('data-was') }, pays: [...document.querySelectorAll('#rows .ss-alloc')].map(r => r.querySelector('.tot').firstChild.textContent), hash: location.hash }));
-    ck(w + ' Change my amount: changeNote once, stepper by keyboard, "was" marker, original link untouched', r.vis && r.note === "This makes a new link for you to send back. It doesn't change the sender's copy or tell them anything." && r.amt === '2 lb' && r.was && r.was.was === 'was 1 lb' && r.pays.join() === '$1.00,$2.00,$1.00,$6.00' && r.hash === new URL(t.link).hash, r);
+    ck(w + ' Change my amount: changeNote once, stepper by keyboard, "was" marker, original link untouched', r.vis && r.note === "This makes a new link for you to send back. It doesn't change the sender's copy or tell them anything." && r.amt === '2 “lb”' && r.was && r.was.was === 'was 1 “lb”' && r.pays.join() === '$1.00,$2.00,$1.00,$6.00' && r.hash === new URL(t.link).hash, r);
     await q.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.reject(new Error('denied')) } }); });
     await q.focus('#makelink'); await q.keyboard.press('Enter'); await sleep(150);
     r = await q.evaluate(() => ({ link: document.getElementById('rlink').value, f: document.activeElement.id, toast: document.getElementById('toast').textContent }));
@@ -120,7 +120,7 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     for (const [id, v] of [['item', 'Rice'], ['q', '10'], ['u', 'lb'], ['p', '10.00'], ['f', '1.00']]) await typeInto(p, '#' + id, v);
     { const hn = await p.$$('#hh input:not(.sk-rq)'), rq = await p.$$('#hh input.sk-rq'); await hn[0].focus(); await p.keyboard.type('A'); await hn[1].focus(); await p.keyboard.type('B'); await rq[0].focus(); await p.keyboard.type('3'); await rq[1].focus(); await p.keyboard.type('3'); }
     await sleep(50); const rowsOf = () => p.evaluate(() => ({ note: document.getElementById('basisnote').textContent, fees: [...document.querySelectorAll('#rows .ss-alloc')].map(r => r.querySelector('.fee').firstChild.textContent), tots: [...document.querySelectorAll('#rows .ss-alloc')].map(r => r.querySelector('.tot').firstChild.textContent), text: document.getElementById('text').value, status: document.getElementById('status').textContent }));
-    let t = await rowsOf(); ck('390 proportional: unclaimed shows cost + fee share; line from copy.v2', t.note === COPYV2.feeBasisLine.proportional && t.fees.join() === '$0.30,$0.30,$0.40' && t.tots.join() === '$3.30,$3.30,$4.40' && t.text.includes(COPYV2.feeBasisLine.proportional) && t.text.includes('Unclaimed: 4 lb · $4.40'), t);
+    let t = await rowsOf(); ck('390 proportional: unclaimed shows cost + fee share; line from copy.v2', t.note === COPYV2.feeBasisLine.proportional && t.fees.join() === '$0.30,$0.30,$0.40' && t.tots.join() === '$3.30,$3.30,$4.40' && t.text.includes(COPYV2.feeBasisLine.proportional) && t.text.includes('Unclaimed: 4 “lb” · $4.40'), t);
     await p.focus('#be'); await p.keyboard.press('Enter'); await sleep(50); t = await rowsOf();
     ck('390 equal: fee across households only, unclaimed none; UI says so', t.note === COPYV2.feeBasisLine.equal && t.fees.join() === '$0.50,$0.50,$0.00' && t.tots.join() === '$3.50,$3.50,$4.00', t);
     { const rq = await p.$$('#hh input.sk-rq'); await typeInto(p, '#' + await rq[0].evaluate(e => e.id), '0'); await typeInto(p, '#' + await rq[1].evaluate(e => e.id), '0'); } await sleep(50); t = await rowsOf();
@@ -166,6 +166,7 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     await p.goto(BASE + '#', { waitUntil: 'load' }); await sleep(100); await typeInto(p, '#item', 'Sand'); await typeInto(p, '#q', '100000'); await typeInto(p, '#u', 'lb'); await typeInto(p, '#inc', '1'); await typeInto(p, '#p', '9999999.99'); await typeInto(p, '#f', '100000.00');
     const hb = await p.$$('#hh input'); await hb[0].type('A'); await hb[1].type('50000'); await hb[2].type('B'); await hb[3].type('50000'); await sleep(120);
     const d1 = await p.evaluate(() => [...document.querySelectorAll('.ss-lcd .v, #rows .ss-alloc .tot, #rows .ss-alloc .m.fee, #rows .ss-alloc .qty')].filter(e => e.getClientRects().length).map(e => { const r = document.createRange(); r.selectNodeContents(e.firstChild || e); const ls = new Set([...r.getClientRects()].map(x => Math.round(x.top))); return { t: (e.firstChild || e).textContent, lines: ls.size }; }));
+    { const qu = await p.evaluate(() => [...document.querySelectorAll('#rows .qu, .ss-wants .u')].filter(e => e.getClientRects().length).map(e => ({ t: e.textContent, lines: (r => { r.selectNodeContents(e.firstChild); return new Set([...r.getClientRects()].map(x => Math.round(x.bottom))).size; })(document.createRange()), rects: e.getClientRects().length, clip: e.scrollWidth > e.clientWidth + 1 }))); ck(w + ' D10: the quoted unit is never split or clipped (allocation rows, request rows)', qu.length && qu.every(x => x.lines <= 1 && x.rects === 1 && !x.clip), qu); }
     const of = await overflow(p);
     ck(w + ' D1b money/quantity values stay on one line (no mid-number wrap), no overflow', d1.length >= 6 && d1.every(x => x.lines === 1) && of.sw <= w && !of.bad.length, { d1, of });
     ck(w + ' QA-recheck checks no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
@@ -178,12 +179,12 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     ck(w + ' N1 same tab: bad link after fill + link + open shows zero validation errors', r.ok, r);
     await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(120); await fillSack(p);
     const txt = await p.$eval('#text', e => e.value); await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.click('#share'); await sleep(200); const url = await p.$eval('#link', e => e.value);
-    ck(w + ' D10 copy-as-text: household names quoted + attributed (textNamesTyped)', txt.split('\n')[0] === 'Proposed split for “You owe me, deadbeat. Pay up” (typed by the sender)' && txt.split('\n')[1] === 'Household names are as typed by the sender.' && txt.split('\n').filter(l => l === 'Household names are as typed by the sender.').length === 1 && (await p.$eval('#printout', e => e.textContent)).startsWith('Proposed split for “You owe me, deadbeat. Pay up” (typed by the sender)\nHousehold names are as typed by the sender.\n') && /\n“Verified ✔ Bank”: 4 kg · /.test(txt) && /\n“Kiwi Flat”: 3 kg · /.test(txt), txt);
+    ck(w + ' D10 copy-as-text: household names quoted + attributed (textNamesTyped)', txt.split('\n')[0] === 'Proposed split for “You owe me, deadbeat. Pay up” (typed by the sender)' && txt.split('\n')[1] === 'Household names are as typed by the sender.' && txt.split('\n').filter(l => l === 'Household names are as typed by the sender.').length === 1 && (await p.$eval('#printout', e => e.textContent)).startsWith('Proposed split for “You owe me, deadbeat. Pay up” (typed by the sender)\nHousehold names are as typed by the sender.\n') && /\n“Verified ✔ Bank”: 4 “kg” · /.test(txt) && /\n“Kiwi Flat”: 3 “kg” · /.test(txt), txt);
     await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(200);
     const rv = await p.evaluate(() => { const sn = document.getElementById('sname'), ty = sn.querySelector('.mill-typed'), stp = sn.querySelector('.ss-step');
       return { typed: ty && ty.textContent, tt: ty && getComputedStyle(ty).textTransform, step: stp && stp.textContent, sep: ty && stp ? stp.getBoundingClientRect().top >= ty.getBoundingClientRect().bottom - 1 : false,
         cells: [...document.querySelectorAll('#rows .ss-alloc .who')].map(e => e.textContent), opts: [...document.getElementById('pick').options].map(o => o.textContent) }; });
-    ck(w + ' D11 recipient item: quoted typed text (no uppercase), the app\'s step line on its own line', rv.typed === '“You owe me, deadbeat. Pay up”' && rv.tt === 'none' && rv.step === 'Split in steps of 1 kg' && rv.sep, rv);
+    ck(w + ' D11 recipient item: quoted typed text (no uppercase), the app\'s step line on its own line', rv.typed === '“You owe me, deadbeat. Pay up”' && rv.tt === 'none' && rv.step === 'Split in steps of 1 “kg”' && rv.sep, rv);
     ck(w + ' D12 recipient table + picker quote typed household names', rv.cells.includes('“Verified ✔ Bank”') && rv.cells.includes('“Kiwi Flat”') && rv.opts.includes('“Verified ✔ Bank”') && rv.opts.includes('“Kiwi Flat”'), rv);
     await p.select('#pick', await p.evaluate(() => [...document.getElementById('pick').options].find(o => o.textContent === '“Kiwi Flat”').value)); await sleep(80); await p.click('#change'); await sleep(120);
     const ar = await p.evaluate(() => ({ down: document.getElementById('down').getAttribute('aria-label'), up: document.getElementById('up').getAttribute('aria-label') }));
@@ -207,5 +208,33 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     a = await typedAudit(p, ['Zqx rice', 'Zqx Ana', 'Zqx Ben', 'Zqx Cy with a very long name x']);
     ck(w + ' D14 editor validation messages name the household quoted ("“Zqx Ana”: …")', msgs.length >= 2 && msgs.some(m => m.startsWith('“Zqx Ana”: ')) && msgs.some(m => m.startsWith('“Zqx Cy with a very long name x”: ')) && a.ok, { msgs, a });
     ck(w + ' D14 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA D10 reopened (PM): the free-text unit is quoted everywhere it is displayed: row unit spans, request aria, error/increment
+  // messages, LCD, status, reconcile, assign, notready, copy text, changedWas, answer amount label, amount and print.
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 });
+    await p.evaluateOnNewDocument(() => { window.__clip = []; Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: t => { window.__clip.push(String(t)); return Promise.resolve(); } } }); });
+    const UN = 'Zqx bag', US = '\u201Cbags\u201D', all = async (seeds, extra = {}) => { await p.emulateMediaType('print'); const pr = await p.evaluate(() => document.body.innerText); await p.emulateMediaType(null); const clip = await p.evaluate(() => window.__clip.slice()); return typedAudit(p, seeds, Object.assign({ print: pr }, extra, Object.fromEntries(clip.map((c, i) => ['clipboard#' + i, c])))); };
+    // sender editor: short (over), unallocated, off-increment, exact, copy text
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    for (const [id, v] of [['item', 'Rice'], ['q', '10'], ['u', UN], ['inc', '1'], ['p', '10.00']]) await typeInto(p, '#' + id, v);
+    const nn = await p.evaluate(() => [...document.querySelectorAll('.ss-hn')].map(e => '#' + e.id)); for (let i = 0; i < nn.length; i++) await typeInto(p, nn[i], ['Ana', 'Bo', 'Cy', 'Di'][i] || 'H' + i);
+    const ids = await p.evaluate(() => [...document.querySelectorAll('.sk-rq')].map(e => '#' + e.id));
+    const fillRows = async vals => { for (let i = 0; i < vals.length; i++) await typeInto(p, ids[i], vals[i]); await sleep(80); };
+    for (const [tag, vals] of [['over', ['6', '6']], ['unallocated', ['3', '3']], ['off-increment', ['2.5', '3']], ['exact', ['4', '6', '0', '0'].slice(0, ids.length)]]) { await fillRows(vals);
+      const a = await all([UN]); const seen = await p.evaluate(u => document.body.innerText.includes('\u201C' + u + '\u201D'), UN);
+      ck(w + ' D10 sender editor (' + tag + '): unit quoted everywhere (screen, aria, messages, LCD, status, reconcile, assign, notready, print)', a.ok && seen, a.hits); }
+    { const ra = await p.evaluate(() => [...document.querySelectorAll('.sk-rq')].map(e => e.getAttribute('aria-label'))); ck(w + ' D10 request aria names the quoted unit', ra.every(x => x.includes('\u201CZqx bag\u201D')), ra); }
+    await p.click('#share'); await sleep(200); const url = await p.$eval('#link', e => e.value);
+    await p.evaluate(() => { window.__clip = []; }); for (const b of ['#copytext', '#b-text', '#b-copy']) if (await p.$(b) && await p.$eval(b, e => !e.disabled && e.getClientRects().length > 0)) { await p.click(b); await sleep(100); }
+    { const a = await all([UN]); ck(w + ' D10 copy text / clipboard: unit quoted', a.ok, a.hits); }
+    // recipient: pick, amount label, own cost, change my amount (changedWas), print
+    await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(250); await p.select('#pick', '0'); await sleep(120);
+    { const a = await all([UN]); const amt = await p.$eval('#amt-l', e => e.textContent); ck(w + ' D10 recipient: answer amount label, own cost, LCD quoted', a.ok && amt.includes('\u201CZqx bag\u201D'), { amt, hits: a.hits }); }
+    if (await p.$('#change') && await p.$eval('#change', e => e.getClientRects().length > 0 && !e.disabled)) { await p.click('#change'); await sleep(150); await p.focus('#up'); await p.keyboard.press('Enter'); await sleep(120);
+      const a = await all([UN]); const was = await p.evaluate(() => document.body.innerText); ck(w + ' D10 change my amount: changedWas + amount quoted', a.ok && /\u201CZqx bag\u201D/.test(was), a.hits); }
+    // Q1: a unit carrying curly quotes is neutralised inside the frame; the link keeps it
+    const f = await p.evaluate(u => SACKLINK.encode({ n: 'Rice', u, c: '$', q: '10', i: '1', p: '10', f: '', b: 'p', x: -1, h: [['Ana', '4'], ['Bo', '3']] }), US);
+    await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(250); await p.select('#pick', '0'); await sleep(120);
+    { const a = await all([US]); ck(w + ' D10 + Q1: spoof unit shown as \u201C"bags"\u201D everywhere, link keeps the marks', a.ok && f.length > 0, a.hits); }
+    ck(w + ' D10 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

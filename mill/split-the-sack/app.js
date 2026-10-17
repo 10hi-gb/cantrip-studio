@@ -16,7 +16,10 @@
   // the product fallback "Household N" not. nameOf() is only for comparisons, never for display.
   function typedName(i) { return qName(i); }
   function shownName(i) { return qName(i); }
-  function unit() { return M.strip(st.u); }
+  // QA D10 (reopened): the unit (#u) is free text, so it is shown quoted with the shared rule everywhere it is displayed
+  // (row spans, aria, messages, LCD, status, reconcile, assign, notready, copy text, changedWas, amount label, print). unitRaw() for length checks.
+  function unitRaw() { return M.strip(st.u); }
+  function unit() { var u = unitRaw(); return u ? V.quote(u) : ''; }
   function money(c) { return S.fmtMoney(c, M.strip(st.c)); }
   function staticText() {
     document.querySelectorAll('[data-c]').forEach(function (e) { e.textContent = key(e.getAttribute('data-c')); });
@@ -69,7 +72,7 @@
   function fieldErrors() {
     var e = [], h = [], q = S.parseQty(st.q), inc = S.parseQty(st.i), x;
     if ((x = M.len(M.strip(st.n)) - L.ITEM_MAX) > 0) e.push(C.itemLabel + ' ' + M.plural(C.itemTooLong, x));
-    if ((x = M.len(unit()) - L.UNIT_MAX) > 0) e.push(M.plural(C.unitTooLong, x, { max: L.UNIT_MAX }));
+    if ((x = M.len(unitRaw()) - L.UNIT_MAX) > 0) e.push(M.plural(C.unitTooLong, x, { max: L.UNIT_MAX }));
     if ((x = M.len(M.strip(st.c)) - L.SYM_MAX) > 0) e.push(M.plural(C.currencyTooLong, x, { max: L.SYM_MAX }));
     if ((x = numErr(st.q, false))) e.push(C.packageQtyLabel + ': ' + x);
     if ((x = numErr(st.i, false))) e.push(C.incrementLabel + ': ' + x);
@@ -95,7 +98,8 @@
     var r = el('div', 'ss-alloc' + (cls ? ' ' + cls : '')); r.setAttribute('role', 'row');
     r.appendChild(bin(qty.n, qty.Q));
     var w = el('span', 'who', who); w.title = who; w.setAttribute('role', 'rowheader'); r.appendChild(w);
-    var q = el('span', 'qty', qty.t); q.setAttribute('role', 'cell'); r.appendChild(q);
+    // D10: the quoted unit may move to its own line at 320, but neither the number nor the unit is ever split
+    var q = el('span', 'qty'), sp = String(qty.t).indexOf(' '); if (sp > 0) { q.appendChild(document.createTextNode(qty.t.slice(0, sp + 1))); q.appendChild(el('span', 'qu', qty.t.slice(sp + 1))); } else q.textContent = qty.t; q.setAttribute('role', 'cell'); r.appendChild(q);
     var it = el('span', 'm item', item); it.setAttribute('role', 'cell'); r.appendChild(it);
     var fe = el('span', 'm fee', fee); fe.setAttribute('role', 'cell'); if (fee !== '—') fe.appendChild(el('span', 'fw', ' ' + C.colFee.toLowerCase())); r.appendChild(fe);
     var t = el('span', 'tot', tot); t.setAttribute('role', 'cell'); if (penny) t.appendChild(el('span', 'p', penny)); r.appendChild(t);
