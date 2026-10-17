@@ -65,8 +65,56 @@
     [['work', res.work, ''], ['available', res.available, ''], ['assigned', res.given, ''], ['bench', res.benchMin, res.benchMin ? 'bad' : 'ok']].forEach(function (p, i) {
       var s = el('span', p[2] || null), t = M.fill(C.tally[p[0]], { n: p[1] }), m = /^(\d+)(.*)$/.exec(t); s.append(el('b', null, m[1]), txt(m[2])); if (i) box.append(sep()); box.append(s); });
     var ok = res.conserved; box.append(sep()); box.append(el('span', ok ? 'ok' : 'bad', ok ? M.fill(C.conservation, { on: res.given, bench: res.benchMin, work: res.work }) : C.conservationFail)); }
-  function stick(it, sc) { var s = el('div', 'stick'); setv(s, '--m', it.min); setv(s, '--sc', sc); var t = el('span', 't'); t.append(V.typed(it.name)); s.append(t, el('span', 'm', String(it.min)));
+  // a stick is the bar (width = its minutes, to scale); .lab holds the name then the minutes (display:contents unless the label has to sit outside the bar)
+  function stick(it, sc) { var s = el('div', 'stick'), lab = el('span', 'lab'); setv(s, '--m', it.min); setv(s, '--sc', sc); var t = el('span', 't'); t.append(V.typed(it.name)); lab.append(t, el('span', 'm', String(it.min))); s.append(lab);
+    s.dataset.p = it.overMin ? String(it.overMin / it.min) : '0';
     if (it.overMin) { s.classList.add('over'); if (it.overMin >= it.min) s.classList.add('all'); setv(s, '--p', (Math.round(it.overMin / it.min * 1000) / 10) + '%'); } return s; }
+  // ---- LABEL TREATMENT (QA H14/H9/H11; PM 05:36, Creative 05:37). The one place that decides where a bar's label goes; its CSS is the "LABEL TREATMENT"
+  // block in app.css. Bars are always to scale (minutes / roll scale, 3px floor). A label goes inside its bar only where its longest word fits: on the wood
+  // (dark text, kept off the red tip) or on the red tip (light text). Otherwise it goes outside, never on the pine:
+  //  - wider than 640 (one row of bars on the roll): whole, 8px after the bar end on the row (only the last bar has room), else under the row from the bar's
+  //    start with a 1px leader; moved
+  //    wholly onto the roll's empty canvas (chalk text) or wholly onto the card (ink text, red minutes for an over bar);
+  //  - 640 and narrower (one bar per line, no roll): name (12px) + minutes 8px after the bar; if they don't fit, the minutes stay there and the name
+  //    goes on the line below from the bar's start, with a 1px leader, cut with an ellipsis inside its quotes only if it still doesn't fit. Minutes are never cut.
+  // DOM order (name, minutes, bar after bar) never changes, so reading and keyboard order stay the same; the full name stays in the text and the copy.
+  var WIDE = window.matchMedia ? window.matchMedia('(min-width:641px)') : { matches: true }, cx = document.createElement('canvas').getContext('2d');
+  function tw(node, text, px) { var cs = getComputedStyle(node); cx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + (px || cs.fontSize) + ' ' + cs.fontFamily; return cx.measureText(text).width; }
+  function widest(node, text) { return text.split(/\s+|(?<=[-\u2010\u2011])/).reduce(function (w, x) { return Math.max(w, tw(node, x)); }, 0); }
+  var LBL = ['in', 'inr', 'out', 'split', 'under', 'below', 'gc', 'gk', 'chip'], LV = ['--pl', '--pr', '--lx', '--ly', '--lw', '--nx', '--nw', '--below'];
+  // A name too long for its line is cut inside its quotes (“Greenhou…”), so the closing quote stays visible: the cut copy is aria-hidden, the full
+  // name stays in the DOM (visually hidden), so the accessible name and copied text keep all of it.
+  function uncut(t) { var c = t.querySelector('.cut'); if (c) { c.remove(); t.firstChild.classList.remove('fh-vh'); } }
+  function cut(t, avail) { var full = t.textContent; if (tw(t, full) <= avail) return; var a = full.charAt(0), z = full.charAt(full.length - 1), mid = full.slice(1, -1), lo = 0, hi = mid.length;
+    while (lo < hi) { var k = Math.ceil((lo + hi) / 2); if (tw(t, a + mid.slice(0, k).replace(/\s+$/, '') + '\u2026' + z) <= avail) lo = k; else hi = k - 1; }
+    var c = el('span', 'cut', a + mid.slice(0, lo).replace(/\s+$/, '') + '\u2026' + z); c.setAttribute('aria-hidden', 'true'); t.firstChild.classList.add('fh-vh'); t.append(c); }
+  function layOne(box) { var sts = [].slice.call(box.children).filter(function (x) { return x.classList.contains('stick'); });
+    sts.forEach(function (s) { LBL.forEach(function (c) { s.classList.remove(c); }); LV.forEach(function (k) { s.style.removeProperty(k); }); uncut(s.querySelector('.t')); });
+    box.style.removeProperty('--outh'); if (!box.getClientRects().length) return;
+    var wide = WIDE.matches, W = box.clientWidth, pad = wide ? 16 : 20, outs = [];
+    sts.forEach(function (s) { var t = s.querySelector('.t'), m = s.querySelector('.m'), wt = widest(t, t.textContent), wm = tw(m, m.textContent), need = (wide ? Math.max(wt, wm, 28) : wt + 8 + wm) + 1,
+        bw = s.getBoundingClientRect().width, p = +s.dataset.p || 0, red = bw * p, wood = bw - red;
+      if (wood - pad >= need) { s.classList.add('in'); if (red) setv(s, '--pr', Math.ceil(red + pad / 2) + 'px'); }
+      else if (red - pad >= need) { s.classList.add('inr'); setv(s, '--pl', Math.ceil(wood + pad / 2) + 'px'); }
+      else { s.classList.add('out'); outs.push(s); } });
+    if (!outs.length) return;
+    var br = box.getBoundingClientRect(), rel = function (s) { var r = s.getBoundingClientRect(); return { l: r.left - br.left, r: r.right - br.left, t: r.top - br.top, b: r.bottom - br.top, w: r.width, h: r.height }; };
+    if (!wide) { outs.forEach(function (s) { var r = rel(s), t = s.querySelector('.t'), m = s.querySelector('.m'), room = W - r.r - 8, wm = tw(m, m.textContent, '15px'), full = tw(t, t.textContent, '12px') + 6 + wm + 2;
+        s.classList.add('gk'); setv(s, '--lx', (r.w + 8) + 'px'); setv(s, '--lw', Math.max(room, wm + 1) + 'px');
+        if (room < wm + 2) { s.classList.add('under'); setv(s, '--lx', '0px'); setv(s, '--lw', W + 'px'); setv(s, '--below', '21px'); cut(t, W - 6 - 6 - wm - 2); } // a bar the width of the card: name and minutes on the line below
+        else if (full > room) { s.classList.add('split'); setv(s, '--nx', -(r.w + 8) + 'px'); setv(s, '--nw', W + 'px'); setv(s, '--below', '19px'); cut(t, W - 6 - 2); } }); return; }
+    var roll = box.parentNode.querySelector('.roll'), rollEnd = roll && getComputedStyle(roll).display !== 'none' ? roll.getBoundingClientRect().right - br.left : 0,
+      rowB = Math.max.apply(null, sts.map(function (s) { return rel(s).b; })) + 4, y = rowB, last = sts[sts.length - 1];
+    outs.forEach(function (s) { var r = rel(s), t = s.querySelector('.t'), m = s.querySelector('.m'), lab = s.querySelector('.lab'), lw = Math.ceil(tw(t, t.textContent) + 6 + tw(m, m.textContent, '15px') + 2 + 8), x, row = false, gap = 8;
+      if (lw > W) lw = W;
+      // whole label 8px after the bar on its row (only the last bar has room there); otherwise below the row from the bar's start, with a 1px leader
+      if (s === last && W - r.r - gap >= lw) { x = r.r + gap; row = true; } else { s.classList.add('below'); lw += 6; x = Math.min(r.l, W - lw); }
+      if (rollEnd && x < rollEnd && x + lw > rollEnd) { if (rollEnd - 6 - lw >= 0 && !row) x = rollEnd - 6 - lw; else if (W - rollEnd - gap >= lw) x = rollEnd + gap; else s.classList.add('chip'); }
+      if (!s.classList.contains('chip')) s.classList.add(rollEnd && x + lw <= rollEnd ? 'gc' : 'gk');
+      setv(s, '--lx', (Math.max(0, x) - r.l) + 'px'); setv(s, '--lw', lw + 'px'); setv(s, '--ly', '0px'); var lh = lab.getBoundingClientRect().height; // label box is placed from the stick's own corner
+      if (row) setv(s, '--ly', Math.max(0, (r.h - lh) / 2) + 'px'); else { setv(s, '--ly', (y - r.t) + 'px'); y += lh + 4; } });
+    if (y > rowB) setv(box, '--outh', (y - rowB + 6) + 'px'); }
+  function lay() { [].forEach.call(document.querySelectorAll('#rolls .sticks, #plank .sticks'), layOne); }
   // minutes line: loadLine, then (red) tallySep + overBy, or (green) tallySep + loadSpare (Writer N9/N9b). A 0-minute helper with no tasks: zeroHead (Writer N12).
   function helperCard(r, sc, title, mode) { var a = el('article', 'helper' + (r.cap === 0 ? ' zero' : '') + (r.cap === 0 && !r.items.length ? ' idle' : '')), nm = q(M.strip(r.name)), ll = M.fill(C.loadLine, { load: r.load, cap: r.cap });
     var idle = r.cap === 0 && !r.items.length, ov = r.over ? M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : '', sp = !ov && r.cap > 0 && r.spare > 0 ? M.fill(C.loadSpare, { n: r.spare }) : '';
@@ -95,12 +143,12 @@
     var sc = res.scale, host = $('rolls'); host.textContent = ''; res.rows.forEach(function (r) { host.append(helperCard(r, sc, title, res.mode)); });
     // bench
     var bh = $('bench-h'), pl = $('plank'); pl.textContent = ''; bh.textContent = res.bench.length ? M.plural(C.benchHeading, res.bench.length, { m: res.benchMin }) : C.benchHeadingEmpty;
-    if (res.bench.length) { var bs = el('div', 'sticks'), bsc = Math.max(sc, Math.max.apply(null, res.bench.map(function (t) { return t.min; }))); res.bench.forEach(function (t) { bs.append(stick(t, bsc)); }); pl.append(bs); }
+    if (res.bench.length) { var bs = el('div', 'sticks'), bsc = Math.max(sc, res.benchMin); res.bench.forEach(function (t) { bs.append(stick(t, bsc)); }); pl.append(bs); }
     else pl.append(el('p', 'empty', C.benchEmpty));
     var be = $('bench-explain'); be.hidden = !res.benchExplain; be.textContent = res.benchExplain ? M.fill(C.benchExplain, { m: res.benchMin, list: M.raw(res.spares.map(function (r) { return M.fill(C.spareItem, { name: q(M.strip(r.name)), n: r.spare }); }).join(' · ')) }) : '';
     $('b-bench').hidden = !res.bench.length; $('preview').hidden = true;
     $('b-change').hidden = !!recv; sheet(title, res); $('link-box').hidden = true; $('link').value = ''; $('link-long').hidden = true; $('share').hidden = !!recv;
-    show('s2', true); show('s5', true); }
+    show('s2', true); show('s5', true); lay(); }
   function sheet(title, res) { $('sheet-h').textContent = M.fill(C.sheetHeading, { title: title }); var tb = $('sheet-t').tBodies[0]; tb.textContent = '';
     var line = function (its) { return its.map(function (it) { return M.fill(C.sheetTaskCell, { task: M.strip(it.name), m: it.min }); }).join(' · '); };
     res.rows.forEach(function (r) { var tr = el('tr'), n = el('td', 'n'); n.append(V.typed(r.name)); var nm = q(M.strip(r.name));
@@ -158,9 +206,9 @@
     fill(d, d.res.mode, d.res.assign); V.readOnly($('form'), true); show('s1', false);
     $('recv-intro').textContent = C.receiverIntro; $('recv-note').textContent = C.receiverNote; $('recv').hidden = false;
     render(d, d.res, true); }
-  function own() { var d = last && last.d, res = last && last.res; history.replaceState(null, '', location.pathname + location.search); routeTo('');
+  function own() { var d = last && last.d, res = last && last.res; history.replaceState(null, '', location.pathname); routeTo('');
     if (d) { fill(d, res.mode, res.assign); split(); } }
-  function reset() { if (!window.confirm(C.resetConfirm)) return; if (location.hash && location.hash !== '#') history.replaceState(null, '', location.pathname + location.search); routeTo(''); V.toast(C.resetDone); $('f-title').focus(); }
+  function reset() { if (!window.confirm(C.resetConfirm)) return; if ((location.hash && location.hash !== '#') || location.search) history.replaceState(null, '', location.pathname); routeTo(''); V.toast(C.resetDone); $('f-title').focus(); }
   // deferred script: the DOM is parsed. Wire once here, BEFORE route() runs (route runs at once when readyState isn't 'loading').
   (function init() { texts(); fill(null);
     $('f-title').addEventListener('input', titleInput); $('f-title').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); $('form').requestSubmit ? $('form').requestSubmit() : $('b-split').click(); } });
@@ -174,6 +222,10 @@
     $('b-print').addEventListener('click', function () { window.print(); });
     $('b-change').addEventListener('click', function () { var f = rows('helper')[0].querySelectorAll('input')[1]; f.scrollIntoView({ block: 'center' }); f.focus({ preventScroll: true }); });
     $('b-link').addEventListener('click', makeLink); $('own').addEventListener('click', own);
+    // H14: re-lay the labels when the card width or the fonts change
+    if (window.ResizeObserver) { var lw = 0; new ResizeObserver(function (e) { var w = Math.round(e[0].contentRect.width); if (w !== lw) { lw = w; lay(); } }).observe($('rolls')); } else window.addEventListener('resize', lay);
+    if (WIDE.addEventListener) WIDE.addEventListener('change', lay); if (document.fonts && document.fonts.ready) document.fonts.ready.then(lay);
   })();
+  if (location.search) history.replaceState(null, '', location.pathname + location.hash); // PM 04:57: the address bar never keeps a ?query (path + #fragment only)
   V.route(routeTo);
 })();
