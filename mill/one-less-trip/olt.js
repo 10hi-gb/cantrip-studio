@@ -105,8 +105,8 @@
     var c = compute(st), L = [C.textHeader, ''];
     function sp(t) { return t.replace(/ {2,}/g, ' ').replace(/ ·/g, ' ·'); }
     function lines(b) { b.lines.forEach(function (l) {
-      if (l.merged) L.push(sp(M.fill(C.textMergedItemLine, { item: l.item, qty: fmtQty(l.q), unit: l.unit || '', owners: l.traces.map(function (t) { return M.quote(t.owner); }).join(', ') })));
-      else { var t = l.traces[0]; L.push(sp(M.fill(C.textItemLine, { item: l.item, qty: fmtQty(t.q), unit: t.unit || '', owner: M.quote(t.owner) }))); }
+      if (l.merged) L.push(sp(M.fill(C.textMergedItemLine, { item: l.item, qty: fmtQty(l.q), unit: l.unit ? M.quote(l.unit) : '', owners: l.traces.map(function (t) { return M.quote(t.owner); }).join(', ') })));
+      else { var t = l.traces[0]; L.push(sp(M.fill(C.textItemLine, { item: l.item, qty: fmtQty(t.q), unit: t.unit ? M.quote(t.unit) : '', owner: M.quote(t.owner) }))); }
     }); }
     c.stops.forEach(function (s) { L.push(M.fill(C.textStopLine, { stop: s.name })); lines(s); L.push(''); });
     if (c.unknown.lines.length) { L.push(C.textUnknownStopLine); lines(c.unknown); L.push(''); }
@@ -115,12 +115,14 @@
   }
   // Link "#t1.<b64url>.<ck>": {h:[names], r:[[ownerIdx,item,qty,unit,stop]], m:[[rowIdx..]]}. Only for a fully valid list.
   // maxLen: room left for the fragment so the WHOLE URL stays within URL_MAX (2,000). '' = too long, null = not shareable.
-  function encode(st, maxLen) {
+  // N4: the uncapped fragment, so the UI can show a link's real length; encode() applies the cap.
+  function rawFragment(st) {
     if (!canShare(st)) return null; var hi = {}; st.h.forEach(function (h, i) { hi[h.id] = i; }); var ri = {}; st.r.forEach(function (r, i) { ri[r.id] = i; });
     var c = compute(st), groups = []; c.stops.concat([c.unknown]).forEach(function (b) { b.lines.forEach(function (l) { if (l.merged) groups.push(l.traces.map(function (t) { return ri[t.id]; })); }); });
     var f = M.pack('t', 1, { h: st.h.map(function (h) { return M.strip(h.name); }), r: st.r.map(function (r) { return [hi[r.o], M.strip(r.i), fmtQty(r.q), M.strip(r.u), M.strip(r.s)]; }), m: groups });
-    return f.length <= Math.min(FRAG_MAX, maxLen == null ? FRAG_MAX : maxLen) ? f : '';
+    return f;
   }
+  function encode(st, maxLen) { var f = rawFragment(st); if (f === null) return null; return f.length <= Math.min(FRAG_MAX, maxLen == null ? FRAG_MAX : maxLen) ? f : ''; }
   function decode(frag) {
     var u = M.unpack(frag, 't', 1, FRAG_MAX); if (!u.ok) return u; var d = u.data, bad = { ok: false, why: 'bad' };
     if (!d || Array.isArray(d) || Object.keys(d).sort().join() !== 'h,m,r' || !Array.isArray(d.h) || !Array.isArray(d.r) || !Array.isArray(d.m)) return bad;
@@ -141,5 +143,5 @@
     st.next = id; if (!canShare(st)) return bad;
     return { ok: true, data: st };
   }
-  return { LIM: LIM, FRAG_MAX: FRAG_MAX, URL_MAX: URL_MAX, fold: fold, prune: prune, sameStops: sameStops, sameStop: sameStop, notSameStop: notSameStop, norm: norm, mkey: mkey, parseQty: parseQty, fmtQty: fmtQty, tag: tag, blank: blank, householdErrors: householdErrors, rowErrors: rowErrors, compute: compute, merge: merge, unmerge: unmerge, removeRow: removeRow, removeHousehold: removeHousehold, canShare: canShare, qtyUnit: qtyUnit, text: text, encode: encode, decode: decode };
+  return { LIM: LIM, FRAG_MAX: FRAG_MAX, URL_MAX: URL_MAX, fold: fold, prune: prune, sameStops: sameStops, sameStop: sameStop, notSameStop: notSameStop, norm: norm, mkey: mkey, parseQty: parseQty, fmtQty: fmtQty, tag: tag, blank: blank, householdErrors: householdErrors, rowErrors: rowErrors, compute: compute, merge: merge, unmerge: unmerge, removeRow: removeRow, removeHousehold: removeHousehold, canShare: canShare, qtyUnit: qtyUnit, text: text, rawFragment: rawFragment, encode: encode, decode: decode };
 });

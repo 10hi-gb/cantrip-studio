@@ -11,7 +11,7 @@
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function label(k) { return B.OPTIONAL.indexOf(k) >= 0 ? C.optionalFields[k] : C.fields[k]; }
   function question(k) { var q = B.questions(st, C).filter(function (x) { return x.key === k; })[0]; return q ? q.text : (B.OPTIONAL.indexOf(k) >= 0 ? C.optionalQuestions[k] : C.questions[k]); }
-  function toast(msg) { var t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 3200); }
+  function toast(msg) { V.toast(msg, 3200); } // shared: route() clears it (QA N2)
   function clearHash() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); }
   function today() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function roomLine(node, err, value, cap, tpl) { var used = B.room(M.strip(value)), over = used - cap; node.textContent = M.fill(C.limitCounter, { n: used, max: cap }); err.textContent = over > 0 ? M.plural(tpl, over, { max: cap }) : ''; return over; }

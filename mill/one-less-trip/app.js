@@ -5,11 +5,16 @@
   var st = O.blank(), checks = {}, editing = null, toastT = 0, mode = 'own', isCopy = false, prevSig = null, hhTouched = {}, V = window.MILLVIEW;
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function btn(cls, txt, fn) { var b = el('button', cls, txt); b.type = 'button'; b.addEventListener('click', fn); return b; }
-  function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 3200); }
+  function toast(m) { V.toast(m, 3200); } // shared: route() clears it (QA N2)
   function clearHash() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); }
   function changed() { clearHash(); $('linkbox').hidden = true; $('fbwrap').hidden = true; }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function qu(q, u) { return O.qtyUnit(q, u); }
+  // D5: every sender-typed value (household, item, unit, stop) is quoted wherever it appears: DOM text via V.typed(),
+  // plain-text places (aria-labels, toasts, option labels, notes) via V.quote(). Quantities are app-formatted numbers.
+  function qt(s) { return V.quote(s); }
+  function quT(q, u) { return O.fmtQty(q) + (u ? ' ' + qt(u) : ''); }
+  function qtyNodes(parent, q, u) { parent.appendChild(el('span', 'olt-qty', O.fmtQty(q))); if (u) { parent.appendChild(document.createTextNode(' ')); parent.appendChild(V.typed(u, 'olt-unit')); } }
 
   // ---- households
   function drawHouseholds() {
@@ -18,10 +23,10 @@
       var li = el('li'), inp = el('input'); inp.id = 'hh-' + h.id; inp.value = h.name; inp.placeholder = C.householdPlaceholder; inp.autocomplete = 'off'; inp.setAttribute('aria-label', C.householdLabel + ' ' + (i + 1));
       var err = el('span', 'olt-err'); err.id = 'hhe-' + h.id; inp.setAttribute('aria-describedby', err.id);
       inp.addEventListener('input', function () { h.name = inp.value; hhTouched[h.id] = 1; changed(); refresh(); });
-      inp.addEventListener('blur', function () { if (!hhTouched[h.id]) { hhTouched[h.id] = 1; refresh(); } });
+      inp.addEventListener('blur', function () { if (!hhTouched[h.id]) { hhTouched[h.id] = 1; V.afterPointer(function () { paintHH(); }); } });
       li.appendChild(inp);
       var rm = btn('olt-mini', C.removeHousehold.replace(/\s*\{name\}/, ''), function () { O.removeHousehold(st, h.id); changed(); drawHouseholds(); drawRows(); refresh(); var f = $('hh-add'); f.focus(); });
-      rm.id = 'hhr-' + h.id; rm.setAttribute('aria-label', M.fill(C.removeHousehold, { name: M.strip(h.name) || (C.householdLabel + ' ' + (i + 1)) })); rm.disabled = st.h.length <= O.LIM.hhMin; li.appendChild(rm); li.appendChild(err); ul.appendChild(li);
+      rm.id = 'hhr-' + h.id; rm.setAttribute('aria-label', M.fill(C.removeHousehold, { name: M.strip(h.name) ? qt(M.strip(h.name)) : (C.householdLabel + ' ' + (i + 1)) })); rm.disabled = st.h.length <= O.LIM.hhMin; li.appendChild(rm); li.appendChild(err); ul.appendChild(li);
     });
   }
   // ---- source rows (left list)
@@ -30,19 +35,19 @@
     c.rows.forEach(function (x) {
       var li = el('li', 'olt-row' + (x.ok ? '' : ' is-invalid')); li.id = 'row-' + x.id;
       li.appendChild(el('span', 'olt-src', x.tag));
-      var what = el('span', 'olt-what'); what.appendChild(el('b', null, x.owner || '—')); what.appendChild(document.createTextNode(' · ' + M.strip(x.row.i) + ' ' + qu(x.row.q, M.strip(x.row.u)))); li.appendChild(what);
-      li.appendChild(el('span', 'olt-where' + (x.stopKey ? '' : ' is-unknown'), x.stopKey ? M.strip(x.row.s) : C.unknownStop));
+      var what = el('span', 'olt-what'); if (x.owner) what.appendChild(V.typed(x.owner, null, 'b')); else what.appendChild(el('b', null, '—')); what.appendChild(document.createTextNode(' · ')); if (M.strip(x.row.i)) what.appendChild(V.typed(M.strip(x.row.i))); what.appendChild(document.createTextNode(' ' + quT(x.row.q, M.strip(x.row.u)))); li.appendChild(what);
+      var wh = el('span', 'olt-where' + (x.stopKey ? '' : ' is-unknown')); if (x.stopKey) wh.appendChild(V.typed(M.strip(x.row.s))); else wh.textContent = C.unknownStop; li.appendChild(wh);
       if (!x.ok) li.appendChild(el('span', 'olt-err', x.err.o ? C.ownerMissing : x.err.i === 'empty' ? C.itemEmpty : C.qtyInvalid));
       var acts = el('span', 'olt-acts');
-      var ed = btn('olt-mini', C.editRow, function () { startEdit(x.id); }); ed.id = 'ed-' + x.id; ed.setAttribute('aria-label', M.fill(C.editRowAria, { item: M.strip(x.row.i) + ' (' + x.tag + ')' }));
+      var ed = btn('olt-mini', C.editRow, function () { startEdit(x.id); }); ed.id = 'ed-' + x.id; ed.setAttribute('aria-label', M.fill(C.editRowAria, { item: qt(M.strip(x.row.i)) + ' (' + x.tag + ')' }));
       var rm = btn('olt-mini', C.removeRow.replace(/\s*\{item\}/, '') || C.removeRow, function () { O.removeRow(st, x.id); delete checks['r' + x.id]; if (editing === x.id) stopEdit(); changed(); drawRows(); refresh(); $('f-i').focus(); });
-      rm.id = 'rm-' + x.id; rm.setAttribute('aria-label', M.fill(C.removeRow, { item: M.strip(x.row.i) + ' (' + x.tag + ')' }));
+      rm.id = 'rm-' + x.id; rm.setAttribute('aria-label', M.fill(C.removeRow, { item: qt(M.strip(x.row.i)) + ' (' + x.tag + ')' }));
       acts.appendChild(ed); acts.appendChild(rm); li.appendChild(acts); ol.appendChild(li);
     });
   }
   function ownerOptions() {
     var s = $('f-o'), v = s.value; s.textContent = ''; var o0 = el('option', null, C.ownerChoose); o0.value = ''; s.appendChild(o0);
-    st.h.forEach(function (h, i) { var o = el('option', null, M.strip(h.name) || (C.householdLabel + ' ' + (i + 1))); o.value = String(h.id); s.appendChild(o); });
+    st.h.forEach(function (h, i) { var o = el('option', null, M.strip(h.name) ? qt(M.strip(h.name)) : (C.householdLabel + ' ' + (i + 1))); o.value = String(h.id); s.appendChild(o); });
     s.value = v; if (s.value !== v) s.value = '';
     var dl = $('stoplist'); dl.textContent = ''; O.compute(st).stops.forEach(function (x) { var o = el('option'); o.value = x.name; dl.appendChild(o); });
   }
@@ -77,22 +82,22 @@
     var ul = el('ul', 'olt-items');
     b.lines.forEach(function (l) {
       var li = el('li', 'olt-item' + (checks[l.lk] ? ' is-done' : '')), cb = el('input', 'olt-check'); cb.type = 'checkbox'; cb.id = 'ck-' + l.lk; cb.checked = !!checks[l.lk];
-      cb.setAttribute('aria-label', M.fill(C.checkAria, { item: l.item + ' ' + qu(l.q, l.unit), owner: l.traces.map(function (t) { return t.owner; }).join(', '), stop: unknown ? C.unknownStop : b.name }));
+      cb.setAttribute('aria-label', M.fill(C.checkAria, { item: qt(l.item) + ' ' + quT(l.q, l.unit), owner: l.traces.map(function (t) { return qt(t.owner); }).join(', '), stop: unknown ? C.unknownStop : qt(b.name) }));
       cb.addEventListener('change', function () { if (cb.checked) checks[l.lk] = 1; else delete checks[l.lk]; li.classList.toggle('is-done', cb.checked); progress(); });
       li.appendChild(cb);
-      var line = el('div', 'olt-line'); line.appendChild(el('span', 'olt-qty', qu(l.q, l.unit))); line.appendChild(document.createTextNode(' ')); line.appendChild(el('span', 'olt-name', l.item));
+      var line = el('div', 'olt-line'); qtyNodes(line, l.q, l.unit); line.appendChild(document.createTextNode(' ')); line.appendChild(V.typed(l.item, 'olt-name'));
       if (l.merged) line.appendChild(el('span', 'olt-merged', C.mergedBadge));
       var tags = el('div', 'olt-tags'); l.traces.forEach(function (t) { var tg = el('span', 'olt-tag'); tg.appendChild(V.typed(t.owner)); tg.appendChild(document.createTextNode(' ' + t.tag + (l.merged ? ' ·' + O.fmtQty(t.q) : ''))); tags.appendChild(tg); }); line.appendChild(tags);
-      if (l.merged) { var ub = btn('olt-mini', C.unmergeButton, function () { var wasRecv = mode === 'recv'; O.unmerge(st, l.traces[0].id); delete checks[l.lk]; if (wasRecv) takeCopy(C.copyMergedNote); changed(); refresh(); if (wasRecv) offerLink(); toast(M.fill(C.unmergedStatus, { item: l.item })); var f = $('ck-r' + l.traces[0].id); if (f) f.focus(); }); ub.id = 'um-' + l.traces[0].id; line.appendChild(ub); }
-      if (l.kept) line.appendChild(el('div', 'olt-note olt-note--kept', M.fill(C.keptSeparateUnit, { unit1: l.kept.unit1 || '—', unit2: l.kept.unit2 || '—' })));
+      if (l.merged) { var ub = btn('olt-mini', C.unmergeButton, function () { var wasRecv = mode === 'recv'; O.unmerge(st, l.traces[0].id); delete checks[l.lk]; if (wasRecv) takeCopy(C.copyMergedNote); changed(); refresh(); if (wasRecv) offerLink(); toast(M.fill(C.unmergedStatus, { item: qt(l.item) })); var f = $('ck-r' + l.traces[0].id); if (f) f.focus(); }); ub.id = 'um-' + l.traces[0].id; line.appendChild(ub); }
+      if (l.kept) line.appendChild(el('div', 'olt-note olt-note--kept', M.fill(C.keptSeparateUnit, { unit1: l.kept.unit1 ? qt(l.kept.unit1) : '—', unit2: l.kept.unit2 ? qt(l.kept.unit2) : '—' })));
       li.appendChild(line); ul.appendChild(li);
     });
     a.appendChild(ul);
     b.offers.forEach(function (of) {
       var nt = el('div', 'olt-note olt-note--merge'), owners = [].concat.apply([], of.lines.map(function (l) { return l.traces.map(function (t) { return t.owner; }); }));
       var tagsTxt = [].concat.apply([], of.lines.map(function (l) { return l.traces.map(function (t) { return t.tag; }); }));
-      nt.appendChild(el('p', null, M.fill(C.duplicateFound, { owner1: owners.slice(0, -1).join('\u201D, \u201C'), owner2: owners[owners.length - 1], item: of.lines[0].item, unit: of.lines[0].unit || '—' }) + ' ' + C.mergeHint));
-      var mb = btn('olt-mini', C.mergeButton, function () { var wasRecv = mode === 'recv'; O.merge(st, of.stopKey, of.key); if (wasRecv) takeCopy(C.copyMergedNote); changed(); refresh(); if (wasRecv) offerLink(); toast(M.fill(C.mergedStatus, { item: of.lines[0].item })); var f = $('um-' + of.ids.slice().sort(function (p, q) { return idx(p) - idx(q); })[0]); if (f) f.focus(); });
+      nt.appendChild(el('p', null, M.fill(C.duplicateFound, { owner1: owners.slice(0, -1).join('\u201D, \u201C'), owner2: owners[owners.length - 1], item: of.lines[0].item, unit: of.lines[0].unit ? qt(of.lines[0].unit) : '—' }) + ' ' + C.mergeHint));
+      var mb = btn('olt-mini', C.mergeButton, function () { var wasRecv = mode === 'recv'; O.merge(st, of.stopKey, of.key); if (wasRecv) takeCopy(C.copyMergedNote); changed(); refresh(); if (wasRecv) offerLink(); toast(M.fill(C.mergedStatus, { item: qt(of.lines[0].item) })); var f = $('um-' + of.ids.slice().sort(function (p, q) { return idx(p) - idx(q); })[0]); if (f) f.focus(); });
       mb.id = 'mg-' + of.ids[0]; mb.setAttribute('aria-label', M.fill(C.mergeAria, { tags: tagsTxt.join(' + ') })); nt.appendChild(mb); a.appendChild(nt);
     });
     return a;
@@ -124,16 +129,21 @@
     [].forEach.call($('lane').querySelectorAll('.olt-divider'), function (d, i) { if (i >= Object.keys(prev).length - 1) d.classList.add('is-dropping'); });
     var b = $('belt'); b.classList.remove('is-advancing'); void b.offsetWidth; b.classList.add('is-advancing');
   }
-  function refresh() { refresh0(); applyMode(); }
-  function refresh0() {
-    if (mode === 'own') O.prune(st); // D10: a merge an edit dissolved never comes back by itself
-    var c = O.compute(st), L = c.ledger;
-    // households
+  // Household errors painted IN PLACE (no rebuild): a blur on an untouched field only marks it touched and repaints these
+  // spans, so the click that caused the blur still lands on the button under the pointer (QA N1).
+  function paintHH(c) {
+    c = c || O.compute(st);
     var herr = {}; c.hhErr.forEach(function (e) { if (e.id) herr[e.id] = e; });
     // An empty household name is only flagged once that field was used (or a row was added): a blank start shows no errors.
     st.h.forEach(function (h) { var e = herr[h.id], inp = $('hh-' + h.id); if (!inp) return; if (e && e.why === 'empty' && !hhTouched[h.id] && !st.r.length) e = null; if (e) inp.setAttribute('aria-invalid', 'true'); else inp.removeAttribute('aria-invalid');
       $('hhe-' + h.id).textContent = !e ? '' : e.why === 'empty' ? C.householdEmpty : e.why === 'dup' ? C.householdDuplicate : M.plural(C.householdTooLong, e.over);
-      var rm = $('hhr-' + h.id); if (rm) rm.setAttribute('aria-label', M.fill(C.removeHousehold, { name: M.strip(h.name) || C.householdLabel })); });
+      var rm = $('hhr-' + h.id); if (rm) rm.setAttribute('aria-label', M.fill(C.removeHousehold, { name: M.strip(h.name) ? qt(M.strip(h.name)) : C.householdLabel })); });
+  }
+  function refresh() { refresh0(); applyMode(); }
+  function refresh0() {
+    if (mode === 'own') O.prune(st); // D10: a merge an edit dissolved never comes back by itself
+    var c = O.compute(st), L = c.ledger;
+    paintHH(c);
     $('hh-meta').textContent = M.plural(C.householdCount, st.h.length);
     $('hh-add').disabled = st.h.length >= O.LIM.hhMax; $('hh-e').textContent = st.h.length >= O.LIM.hhMax ? C.tooManyHouseholds : '';
     $('rows-meta').textContent = M.plural(C.rowCount, st.r.length) + (st.r.length >= O.LIM.rows ? ' · ' + C.tooManyRows : '');
@@ -158,9 +168,9 @@
     $('blocked').hidden = !(st.r.length && !can); $('blocked').textContent = C.copyBlocked;
     $('fallback').value = can ? O.text(st, C) : '';
     // D11: the whole URL is capped at URL_MAX; the current length is always shown, nothing is cut silently.
-    var f = can ? O.encode(st, 1e9) : null, lr = $('linkroom');
+    var f = can ? O.rawFragment(st) : null, lr = $('linkroom');
     if (f == null) { lr.textContent = ''; lr.classList.remove('is-over'); }
-    else { var n = f === '' ? O.FRAG_MAX + linkPrefix().length + 1 : linkPrefix().length + f.length; lr.textContent = M.fill(C.linkRoom, { n: n.toLocaleString('en-US'), max: O.URL_MAX.toLocaleString('en-US') }) + (n > O.URL_MAX ? ' ' + C.tooLongLink : ''); lr.classList.toggle('is-over', n > O.URL_MAX); }
+    else { var n = linkPrefix().length + f.length; /* N4: the real length of the link this list would make, even when over */ lr.textContent = M.fill(C.linkRoom, { n: n.toLocaleString('en-US'), max: O.URL_MAX.toLocaleString('en-US') }) + (n > O.URL_MAX ? ' ' + C.tooLongLink : ''); lr.classList.toggle('is-over', n > O.URL_MAX); }
   }
   // PM 2: "Same stop?" prompt, never an automatic grouping.
   function drawSameStops(c) {

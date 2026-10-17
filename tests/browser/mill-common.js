@@ -7,7 +7,7 @@ async function storage(p) {
     idb: indexedDB.databases ? (await indexedDB.databases()).map(d => d.name) : 'n/a', caches: [], sw: 0, insecureLocal: true,
     undef: /undefined|\{\w+\}/.test(document.body.innerText) }));
 }
-const W = [320, 390, 1280];
+const W = process.env.MILL_W ? process.env.MILL_W.split(',').map(Number) : [320, 390, 1280];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function session(host, ip, opts = {}) {
   const s = await open(host, ip); s.p.setDefaultTimeout(15000);
@@ -57,4 +57,63 @@ async function reallyHidden(p, selectors) {
   }
   return { ok: Object.values(out).every(x => x.ok), out };
 }
-module.exports = { sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };
+
+// Typed-text audit (QA D5/N3, Joshua 23:52): every occurrence of a sender-typed seed in VISIBLE text, aria-label,
+// aria-description, title, aria-describedby targets, live regions (role=status/alert/log, aria-live), <option> labels,
+// the toast and any extra strings (copied text) must sit inside curly quotes
+// “seed”. Returns {ok, hits:[{where, ctx}]}. Form control values are not scanned (an editor shows raw text by design).
+// Seeds should be distinct per field so a seed never appears inside another quoted value.
+function unquotedIn(str, seed) {
+  const out = []; let i = str.indexOf(seed);
+  while (i >= 0) { const before = str[i - 1], after = str[i + seed.length]; if (!(before === '\u201C' && after === '\u201D')) out.push(str.slice(Math.max(0, i - 30), i + seed.length + 30)); i = str.indexOf(seed, i + 1); }
+  return out;
+}
+async function typedAudit(p, seeds, extra = {}) {
+  const got = await p.evaluate(() => {
+    const vis = e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return cs.display !== 'none' && cs.visibility !== 'hidden' && (r.width > 0 || r.height > 0); };
+    const attrs = []; document.querySelectorAll('[aria-label],[aria-description],[title]').forEach(e => { ['aria-label', 'aria-description', 'title'].forEach(a => { const v = e.getAttribute(a); if (v) attrs.push([a + '@' + (e.id || e.tagName), v]); }); });
+    const opts = [...document.querySelectorAll('option')].map(o => ['option@' + (o.parentElement.id || ''), o.textContent]);
+    const t = document.getElementById('toast');
+    // screen-reader-only text (PM 23:52): aria-describedby targets and every live region, visible or not
+    const desc = []; document.querySelectorAll('[aria-describedby]').forEach(e => e.getAttribute('aria-describedby').split(/\s+/).forEach(id => { const d = id && document.getElementById(id); if (d && d.textContent) desc.push(['describedby@' + (e.id || e.tagName) + '>' + id, d.textContent]); }));
+    document.querySelectorAll('[aria-live],[role=status],[role=alert],[role=log]').forEach(e => { if (e.textContent) desc.push(['live@' + (e.id || e.tagName), e.textContent]); });
+    attrs.push(...desc);
+    return { visible: document.body.innerText, attrs, opts, toast: t && vis(t) ? t.textContent : '', title: document.title };
+  });
+  const hits = [];
+  for (const seed of seeds) {
+    unquotedIn(got.visible, seed).forEach(ctx => hits.push({ where: 'visible', seed, ctx }));
+    unquotedIn(got.toast, seed).forEach(ctx => hits.push({ where: 'toast', seed, ctx }));
+    unquotedIn(got.title, seed).forEach(ctx => hits.push({ where: 'document.title', seed, ctx }));
+    got.attrs.concat(got.opts).forEach(([w, v]) => unquotedIn(v, seed).forEach(ctx => hits.push({ where: w, seed, ctx })));
+    Object.entries(extra).forEach(([w, v]) => unquotedIn(String(v || ''), seed).forEach(ctx => hits.push({ where: w, seed, ctx })));
+  }
+  return { ok: !hits.length, hits: hits.slice(0, 20), n: hits.length };
+}
+
+// Recipient accessibility (QA BYG N1 / TSH KS-1, Joshua 23:57): read-only must never mean inert or aria-hidden.
+// facts: strings that must be exposed by the accessibility tree; tabTo: selectors Tab must reach; click: selector that a
+// REAL pointer click (mouse move + down + up on its box) must activate (click event reaches it, default not prevented).
+async function mouseAt(p, sel) {
+  const h = await p.$(sel); if (!h) return null; await h.evaluate(e => e.scrollIntoView({ block: 'center' })); const b = await h.boundingBox(); if (!b) return null;
+  await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await sleep(30); await p.mouse.up(); await sleep(120); return b;
+}
+async function recipientAccess(p, { facts = [], tabTo = [], click = null, maxTabs = 80 } = {}) {
+  const out = {};
+  out.inert = await p.evaluate(() => [...document.querySelectorAll('[inert]')].filter(e => !e.hidden && getComputedStyle(e).display !== 'none').map(e => e.id || e.tagName));
+  out.ariaHidden = await p.evaluate(f => [...document.querySelectorAll('[aria-hidden=true]')].filter(e => f.some(x => e.textContent.includes(x))).map(e => e.id || e.className), facts);
+  const snap = await p.accessibility.snapshot({ interestingOnly: false }); const names = [];
+  (function walk(n) { if (!n) return; if (n.name) names.push(String(n.name)); if (n.value) names.push(String(n.value)); (n.children || []).forEach(walk); })(snap);
+  const all = names.join('\n'); out.missingAx = facts.filter(f => !all.includes(f));
+  await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); window.scrollTo(0, 0); });
+  const seen = new Set(); for (let i = 0; i < maxTabs; i++) { await p.keyboard.press('Tab'); const id = await p.evaluate(() => { const a = document.activeElement; return a ? (a.id ? '#' + a.id : '') + '|' + (a.getAttribute('href') || '') + '|' + a.tagName : ''; }); seen.add(id); }
+  out.unreached = []; for (const sel of tabTo) { const ok = await p.evaluate((sel, seen) => { const els = [...document.querySelectorAll(sel)]; return els.length > 0 && els.every(e => seen.some(s => (e.id && s.startsWith('#' + e.id + '|')) || (!e.id && e.getAttribute('href') && s.split('|')[1] === e.getAttribute('href')))); }, sel, [...seen]); if (!ok) out.unreached.push(sel); }
+  if (click) {
+    // record that the real click reached the control (with its href); then cancel tel:/sms: navigation so the test page stays put
+    await p.evaluate(sel => { window.__clk = null; document.addEventListener('click', ev => { const t = ev.target.closest(sel); if (!t) return; window.__clk = { href: t.getAttribute('href') || '', id: t.id, tag: t.tagName }; if (/^(tel|sms):/.test(t.getAttribute('href') || '')) ev.preventDefault(); }, true); }, click);
+    out.box = await mouseAt(p, click); out.clicked = await p.evaluate(() => window.__clk);
+  }
+  out.ok = !out.inert.length && !out.ariaHidden.length && !out.missingAx.length && !out.unreached.length && (!click || !!(out.clicked && (out.clicked.href || out.clicked.id)));
+  return out;
+}
+module.exports = { recipientAccess, mouseAt, typedAudit, unquotedIn, sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };

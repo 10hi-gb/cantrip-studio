@@ -1,6 +1,6 @@
 // node tests/browser/mill-olt.qa.js <host[:port]> <ip> [scheme] — One Less Trip @320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { sameTabBadLink, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result, reallyHidden } = require('./mill-common');
+const { typedAudit, sameTabBadLink, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result, reallyHidden } = require('./mill-common');
 const BASE = `${SCHEME}://${H}/mill/one-less-trip/`;
 async function addRow(p, owner, item, qty, unit, stop) {
   await p.select('#f-o', String(owner)); await typeInto(p, '#f-i', item); await typeInto(p, '#f-q', qty); await typeInto(p, '#f-u', unit);
@@ -8,7 +8,7 @@ async function addRow(p, owner, item, qty, unit, stop) {
   await p.focus('#f-add'); await p.keyboard.press('Enter'); await sleep(40);
 }
 const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').textContent, stops: [...document.querySelectorAll('#lane .olt-ticket')].map(a => a.querySelector('.olt-stopname').textContent + ':' + a.querySelectorAll('.olt-item').length),
-  tray: [...document.querySelectorAll('#tray-t .olt-item .olt-name')].map(e => e.textContent), trayHidden: document.getElementById('tray').hidden, offers: [...document.querySelectorAll('.olt-note--merge button')].map(b => b.getAttribute('aria-label')),
+  tray: [...document.querySelectorAll('#tray-t .olt-item .olt-name')].map(e => e.textContent.replace(/^“|”$/g, '')), trayHidden: document.getElementById('tray').hidden, offers: [...document.querySelectorAll('.olt-note--merge button')].map(b => b.getAttribute('aria-label')),
   kept: [...document.querySelectorAll('.olt-note--kept')].map(e => e.textContent), tags: [...document.querySelectorAll('#lane .olt-tag, #tray-t .olt-tag')].map(e => e.textContent), copy: document.getElementById('b-copy').disabled, fix: document.getElementById('fix').textContent }));
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
@@ -27,7 +27,7 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     for (const r of R) await addRow(p, ...r);
     t = await view(p);
     ck(w + ' regrouped by stop in entered order; unknown tray; ledger reconciles', t.stops.join() === '“Corner Co-op”:4,“Post office”:2,“Hardware store”:2' && t.tray.join() === 'AA batteries,Sourdough' && t.ledger === '10 rows in8 on tickets2 set asideEvery item from every list is here once.', t);
-    ck(w + ' exact dup offered (not merged); different unit kept separate', t.offers.join() === 'Merge r01 + r02' && t.kept.join() === "Kept separate: litre isn't carton." && t.tags.length === 10, t);
+    ck(w + ' exact dup offered (not merged); different unit kept separate', t.offers.join() === 'Merge r01 + r02' && t.kept.join() === "Kept separate: “litre” isn't “carton”." && t.tags.length === 10, t);
     // form validation
     await addRow(p, 1, 'Glue', '1e9', '', 'X'); let fe = await p.evaluate(() => ({ q: document.getElementById('e-q').textContent, n: document.querySelectorAll('#rows li').length, f: document.activeElement.id }));
     ck(w + ' qty 1e9 rejected inline, no row added', fe.q === 'Use a plain number, like 2 or 0.5.' && fe.n === 10 && fe.f === 'f-q', fe);
@@ -35,23 +35,23 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     await typeInto(p, '#f-q', ''); await typeInto(p, '#f-i', '');
     // explicit merge by keyboard
     await p.focus('#mg-' + await p.evaluate(() => document.querySelector('.olt-note--merge button').id.slice(3))); await p.keyboard.press('Enter'); await sleep(80);
-    t = await view(p); const um = await p.evaluate(() => ({ f: document.activeElement.id, merged: [...document.querySelectorAll('.olt-merged')].length, qty: document.querySelector('#lane .olt-qty').textContent, toast: document.getElementById('toast').textContent }));
-    ck(w + ' merge: one line, both owner tags with qty, focus on Split back out', um.merged === 1 && um.qty === '3 carton' && t.tags.includes('“Ana” r01 ·2') && t.tags.includes('“Ben” r02 ·1') && um.f.startsWith('um-') && um.toast === 'Merged Oat milk into one line.' && t.ledger.startsWith('10 rows in8 on tickets'), { t, um });
+    t = await view(p); const um = await p.evaluate(() => ({ f: document.activeElement.id, merged: [...document.querySelectorAll('.olt-merged')].length, qty: document.querySelector('#lane .olt-line').firstChild.textContent + ' ' + document.querySelector('#lane .olt-line .olt-unit').textContent, toast: document.getElementById('toast').textContent }));
+    ck(w + ' merge: one line, both owner tags with qty, focus on Split back out', um.merged === 1 && um.qty === '3 “carton”' && t.tags.includes('“Ana” r01 ·2') && t.tags.includes('“Ben” r02 ·1') && um.f.startsWith('um-') && um.toast === 'Merged “Oat milk” into one line.' && t.ledger.startsWith('10 rows in8 on tickets'), { t, um });
     // check-off is session-only and keyboard
-    await p.focus('#' + await p.evaluate(() => [...document.querySelectorAll('#lane .olt-item')].find(li => li.querySelector('.olt-name').textContent === 'Brown rice').querySelector('input').id)); await p.keyboard.press('Space'); await sleep(30);
+    await p.focus('#' + await p.evaluate(() => [...document.querySelectorAll('#lane .olt-item')].find(li => li.querySelector('.olt-name').textContent.replace(/^“|”$/g, '') === 'Brown rice').querySelector('input').id)); await p.keyboard.press('Space'); await sleep(30);
     t = await p.evaluate(() => ({ done: document.querySelectorAll('.olt-item.is-done').length, prog: document.getElementById('progress').textContent })); ck(w + ' check-off', t.done === 1 && t.prog.startsWith('1 of 9 picked up'), t);
     // copy fails in headless (no permission) -> fallback selectable
     await p.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.reject(new Error('denied')) } }); });
     await p.focus('#b-copy'); await p.keyboard.press('Enter'); await sleep(150);
     t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, f: document.activeElement.id, v: document.getElementById('fallback').value, sel: document.activeElement.selectionEnd - document.activeElement.selectionStart }));
-    ck(w + ' copy failure leaves full list selected', t.toast === "Couldn't copy. Select the text below and copy it yourself." && t.f === 'fallback' && t.sel > 100 && t.v.startsWith('Shopping by stop. Items, stops and names as typed by the sender.\n\nStop: “Corner Co-op”\n☐ “Oat milk”: 3 carton total · for “Ana”, “Ben”\n') && t.v.includes('\nStop unknown\n☐ “AA batteries”: 8 each · for “Ana”\n'), t);
+    ck(w + ' copy failure leaves full list selected', t.toast === "Couldn't copy. Select the text below and copy it yourself." && t.f === 'fallback' && t.sel > 100 && t.v.startsWith('Shopping by stop. Items, stops and names as typed by the sender.\n\nStop: “Corner Co-op”\n☐ “Oat milk”: 3 “carton” total · for “Ana”, “Ben”\n') && t.v.includes('\nStop unknown\n☐ “AA batteries”: 8 “each” · for “Ana”\n'), t);
     // remove a household -> rows held back, copy blocked
     await p.focus('#hhr-3'); await p.keyboard.press('Enter'); await sleep(60); t = await view(p);
     ck(w + ' removed household: its rows held back, never dropped; copy blocked', t.ledger.includes('10 rows in') && t.ledger.includes('4 held back') && t.copy && t.fix.startsWith('4 rows need fixing'), t);
     // fix via edit: re-own r03
     await p.focus('#hh-add'); await p.keyboard.press('Enter'); await sleep(30); await p.keyboard.type('Cy');
     for (const tag of ['r03', 'r07', 'r09', 'r10']) { const id = await p.evaluate(tg => [...document.querySelectorAll('#rows li')].find(li => li.querySelector('.olt-src').textContent === tg).id.slice(4), tag); await p.focus('#ed-' + id); await p.keyboard.press('Enter'); await sleep(30);
-      const cyId = await p.evaluate(() => [...document.querySelectorAll('#f-o option')].find(o => o.textContent === 'Cy').value); await p.select('#f-o', cyId); await p.focus('#f-add'); await p.keyboard.press('Enter'); await sleep(40); }
+      const cyId = await p.evaluate(() => [...document.querySelectorAll('#f-o option')].find(o => o.textContent === '“Cy”').value); await p.select('#f-o', cyId); await p.focus('#f-add'); await p.keyboard.press('Enter'); await sleep(40); }
     t = await view(p); ck(w + ' edited rows back on tickets; ledger reconciles', t.ledger.startsWith('10 rows in8 on tickets2 set aside') && !t.copy && !t.fix, t);
     const miss = await tabReach(p, ['skip', 'hh-1', 'hh-add', 'f-o', 'f-i', 'f-q', 'f-u', 'f-s', 'f-x', 'f-add', 'b-copy', 'b-print', 'b-share', 'b-reset'], 160); ck(w + ' keyboard reach', !miss.length, miss);
     // link -> receiver
@@ -69,8 +69,8 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
       ck(w + ' ' + nm + ' link refused', want.test(x.b) && !x.hid && !x.img && !x.rows, x);
     }
     // text-safe
-    await addRow(p, 1, '<img src=x onerror=alert(1)>', '1', '<b>u</b>', '<i>S</i>'); t = await p.evaluate(() => ({ img: document.querySelectorAll('img, b b, .olt-ticket i').length, name: ([...document.querySelectorAll('.olt-name')].find(e => e.textContent.startsWith('<img')) || {}).textContent || '', stop: [...document.querySelectorAll('.olt-stopname')].some(e => e.textContent === '“<i>S</i>”') }));
-    ck(w + ' text-safe rendering', !t.img && t.name.startsWith('<img') && t.stop, t);
+    await addRow(p, 1, '<img src=x onerror=alert(1)>', '1', '<b>u</b>', '<i>S</i>'); t = await p.evaluate(() => ({ img: document.querySelectorAll('img, b b, .olt-ticket i').length, name: ([...document.querySelectorAll('.olt-name')].find(e => e.textContent.startsWith('“<img')) || {}).textContent || '', stop: [...document.querySelectorAll('.olt-stopname')].some(e => e.textContent === '“<i>S</i>”') }));
+    ck(w + ' text-safe rendering', !t.img && t.name.startsWith('“<img') && t.stop, t);
     await sleep(600); const of = await overflow(p); ck(w + ' no overflow (owner, receiver)', of.sw <= of.w && !of.bad.length && ofq.sw <= ofq.w && !ofq.bad.length, { of, ofq });
     // recipient view is read-only in the DOM (shared MILLVIEW.readOnly): no enabled control in the intake, no Start over
     await q.goto('about:blank'); await q.goto(url, { waitUntil: 'load' }); await sleep(150);
@@ -131,7 +131,7 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
       tagOut: [...document.querySelectorAll('.olt-tag')].filter(g => { const a = g.closest('article').getBoundingClientRect(), r = g.getBoundingClientRect(); return r.right > a.right + 0.5 || r.left < a.left - 0.5; }).map(g => g.textContent),
       stubOver: [...document.querySelectorAll('.olt-stub')].filter(st => { const m = st.querySelector('.olt-stopmeta'); return m && m.getBoundingClientRect().bottom > st.getBoundingClientRect().bottom + 0.5; }).length,
       sw: document.documentElement.scrollWidth, progress: document.getElementById('progress').textContent, same: document.querySelectorAll('.olt-same').length }; });
-    ck(w + ' D5 recipient: receiverTypedNote exact under the intro; merge prompt = quoted duplicateFound + mergeHint; stop headings typed + quoted in body type', !t.typedHidden && t.typed === 'Names, items and stops are as typed by the sender. Not checked.' && t.prompt === 'Possible double, as typed: “Oat milk” (carton). Listed for “Ana Maria de los Santos” and “The Nguyen-Okafors”. Merge only if it\'s the same thing.' && t.stops[0] === '“Walgreens on 5th Avenue & Main St”' && t.font !== t.slab, t);
+    ck(w + ' D5 recipient: receiverTypedNote exact under the intro; merge prompt = quoted duplicateFound + mergeHint; stop headings typed + quoted in body type', !t.typedHidden && t.typed === 'Names, items and stops are as typed by the sender. Not checked.' && t.prompt === 'Possible double, as typed: “Oat milk” (“carton”). Listed for “Ana Maria de los Santos” and “The Nguyen-Okafors”. Merge only if it\'s the same thing.' && t.stops[0] === '“Walgreens on 5th Avenue & Main St”' && t.font !== t.slab, t);
     ck(w + ' D6 notOrdered neutral, exact; PM5 checksNote exact', t.order === 'Stops are in the order they were entered, not by route.' && t.progress.endsWith(' · Ticks live on this screen only. They clear if the page closes or reloads, the lists merge, or a new link opens.'), { order: t.order, progress: t.progress });
     ck(w + ' PM2 stops differing only in capitals stay separate tickets; no Same stop? prompt in the recipient view', t.stops.includes('“corner shop”') && t.stops.includes('“Corner Shop”') && t.same === 0, t.stops);
     ck(w + ' D8/D9 long owner tags wrap inside the ticket; stub grows, meta never overlaps the perforation; no sideways scroll', !t.tagOut.length && !t.stubOver && t.sw <= w, { tagOut: t.tagOut, stubOver: t.stubOver, sw: t.sw });
@@ -144,7 +144,7 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
       inW: document.getElementById('hh-1').getBoundingClientRect().width, liW: li.getBoundingClientRect().width, rmTxt: document.getElementById('hhr-1').textContent, rmAria: document.getElementById('hhr-1').getAttribute('aria-label'),
       unk: getComputedStyle(document.querySelector('.olt-row .olt-where.is-unknown')).color, sw: document.documentElement.scrollWidth, prompt: (document.querySelector('.olt-same p') || {}).textContent }; });
     ck(w + ' D13 householdHint + stopHint exact; D11 limits + link length shown', t.hint === 'A first name or nickname is plenty.' && t.sh === 'A shop or place name, not a home address. Anyone with the link can read it.' && t.limits === 'Names up to 24 characters, items 40, units 16, stops 40. The whole link can be up to 2,000 characters.' && /^Link length: [\d,]+ of 2,000 characters\.$/.test(t.room), t);
-    ck(w + ' D7 household input keeps most of its row (short visible Remove, full name in aria-label); D12 Stop unknown uses mute ink (5.9:1); no sideways scroll', t.inW >= t.liW * 0.6 && t.rmTxt === 'Remove' && t.rmAria === 'Remove Ana Maria de los Santos' && t.unk === 'rgb(91, 101, 95)' && t.sw <= w, t);
+    ck(w + ' D7 household input keeps most of its row (short visible Remove, full name in aria-label); D12 Stop unknown uses mute ink (5.9:1); no sideways scroll', t.inW >= t.liW * 0.6 && t.rmTxt === 'Remove' && t.rmAria === 'Remove “Ana Maria de los Santos”' && t.unk === 'rgb(91, 101, 95)' && t.sw <= w, t);
     ck(w + ' PM2 Same stop? prompt shown to the owner, exact', t.prompt === 'Same stop? “corner shop” and “Corner Shop” differ only in capitals or spacing.', t.prompt);
     await p.click('#ss-y-0'); await sleep(80);
     t = await p.evaluate(() => ({ stops: [...document.querySelectorAll('#lane .olt-stopname')].map(e => e.textContent), arriving: document.querySelectorAll('.olt-ticket.is-arriving').length, adv: document.getElementById('belt').classList.contains('is-advancing'), same: document.querySelectorAll('.olt-same').length }));
@@ -173,6 +173,60 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     ck(w + ' D11 one row less: link made, whole URL <= 2,000 and opens', !t.lb && t.link.length <= 2000 && t.link.length > 1900 && t.ok, { len: t.link.length, ok: t.ok });
     ck(w + ' D4–D13 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
   }
+  // ---- QA local-652d0e0: D5 typed-text audit, N1 first mouse click, N2 toast reset, N3 320 form, N4 real link length
+  const HOST = ['Verified ✔ Bank', 'Kiwi Flat', 'You owe me, deadbeat', 'deadbeatunit', 'boxunit', 'I know where you live'];
+  const HL = { h: ['Verified ✔ Bank', 'Kiwi Flat'], r: [[0, 'You owe me, deadbeat', '2', 'deadbeatunit', 'I know where you live'], [1, 'You owe me, deadbeat', '1', 'deadbeatunit', 'I know where you live'], [1, 'You owe me, deadbeat', '1', 'boxunit', 'I know where you live']], m: [] };
+  const clipStub = p => p.evaluate(() => { window.__clip = ''; Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: t => { window.__clip = t; return Promise.resolve(); } } }); });
+  const mouseOn = async (p, sel) => { const h = await p.$(sel); await h.evaluate(e => e.scrollIntoView({ block: 'center' })); const b = await h.boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await sleep(40); await p.mouse.up(); await sleep(150); };
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); let t;
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(100);
+    const frag = await p.evaluate(o => MILL.pack('t', 1, o), HL);
+    await p.goto('about:blank'); await p.goto(BASE + '#' + frag, { waitUntil: 'load' }); await sleep(250); await clipStub(p);
+    await p.click('#b-copy'); await sleep(120); const clip = await p.evaluate(() => window.__clip);
+    let a = await typedAudit(p, HOST, { copied: clip, fallback: await p.$eval('#fallback', e => e.value) });
+    ck(w + ' D5 recipient: every sender string quoted in visible text, aria-labels, describedby, live regions, toast and copied text', a.ok && /“deadbeatunit”/.test(clip), a);
+    t = await p.evaluate(() => [...document.querySelectorAll('#lane .olt-line')].map(l => l.textContent));
+    ck(w + ' D5 ticket line: qty, then quoted unit, then quoted item', t.some(x => x.startsWith('2 “deadbeatunit” “You owe me, deadbeat”')) || t.some(x => x.startsWith('3 “deadbeatunit” “You owe me, deadbeat”')), t);
+    await mouseOn(p, '[id^=mg-]'); a = await typedAudit(p, HOST, { copied: await p.$eval('#fallback', e => e.value) });
+    t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, kept: [...document.querySelectorAll('.olt-note--kept')].map(e => e.textContent) }));
+    ck(w + ' D5 merge (recipient -> own copy): toast + editor + kept note quoted', a.ok && t.toast === 'Merged “You owe me, deadbeat” into one line.' && t.kept.every(k => /“[^”]+” isn't “[^”]+”/.test(k)), { a, t });
+    await mouseOn(p, '[id^=um-]'); a = await typedAudit(p, HOST);
+    t = await p.evaluate(() => document.getElementById('toast').textContent);
+    ck(w + ' D5 split back out: toast quoted; whole page still clean', a.ok && t === '“You owe me, deadbeat” split back out.', { a, t });
+    // N2: a visible toast is gone (and its timer cleared) after the hash changes, bad link or good
+    await p.click('#b-copy'); await sleep(60); const before = await p.$eval('#toast', e => !e.hidden);
+    await p.evaluate(() => { location.hash = 't1.broken'; }); await sleep(150);
+    t = await p.evaluate(() => ({ hidden: document.getElementById('toast').hidden, txt: document.getElementById('toast').textContent }));
+    ck(w + ' N2 toast cleared on route change (bad link)', before && t.hidden && t.txt === '', t);
+    await p.evaluate(f => { location.hash = f; }, frag); await sleep(150); await mouseOn(p, '#own-copy'); await mouseOn(p, '[id^=mg-]');
+    await p.evaluate(() => { location.hash = ''; }); await sleep(3400);
+    t = await p.evaluate(() => ({ hidden: document.getElementById('toast').hidden, txt: document.getElementById('toast').textContent }));
+    ck(w + ' N2 toast from an own-copy merge does not come back over the next list (timer cleared)', t.hidden && t.txt === '', t);
+    // N1: first real mouse click after "Make my own from this" / "Add household" acts (no re-render on blur)
+    const N1L = await p.evaluate(() => MILL.pack('t', 1, { h: ['Fay', 'Gus'], r: [[0, 'Tea', '1', '', 'Cafe'], [1, 'Tea', '2', '', 'Cafe']], m: [] }));
+    const fresh = async () => { await p.goto('about:blank'); await p.goto(BASE + '#' + N1L, { waitUntil: 'load' }); await sleep(200); await mouseOn(p, '#own-copy'); };
+    await fresh(); const act = await p.evaluate(() => document.activeElement.id); await mouseOn(p, '[id^=ed-]');
+    t = await p.evaluate(() => ({ i: document.getElementById('f-i').value, add: document.getElementById('f-add').textContent }));
+    ck(w + ' N1 own copy -> first mouse click on Edit opens the edit', t.i === 'Tea' && t.add === 'Save item', { act, t });
+    await fresh(); await mouseOn(p, '#lane .olt-check'); t = await p.evaluate(() => document.querySelectorAll('#lane .olt-check:checked').length);
+    ck(w + ' N1 own copy -> first mouse click on a checkbox ticks it', t === 1, t);
+    await fresh(); await mouseOn(p, '[id^=mg-]'); t = await p.evaluate(() => document.querySelectorAll('.olt-merged').length);
+    ck(w + ' N1 own copy -> first mouse click on Merge merges', t === 1, t);
+    await fresh(); await mouseOn(p, '#hh-add'); const act2 = await p.evaluate(() => document.activeElement.id); await mouseOn(p, '[id^=ed-]');
+    t = await p.evaluate(() => ({ i: document.getElementById('f-i').value, err: [...document.querySelectorAll('[id^=hhe-]')].map(e => e.textContent).filter(Boolean) }));
+    ck(w + ' N1 Add household -> first mouse click on Edit opens the edit; empty-name error still shown in place', t.i === 'Tea' && t.err.length === 1, { act2, t });
+    // N4: an over-cap list shows its REAL link length (not a made-up FRAG_MAX + prefix + 1)
+    const N4 = await p.evaluate(() => { const h = ['A', 'B'], r = []; for (let i = 0; i < 26; i++) r.push([i % 2, 'Item ' + i + 'x'.repeat(24), '1', 'u', 'Stop ' + i]); return { h, r, f: MILL.pack('t', 1, { h, r, m: [] }) }; });
+    await p.goto('about:blank'); await p.goto(BASE + '#' + N4.f, { waitUntil: 'load' }); await sleep(200); await mouseOn(p, '#own-copy');
+    const extra = []; for (let k = 0; k < 4; k++) { const it = 'More ' + k + 'z'.repeat(30); extra.push([0, it, '1', 'u', 'Stop Z' + k]); await addRow(p, 1, it, '1', 'u', 'Stop Z' + k); }
+    t = await p.evaluate((N4, extra, base) => ({ txt: document.getElementById('linkroom').textContent, real: base.length + 1 + MILL.pack('t', 1, { h: N4.h, r: N4.r.concat(extra), m: [] }).length, fake: OLT.FRAG_MAX + base.length + 1 + 1 }), N4, extra, BASE);
+    const shown = +((t.txt.match(/Link length: ([\d,]+) of/) || [])[1] || '0').replace(/,/g, '');
+    ck(w + ' N4 over-cap link length shows the real length', shown === t.real && shown > 2000 && /Too much for a link/.test(t.txt), { shown, t });
+    // N3: at 320 the For select, the Stop field and the limits note are full width
+    if (w === 320) { await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+      t = await p.evaluate(() => { const W = id => Math.round(document.getElementById(id).getBoundingClientRect().width); return { fo: W('f-o'), fs: W('f-s'), fi: W('f-i'), lim: W('limits'), hint: W('h-s'), form: W('form') }; });
+      ck('320 N3 For, Item, Stop and the limits note stack full width (no "The Nguyen-(" / "Hardware" clipping)', t.fo >= t.form - 4 && t.fs >= t.form - 4 && t.fi >= t.form - 4 && t.lim >= t.form - 4 && t.hint >= t.form - 30, t); }
+    await s.b.close(); }
   // QA N1 (same tab, all pieces)
   for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
     const r = await sameTabBadLink(p, { errSel: '.olt-err', bad: 't1.broken',
