@@ -90,7 +90,7 @@
     var ok = !Object.keys(e).length; setText('');
     if (ok) { var c = A.cleanTerms(draftAsk(draft)); c.f = M.strip(draft.f); c.o = M.strip(draft.o); setText(A.textAsk(C, c)); }
     $('b-text').disabled = !ok;
-    var hd = $('x').querySelectorAll('.osa-heads b'); if (hd[0]) { hd[0].textContent = M.strip(draft.f) ? V.quote(M.strip(draft.f)) : C.fromLabel; hd[1].textContent = M.strip(draft.o) ? V.quote(M.strip(draft.o)) : C.toLabel; /* D14 class: typed names quoted in the compose preview */ var ini = $('x').querySelectorAll('.osa-heads .osa-ini'); ini[0].textContent = initial(draft.f); ini[1].textContent = initial(draft.o); }
+    var hd = $('x').querySelectorAll('.osa-heads b'); if (hd[0]) { hd[0].textContent = M.strip(draft.f) ? V.quote(M.strip(draft.f)) : C.fromLabel; hd[1].textContent = M.strip(draft.o) ? V.quote(M.strip(draft.o)) : C.toLabel; hd[0].title = hd[0].textContent; hd[1].title = hd[1].textContent; /* N6: the hover title follows the quoted name */ /* D14 class: typed names quoted in the compose preview */ var ini = $('x').querySelectorAll('.osa-heads .osa-ini'); ini[0].textContent = initial(draft.f); ini[1].textContent = initial(draft.o); }
   }
   function edited() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); $('linkbox').hidden = true; $('banner').hidden = true; validate(); }
   // ---------- answer (#a1) ----------
@@ -165,7 +165,7 @@
     if ($('e-part')) $('e-part').textContent = c && c.err ? (c.err === 'partNothingChanged' ? C.partNothingChanged : C[c.err] || C.windowMissing) : '';
     if ($('b-rlink')) $('b-rlink').textContent = c && c.yes ? C.partIsYes : C.copyReplyLink;
     var ok = c && c.r && !A.replyError(c.r) && M.len(M.strip(note)) <= A.CAP.note;
-    if (ok) { var cl = A.decode(A.encodeReply(c.r) || ''); setText(A.textReply(C, cl.ok ? cl.data : { a: ask, v: c.r.v, p: c.r.p ? A.cleanTerms(c.r.p) : null, n: M.strip(c.r.n) })); } else setText('');
+    if (ok) { var cl = A.decode(A.encodeReply(c.r) || ''); setText(A.textReply(C, cl.ok ? cl.data : { a: ask, v: c.r.v, p: c.r.p ? A.cleanTerms(c.r.p) : null, n: M.strip(c.r.n) }) + '\n' + C.receiverTypedNote); } else setText('');
     if ($('b-rtext')) $('b-rtext').disabled = !ok; if ($('b-rshare')) $('b-rshare').disabled = !ok && !(c && c.yes);
     $('linkbox').hidden = true;
   }
@@ -193,7 +193,7 @@
     if (r.n) x.appendChild(term('same', C.noteLabel, el('span', 'none', '—'), '·', V.typed(r.n, 'osa-typed')));
     x.appendChild(foot([btns([btn(C.askAgainChanged, 'osa-btn--ask', function () { var src = r.p || r.a; draft = { w: src.w, e: String(src.e), u: src.u, d: src.d, s: src.s, t: src.t, h: src.h, f: r.a.f, o: r.a.o }; leave(); }, 'b-again'), btn(C.askSomeoneElse, '', function () { draft = { w: r.a.w, e: String(r.a.e), u: r.a.u, d: r.a.d, s: r.a.s, t: r.a.t, h: r.a.h, f: r.a.f, o: '' }; leave(); }, 'b-else'), btn(C.copyAsText, '', function () { copy(lastText, $('text')); }, 'b-text'), btn(C.printLabel, '', function () { window.print(); }, 'b-print')])], []));
     noteLine([C.replyReceivedNote, C.noBookingNote, r.v === 'n' ? C.noReasonReceived : ''].filter(Boolean).join(' '));
-    setText(A.textReply(C, r));
+    setText(A.textReply(C, r) + '\n' + C.replyTypedNote); // PM: copy-as-text carries the screen's attribution line, verbatim, once
   }
   function leave() { history.replaceState(null, '', location.pathname + location.search); touched = {}; $('banner').hidden = true; compose(); $('f-w').focus(); }
   function reset() { if (!confirm(C.resetConfirm)) return; history.replaceState(null, '', location.pathname + location.search); $('link').value = ''; $('linkbox').hidden = true; draft = blankDraft(); touched = {}; $('banner').hidden = true; compose(); toast(C.resetDone); $('f-w').focus(); }

@@ -18,7 +18,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     await typeInto(p, '#f-d', 'Tue Oct 20'); await p.focus('#f-s'); await p.keyboard.type('0400PM'); await p.focus('#f-t'); await p.keyboard.type('0600PM');
     await typeInto(p, '#f-f', 'Dana'); await typeInto(p, '#f-o', 'Sam');
     t = await p.evaluate(() => ({ s: document.getElementById('f-s').value, t: document.getElementById('f-t').value, text: document.getElementById('text').textContent }));
-    ck(w + ' sender text export', t.s === '16:00' && t.t === '18:00' && t.text.includes('When: Tue Oct 20, 4 PM–6 PM') && t.text.startsWith('From: “Dana”\nThe favor, as typed: “Pick up groceries from my porch and drop them at Mom\'s”\n'), t);
+    ck(w + ' sender text export', t.s === '16:00' && t.t === '18:00' && t.text.includes('When: “Tue Oct 20”, 4 PM–6 PM') && t.text.startsWith('From: “Dana”\nThe favor, as typed: “Pick up groceries from my porch and drop them at Mom\'s”\n'), t);
     await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(300);
     const askUrl = await p.$eval('#link', e => e.value); ck(w + ' ask link made (#a1)', /#a1\./.test(askUrl), askUrl.length);
     ck(w + ' address bar not rewritten', (await p.evaluate(() => location.hash)) === '', null);
@@ -26,7 +26,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     const q = await b.newPage(); await q.setViewport({ width: w, height: 800 }); const qe = []; q.on('pageerror', e => qe.push(String(e))); q.on('console', m => { if (m.type() === 'error' && !/Cross-Origin-Opener-Policy/.test(m.text())) qe.push(m.text()); });
     await q.goto(askUrl, { waitUntil: 'load' }); await sleep(200);
     t = await q.evaluate(() => ({ title: document.getElementById('title').textContent, typed: (document.querySelector('#title .osa-typed') || {}).textContent, qlab: [...document.querySelectorAll('.osa-term .ask .osa-qlabel')].map(e => e.textContent), send: [...document.querySelectorAll('.osa-fine')].map(e => e.textContent).join('|'), ask: [...document.querySelectorAll('.osa-term .ask')].map(e => e.textContent), choices: document.querySelectorAll('[role=radio]').length }));
-    ck(w + ' recipient sees the ask (D4: name after its label as separate text; favor quoted under receiverAskLabel)', t.title === 'Small ask from: “Dana”' && t.typed === '“Dana”' && t.qlab[0] === 'Their ask, as typed:' && t.ask[0].includes('“Pick up groceries') && t.ask[0].endsWith('”') && t.ask[2] === 'Tue Oct 20, 4 PM–6 PM' && t.choices === 3 && t.ask.length === 3, t);
+    ck(w + ' recipient sees the ask (D4: name after its label as separate text; favor quoted under receiverAskLabel)', t.title === 'Small ask from: “Dana”' && t.typed === '“Dana”' && t.qlab[0] === 'Their ask, as typed:' && t.ask[0].includes('“Pick up groceries') && t.ask[0].endsWith('”') && t.ask[2] === '“Tue Oct 20”, 4 PM–6 PM' && t.choices === 3 && t.ask.length === 3, t);
     // keyboard radiogroup: focus Yes, arrow to Part of it
     await q.focus('#c-y'); await q.keyboard.press('ArrowDown'); await sleep(100);
     t = await q.evaluate(() => ({ checked: document.querySelector('[aria-checked=true]').id, focus: document.activeElement.id, inputs: !!document.getElementById('o-w') }));
@@ -43,7 +43,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     const r = await b.newPage(); await r.setViewport({ width: w, height: 800 }); const re = []; r.on('pageerror', e => re.push(String(e)));
     await r.goto(repUrl, { waitUntil: 'load' }); await sleep(200);
     t = await r.evaluate(() => ({ title: document.getElementById('title').textContent, delta: document.getElementById('delta').textContent, verdict: document.querySelector('.osa-verdict').textContent, note: document.getElementById('note').textContent, body: document.body.innerText }));
-    ck(w + ' sender sees reply with delta + snapshot note', t.title === '“Sam” replied with what they can do.' && t.delta.includes('“Collection only” · Wed Oct 21, 5 PM–6 PM') && t.verdict === 'Part of it' && /Nothing has been booked/.test(t.note) && !/\b(accepted|confirmed|agreed|delivered|notified)\b/i.test(t.body), t);
+    ck(w + ' sender sees reply with delta + snapshot note', t.title === '“Sam” replied with what they can do.' && t.delta.includes('“Collection only” · “Wed Oct 21”, 5 PM–6 PM') && t.verdict === 'Part of it' && /Nothing has been booked/.test(t.note) && !/\b(accepted|confirmed|agreed|delivered|notified)\b/i.test(t.body), t);
     { const qv = await r.evaluate(() => [...document.querySelectorAll('.osa-term .ask .osa-quoted')].map(e => e.textContent)); ck(w + ' reply view: original typed favor quoted under receiverAskLabel (D4)', qv.length >= 1 && qv[0].startsWith('Their ask, as typed: “Pick up groceries') && qv[0].endsWith('”'), qv); }
     // ask again, changed -> composer prefilled with the offer
     await r.focus('#b-again'); await r.keyboard.press('Enter'); await sleep(100);
@@ -52,7 +52,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     // "no" reply has no reason field
     await q.focus('#c-n'); await q.keyboard.press('Enter'); await sleep(100);
     t = await q.evaluate(() => ({ note: !!document.getElementById('f-note'), text: document.getElementById('text').textContent }));
-    ck(w + ' no = no reason field', !t.note && t.text.endsWith('Not this time.'), t);
+    ck(w + ' no = no reason field', !t.note && t.text.endsWith('Not this time.\n' + C.receiverTypedNote), t);
     // malformed links
     for (const [nm, h, want] of [['truncated', askUrl.split('#')[1].slice(0, 50), /damaged/], ['oversized', 'a1.' + 'A'.repeat(2100) + '.abcdef', /damaged/], ['script', '<img src=x onerror=alert(1)>', /damaged/], ['old version', await r.evaluate(() => MILL.pack('a', 0, {})), /older version/]]) {
       await r.goto('about:blank'); await r.goto(BASE + '#' + h, { waitUntil: 'load' }); await sleep(100);
@@ -74,7 +74,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
   { const s = await session(H, IP, { shareCancel: true }); const { p } = s; await p.setViewport({ width: 390, height: 800 });
     await p.goto(BASE, { waitUntil: 'load' }); const f = await p.evaluate(() => ASK.encodeAsk({ w: 'Water plants', e: 10, u: 'min', d: 'Sat', s: '09:00', t: '10:00', h: '', f: 'Ana', o: 'Bo' }));
     await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await p.focus('#c-y'); await p.keyboard.press('Enter'); await sleep(50);
-    await p.focus('#f-note'); await p.keyboard.type('Happy to.'); const nt = await p.evaluate(() => ({ vis: document.getElementById('f-note').getBoundingClientRect().height > 20, text: document.getElementById('text').textContent })); ck('390 yes + optional note visible and exported', nt.vis && nt.text.endsWith('Note: “Happy to.”'), nt); await p.focus('#b-rshare'); await p.keyboard.press('Enter'); await sleep(300);
+    await p.focus('#f-note'); await p.keyboard.type('Happy to.'); const nt = await p.evaluate(() => ({ vis: document.getElementById('f-note').getBoundingClientRect().height > 20, text: document.getElementById('text').textContent })); ck('390 yes + optional note visible and exported', nt.vis && nt.text.endsWith('Note: “Happy to.”\n' + C.receiverTypedNote), nt); await p.focus('#b-rshare'); await p.keyboard.press('Enter'); await sleep(300);
     const t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, sel: document.activeElement.id, link: document.getElementById('link').value }));
     ck('390 reply share cancel keeps link selectable', t.toast === 'Not sent. Your reply is still here.' && t.sel === 'link' && /#r1\./.test(t.link), t); ck('390 share-cancel no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   // D1/D2/D4 pattern checks carried over from Split the Sack QA: long single-word sender values never widen the page or overlap; full name kept in title
@@ -171,18 +171,20 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
   // QA local-652d0e0 Ask N3: typed text quoted in the strikethrough, CHANGED values, aria summaries, delta and note row;
   // receiverTypedNote on reply views; a hash change with focus in the favor field blurs first and clears errors after.
   for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
-    const ASKD = { w: 'Zqx favor', e: 20, u: 'min', d: 'Tue Oct 20', s: '16:00', t: '18:00', h: 'Zqx porch', f: 'Zqx Dana', o: 'Zqx Sam' };
-    const L = await p.evaluate(a => ({ ask: ASK.encodeAsk(a), p: ASK.encodeReply({ a, v: 'p', p: { w: 'Zqx new', e: 20, u: 'min', d: 'Wed Oct 21', s: '17:00', t: '18:00', h: 'Zqx gate' }, n: 'Zqx note' }), y: ASK.encodeReply({ a, v: 'y', p: null, n: 'Zqx yes note' }), n: ASK.encodeReply({ a, v: 'n', p: null, n: '' }) }), ASKD);
-    const SEEDS = ['Zqx favor', 'Zqx porch', 'Zqx Dana', 'Zqx Sam', 'Zqx new', 'Zqx gate', 'Zqx note', 'Zqx yes note'];
+    const ASKD = { w: 'Zqx favor', e: 20, u: 'min', d: 'Zqx Tue', s: '16:00', t: '18:00', h: 'Zqx porch', f: 'Zqx Dana', o: 'Zqx Sam' };
+    const L = await p.evaluate(a => ({ ask: ASK.encodeAsk(a), p: ASK.encodeReply({ a, v: 'p', p: { w: 'Zqx new', e: 20, u: 'min', d: 'Zqx Wed', s: '17:00', t: '18:00', h: 'Zqx gate' }, n: 'Zqx note' }), y: ASK.encodeReply({ a, v: 'y', p: null, n: 'Zqx yes note' }), n: ASK.encodeReply({ a, v: 'n', p: null, n: '' }) }), ASKD);
+    const SEEDS = ['Zqx favor', 'Zqx porch', 'Zqx Dana', 'Zqx Sam', 'Zqx new', 'Zqx gate', 'Zqx note', 'Zqx yes note', 'Zqx Tue', 'Zqx Wed']; // N5: typed Day values are seeds too
     for (const v of ['p', 'y', 'n']) {
       await p.goto('about:blank'); await p.goto(BASE + '#' + L[v], { waitUntil: 'load' }); await sleep(200);
       const r = await p.evaluate(() => ({ lede: document.getElementById('lede').hidden ? null : document.getElementById('lede').textContent, body: document.body.innerText, struck: [...document.querySelectorAll('.osa-term.is-changed .ask s')].map(e => e.textContent), now: [...document.querySelectorAll('.osa-term.is-changed .ans')].map(e => e.firstChild.textContent), sr: [...document.querySelectorAll('.osa-term.is-changed .osa-vh')].map(e => e.textContent), delta: document.getElementById('delta').hidden ? '' : document.getElementById('delta').textContent, text: (e => e.value != null ? e.value : e.textContent)(document.getElementById('text')) }));
-      const once = r.body.split('Your ask is as you sent it. Their reply is as they typed it. Not checked.').length - 1;
-      await p.emulateMediaType('print'); const pb = await p.evaluate(() => document.body.innerText); await p.emulateMediaType(null); const ponce = pb.split(C.replyTypedNote).length - 1;
+      const outTx = await p.evaluate(() => { const t = document.getElementById('text'); return t ? t.innerText : ''; }); const once = r.body.split('Your ask is as you sent it. Their reply is as they typed it. Not checked.').length - 1 - (outTx.split(C.replyTypedNote).length - 1); // the copy-text box carries its own copy (PM)
+      await p.emulateMediaType('print'); const pb = await p.evaluate(() => document.body.innerText); await p.emulateMediaType(null); const ptx = await (async () => { await p.emulateMediaType('print'); const v = await p.evaluate(() => { const t = document.getElementById('text'); return t && t.getClientRects().length ? t.innerText : ''; }); await p.emulateMediaType(null); return v; })(); const ponce = pb.split(C.replyTypedNote).length - 1 - (ptx.split(C.replyTypedNote).length - 1);
       ck(w + ' Writer N4 reply view (' + v + '): replyTypedNote (verbatim) shown once on screen and once in print; receiverTypedNote nowhere (screen, print, copied text)', r.lede === 'Your ask is as you sent it. Their reply is as they typed it. Not checked.' && once === 1 && ponce === 1 && !r.body.includes(C.receiverTypedNote) && !pb.includes(C.receiverTypedNote) && !r.text.includes(C.receiverTypedNote), { lede: r.lede, once, ponce });
       if (v === 'p') ck(w + ' N3 reply (part): strikethrough, CHANGED values, aria summaries and delta quote the typed favor and Where', r.struck.some(x => x.includes('“Zqx favor”')) && r.struck.some(x => x.includes('“Zqx porch”')) && r.now.includes('“Zqx new”') && r.now.includes('“Zqx gate”') && r.sr.some(x => x.endsWith(': was “Zqx favor”, now “Zqx new”.')) && r.sr.some(x => x.endsWith(': was “Zqx porch”, now “Zqx gate”.')) && r.delta.includes('“Zqx favor”') && r.delta.includes('“Zqx new”') && r.body.includes('“Zqx note”'), r);
       if (v === 'y') ck(w + ' N3 reply (yes): the note row is quoted typed text', r.body.includes('“Zqx yes note”'), r.body.slice(0, 600));
-      const a = await typedAudit(p, SEEDS, { copied: r.text }); ck(w + ' N3 reply (' + v + '): typedAudit (screen, aria, describedby, live, toast, copied text) finds nothing unquoted', a.ok, a);
+      const a = await typedAudit(p, SEEDS, { copied: r.text, print: pb }); ck(w + ' N3/N5 reply (' + v + '): typedAudit (screen, aria, describedby, live, toast, print, copied text) finds nothing unquoted incl. the typed Day', a.ok, a);
+      ck(w + ' PM: reply (' + v + ') copy-as-text ends with replyTypedNote, verbatim and once', r.text.endsWith('\n' + C.replyTypedNote) && r.text.split(C.replyTypedNote).length === 2 && !r.text.includes(C.receiverTypedNote), r.text);
+      if (v !== 'n') ck(w + ' N5 reply (' + v + '): the Day shows as “Zqx Tue” on screen, in print and in copied text', r.body.includes('“Zqx Tue”, 4 PM–6 PM') && pb.includes('“Zqx Tue”') && r.text.includes('“Zqx Tue”'), r.text);
     }
     // answer view, part mode: rows marked changed in place keep the quotes
     await p.goto('about:blank'); await p.goto(BASE + '#' + L.ask, { waitUntil: 'load' }); await sleep(200); { const ld = await p.evaluate(() => document.getElementById('lede').textContent); ck(w + ' Writer N4: the answer view keeps receiverTypedNote', ld === C.receiverTypedNote, ld); }
@@ -192,7 +194,9 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     await typeInto(p, '#o-w', 'Zqx new'); await sleep(100);
     let r = await p.evaluate(() => ({ struck: [...document.querySelectorAll('.osa-term .ask s')].map(e => e.textContent), same: [...document.querySelectorAll('.osa-term.is-same[data-key=where] .ask')].map(e => e.textContent) }));
     ck(w + ' N3 answer (part): the struck original favor is quoted; unchanged Where stays quoted', r.struck.includes('“Zqx favor”') && r.same.some(x => x.includes('“Zqx porch”')), r);
-    let a = await typedAudit(p, SEEDS); ck(w + ' N3 answer (part): typedAudit finds nothing unquoted', a.ok, a);
+    await typeInto(p, '#o-d', 'Zqx Wed'); await sleep(100);
+    let a = await typedAudit(p, SEEDS, { copied: await p.$eval('#text', e => e.textContent) }); ck(w + ' N3/N5 answer (part): typedAudit finds nothing unquoted (Day struck and in the copy text included)', a.ok, a);
+    { const tx = await p.$eval('#text', e => e.textContent); ck(w + ' PM: answer view copy-as-text ends with receiverTypedNote, verbatim and once; Day quoted', tx.endsWith('\n' + C.receiverTypedNote) && tx.split(C.receiverTypedNote).length === 2 && !tx.includes(C.replyTypedNote) && tx.includes('(asked: “Zqx Tue”, 4 PM–6 PM)'), tx); }
     // hash change with focus in the favor field: blur first, clear errors after
     for (const [nm, frag] of [['valid ask', L.ask], ['bad link', 'a1.broken'], ['empty', '']]) {
       await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await typeInto(p, '#f-w', 'x'); await p.focus('#f-w'); await p.keyboard.press('Backspace'); await sleep(50);
@@ -202,5 +206,25 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
       ck(w + ' N3 hash change (' + nm + ') with focus in the favor field: zero errors, nothing aria-invalid', !r.errs.length && !r.invalid, r);
     }
     ck(w + ' N3 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA local-71ba769 N5 (QA's exact case: spoof Day) + N6 (compose card headers on screen, in the AX tree and in print)
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const DAY = 'Verified by \u201CYour bank\u201D', NF = '\u00ABVerified\u00BB Bank', NO = 'Sam \u00ABS\u00BB';
+    await typeInto(p, '#f-w', 'pickup'); await typeInto(p, '#f-e', '20'); await typeInto(p, '#f-d', DAY); await p.focus('#f-s'); await p.keyboard.type('0400PM'); await p.focus('#f-t'); await p.keyboard.type('0600PM'); await typeInto(p, '#f-f', NF); await typeInto(p, '#f-o', NO); await sleep(100);
+    const heads = await p.evaluate(() => [...document.querySelectorAll('.osa-heads b')].map(e => [e.textContent, e.title]));
+    const snap = await p.accessibility.snapshot({ interestingOnly: false }); const ax = []; (function wk(n) { if (!n) return; if (n.name) ax.push(String(n.name)); (n.children || []).forEach(wk); })(snap);
+    await p.emulateMediaType('print'); const pr = await p.evaluate(() => document.body.innerText); await p.emulateMediaType(null);
+    const qf = '\u201C"Verified" Bank\u201D', qo = '\u201CSam "S"\u201D';
+    ck(w + ' N6 compose: card headers quote From/To (screen + title), in the accessibility tree and in print', heads[0][0] === qf && heads[1][0] === qo && heads[0][1] === qf && heads[1][1] === qo && ax.includes(qf) && ax.includes(qo) && pr.includes(qf) && pr.includes(qo) && !pr.includes(NF), { heads, pr: pr.slice(0, 300) });
+    const ctext = await p.$eval('#text', e => e.textContent); const a0 = await typedAudit(p, [DAY, NF, NO], { copied: ctext, print: pr }); ck(w + ' N5/N6 compose: typedAudit (Day + names, incl. copy text and print) clean', a0.ok, a0.hits);
+    const L = await p.evaluate((d) => { const a = { w: 'pickup', e: 20, u: 'min', d, s: '16:00', t: '18:00', h: '', f: 'Jo', o: 'Sam' }; return { ask: ASK.encodeAsk(a), p: ASK.encodeReply({ a, v: 'p', p: { w: 'pickup', e: 20, u: 'min', d: 'Call 555-0100 first', s: '16:00', t: '18:00', h: '' }, n: '' }) }; }, DAY);
+    await p.evaluateOnNewDocument(() => { window.__clip = []; Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: t => { window.__clip.push(String(t)); return Promise.resolve(); } } }); });
+    for (const [tag, frag, prep] of [['recipient ask', L.ask, null], ['recipient part (Day edited)', L.ask, async () => { await p.click('#c-p'); await sleep(80); await typeInto(p, '#o-d', 'Call 555-0100 first'); await sleep(80); }], ['reply part', L.p, null]]) {
+      await p.goto('about:blank'); await p.goto(BASE + '#' + frag, { waitUntil: 'load' }); await sleep(200); if (prep) await prep();
+      for (const b of ['#b-text', '#b-rtext']) { if (await p.evaluate(sel => { const e = document.querySelector(sel); return !!(e && !e.disabled && e.getClientRects().length); }, b)) { await p.click(b); await sleep(100); } }
+      await p.emulateMediaType('print'); const pb = await p.evaluate(() => document.body.innerText); await p.emulateMediaType(null);
+      const clip = await p.evaluate(() => window.__clip.slice()), tx = await p.$eval('#text', e => e.textContent);
+      const a = await typedAudit(p, [DAY, 'Call 555-0100 first'], Object.assign({ copied: tx, print: pb }, Object.fromEntries(clip.map((c, i) => ['clipboard#' + i, c]))));
+      ck(w + ' N5 ' + tag + ': the typed Day is quoted with Q1 neutralising everywhere (When row, Part column, delta, aria, print, copy text, clipboard)', a.ok, a.hits); }
+    ck(w + ' N5/N6 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

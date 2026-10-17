@@ -69,7 +69,8 @@
   function fmtTime(hm) { var h = +hm.slice(0, 2), m = hm.slice(3), ap = h < 12 ? 'AM' : 'PM', h12 = h % 12 || 12; return h12 + (m === '00' ? '' : ':' + m) + ' ' + ap; }
   // Display strings and plain-text exports. C = Writer COPY. Values are verbatim user text.
   function effortText(C, t) { return M.plural(C.effortLine[t.u], t.e); }
-  function windowText(C, t) { return M.fill(C.windowLine, { day: t.d, start: fmtTime(t.s), end: fmtTime(t.t) }); }
+  // QA N5: Day is free text the sender (or replier) typed: quoted with the shared rule wherever the window shows (screen, aria, print, copy)
+  function windowText(C, t) { var d = M.strip(t.d || ''); return M.fill(C.windowLine, { day: d ? M.raw(M.quote(d)) : '', start: fmtTime(t.s), end: fmtTime(t.t) }); }
   function termValues(C, t) { return { action: t.w, effort: effortText(C, t), window: windowText(C, t), where: t.h }; }
   var TERMS = [['action', 'diffAction'], ['effort', 'diffEffort'], ['window', 'diffWindow'], ['where', 'diffWhere']];
   function textAsk(C, a) {
