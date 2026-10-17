@@ -34,7 +34,7 @@ t('property: 2000 random asks/replies round-trip exactly', () => { let s = 7; co
     const d = A.decode(A.encodeReply(rep)); assert.ok(d.ok, JSON.stringify(rep)); assert.deepEqual(d.data.a, ca); assert.equal(d.data.v, v); } });
 const C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/one-small-ask/copy.js', 'utf8') + ';COPY');
 t('plain-text exports read complete (Writer QA-83 templates: typed text quoted, verbatim values)', () => {
-  assert.equal(A.textAsk(C, ask), "From: Dana\nThe favor, as typed: “Pick up my parcel and drop it at Mom's”\nTime: 20 minutes max\nWhen: Tue Oct 20, 4 PM–6 PM\nYou can say yes, take part of it, or say not this time.");
+  assert.equal(A.textAsk(C, ask), "From: “Dana”\nThe favor, as typed: “Pick up my parcel and drop it at Mom's”\nTime: 20 minutes max\nWhen: Tue Oct 20, 4 PM–6 PM\nYou can say yes, take part of it, or say not this time.");
   assert.equal(A.textAsk(C, { ...ask, f: '', h: 'Main St' }), "From: (no name given)\nThe favor, as typed: “Pick up my parcel and drop it at Mom's”\nTime: 20 minutes max\nWhen: Tue Oct 20, 4 PM–6 PM\nWhere: “Main St”\nYou can say yes, take part of it, or say not this time.");
   assert.equal(A.textReply(C, { a: ask, v: 'p', p: offer, n: '' }), "Re: “Pick up my parcel and drop it at Mom's”\nI can do part of it.\nFavor: “Collection only” (asked: “Pick up my parcel and drop it at Mom's”)\nWhen: Wed Oct 21, 5 PM–6 PM (asked: Tue Oct 20, 4 PM–6 PM)\nTime it takes: 20 minutes max (same)\n");
   assert.equal(A.textReply(C, { a: ask, v: 'n', p: null, n: '' }), "Re: “Pick up my parcel and drop it at Mom's”\nNot this time.");

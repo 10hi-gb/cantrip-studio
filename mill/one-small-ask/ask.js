@@ -74,7 +74,7 @@
   var TERMS = [['action', 'diffAction'], ['effort', 'diffEffort'], ['window', 'diffWindow'], ['where', 'diffWhere']];
   function textAsk(C, a) {
     var v = termValues(C, a);
-    return M.fill(C.textAsk, { fromLine: a.f ? M.fill(C.textFromLine, { from: a.f }) : C.textFromLineAnon, action: v.action, effort: v.effort, window: v.window, whereLine: a.h ? M.fill(C.textWhereLine, { where: a.h }) : '' });
+    return M.fill(C.textAsk, { fromLine: a.f ? M.fill(C.textFromLine, { from: M.quote(a.f) }) : C.textFromLineAnon, action: v.action, effort: v.effort, window: v.window, whereLine: a.h ? M.fill(C.textWhereLine, { where: a.h }) : '' });
   }
   function textReply(C, r) {
     var a = termValues(C, r.a), noteLine = r.n ? M.fill(C.textNoteLine, { note: r.n }) : '';
