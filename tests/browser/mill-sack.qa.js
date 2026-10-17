@@ -92,11 +92,11 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
       await typeInto(p, '#q', q1); await typeInto(p, '#u', u1); await typeInto(p, '#p', p1); await typeInto(p, '#f', f1); await sleep(50);
       const ov = await textOverlap(p, '.ss-lcd .v, .ss-lcd .k'); const of2 = await overflow(p); ck(w + ' readout no text overlap ' + q1 + ' ' + u1.slice(0, 5) + ' $' + p1 + ' fee ' + f1 + ' (D1)', !ov.length && of2.sw <= of2.w, { ov, of2 });
     }
-    // D2: 24-char single word is ellipsized (not broken mid-word), full text kept
+    // D2 (kept by D10-r5's wrap rule, no ellipsis): a 24-char single word that fits its cell stays whole on one line, shown in full
     await typeInto(p, '#item', 'Rice'); await typeInto(p, '#q', '10'); await typeInto(p, '#p', '10'); await typeInto(p, '#f', '');
     { const hn3 = await p.$$('#hh input:not(.sk-rq)'); await hn3[0].click({ clickCount: 3 }); await p.keyboard.type('Pneumonoultramicroscopic'); const rq3 = await p.$$('#hh input.sk-rq'); if (rq3[0]) { await rq3[0].click({ clickCount: 3 }); await p.keyboard.type('1'); } await sleep(80);
-      const e2 = await p.evaluate(() => { const w = [...document.querySelectorAll('#rows .ss-alloc .who')].find(e => e.textContent === '“Pneumonoultramicroscopic”'); if (!w) return null; const r = document.createRange(); r.selectNodeContents(w); const cs = getComputedStyle(w); return { lines: new Set([...r.getClientRects()].map(x => Math.round(x.top))).size, ell: cs.textOverflow, title: w.title, text: w.textContent }; });
-      ck(w + ' long single-word name ellipsized, one line, full text kept (D2)', e2 && e2.lines === 1 && e2.ell === 'ellipsis' && e2.title === '“Pneumonoultramicroscopic”', e2); }
+      const e2 = await p.evaluate(() => { const w = [...document.querySelectorAll('#rows .ss-alloc .who')].find(e => e.textContent === '“Pneumonoultramicroscopic”'); if (!w) return null; const r = document.createRange(); r.selectNodeContents(w); const cs = getComputedStyle(w), b = w.getBoundingClientRect(), rs = [...r.getClientRects()].filter(x => x.width > 0); const m = document.createElement('span'); m.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap'; m.textContent = w.textContent; w.appendChild(m); const ww = m.getBoundingClientRect().width; w.removeChild(m); return { wordW: Math.round(ww), fits: ww <= w.clientWidth + .5, lines: new Set(rs.map(x => Math.round(x.top))).size, ell: cs.textOverflow, ws: cs.whiteSpace, inBox: rs.every(a => a.left >= b.left - .5 && a.right <= b.right + .5), sw: w.scrollWidth, cw: w.clientWidth, text: w.textContent }; });
+      ck(w + ' long single-word name: whole on one line wherever the word fits its (widened) cell, broken mid-word only when it cannot fit; no ellipsis, shown in full inside its cell (D2 + D10-r5)', e2 && (e2.fits ? e2.lines === 1 : e2.lines > 1) && (w >= 390 ? e2.fits : true) && e2.ell !== 'ellipsis' && e2.ws !== 'nowrap' && e2.inBox && e2.sw <= e2.cw + 1 && e2.text === '“Pneumonoultramicroscopic”', e2); }
     const stg = await storage(p); ck(w + ' storage empty', !stg.cookie && !stg.ls.length && !stg.ss.length && !(Array.isArray(stg.idb) && stg.idb.length) && !stg.caches.length && !stg.sw && !stg.undef, { ...stg, meta: undefined });
     const net = netCheck(s.reqs, H, []); ck(w + ' no off-site / non-GET requests', !net.offending.length, net);
     ck(w + ' no console/page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME));
@@ -372,5 +372,85 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
       }
     }
     ck(w + ' D10-r3 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA local-d8d1dce D10-r5: household names at the 24-grapheme cap (QA's sets + combined emoji / hyphens / one long word) are never cut with an ellipsis or
+  // clipped: sender, sender print, recipient, change, recipient print, at 305/320/390/600/1280. The full quoted name is visible inside its cell and the
+  // viewport, nothing overlaps it, and a piece of the name that fits its cell (split at spaces and after hyphens) is never broken mid-word (old D2).
+  { const FAM = '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}';
+    const SETS = { family: ['A' + FAM.repeat(23), 'B' + FAM.repeat(23), 'Cy'], latin: ['Wwwwwwwwwwwwwwwwwwwwwwww', 'Mmmmmmmmmmmmmmmmmmmmmmmm', 'Ana'], spaced: ['The Okonkwo-Adeyemi Home', 'The Bartholomew-Fitz Hse', 'Cy'], mixed: ['Mary-Kate Lee-Park \u{1F1EF}\u{1F1F5}\u{1F44D}\u{1F3FD} Bo', 'Pneumonoultramicroscopic', 'Zo\u00EB Ng'] };
+    const SCAN = names => { const Q = names.map(n => '\u201C' + n + '\u201D'), out = { rows: [], ell: [], btn: [] }, vw = document.documentElement.clientWidth;
+      const R = e => { const g = document.createRange(); g.selectNodeContents(e); return [...g.getClientRects()].filter(x => x.width > 0); };
+      document.querySelectorAll('#rows .ss-alloc .who').forEach(who => { if (!who.getClientRects().length || !Q.includes(who.textContent)) return; const row = who.parentElement, cs = getComputedStyle(who), b = who.getBoundingClientRect(), rs = R(who);
+        const others = [...row.children].filter(c => c !== who && c.getClientRects().length && getComputedStyle(c).visibility !== 'hidden').flatMap(R);
+        const tn = who.firstChild, txt = tn.textContent, m = document.createElement('span'); m.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;left:0;top:0'; who.appendChild(m); const broken = []; let at = 0;
+        const EMO = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u, SEG = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+        // words = runs between spaces and after hyphens; each emoji is its own word (Unicode line breaking allows a break between two emoji, as between CJK characters)
+        txt.replace(/-/g, '-\n').split(/\s+/).flatMap(t => { const out = []; let cur = ''; for (const { segment: g } of SEG.segment(t.replace(/\n/g, ''))) { if (EMO.test(g)) { if (cur) out.push(cur); out.push(g); cur = ''; } else cur += g; } if (cur) out.push(cur); return out; }).forEach(tok => { if (!tok) return; const i = txt.indexOf(tok, at); at = i + tok.length; m.textContent = tok; const tw = m.getBoundingClientRect().width;
+          if (tw <= who.clientWidth + .5) { const g = document.createRange(); g.setStart(tn, i); g.setEnd(tn, i + tok.length); if (new Set([...g.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top))).size > 1) broken.push(tok); } });
+        who.removeChild(m); const last = document.createRange(); last.setStart(tn, txt.length - 1); last.setEnd(tn, txt.length); const lq = last.getBoundingClientRect();
+        out.rows.push({ name: txt.slice(0, 12), ell: cs.textOverflow === 'ellipsis', nowrap: cs.whiteSpace === 'nowrap', sw: who.scrollWidth, cw: who.clientWidth, inBox: rs.every(a => a.left >= b.left - .5 && a.right <= b.right + .5 && a.top >= b.top - .5 && a.bottom <= b.bottom + .5),
+          inView: rs.every(a => a.left >= -.5 && a.right <= vw + .5), closeQ: lq.width > 0 && lq.right <= b.right + .5 && lq.left >= b.left - .5, overlap: rs.some(a => others.some(o => a.left < o.right - .5 && o.left < a.right - .5 && a.top < o.bottom - .5 && o.top < a.bottom - .5)), broken, tot: (row.querySelector('.tot') || {}).textContent }); });
+      for (const el of document.querySelectorAll('body *')) { if (!el.getClientRects().length) continue; const own = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join(''); if (!names.some(n => own.includes(n.slice(0, 3)))) continue;
+        const cs = getComputedStyle(el); if (cs.textOverflow === 'ellipsis' || (/hidden|clip/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1)) out.ell.push((el.id || el.className) + ':' + own.slice(0, 10)); }
+      document.querySelectorAll('#assign .ss-btn').forEach(bt => { if (!bt.getClientRects().length || !names.some(n => bt.textContent.includes(n))) return; const r = bt.getBoundingClientRect(); out.btn.push({ ok: bt.scrollWidth <= bt.clientWidth + 1 && r.right <= vw + .5 && r.left >= -.5 }); });
+      out.sw = document.documentElement.scrollWidth; out.vw = vw; return out; };
+    const good = (r, n) => r.rows.length === n && r.rows.every(x => !x.ell && !x.nowrap && x.sw <= x.cw + 1 && x.inBox && x.inView && x.closeQ && !x.overlap && !x.broken.length) && !r.ell.length && r.btn.every(x => x.ok) && r.sw <= r.vw;
+    const fill = async (p, st) => p.evaluate(st => { const set = (e, v) => { e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }, g = id => document.getElementById(id); set(g('item'), st.n); set(g('q'), st.q); set(g('u'), st.u); set(g('inc'), st.i); set(g('p'), st.p); set(g('f'), st.f); while (document.querySelectorAll('.ss-hn').length < st.h.length) g('add').click(); const hn = document.querySelectorAll('.ss-hn'), rq = document.querySelectorAll('.sk-rq'); st.h.forEach((h, i) => { set(hn[i], h[0]); set(rq[i], h[1]); }); }, st);
+    const pdfs = {};
+    for (const w of [305, 320, 390, 600, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 });
+      for (const [k, names] of Object.entries(SETS)) {
+        const st = { n: 'Rice', u: 'kg', c: '$', q: '10', i: '1', p: '20.00', f: '1.00', b: 'p', x: -1, h: [[names[0], '3'], [names[1], '3'], [names[2], '2']] }, res = {};
+        await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(80); await fill(p, st); await sleep(200);
+        res.sender = await p.evaluate(SCAN, names); await p.emulateMediaType('print'); await sleep(200); res.senderPrint = await p.evaluate(SCAN, names);
+        if (w === 390) { const f = '/tmp/sack-d10r5-' + k + '-sender-letter.pdf'; await p.pdf({ path: f, format: 'Letter', printBackground: true }); pdfs[k + ' sender'] = f; }
+        await p.emulateMediaType('screen');
+        const f = await p.evaluate(st => SACKLINK.encode(st), st); await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(200); res.recipient = await p.evaluate(SCAN, names);
+        await p.emulateMediaType('print'); await sleep(200); res.recipientPrint = await p.evaluate(SCAN, names);
+        if (w === 390) { const fp = '/tmp/sack-d10r5-' + k + '-recipient-letter.pdf'; await p.pdf({ path: fp, format: 'Letter', printBackground: true }); pdfs[k + ' recipient'] = fp; }
+        await p.emulateMediaType('screen');
+        await p.select('#pick', '0'); await sleep(80);
+        res.picked = await p.evaluate(() => { const sel = document.getElementById('pick'), cs = getComputedStyle(sel), c = document.createElement('canvas').getContext('2d'); c.font = cs.font; const o = sel.selectedOptions[0], clips = c.measureText(o.textContent).width > sel.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 24, pk = document.getElementById('picked'); if (!pk) return { clips, shown: false, missing: true };
+          const r = pk.getBoundingClientRect(); return { clips, shown: !pk.hidden && pk.getClientRects().length > 0, full: pk.textContent === o.textContent, inView: r.right <= document.documentElement.clientWidth + .5, fits: pk.scrollWidth <= pk.clientWidth + 1, aria: pk.getAttribute('aria-hidden') }; });
+        await p.evaluate(() => document.getElementById('change').click()); await sleep(150); await p.evaluate(() => document.getElementById('up').click()); await sleep(200); res.change = await p.evaluate(SCAN, names);
+        const okAll = ['sender', 'senderPrint', 'recipient', 'recipientPrint', 'change'].every(v => good(res[v], v === 'change' ? 3 : 3));
+        ck(w + ' D10-r5 ' + k + ' names at the 24 cap: full quoted name visible (no ellipsis, scrollWidth <= clientWidth, closing ” inside), nothing overlaps, pieces that fit are never broken mid-word; sender, sender print, recipient, recipient print, change (+1 -> $8.40); no page overflow',
+          okAll && res.change.rows[0].tot === '$8.40', Object.fromEntries(Object.entries(res).map(([v, r]) => [v, r.rows ? { bad: r.rows.filter(x => x.ell || x.nowrap || x.sw > x.cw + 1 || !x.inBox || !x.inView || !x.closeQ || x.overlap || x.broken.length), ell: r.ell, btn: r.btn.filter(x => !x.ok).length, sw: r.sw, vw: r.vw, tot0: r.rows[0] && r.rows[0].tot } : r])));
+        ck(w + ' D10-r5 ' + k + ' recipient picker: a picked name the closed list cuts is also shown in full under it (wrapping, in view, not aria-hidden: facts stay in the accessibility tree); not shown when it fits', res.picked.clips ? res.picked.shown && res.picked.full && res.picked.inView && res.picked.fits && res.picked.aria === null : !res.picked.shown, res.picked);
+      }
+      ck(w + ' D10-r5 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+    // Letter print (PDF from the 390 window): every name comes out in full (text layer; whitespace/line breaks removed, case folded)
+    const { execSync } = require('child_process'), norm = t => t.replace(/\s+/g, '').toUpperCase(), pdfOut = {};
+    for (const [key, fpath] of Object.entries(pdfs)) { const t = norm(execSync('pdftotext -raw ' + fpath + ' -').toString()), names = SETS[key.split(' ')[0]]; pdfOut[key] = names.map(n => t.includes(norm('\u201C' + n + '\u201D'))); }
+    ck('D10-r5 Letter print (390 window): every at-cap name, with both quotes, is in the printed text in full, sender and recipient, all 4 sets', Object.values(pdfOut).every(a => a.every(Boolean)), pdfOut); }
+  // QA local-d8d1dce D7r: the WHOLE received URL is capped at 2,000 (shared MILLVIEW.linkFor, same as sending). Normal path: valid links whose whole URL is
+  // 1999 / 2000 open; 2001 / 2040 are refused with the bad-link message (fresh tab and same tab). Long path (throwaway server, nested dirs + symlink): same.
+  { const fs = require('fs'), os = require('os'), path = require('path'), { spawn } = require('child_process'), REPO = path.resolve(__dirname, '../..');
+    const s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 });
+    const openAt = async (url, same) => { if (!same) await p.goto('about:blank'); if (same) await p.evaluate(u => { location.href = u; }, url); else await p.goto(url, { waitUntil: 'load' }); await sleep(250);
+      return p.evaluate(() => ({ len: location.href.length, recv: document.body.classList.contains('is-recv') && !document.getElementById('recv').hidden, bad: !document.getElementById('banner').hidden && document.getElementById('banner-t').textContent, rows: document.querySelectorAll('#rows .ss-alloc').length })); };
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(100);
+    const FAM = '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}';
+    // valid fragments of exact lengths (item padding x household name tail), all within the link format's own 2,000 cap
+    const fragFor = async T => p.evaluate((T, FAM) => { for (let fam = 23; fam >= 0; fam--) for (let pad = 0; pad <= 36; pad++) for (let hh = 2; hh <= 8; hh++) {
+      const h = []; for (let i = 0; i < hh; i++) h.push([(i === hh - 1 ? 'Z' + 'y'.repeat(23 - fam) + FAM.repeat(fam) : String.fromCharCode(65 + i) + FAM.repeat(23)), '1']);
+      const f = SACKLINK.encode({ n: 'Rice' + 'x'.repeat(pad), u: 'kg', c: '$', q: String(hh), i: '1', p: '10.00', f: '', b: 'p', x: -1, h }); if (f && f.length === T && SACKLINK.decode('#' + f).ok) return f; } return null; }, T, FAM);
+    const normal = {}; let f2000 = null;
+    for (const total of [1999, 2000, 2001, 2040]) { const f = await fragFor(total - BASE.length - 1); if (!f) { normal[total] = 'no fragment of that length'; continue; } if (total === 2000) f2000 = f; normal[total] = await openAt(BASE + '#' + f); normal[total].fragLen = f.length; }
+    // same tab: from an open 2,000 link to a 2,001 one (hashchange)
+    let sameTab = null; { const f = await fragFor(2001 - BASE.length - 1); if (f && f2000) { await openAt(BASE + '#' + f2000); sameTab = await openAt(BASE + '#' + f, true); } }
+    const B = COPY.badLink;
+    ck('QA D7r normal path: whole URL 1999 and 2000 open the proposed split; 2001 and 2040 (fragment under 2,000) refused with the bad-link message, no rows; 2001 in the same tab refused too',
+      [1999, 2000].every(t => normal[t].recv && normal[t].len === t && normal[t].bad !== B && normal[t].rows > 0) && [2001, 2040].every(t => !normal[t].recv && normal[t].len === t && normal[t].bad === B && normal[t].fragLen <= 2000) && sameTab && !sameTab.recv && sameTab.bad === B && sameTab.len === 2001, { normal, sameTab });
+    const root = fs.mkdtempSync(os.tmpdir() + '/sk-long-'); const srv = spawn('python3', ['-u', '-m', 'http.server', '0', '--bind', '127.0.0.1', '--directory', root], { stdio: ['ignore', 'pipe', 'pipe'] });
+    try { const port = await new Promise((res, rej) => { let b = ''; const f = d => { b += d; const m = /port (\d+)/.exec(b); if (m) res(+m[1]); }; srv.stdout.on('data', f); srv.stderr.on('data', f); setTimeout(() => rej(new Error('no port')), 8000); });
+      const ORIGIN = 'http://127.0.0.1:' + port; let tag = 0;
+      const pathOf = total => { let left = total - 1 - '/mill/split-the-sack/'.length; const segs = []; tag++;
+        while (left > 0) { let k = left > 200 ? (left === 201 ? 199 : 200) : left; left -= k; if (left) left -= 1; segs.push(segs.length ? 'a'.repeat(k) : ('t' + tag + '_' + 'a'.repeat(k)).slice(0, k)); }
+        let dir = root; segs.slice(0, -1).forEach(x => { dir = path.join(dir, x); fs.mkdirSync(dir, { recursive: true }); }); fs.symlinkSync(REPO, path.join(dir, segs[segs.length - 1]));
+        const P = '/' + segs.join('/') + '/mill/split-the-sack/'; if (P.length !== total) throw new Error('path ' + P.length + ' != ' + total); return P; };
+      const small = await p.evaluate(() => SACKLINK.encode({ n: 'Rice', u: 'kg', c: '$', q: '10', i: '1', p: '20.00', f: '', b: 'p', x: -1, h: [['Ana', '5'], ['Bo', '5']] })), long = {};
+      for (const total of [1999, 2000, 2001, 2040]) long[total] = await openAt(ORIGIN + pathOf(total - ORIGIN.length - 1 - small.length) + '#' + small);
+      ck('QA D7r long path (fragment ' + small.length + ' chars): whole URL 1999 and 2000 open; 2001 and 2040 refused with the bad-link message', [1999, 2000].every(t => long[t].recv && long[t].len === t && long[t].bad !== B && long[t].rows > 0) && [2001, 2040].every(t => !long[t].recv && long[t].len === t && long[t].bad === B && long[t].rows === 0), long);
+    } finally { srv.kill(); }
+    ck('D7r no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
