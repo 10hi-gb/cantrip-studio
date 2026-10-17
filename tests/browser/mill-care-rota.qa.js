@@ -476,5 +476,62 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     ck('Creative 05:42: DOM order = visual order for tags and per-helper list (row by row), per-helper in two columns at ≥720px, buttons right under the quilt and before the tags in DOM/focus order, nothing past the edge at 320–1440',
       Object.values(out).every(x => x.order && x.perOrder && x.within && x.sw <= x.iw && x.btnUnderQuilt && x.focusBtnsFirst && x.tagsAfterBtns && (x.colW >= 720 ? x.perCols === 2 : x.perCols === 1)), Object.fromEntries(Object.entries(out).map(([w, x]) => [w, { order: x.order, perOrder: x.perOrder, perCols: x.perCols, within: x.within, sw: x.sw, iw: x.iw, btn: x.btnUnderQuilt }])));
     ck('Creative 05:42: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // ================= QA local-83edf87 C14 / C15 / C16 =================
+  // C14: QA's 56 cases (14 names of ≤10 graphemes × 1280/1440 × classic scrollbars visible/hidden), each name in Dinner, Ride, Dog walk, Other and Double
+  // squares (name + "Bo", and name + itself), measured straight after Check, 1.2 s later and after a resize: one line, ≥10px, inside its square.
+  { const s = await session(H, IP); const { p } = s; const cdp = await p.target().createCDPSession(); const fails = []; let runs = 0;
+    const NAMES = ['Fatima', 'Anastasiya', 'Bartholome', 'WWWWWWWWWW', 'MMMMMMMMMM', 'WMWMWMWMWM', 'Mary-Louis', 'Anne Marie', 'É'.normalize('NFD').repeat(10), '😀'.repeat(10), '🇺🇦'.repeat(10), '👩‍👩‍👧‍👦'.repeat(5), '王小明李华张伟刘洋陈', 'عبد الرحمن'];
+    const measure = nm => p.evaluate(nm => [...document.querySelectorAll('#quilts .patch')].flatMap(pt => [...pt.querySelectorAll('.who .mill-typed')].filter(e => e.textContent.includes(nm)).map(e => { const rg = document.createRange(); rg.selectNodeContents(e); const rs = [...rg.getClientRects()].filter(q => q.width > 0.5), tops = [];
+      rs.forEach(q => { if (!tops.some(t => Math.abs(t - q.top) <= 3)) tops.push(q.top); }); const pr = pt.getBoundingClientRect(); return { sq: pt.className.replace(/patch |taken |new/g, '').trim(), lines: tops.length, fs: parseFloat(getComputedStyle(e).fontSize), inside: Math.min(...rs.map(q => q.left)) >= pr.left - 0.5 && Math.max(...rs.map(q => q.right)) <= pr.right + 0.5 && Math.max(...rs.map(q => q.bottom)) <= pr.bottom + 0.5 }; })), nm);
+    for (const sb of ['visible', 'hidden']) { await cdp.send('Emulation.setScrollbarsHidden', { hidden: sb === 'hidden' });
+      for (const w of [1280, 1440]) for (const nm of NAMES) { await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(100);
+        await form(p, { forName: 'Q', org: 'Jo', first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', rule: 'every' }, { key: 'ride', rule: 'every' }, { key: 'walk', rule: 'every' }, { key: 'other', rule: 'every', label: 'Groceries' }],
+          lines: [`Mon 19 dinner ${nm}`, `Tue 20 ride ${nm}`, `Wed 21 walk ${nm}`, `Thu 22 groceries ${nm}`, `Fri 23 dinner ${nm}`, 'Fri 23 dinner Bo', `Sat 24 dinner ${nm}`, `Sat 24 dinner ${nm}`, `Sun 25 ride ${nm}`, 'Sun 25 ride Bo'] });
+        await p.click('#b-check'); const st = { t0: await measure(nm) }; await sleep(1200); st.t1200 = await measure(nm); await p.setViewport({ width: w, height: 901 }); await sleep(300); st.resized = await measure(nm); runs++;
+        const bad = Object.entries(st).filter(([k, v]) => v.length < 8 || !['meal', 'ride', 'walk', 'other', 'dbl'].every(t => v.some(x => x.sq.includes(t))) || v.some(x => x.lines !== 1 || x.fs < 10 || !x.inside));
+        if (bad.length) fails.push({ sb, w, nm, bad: bad.map(([k, v]) => k + ':' + JSON.stringify(v.filter(x => x.lines !== 1 || x.fs < 10 || !x.inside).slice(0, 3)) + ' n=' + v.length) }); } }
+    await cdp.send('Emulation.setScrollbarsHidden', { hidden: false });
+    ck('QA C14 (QA\'s 56 cases): 14 names ≤10 graphemes (W×10, M×10, 😀×10, 🇺🇦×10, ZWJ families, NFD É×10, CJK, Arabic …) × 1280/1440 × scrollbars visible/hidden: one line, ≥10px, inside the square, in Dinner/Ride/Walk/Other/Double, straight after Check, 1.2 s later and after a resize', runs === 56 && !fails.length, { runs, fails: fails.slice(0, 8) });
+    ck('QA C14: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // C15: every focusable on the organizer (needs ticked, rules with checked and unchecked day chips; empty-Check error links; after Check + Make link) and the
+  // recipient page, at 390 and 1280, reached by real Tab presses: the ring = pixels that change on focus (shot focused vs shot after blur); the ring must be
+  // there (at least a thin band all round) and its colour ≥3:1 against the pixels 3px beyond it on every side (gap and outside), checked chip included.
+  const ringAudit = async (p, tag, max) => { const out = []; await p.evaluate(() => { document.activeElement && document.activeElement.blur(); window.scrollTo(0, 0); });
+    for (let i = 0; i < max; i++) { await p.keyboard.press('Tab'); await sleep(30);
+      const info = await p.evaluate(() => { const e = document.activeElement; if (!e || e === document.body) return null; if (!e.dataset.ra) e.dataset.ra = String(Math.random()).slice(2, 9); const host = e.closest('.cr-chip') || e, r = host.getBoundingClientRect();
+        return { id: e.id || e.dataset.ra, desc: (e.id ? '#' + e.id : e.tagName.toLowerCase() + (e.closest('.cr-chip') ? ' in checked=' + e.checked + ' chip' : '') + ':' + (e.textContent || e.value || e.getAttribute('aria-label') || '').trim().slice(0, 24)), x: r.left + scrollX - 12, y: r.top + scrollY - 12, w: r.width + 24, h: r.height + 24, perim: 2 * (r.width + r.height) }; });
+      if (!info) break; if (out.some(o => o.id === info.id)) break; const clip = { x: Math.max(0, info.x), y: Math.max(0, info.y), width: info.w, height: info.h };
+      const f = await p.screenshot({ clip, encoding: 'base64' }); await p.evaluate(() => document.activeElement.blur()); await sleep(30); const u = await p.screenshot({ clip, encoding: 'base64' });
+      const m = await p.evaluate(async (f, u, perim) => { const decode = async s => { const img = new Image(); img.src = 'data:image/png;base64,' + s; await img.decode(); const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const g = cv.getContext('2d'); g.drawImage(img, 0, 0); return { w: cv.width, h: cv.height, D: g.getImageData(0, 0, cv.width, cv.height).data }; }, F = await decode(f), U = (await decode(u)).D, D = F.D, W = F.w, H2 = F.h, R = new Uint8Array(W * H2); let n = 0;
+        for (let k = 0; k < W * H2; k++) { const j = k * 4; if (Math.abs(D[j] - U[j]) + Math.abs(D[j + 1] - U[j + 1]) + Math.abs(D[j + 2] - U[j + 2]) > 60) { R[k] = 1; n++; } }
+        if (n < perim) return { n, visible: false };
+        const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }, L = j => 0.2126 * lin(D[j]) + 0.7152 * lin(D[j + 1]) + 0.0722 * lin(D[j + 2]), cnt = {};
+        for (let k = 0; k < W * H2; k++) if (R[k]) { const j = k * 4, key = D[j] + ',' + D[j + 1] + ',' + D[j + 2]; cnt[key] = (cnt[key] || 0) + 1; }
+        const ring = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0][0].split(',').map(Number), lr = 0.2126 * lin(ring[0]) + 0.7152 * lin(ring[1]) + 0.0722 * lin(ring[2]); let worst = 99, edges = 0;
+        for (let y = 0; y < H2; y++) for (let x = 0; x < W; x++) { const k = y * W + x; if (!R[k]) continue; const j = k * 4; if (Math.abs(D[j] - ring[0]) + Math.abs(D[j + 1] - ring[1]) + Math.abs(D[j + 2] - ring[2]) > 30) continue;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x1 = x + dx, y1 = y + dy; if (x1 < 0 || y1 < 0 || x1 >= W || y1 >= H2 || R[y1 * W + x1]) continue; // ring edge: step past one antialiased pixel, then compare
+            const xx = x + 3 * dx, yy = y + 3 * dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H2 || R[yy * W + xx]) continue; const lb = L((yy * W + xx) * 4), c = (Math.max(lr, lb) + 0.05) / (Math.min(lr, lb) + 0.05); edges++; if (c < worst) worst = c; } }
+        return { n, visible: true, ring: ring.join(','), worst: Math.round(worst * 100) / 100, edges }; }, f, u, info.perim);
+      out.push(Object.assign({ tag, desc: info.desc, id: info.id }, m)); }
+    return out; };
+  { const s = await session(H, IP); const { p } = s; await p.evaluateOnNewDocument(clipStub); const all = [];
+    for (const w of [390, 1280]) { await p.setViewport({ width: w, height: 900 });
+      await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); all.push(...await ringAudit(p, w + ' organizer at load', 80));
+      await form(p, Object.assign({}, JESS, { lines: [] })); all.push(...await ringAudit(p, w + ' organizer, needs ticked, checked + unchecked day chips', 120));
+      await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await p.click('#b-check'); await sleep(250); all.push(...await ringAudit(p, w + ' organizer, empty Check (error links)', 120));
+      await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await form(p, Object.assign({}, JESS, { lines: PLAN })); await check(p); await p.click('#b-link'); await sleep(250); all.push(...await ringAudit(p, w + ' organizer after Check + Make link', 160));
+      const lk = await p.$eval('#link', e => e.value); await p.goto('about:blank'); await p.goto(lk, { waitUntil: 'load' }); await sleep(250); all.push(...await ringAudit(p, w + ' recipient', 60)); }
+    const bad = all.filter(x => !x.visible || x.worst < 3), chips = all.filter(x => /checked=true chip/.test(x.desc));
+    ck('QA C15: every focusable (organizer: load, needs + day chips checked/unchecked, error links, after Check + link; recipient) at 390/1280 shows a ring ≥3:1 against the pixels beside it, by rendered pixels; checked day chips included', all.length > 100 && chips.length >= 4 && !bad.length,
+      { n: all.length, checkedChips: chips.map(x => x.worst), bad: bad.slice(0, 12), min: Math.min(...all.filter(x => x.visible).map(x => x.worst)) });
+    // C16: the legend's empty "Not needed" swatch: outline pixels vs the page just outside, ≥3:1, still no fill
+    const sw = []; for (const w of [390, 1280]) { await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await form(p, Object.assign({}, JESS, { lines: PLAN })); await check(p);
+      const r = await p.evaluate(() => { const e = document.querySelector('#legend .cr-sw--notNeeded'); e.scrollIntoView({ block: 'center' }); const b = e.getBoundingClientRect(); return { x: b.left + scrollX, y: b.top + scrollY, w: b.width, h: b.height, bg: getComputedStyle(e).backgroundColor }; });
+      const img = await p.screenshot({ clip: { x: r.x - 8, y: r.y - 8, width: r.w + 16, height: r.h + 16 }, encoding: 'base64' });
+      sw.push(Object.assign({ w, bg: r.bg }, await p.evaluate(async (img, bw, bh) => { const { w: W, D } = await (async s => { const img = new Image(); img.src = 'data:image/png;base64,' + s; await img.decode(); const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const g = cv.getContext('2d'); g.drawImage(img, 0, 0); return { w: cv.width, h: cv.height, D: g.getImageData(0, 0, cv.width, cv.height).data }; })(img), lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }, L = (x, y) => { const j = (y * W + x) * 4; return 0.2126 * lin(D[j]) + 0.7152 * lin(D[j + 1]) + 0.0722 * lin(D[j + 2]); };
+        const cy = 8 + Math.round(bh / 2), cx = 8 + Math.round(bw / 2), pairs = [[[7, cy], [3, cy]], [[8 + Math.round(bw), cy], [12 + Math.round(bw), cy]], [[cx, 7], [cx, 3]], [[cx, 8 + Math.round(bh)], [cx, 12 + Math.round(bh)]]];
+        const cs = pairs.map(([[a, b], [c, d]]) => { const x = L(a, b), y = L(c, d); return Math.round((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) * 100) / 100; }); return { sides: cs, min: Math.min(...cs) }; }, img, r.w, r.h))); }
+    ck('QA C16: legend "Not needed" swatch outline ≥3:1 against the page on all four sides at 390/1280, and still unfilled', sw.every(x => x.min >= 3 && /rgba\(0, 0, 0, 0\)|transparent/.test(x.bg)), sw);
+    ck('QA C15/C16: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })();
