@@ -83,21 +83,28 @@
     var p = {}; new Intl.DateTimeFormat('en-US', o).formatToParts(new Date(now)).forEach(function (x) { p[x.type] = x.value; });
     return p.weekday + ' ' + p.month + ' ' + p.day + ', ' + p.hour + ':' + p.minute + ' ' + p.dayPeriod + ' ' + p.timeZoneName; }
   // ---- outputs (C = Writer COPY) ----
-  function stampText(C, r, cfg) { return M.fill(C.stamp, { datetime: r.stamp, org: M.strip(cfg.org) }); }
-  function stillOpen(C, r, cfg) { var st = stampText(C, r, cfg), f = M.strip(cfg.forName), o = M.strip(cfg.org);
-    if (!r.gaps.length) return M.fill(C.stillOpenNone, { for: f, stamp: st });
-    return M.fill(C.stillOpenText, { for: f, org: o, lines: r.gaps.map(function (k) { return M.fill(C.stillOpenLine, { date: d2(k[0]), need: k[1] }); }).join('\n'), stamp: st }); }
-  function handoff(C, r, cfg, h) { var o = M.strip(cfg.org), by = {}, order = []; h.items.forEach(function (it) { if (!by[it.t]) { by[it.t] = []; order.push(it.t); } if (by[it.t].indexOf(it.need) < 0) by[it.t].push(it.need); });
+  // PM (Left or Right ruling, 02:34): typed names stay quoted everywhere, copy text included. Writer's v2 templates stay
+  // verbatim; only the substituted typed values (helper names, who it's for, organizer, an "Other" need label) get the
+  // shared quote rule (core MILL.quote: typed “ ” „ ‟ « » shown as " inside the frame). Notes are framed by the template.
+  var Q = function (s) { return M.raw(M.quote(M.strip(s))); };
+  function needOf(cfg, label) { var n = (cfg.needs || []).find(function (x) { return x.label === label; }); return n && n.key === 'other' ? M.quote(label) : label; }
+  function stampText(C, r, cfg) { return M.fill(C.stamp, { datetime: r.stamp, org: Q(cfg.org) }); }
+  function stillOpen(C, r, cfg) { var st = stampText(C, r, cfg);
+    if (!r.gaps.length) return M.fill(C.stillOpenNone, { for: Q(cfg.forName), stamp: M.raw(st) });
+    return M.fill(C.stillOpenText, { for: Q(cfg.forName), org: Q(cfg.org), lines: M.raw(r.gaps.map(function (k) { return M.fill(C.stillOpenLine, { date: d2(k[0]), need: M.raw(needOf(cfg, k[1])) }); }).join('\n')), stamp: M.raw(st) }); }
+  function handoff(C, r, cfg, h) { var o = Q(cfg.org), by = {}, order = []; h.items.forEach(function (it) { if (!by[it.t]) { by[it.t] = []; order.push(it.t); } if (by[it.t].indexOf(it.need) < 0) by[it.t].push(it.need); });
     order.sort(function (a, b) { return a - b; });
     var mine = {}; h.items.forEach(function (it) { mine[it.need] = 1; });
-    var notes = ''; (cfg.needs || []).forEach(function (n) { var note = M.strip(n.note || ''); if (note && mine[n.label]) notes += M.fill(C.handoffNoteLine, { need: n.label, org: o, note: note }); });
+    var notes = ''; (cfg.needs || []).forEach(function (n) { var note = M.strip(n.note || ''); if (note && mine[n.label]) notes += M.fill(C.handoffNoteLine, { need: M.raw(needOf(cfg, n.label)), org: o, note: note }); });
     var ev = M.strip(cfg.noteAll || ''); if (ev) notes += M.fill(C.handoffEveryoneNoteLine, { org: o, note: ev });
-    return M.fill(C.handoffText, { name: h.name, for: M.strip(cfg.forName), org: o, dayLines: order.map(function (t) { return M.fill(C.handoffDayLine, { date: d2(t), needs: by[t].join(' + ') }); }).join('\n'), noteLines: notes, stamp: stampText(C, r, cfg) }); }
+    return M.fill(C.handoffText, { name: Q(h.name), for: Q(cfg.forName), org: o, dayLines: M.raw(order.map(function (t) { return M.fill(C.handoffDayLine, { date: d2(t), needs: M.raw(by[t].map(function (x) { return needOf(cfg, x); }).join(' + ')) }); }).join('\n')), noteLines: M.raw(notes), stamp: M.raw(stampText(C, r, cfg)) }); }
   // household sheet: per day, each helper with their needs (or nothing planned)
   function sheet(r) { return r.days.map(function (t) { var who = [], wk = {}; r.needs.forEach(function (n) { (r.got[t + '|' + n.label] || []).forEach(function (nm) { var k = nm.toLowerCase(); if (!wk[k]) { wk[k] = { name: nm, needs: [] }; who.push(wk[k]); } wk[k].needs.push(n.label); }); }); return { t: t, who: who }; }); }
-  function sheetText(C, s, head) { var lines = [M.fill(C.sheetHeading, { for: head.forName }), M.fill(C.sheetRange, { first: d2(parseISO(head.first)), last: d2(parseISO(head.last)) })];
-    s.forEach(function (d) { lines.push(d2(d.t) + ': ' + (d.who.length ? d.who.map(function (w) { return M.fill(C.sheetLine, { name: w.name, needs: w.needs.join(' + ') }); }).join(' · ') : C.sheetNothing)); });
-    lines.push(M.fill(C.stamp, { datetime: head.stamp, org: head.org })); lines.push(M.fill(C.sheetChangeNote, { org: head.org })); return lines.join('\n'); }
+  // head.std(label) -> true for Writer's own need names (Dinner / Ride / Dog walk); anything else was typed and is quoted
+  function sheetText(C, s, head) { var std = head.std || function () { return true; }, nl = function (n) { return std(n) ? n : M.quote(n); };
+    var lines = [M.fill(C.sheetHeading, { for: Q(head.forName) }), M.fill(C.sheetRange, { first: d2(parseISO(head.first)), last: d2(parseISO(head.last)) })];
+    s.forEach(function (d) { lines.push(d2(d.t) + ': ' + (d.who.length ? d.who.map(function (w) { return M.fill(C.sheetLine, { name: Q(w.name), needs: M.raw(w.needs.map(nl).join(' + ')) }); }).join(' · ') : C.sheetNothing)); });
+    lines.push(M.fill(C.stamp, { datetime: head.stamp, org: Q(head.org) })); lines.push(M.fill(C.sheetChangeNote, { org: Q(head.org) })); return lines.join('\n'); }
   // ---- optional household-sheet link "#cr2.<b64url JSON>.<ck>": the sheet only (for, org, days, names + needs, stamp). No notes, no plan. ----
   var TAG = 'cr', VER = 2;
   function encodeSheet(r, cfg) { var o = { f: M.strip(cfg.forName), o: M.strip(cfg.org), a: cfg.first, b: cfg.last, s: r.stamp, d: sheet(r).map(function (d) { return d.who.map(function (w) { return [w.name, w.needs]; }); }) };

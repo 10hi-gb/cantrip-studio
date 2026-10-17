@@ -8,7 +8,7 @@ const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'ht
 const { typedAudit, recipientAccess, mouseAt, errsOf, W, sleep, session, overflow, typeInto, storage, netCheck, result } = require('./mill-common');
 const fs = require('fs'), vm = require('vm');
 const C = vm.runInNewContext(fs.readFileSync(__dirname + '/../../mill/care-rota/copy.js', 'utf8') + ';COPY');
-const X = vm.runInNewContext('var COPY={};' + fs.readFileSync(__dirname + '/../../mill/care-rota/copy-extra.js', 'utf8') + ';COPY');
+const X = C; // Writer N5 supplied the former stand-in keys; no copy-extra.js
 const CR = require('../../mill/care-rota/cr.js'), M = require('../../mill/shared/core.js');
 const pdfPages = buf => { const f = require('os').tmpdir() + '/cr-print-' + process.pid + '.pdf'; fs.writeFileSync(f, buf); const m = /Pages:\s+(\d+)/.exec(require('child_process').execFileSync('pdfinfo', [f]).toString()); fs.unlinkSync(f); return m ? +m[1] : -1; };
 const BASE = `${SCHEME}://${H}/mill/care-rota/`;
@@ -67,15 +67,15 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
       'Read as: “Wed walk Fatima” → Wed Oct 21 (the only Wednesday in these days), Dog walk, “Fatima”.'];
     ck(w + ' S2 tags exact (Writer templates; pasted lines quoted; build-rule lines are TO FIX tags)', JSON.stringify(t.tags) === JSON.stringify(expTags), t.tags);
     const pmon = t.patches.filter(x => /Mon Oct 19: Dinner|Tue Oct 20: Dog walk|Fri Oct 23: Ride/.test(x)).sort();
-    ck(w + ' build rules: two-needs and "and"-names lines are never placed (Mon 19 Dinner stays “Ana” alone, no Ben on Tue walk twice, Fri ride stays not needed)', pmon.join('|') === 'hole|Fri Oct 23: Ride not needed|taken meal|Mon Oct 19: Dinner, “Ana”|taken walk|Tue Oct 20: Dog walk, “Ben”' && !t.patches.some(x => /and|&/.test(x)), pmon);
-    ck(w + ' quilt: 21 patches (3 needs × 7 days): 10 covered (9 single + 1 double with ×2 pin), 2 gap, 9 not-needed holes', t.patches.length === 21 && t.patches.filter(x => /^taken/.test(x)).length === 9 && t.patches.filter(x => /^gap/.test(x)).length === 2 && t.patches.filter(x => /^dbl/.test(x)).length === 1 && t.patches.filter(x => /^hole/.test(x)).length === 9 && t.patches.includes('dbl|Tue Oct 20: Dinner, Double: “Carla” + “Dev”'), t.patches);
+    ck(w + ' build rules: two-needs and "and"-names lines are never placed (Mon 19 Dinner stays “Ana” alone, no Ben on Tue walk twice, Fri ride stays not needed)', pmon.join('|') === 'hole|Fri Oct 23: Ride, not needed|taken meal|Mon Oct 19: Dinner, “Ana”|taken walk|Tue Oct 20: Dog walk, “Ben”' && !t.patches.some(x => /and|&/.test(x)), pmon);
+    ck(w + ' quilt (Writer patchGap/patchNotNeeded verbatim in aria): 21 patches (3 needs × 7 days): 10 covered (9 single + 1 double with ×2 pin), 2 gap, 9 not-needed holes', t.patches.length === 21 && t.patches.filter(x => /^taken/.test(x)).length === 9 && t.patches.filter(x => /^gap/.test(x)).length === 2 && t.patches.filter(x => /^dbl/.test(x)).length === 1 && t.patches.filter(x => /^hole/.test(x)).length === 9 && t.patches.includes('dbl|Tue Oct 20: Dinner, Double: “Carla” + “Dev”') && t.patches.includes('gap|Wed Oct 21: Dinner, nobody yet') && t.patches.includes('hole|Sat Oct 24: Dinner, not needed'), t.patches);
     ck(w + ' set-aside pocket lists every line not placed (to fix, not needed), quoted, with its reading result', t.pocketShown && JSON.stringify(t.pocket) === JSON.stringify(['“Thu 21 dinner Ellie” · To fix', '“Sat 24 dinner Carla” · Set aside: not needed', '“' + RULES[0] + '” · To fix', '“' + RULES[1] + '” · To fix', '“' + RULES[2] + '” · To fix']), t.pocket);
     ck(w + ' per helper counts', t.per.join('|') === '“Ana”: 4|“Ben”: 3|“Carla”: 1|“Dev”: 2|“Fatima”: 1', t.per);
     ck(w + ' stamp on the S2 report: "Plan checked {date, time, zone label} by “Jess”. Changes after this aren\'t here."', STAMP_RE.test(t.stamp2), t.stamp2);
-    const stampTxt = t.stamp2.replace('“Jess”', 'Jess');
-    ck(w + ' S3 handoffs: one card per helper + still-open card; every message ends with the stamp', t.cards.length === 6 && t.cards.every(c => c.stamp === stampTxt && c.msg.endsWith(stampTxt)) && t.cards.map(c => c.h).join() === '“Ana”,“Ben”,“Carla”,“Dev”,“Fatima”,' + X.stillOpenHeading && t.cards[1].btn === 'Copy “Ben”\'s message', t.cards.map(c => c.h + '/' + c.btn));
+    const stampTxt = t.stamp2; // PM 02:34: the organizer is quoted in copied text too
+    ck(w + ' S3 handoffs: one card per helper + still-open card; every message ends with the stamp', t.cards.length === 6 && t.cards.every(c => c.stamp === stampTxt && c.msg.endsWith(stampTxt)) && t.cards.map(c => c.h).join() === '“Ana”,“Ben”,“Carla”,“Dev”,“Fatima”,' + X.stillOpenHeading && t.cards[1].btn === 'Copy the message for “Ben”', t.cards.map(c => c.h + '/' + c.btn));
     const ben = t.cards[1].msg; r0.stamp = stampTxt.match(/checked (.*) by/)[1];
-    ck(w + ' Ben\'s handoff: only his days, only the Dog walk note (never the Dinner/Ride notes), Writer template exactly', ben === CR.handoff(C, r0, CFG, r0.helpers[1]) && !ben.includes('No nuts') && !ben.includes('Pediatrician') && ben.includes('Dog walk, note from Jess: “' + NOTES.walk + '”'), ben);
+    ck(w + ' Ben\'s handoff: only his days, only the Dog walk note (never the Dinner/Ride notes), Writer template exactly', ben === CR.handoff(C, r0, CFG, r0.helpers[1]) && !ben.includes('No nuts') && !ben.includes('Pediatrician') && ben.includes('Dog walk note: “' + NOTES.walk + '”') && ben.startsWith('Days for: “Ben”\nHelping: “Priya & Sam”\nFrom: “Jess”\n'), ben);
     // copy outputs: still-open + a handoff, both stamped (Copy is the 4th output)
     await p.click('#b-open'); await sleep(120); await p.evaluate(() => document.querySelectorAll('#cards .hcard button')[0].click()); await sleep(120);
     t = await p.evaluate(() => ({ clip: window.__clip.slice(), toast: document.getElementById('toast').textContent }));
@@ -102,7 +102,7 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     const stitched = await p.evaluate(() => [...document.querySelectorAll('#quilts .patch.new')].map(e => e.getAttribute('aria-label')));
     ck(w + ' stitch-in only on patches that changed between checks', stitched.sort().join('|') === ['Thu Oct 22: Dinner, “Ellie”', 'Tue Oct 20: Dinner, “Carla”', 'Wed Oct 21: Dinner, “Dev”'].join('|'), stitched);
     await p.click('#b-open'); await sleep(100); t = await p.evaluate(() => window.__clip.slice(-1)[0]);
-    ck(w + ' still-open when nothing is open: stillOpenNone + stamp', /^Priya & Sam: every need has someone for now\.\nPlan checked .* by Jess\. Changes after this aren't here\.$/.test(t), t);
+    ck(w + ' still-open when nothing is open: stillOpenNone + stamp', /^For: “Priya & Sam”\nEvery need has someone for now\.\nPlan checked .* by “Jess”\. Changes after this aren't here\.$/.test(t), t);
     // ---------- link: household sheet only, warning before the button
     t = await p.evaluate(() => ({ warn: document.getElementById('link-warn').textContent, holds: document.getElementById('link-holds').textContent, order: document.getElementById('link-warn').compareDocumentPosition(document.getElementById('b-link')) & 4 }));
     ck(w + ' link: linkWarning + linkHolds shown before "Make the link"', t.warn === C.linkWarning && t.holds === C.linkHolds && t.order, t);
@@ -143,7 +143,7 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
         dst.days.length === 14 && dst.days[0] === 'Mon Oct 26' && dst.days[6] === 'Sun Nov 1' && dst.days[7] === 'Mon Nov 2' && dst.days[13] === 'Sun Nov 8' && dst.nov1 === 'dbl|Sun Nov 1: Dinner, Double: “Ana” + “Fay”' && dst.nov2 === 'taken meal|Mon Nov 2: Dinner, “Ben”' && /^hole/.test(dst.oct31) && dst.ride === 'taken ride|Mon Nov 2: Ride, “Eve”'
         && t.tags.includes('To fix: “Mon 1 dinner Ana”. Sun Nov 1 is a Sunday, not a Monday. Ask “Ana” which day they meant.') && t.tags.includes('“Thu dinner Dee” matches 2 days. Add the date.') && t.tags.includes('Not needed: “Sat 31 dinner Cy”. Dinner isn\'t needed on Sat Oct 31. Set aside, not placed.'), { dst, tags: t.tags });
       const z = tz === 'America/Los_Angeles' ? 'Mon Nov 2, 10:00 AM PST' : 'Tue Nov 3, 7:00 AM GMT+13';
-      ck(`${w} ${tz} stamp carries the device zone label after the change (${z}) on the report, every handoff and the sheet`, t.stamp2 === `Plan checked ${z} by “Jess”. Changes after this aren't here.` && t.cards.every(c => c.stamp === `Plan checked ${z} by Jess. Changes after this aren't here.`) && t.stamp4 === t.stamp2, [t.stamp2, t.cards.map(c => c.stamp)]);
+      ck(`${w} ${tz} stamp carries the device zone label after the change (${z}) on the report, every handoff and the sheet`, t.stamp2 === `Plan checked ${z} by “Jess”. Changes after this aren't here.` && t.cards.every(c => c.stamp === `Plan checked ${z} by “Jess”. Changes after this aren't here.`) && t.stamp4 === t.stamp2, [t.stamp2, t.cards.map(c => c.stamp)]);
       await s.b.close();
     }
 
@@ -155,17 +155,15 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     await check(p); await p.click('#b-open'); await sleep(100);
     // the copy-text previews follow Writer's handoff/still-open templates exactly (checked above); everything else is audited
     const clips = await p.evaluate(() => window.__clip.slice());
-    await p.evaluate(() => document.querySelectorAll('#cards .msg').forEach(m => { m.dataset.keep = m.textContent; m.textContent = ''; }));
     const LINES = ['Mon 19 dinner ' + SN, 'Mon 19 dinner ' + SN2, 'Tue 20 ' + SG.toLowerCase() + ' ' + SN, 'Wed ' + SN2 + ' dinner', 'Thu 21 dinner ' + SN, 'Fri 23 dinner Ana and ' + SN].map(l => '“' + M.unquote(l) + '”');
-    let a = await typedAudit(p, [SF, SO, SN, SN2, SG].concat(LINES.map(l => l.slice(1, -1))));
+    let a = await typedAudit(p, [SF, SO, SN, SN2, SG].concat(LINES.map(l => l.slice(1, -1))), Object.fromEntries(clips.map((c, i) => ['clipboard#' + i, c])));
     const vis = (await p.evaluate(() => document.body.innerText)).split(LINES[0]).join('').split(LINES[1]).join('').split(LINES[2]).join('').split(LINES[3]).join('').split(LINES[4]).join('').split(LINES[5]).join('');
     const { unquotedIn } = require('./mill-common'); const visHits = [SF, SO, SN, SN2, SG].map(x => M.unquote(x)).flatMap(x => unquotedIn(vis, x));
     a.all = a.all.filter(h => h.where !== 'visible').concat(visHits.map(ctx => ({ where: 'visible (outside quoted pasted lines)', ctx })));
-    ck(w + ' typedAudit organizer view (PM Q1 spoof seeds: who it\'s for, organizer, names, other need, whole pasted lines): screen, aria, titles, live regions, toast; a name inside a quoted pasted line counts as quoted', !a.all.length, a.all.slice(0, 12));
-    ck(w + ' copied still-open is exactly Writer\'s template (unframed values as typed; Writer frames none there)', clips[0] === CR.stillOpen(C, Object.assign(CR.check({ forName: SF, org: SO, first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', label: 'Dinner', rule: 'every' }, { key: 'other', label: SG, rule: 'weekdays' }] }, ['Mon 19 dinner ' + SN, 'Mon 19 dinner ' + SN2, 'Tue 20 ' + SG.toLowerCase() + ' ' + SN, 'Wed ' + SN2 + ' dinner', 'Thu 21 dinner ' + SN, 'Fri 23 dinner Ana and ' + SN]), { stamp: clips[0].match(/Plan checked (.*) by /)[1] }), { forName: SF, org: SO }), clips[0]);
-    await p.evaluate(() => document.querySelectorAll('#cards .msg').forEach(m => { m.textContent = m.dataset.keep; }));
+    ck(w + ' typedAudit organizer view (PM Q1 spoof seeds: who it\'s for, organizer, names, other need, whole pasted lines): screen incl. message previews, aria, titles, live regions, toast, copied text (PM 02:34: names quoted in copy text too); a name inside a quoted pasted line counts as quoted', !a.all.length, a.all.slice(0, 12));
+    ck(w + ' copied still-open is exactly Writer\'s v2 template with the typed values quoted', clips[0] === CR.stillOpen(C, Object.assign(CR.check({ forName: SF, org: SO, first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', label: 'Dinner', rule: 'every' }, { key: 'other', label: SG, rule: 'weekdays' }] }, ['Mon 19 dinner ' + SN, 'Mon 19 dinner ' + SN2, 'Tue 20 ' + SG.toLowerCase() + ' ' + SN, 'Wed ' + SN2 + ' dinner', 'Thu 21 dinner ' + SN, 'Fri 23 dinner Ana and ' + SN]), { stamp: clips[0].match(/Plan checked (.*) by /)[1] }), { forName: SF, org: SO, needs: [{ key: 'dinner', label: 'Dinner' }, { key: 'other', label: SG }] }) && clips[0].startsWith('For: “' + M.unquote(SF) + '”\nStill open. Reply to me, not the group:\n• Mon Oct 19 “' + M.unquote(SG) + '”') && clips[0].endsWith('by “' + M.unquote(SO) + '”. Changes after this aren\'t here.'), clips[0]);
     const hand = await p.evaluate(() => document.querySelector('#cards .msg').textContent);
-    ck(w + ' handoff note quoted and attributed (template), spoof marks neutralised inside the frame', hand.includes('Dinner, note from ' + SO + ': “Ring" says "Police”'), hand);
+    ck(w + ' handoff note quoted and attributed (template), spoof marks neutralised inside the frame', hand.includes('Dinner note: “Ring" says "Police”') && hand.startsWith('Days for: “' + M.unquote(SN) + '”\nHelping: “' + M.unquote(SF) + '”\nFrom: “' + M.unquote(SO) + '”\n'), hand);
     await p.click('#b-link'); await sleep(120); const link = await p.$eval('#link', e => e.value);
     await p.goto('about:blank'); await p.goto(link, { waitUntil: 'load' }); await sleep(250);
     a = await typedAudit(p, [SF, SO, SN, SN2, SG]);

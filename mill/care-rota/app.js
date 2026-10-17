@@ -1,8 +1,8 @@
 'use strict';
-// Care Rota r1c UI. Memory only: no storage, no network. All visitor text from COPY (Writer copy.js verbatim + marked
-// copy-extra.js stand-ins). Typed text (names, who it's for, organizer, other need, notes, pasted lines) is shown through the
-// shared quote rule on screen, in aria and in print; the copy-text messages follow Writer's templates exactly (notes and
-// lines quoted there by the template). Shared helpers: MILLVIEW.route/readOnly/toast/quote/typed/linkFor/clearInputs.
+// Care Rota r1c UI. Memory only: no storage, no network. All visitor text from COPY (Writer copy.v2.js verbatim, N5).
+// Typed text (names, who it's for, organizer, other need, notes, pasted lines) is shown through the shared quote rule
+// everywhere: screen, aria, print and copied text (PM 02:34: no exemption; Writer's templates are filled with quoted values).
+// Shared helpers: MILLVIEW.route/readOnly/toast/quote/typed/linkFor/clearInputs.
 (function () {
   var C = COPY, M = MILL, V = MILLVIEW, $ = function (id) { return document.getElementById(id); };
   var KEYS = ['dinner', 'ride', 'walk', 'other'], NC = { dinner: 'meal', ride: 'ride', walk: 'walk', other: 'other' };

@@ -55,16 +55,16 @@ t('caps: 28 days ok, 29 rejected; 60 lines ok, 61 rejected; need with zero days;
   assert.ok(CR.errors(Object.assign({}, CFG, { last: '2026-10-18' }), ['x']).some(e => e.code === 'dateOrder')); });
 t('handoffs: only the helper\'s days and only the notes for their needs (Ben never gets the Dinner note), note for everyone added, stamp', () => {
   const r = CR.check(CFG, FIXED); r.stamp = 'Fri Oct 16, 10:04 PM PDT'; const ben = CR.handoff(C, r, CFG, r.helpers.find(h => h.name === 'Ben')), ana = CR.handoff(C, r, Object.assign({}, CFG, { noteAll: 'Thank you!' }), r.helpers.find(h => h.name === 'Ana'));
-  assert.ok(!ben.includes('No nuts') && !ben.includes('Pediatrician') && ben.includes('Dog walk, note from Jess: “Midday, about 30 min. Use the harness.”'));
-  assert.equal(ana, 'Hi Ana, your days for Priya & Sam (from Jess):\n• Mon Oct 19: Dinner\n• Wed Oct 21: Ride\n• Fri Oct 23: Dinner + Dog walk\nDinner, note from Jess: “No nuts (Sam\'s allergy). Drop off 5:30–6:30.”\nRide, note from Jess: “Pediatrician 10:15. Leave by 9:50.”\nDog walk, note from Jess: “Midday, about 30 min. Use the harness.”\nFor everyone, note from Jess: “Thank you!”\nCan\'t make one? Tell Jess before you swap with anyone.\nPlan checked Fri Oct 16, 10:04 PM PDT by Jess. Changes after this aren\'t here.'); });
+  assert.ok(!ben.includes('No nuts') && !ben.includes('Pediatrician') && ben.includes('Dog walk note: “Midday, about 30 min. Use the harness.”'));
+  assert.equal(ana, 'Days for: “Ana”\nHelping: “Priya & Sam”\nFrom: “Jess”\n• Mon Oct 19: Dinner\n• Wed Oct 21: Ride\n• Fri Oct 23: Dinner + Dog walk\nDinner note: “No nuts (Sam\'s allergy). Drop off 5:30–6:30.”\nRide note: “Pediatrician 10:15. Leave by 9:50.”\nDog walk note: “Midday, about 30 min. Use the harness.”\nNote for everyone: “Thank you!”\nCan\'t make one? Tell “Jess” before you swap with anyone.\nPlan checked Fri Oct 16, 10:04 PM PDT by “Jess”. Changes after this aren\'t here.'); });
 t('stamp on all four outputs (report stamp, every handoff, still-open, household sheet) with zone label; banned words absent', () => {
   const r = CR.check(CFG, PLAN); r.stamp = CR.stampTime(Date.UTC(2026, 9, 17, 4, 58), 'America/Los_Angeles'); assert.equal(r.stamp, 'Fri Oct 16, 9:58 PM PDT');
   assert.equal(CR.stampTime(Date.UTC(2026, 10, 2, 18, 0), 'America/Los_Angeles'), 'Mon Nov 2, 10:00 AM PST', 'after Nov 1 the zone label is PST');
-  const st = 'Plan checked Fri Oct 16, 9:58 PM PDT by Jess. Changes after this aren\'t here.';
-  const so = CR.stillOpen(C, r, CFG); assert.equal(so, 'Priya & Sam: still open. Reply to me (Jess), not the group:\n• Wed Oct 21 Dinner\n• Thu Oct 22 Dinner\n' + st);
+  const st = 'Plan checked Fri Oct 16, 9:58 PM PDT by “Jess”. Changes after this aren\'t here.';
+  const so = CR.stillOpen(C, r, CFG); assert.equal(so, 'For: “Priya & Sam”\nStill open. Reply to me, not the group:\n• Wed Oct 21 Dinner\n• Thu Oct 22 Dinner\n' + st);
   const outs = [CR.stampText(C, r, CFG), so, ...r.helpers.map(h => CR.handoff(C, r, CFG, h)), CR.sheetText(C, CR.sheet(r), { forName: 'Priya & Sam', org: 'Jess', first: CFG.first, last: CFG.last, stamp: r.stamp })];
   outs.forEach(o => { assert.ok(o.includes(st), o); assert.ok(!/booked|confirmed|signed up|accepted|guaranteed|\bsafe\b|private/i.test(o), o); });
-  const r2 = CR.check(CFG, FIXED); r2.stamp = r.stamp; assert.equal(CR.stillOpen(C, r2, CFG), 'Priya & Sam: every need has someone for now.\n' + st); });
+  const r2 = CR.check(CFG, FIXED); r2.stamp = r.stamp; assert.equal(CR.stillOpen(C, r2, CFG), 'For: “Priya & Sam”\nEvery need has someone for now.\n' + st); });
 t('household sheet: per day, helpers with needs, "Nothing planned from helpers"', () => { const r = CR.check(CFG, FIXED); r.stamp = 'X'; const s = CR.sheet(r);
   assert.deepEqual(s.map(d => CR.d2(d.t) + ': ' + (d.who.map(w => w.name + ' (' + w.needs.join(' + ') + ')').join(' · ') || '-')), ['Mon Oct 19: Ana (Dinner) · Ben (Dog walk)', 'Tue Oct 20: Carla (Dinner) · Ben (Dog walk)', 'Wed Oct 21: Dev (Dinner) · Ana (Ride) · Fatima (Dog walk)', 'Thu Oct 22: Ellie (Dinner) · Ben (Dog walk)', 'Fri Oct 23: Ana (Dinner + Dog walk)', 'Sat Oct 24: -', 'Sun Oct 25: Dev (Dinner)']); });
 t('link: household sheet only (no notes, no plan lines), round-trips, malformed/old refused', () => {
@@ -74,4 +74,18 @@ t('link: household sheet only (no notes, no plan lines), round-trips, malformed/
   for (const bad of ['', 'cr2.' + 'A'.repeat(2100) + '.000000', f.slice(0, -1) + (f.slice(-1) === 'a' ? 'b' : 'a'), f.slice(0, 30), 'cr1.' + f.slice(4), 'zz2.e30.000000']) assert.ok(!CR.decodeSheet(bad).ok, bad.slice(0, 20));
   assert.equal(CR.decodeSheet('cr1.' + f.split('.')[1] + '.' + M.ck('cr1.' + f.split('.')[1])).why, 'oldVersion');
   const extra = JSON.parse(raw); extra.n = 'note'; const h2 = 'cr2.' + M.b64e(JSON.stringify(extra)); assert.ok(!CR.decodeSheet(h2 + '.' + M.ck(h2)).ok, 'unknown keys refused'); });
+t('PM 02:34: typed names quoted in copy text (helper, who it\'s for, organizer, Other need); Writer templates verbatim; spoof marks neutralised', () => {
+  const cfg = { forName: 'Milk\u201D from \u201CYour bank', org: '\u00ABBank\u00BB', first: '2026-10-19', last: '2026-10-25', noteAll: '', needs: [{ key: 'other', label: 'Gro\u201Ec\u201F', rule: 'every', days: [], note: 'Bags' }] };
+  const r = CR.check(cfg, ['Mon 19 gro\u201Ec\u201F Zq\u201Dx']); r.stamp = 'S';
+  assert.equal(CR.handoff(C, r, cfg, r.helpers[0]), 'Days for: “Zq"x”\nHelping: “Milk" from "Your bank”\nFrom: “"Bank"”\n• Mon Oct 19: “Gro"c"”\n“Gro"c"” note: “Bags”\nCan\'t make one? Tell “"Bank"” before you swap with anyone.\nPlan checked S by “"Bank"”. Changes after this aren\'t here.');
+  assert.ok(CR.stillOpen(C, r, cfg).startsWith('For: “Milk" from "Your bank”\nStill open. Reply to me, not the group:\n• Tue Oct 20 “Gro"c"”'));
+  assert.equal(CR.sheetText(C, CR.sheet(r), { forName: cfg.forName, org: cfg.org, first: cfg.first, last: cfg.last, stamp: 'S', std: () => false }).split('\n')[2], 'Mon Oct 19: “Zq"x” (“Gro"c"”)');
+  const WR = '/workspace/mill-sprint-2026-10-16/writer/care-rota/copy.v2.js'; if (fs.existsSync(WR)) assert.equal(fs.readFileSync(__dirname + '/../../mill/care-rota/copy.js', 'utf8'), fs.readFileSync(WR, 'utf8'), 'copy.js is Writer copy.v2.js verbatim');
+  assert.ok(!fs.existsSync(__dirname + '/../../mill/care-rota/copy-extra.js'), 'no stand-in file left');
+});
+t('Writer finals (N5) verbatim: tagTwoNeeds, tagTwoNames, tagNoDay quote {line}; patchGap, patchNotNeeded, copyHelper, label-line templates', () => {
+  assert.equal(C.tagTwoNeeds, 'To fix: “{line}” has two needs. Put each on its own line.'); assert.equal(C.tagTwoNames, 'To fix: “{line}” has more than one name. One person per line.');
+  assert.equal(C.tagNoDay, 'To fix: “{line}”. No day in this rota matches it.'); assert.equal(C.patchGap, '{date}: {need}, nobody yet'); assert.equal(C.patchNotNeeded, '{date}: {need}, not needed'); assert.equal(C.copyHelper, 'Copy the message for {name}');
+  assert.equal(C.handoffText, "Days for: {name}\nHelping: {for}\nFrom: {org}\n{dayLines}\n{noteLines}Can't make one? Tell {org} before you swap with anyone.\n{stamp}"); assert.equal(C.stillOpenText, 'For: {for}\nStill open. Reply to me, not the group:\n{lines}\n{stamp}');
+  assert.equal(M.fill(C.tagTwoNeeds, { line: 'Mon dinner \u201Cwalk\u201D Ana' }), 'To fix: “Mon dinner "walk" Ana” has two needs. Put each on its own line.'); });
 console.log('PASS ' + n + ' tests');
