@@ -180,7 +180,7 @@
     "Currency is picked from $, € or £; there is no conversion. Refunds and negative amounts aren't supported.",
     "A received link is a snapshot of what the sender entered; nobody has agreed to anything by opening it."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview 0df2c35: unit 16 (incl. 5000-case settlement property test); browser 180/180 at 320/390/1280. Not QA.",
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview 456c5c4eb788b90c89539ddafb98c62651c71af1: unit 17 (incl. 5000-case settlement property test); browser 183/183 at 320/390/1280. Not QA.",
    "status": "No QA verdict, NOT READY"
   },
   {
