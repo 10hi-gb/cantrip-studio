@@ -231,14 +231,14 @@ window.MILL_HUB = {
     "Nothing is booked or confirmed. Messages are copied and the sheet is printed by hand, each stamped with when the plan was checked.",
     "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview 27b6d874da1b8ac440df8d92835f83e40d6300d0: unit 22/22 (every proto r1d assert, QA C3/C4/C7, regression names, codec agreement, 6,000-case reference sweep); browser 185/185 at 305/320/390/1280/1440 (incl. C1 whole-URL, C2 print, C5/C6 wrap sweep, C8 wide labels). Not QA.",
-   "status": "NOT READY (retest pending at 27b6d87)",
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview f879af10f3db6b338e9d7065bac698d8fabda3a2: unit 23/23 (every proto r1d assert, QA C3/C4/C7, PM C9, regression names, codec agreement, 6,000-case reference sweep); browser 187/187 at 305/320/390/1280/1440 (incl. C1 whole-URL, C2 print, C5/C6 wrap sweep, C8 wide labels, C9). Not QA.",
+   "status": "NOT READY (retest pending at f879af1: C8 27b6d87 + C9)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "e5780b7911a76f29c0c52dc40cf34d8c14ee5f4a",
     "report": "qa/care-rota/local-e5780b7/QA-local-e5780b7.md",
-    "note": "retest pending at 27b6d87"
+    "note": "retest pending at f879af1 (C8 27b6d87 + C9)"
    }
   },
   {
