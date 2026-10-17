@@ -263,14 +263,14 @@ window.MILL_HUB = {
     "Proposal only: every card, the copied text and the sheet say “Nobody has agreed to this yet.”",
     "The optional link holds only task names, minutes and helper names. Anyone with the link can read it."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview b04403afa24cc4c7e4f6d933cb651205834337e4: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 218/218 at 320/360/390/1280 (incl. Creative check 5f127ab items 1–6: over-tip geometry, colour and pixels, minutes line, header, bench on screen and in print, entry at 320/360; QA local-8206084 H1 print after Start over / bad link, H2 1–40-char minutes sweep, H3 whole-URL 1999/2000/2001 on a long path). Not QA.",
-   "status": "NOT READY (retest pending at b04403a)",
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview d68094ade9c8d49edd528b278dcf2583711c78c0: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 247/247 at 320/360/390/641/1024/1280/1440 (incl. Creative check 5f127ab items 1–6; QA local-8206084 H1–H3; QA local-08b466c/2a02a48 H5 tiny and huge sticks in Suggest and Check, H6 tip and capacity-bar contrast and H7 over-text contrast sampled on the rendered page, H8 rolled-up label on phones). Not QA.",
+   "status": "NOT READY (retest pending at d68094a)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "82060845657e7ed189289872640031414e33ca50",
-    "report": "qa/five-hands/local-8206084/QA-local-8206084.md",
-    "note": "retest pending at b04403a"
+    "sha": "2a02a48833cf021b432a8be7983ac97d416489bf",
+    "report": "qa/five-hands/local-2a02a48/QA-local-2a02a48.md (also qa/five-hands/local-08b466c/QA-local-08b466c.md)",
+    "note": "retest pending at d68094a"
    }
   }
  ]
