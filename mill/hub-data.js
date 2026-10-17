@@ -24,12 +24,13 @@ window.MILL_HUB = {
     "Recipients see a read-only split. \"Change my amount\" makes a new link on the recipient's device; it does not update or notify the sender."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 134da28501527078776b63b0ffdc973de96b110e: unit 21+8; browser sack 410/410 at 305/320/390/600/1280 (incl. QA D7r received origin+path+fragment cap at 1999/2000/2001/2040, normal and long path; D10-r5 at-cap names in full, no ellipsis, sender/recipient/change/print + Letter PDF; D2 kept); quote-spoof 63/63, recipient-a11y 87/87, sender-typed 12/12. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL; query-strip 48156f8, untested)",
    "qaLocal": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "134da28501527078776b63b0ffdc973de96b110e",
-    "report": "qa/split-the-sack/local-134da28/QA-local-134da28.md"
+    "report": "qa/split-the-sack/local-134da28/QA-local-134da28.md",
+    "note": "query-strip 48156f8, untested"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -58,8 +59,8 @@ window.MILL_HUB = {
     "tree": "1f37ffe0ce0236ea213816e7f4cdf74961bf59c9",
     "result": "unit tests 9 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY — verification pending (incoming whole-URL cap fix awaiting independent retest)",
-   "pendingAt": "bb0c643fe787cd651ea03cd122787e47a16b5046",
+   "status": "NOT READY — verification pending at b225af5 (cap fix bb0c643 + query-strip)",
+   "pendingAt": "b225af5b4bd505a737e46a9f78374d6d77bd5b28",
    "qaPrevious": {
     "label": "LOCALHOST-PREVIEW",
     "sha": "774b68d4a03a7d5c0fa0e64fd4a2f0de40497f06",
@@ -92,8 +93,8 @@ window.MILL_HUB = {
     "tree": "f83c650c08b683a712f9d700e4ff76e66f756316",
     "result": "unit tests 11 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY — verification pending (incoming whole-URL cap fix awaiting independent retest)",
-   "pendingAt": "b1346d0d006c334a573b9fe134ee491a54fe088a",
+   "status": "NOT READY — verification pending at eade562 (cap fix b1346d0 + query-strip)",
+   "pendingAt": "eade562ddc783558ad2068f927f7aa576e60dd50",
    "qaPrevious": {
     "label": "LOCALHOST-PREVIEW",
     "sha": "7add2de13797af5b9bc68ffd8b94f258b241d945",
@@ -124,8 +125,8 @@ window.MILL_HUB = {
     "tree": "b436439c6fafa24c13bf8e20dc5a3f34a660b771",
     "result": "unit tests 15 pass; live browser check 84/84 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY — verification pending (incoming whole-URL cap fix awaiting independent retest)",
-   "pendingAt": "dce19070dd50b509f28f7134f062358956a81bac",
+   "status": "NOT READY — verification pending at 6169c34 (cap fix dce1907 + query-strip)",
+   "pendingAt": "6169c34f07ac2c8b51e4066d3acc76e5fee1a3f9",
    "qaPrevious": {
     "label": "LOCALHOST-PREVIEW",
     "sha": "bc74052a02d8603a4ec1feeaff647920ea150886",
@@ -152,8 +153,8 @@ window.MILL_HUB = {
     "Nothing is sent or booked. A proposal is a suggestion worked out from what the sender typed; nobody has replied to it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 715aa3a: unit 19 incl. DST; browser 116/116 at 320/390/1280. Not QA.",
-   "status": "NOT READY — verification pending (incoming whole-URL cap fix awaiting independent retest)",
-   "pendingAt": "2dd0f6b6a106319b2d516624644283668572e470",
+   "status": "NOT READY — verification pending at 8886943 (cap fix 2dd0f6b + query-strip)",
+   "pendingAt": "88869436943a40e949ac4445487912cc14bec828",
    "qaPrevious": {
     "label": "LOCALHOST-PREVIEW",
     "sha": "14df77a1622593f85adf2d50ba8a0369390c37c6",
