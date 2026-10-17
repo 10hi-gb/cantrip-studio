@@ -15,4 +15,14 @@ t('malformed: empty, truncated, bad checksum, oversize, wrong tag, old version, 
   assert.equal(L.decode(M.pack('s', 1, { ...base, x: 0, h: [['A', '20'], ['B', '5']] })).why, 'bad'); // assign with nothing unclaimed
 });
 t('control/bidi chars stripped on decode', () => { const d = L.decode(L.encode({ ...base, n: 'Rice\u202E\u0007bag' })); assert.equal(d.data.n, 'Rice bag'); });
+// Unit cap counts like the editor: grapheme clusters (ZWJ sequences, flags, keycaps, tag flags, skin tones = 1 each)
+const EMO = ['👨‍👩‍👧‍👦', '🏳️‍🌈', '🇯🇵', '🇺🇦', '👩🏽‍💻', '😀', '❤️', '🧑‍🤝‍🧑', '🇬🇧', '👍🏿', '🐈‍⬛', '🏴󠁧󠁢󠁳󠁣󠁴󠁿', '1️⃣', '🫶', '🇨🇦', '🦊'];
+t('unit cap: 16 emoji incl. ZWJ, flag, tag-flag and keycap sequences round-trip; a 17th character is refused; abcdefghijklmnop unchanged', () => {
+  const u = EMO.join(''); assert.equal(L.unitLen(u), 16); assert.ok([...u].length > 16 && u.length > 16, 'more than 16 code points / code units');
+  const f = L.encode({ ...base, u }); assert.ok(f, 'encodes'); const d = L.decode(f); assert.ok(d.ok); assert.equal(d.data.u, u);
+  assert.equal(L.encode({ ...base, u: u + 'x' }), null); assert.equal(L.check({ ...base, u: u + '🇫🇷' }), 'unit'); assert.equal(L.decode(M.pack('s', 1, { ...base, u: u + 'x' })).why, 'bad');
+  assert.equal(L.decode(L.encode({ ...base, u: 'abcdefghijklmnop' })).data.u, 'abcdefghijklmnop'); assert.equal(L.encode({ ...base, u: 'abcdefghijklmnopq' }), null);
+  assert.equal(L.unitLen('😀'.repeat(16)), 16); assert.equal(L.check({ ...base, u: '😀'.repeat(17) }), 'unit');
+});
+t('unit cap: the no-Intl.Segmenter fallback counts the same clusters', () => { const g = L._approxGraphemes(EMO.join('')); assert.deepEqual(g, EMO); assert.equal(L._approxGraphemes('e\u0301abc').length, 4); assert.equal(L._approxGraphemes('abcdefghijklmnop').length, 16); });
 console.log('PASS ' + n + ' tests');

@@ -297,9 +297,31 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
         await p.$eval('#u', e => { e.focus(); e.select(); }); await p.evaluate(() => document.execCommand('insertText', false, 'abcdefghijklmnopqrstuvwxyz012345')); await sleep(50); const pasted = await p.$eval('#u', e => e.value);
         await p.evaluate(() => { const e = document.getElementById('u'); e.removeAttribute('maxlength'); e.value = 'large family size bags of grains'; e.dispatchEvent(new Event('input', { bubbles: true })); }); await sleep(50);
         const forced = await p.evaluate(() => ({ v: document.getElementById('u').value, body: document.body.innerText }));
-        await p.reload({ waitUntil: 'load' }); await sleep(100); const ml = await p.$eval('#u', e => e.maxLength);
+        await p.reload({ waitUntil: 'load' }); await sleep(100); const ml = await p.$eval('#u', e => e.hasAttribute('maxlength') ? e.maxLength : 'none');
         const f1 = await fit(p);
-        ck(w + ' D10-r2 unit input rejects more than 16 characters (maxlength 16; typed 17 -> 16; pasted 32 -> 16; script-set 32 without maxlength -> 16 by validation); no "Unit: 16 characters max" error; no overflow', ml === 16 && typed === 'abcdefghijklmnop' && pasted === 'abcdefghijklmnop' && forced.v === 'large family siz' && !/Unit: 16 characters max/.test(forced.body) && forced.body.includes('\u201Clarge family siz\u201D') && f1.sw <= f1.vw, { ml, typed, pasted, forced: forced.v }); }
+        ck(w + ' D10-r2 unit input rejects more than 16 characters (no code-unit maxlength; typed 17 -> 16; pasted 32 -> 16; script-set 32 without maxlength -> 16 by validation); no "Unit: 16 characters max" error; no overflow', ml === 'none' && typed === 'abcdefghijklmnop' && pasted === 'abcdefghijklmnop' && forced.v === 'large family siz' && !/Unit: 16 characters max/.test(forced.body) && forced.body.includes('\u201Clarge family siz\u201D') && f1.sw <= f1.vw, { ml, typed, pasted, forced: forced.v }); }
+      // Unit cap counts like the link parser (grapheme clusters): 16 emoji incl. ZWJ / flag / tag-flag / keycap sequences can be TYPED, a 17th
+      // character is refused (typed, pasted, mid-text insert), 'abcdefghijklmnop' is unchanged, and the emoji unit survives a link round-trip.
+      { const EMO = ['👨‍👩‍👧‍👦', '🏳️‍🌈', '🇯🇵', '🇺🇦', '👩🏽‍💻', '😀', '❤️', '🧑‍🤝‍🧑', '🇬🇧', '👍🏿', '🐈‍⬛', '🏴󠁧󠁢󠁳󠁣󠁴󠁿', '1️⃣', '🫶', '🇨🇦', '🦊'], EU = EMO.join('');
+        await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(100);
+        await typeInto(p, '#u', EU); await sleep(50); const typed = await p.$eval('#u', e => e.value);
+        await p.keyboard.type('x'); await sleep(30); const after17 = await p.$eval('#u', e => e.value);
+        await p.keyboard.type('🇫🇷'); await sleep(30); const afterFlag = await p.$eval('#u', e => e.value);
+        await p.$eval('#u', e => { e.focus(); e.setSelectionRange(4, 4); }); await p.evaluate(() => document.execCommand('insertText', false, 'zz')); await sleep(30); const afterMid = await p.$eval('#u', e => e.value);
+        await p.$eval('#u', e => { e.focus(); e.select(); }); await p.evaluate(t => document.execCommand('insertText', false, t), EU + 'abc'); await sleep(30); const afterPaste = await p.$eval('#u', e => e.value);
+        const drop = await p.evaluate(t => { const e = document.getElementById('u'); e.value = t; e.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertFromDrop' })); return e.value; }, '🦊'.repeat(20));
+        await typeInto(p, '#u', EU); await sleep(30);
+        const st = { n: 'Rice', u: EU, c: '$', q: '10', i: '1', p: '20.00', f: '1.00', b: 'p', x: -1, h: [['Ana', '3'], ['Bo', '3'], ['Cy', '2']] };
+        await setForm(p, { ...st, u: (await p.$eval('#u', e => e.value)) }); await sleep(100);
+        const sv = await p.evaluate(() => ({ err: document.getElementById('item-msg').textContent, lcd: (document.querySelector('#lcd-q .unit') || {}).textContent, share: document.getElementById('share').disabled }));
+        await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); });
+        await p.click('#share'); await sleep(200); const link = await p.$eval('#link', e => e.value);
+        await p.goto('about:blank'); await p.goto(link, { waitUntil: 'load' }); await sleep(200);
+        const rv = await p.evaluate(() => { const d = SACKLINK.decode(location.hash); return { ok: d.ok, u: d.ok && d.data.u, recv: !document.getElementById('recv').hidden, lcd: (document.querySelector('#lcd-q .unit') || {}).textContent, banner: document.getElementById('banner').innerText }; });
+        await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(100); await typeInto(p, '#u', 'abcdefghijklmnop'); const abc = await p.$eval('#u', e => e.value); await p.keyboard.type('q'); const abc17 = await p.$eval('#u', e => e.value);
+        ck(w + ' unit cap = link parser count: 16 emoji (ZWJ, flags, tag flag, keycap) typed in full; 17th char refused when typed, as a flag, mid-text insert, paste and drop; no unit error', typed === EU && after17 === EU && afterFlag === EU && afterMid === EU && afterPaste === EU && drop === '🦊'.repeat(16) && !/Unit:/.test(sv.err) && sv.lcd === '\u201C' + EU + '\u201D' && !sv.share, { typed: typed === EU, after17: after17 === EU, afterFlag: afterFlag === EU, afterMid: afterMid === EU, afterPaste: afterPaste === EU, dropLen: [...drop].length, sv });
+        ck(w + ' unit cap: the 16-emoji unit survives a link round-trip (link made, decodes, recipient view shows it quoted)', /#s1\./.test(link) && rv.ok && rv.u === EU && rv.recv && rv.lcd === '\u201C' + EU + '\u201D' && !/damaged/.test(rv.banner), { link: link.length, rv: { ok: rv.ok, same: rv.u === EU, recv: rv.recv } });
+        ck(w + " unit cap: 'abcdefghijklmnop' typed unchanged, a 17th letter refused", abc === 'abcdefghijklmnop' && abc17 === 'abcdefghijklmnop', { abc, abc17 }); }
       ck(w + ' D10-r1/r2 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   }
   process.exit(result(rows));

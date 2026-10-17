@@ -3,7 +3,7 @@
 (function () {
   var C = COPY, M = MILL, S = SACK, L = SACKLINK, $ = function (id) { return document.getElementById(id); };
   // mode: 'own' (editor) | 'view' (read-only recipient of a link) | 'change' (recipient's local copy, one household's amount)
-  var st, lastLink = '', toastT, mode = 'own', orig = null, pick = -1, V = window.MILLVIEW;
+  var uPrev = '', st, lastLink = '', toastT, mode = 'own', orig = null, pick = -1, V = window.MILLVIEW;
   function blank() { return { n: '', u: '', c: '$', q: '', i: '1', p: '', f: '', b: 'p', x: -1, h: [['', ''], ['', '']] }; }
   function key(k) { return k.split('.').reduce(function (o, p) { return o && o[p]; }, C); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -28,7 +28,7 @@
     document.title = C.studioLabel;
   }
   function toForm() {
-    $('item').value = st.n; $('u').value = st.u; $('c').value = st.c; $('q').value = st.q; $('inc').value = st.i; $('p').value = st.p; $('f').value = st.f;
+    $('item').value = st.n; $('u').value = st.u; uPrev = st.u; $('c').value = st.c; $('q').value = st.q; $('inc').value = st.i; $('p').value = st.p; $('f').value = st.f;
     basisButtons(); drawHouseholds();
   }
   function drawHouseholds() {
@@ -72,7 +72,7 @@
   function fieldErrors() {
     var e = [], h = [], q = S.parseQty(st.q), inc = S.parseQty(st.i), x;
     if ((x = M.len(M.strip(st.n)) - L.ITEM_MAX) > 0) e.push(C.itemLabel + ' ' + M.plural(C.itemTooLong, x));
-    if ((x = M.len(unitRaw()) - L.UNIT_MAX) > 0) e.push(M.plural(C.unitTooLong, x, { max: L.UNIT_MAX }));
+    if ((x = L.unitLen(unitRaw()) - L.UNIT_MAX) > 0) e.push(M.plural(C.unitTooLong, x, { max: L.UNIT_MAX })); // same count as the link parser
     if ((x = M.len(M.strip(st.c)) - L.SYM_MAX) > 0) e.push(M.plural(C.currencyTooLong, x, { max: L.SYM_MAX }));
     if ((x = numErr(st.q, false))) e.push(C.packageQtyLabel + ': ' + x);
     if ((x = numErr(st.i, false))) e.push(C.incrementLabel + ': ' + x);
@@ -257,9 +257,15 @@
     else { st = blank(); setMode('own'); banner(d.why === 'oldVersion' ? C.oldVersion : C.badLink); }
   }
   function bind() {
-    // D10-r2: the unit input holds at most UNIT_MAX (16) characters: maxlength in the HTML, and here for anything maxlength lets through
-    // (pasted or dropped text, autofill, script-set values), clipped by characters (code points) before the state sees it.
-    $('u').addEventListener('input', function (e) { var v = e.target.value; if (M.len(v) > L.UNIT_MAX) e.target.value = Array.from(v).slice(0, L.UNIT_MAX).join(''); });
+    // Unit cap (UNIT_MAX = 16) counted exactly like the link parser (SACKLINK.unitLen: grapheme clusters, after strip), enforced here for
+    // typing, paste, drop and script-set values; no maxlength (it counts UTF-16 code units and would stop at 8 emoji). An edit that
+    // would go over keeps the text around it and only as much of the inserted text as fits, so a 17th character is refused.
+    $('u').addEventListener('input', function (e) { var el = e.target, v = el.value; if (mode !== 'own') return; if (L.unitLen(v) <= L.UNIT_MAX) { uPrev = v; return; }
+      var pre = 0, suf = 0, a = uPrev; while (pre < a.length && pre < v.length && a[pre] === v[pre]) pre++; while (suf < a.length - pre && suf < v.length - pre && a[a.length - 1 - suf] === v[v.length - 1 - suf]) suf++;
+      var head = a.slice(0, pre), tail = a.slice(a.length - suf), ins = L.graphemes(v.slice(pre, v.length - suf)), keep = '';
+      for (var k = 0; k < ins.length && L.unitLen(head + keep + ins[k] + tail) <= L.UNIT_MAX; k++) keep += ins[k];
+      if (L.unitLen(head + keep + tail) > L.UNIT_MAX) { var g = L.graphemes(v), out = ''; for (var j = 0; j < g.length && L.unitLen(out + g[j]) <= L.UNIT_MAX; j++) out += g[j]; head = out; keep = ''; tail = ''; }
+      el.value = head + keep + tail; uPrev = el.value; try { el.setSelectionRange((head + keep).length, (head + keep).length); } catch (er) {} });
     [['item', 'n'], ['q', 'q'], ['inc', 'i'], ['p', 'p'], ['f', 'f'], ['c', 'c'], ['u', 'u']].forEach(function (p) { $(p[0]).addEventListener('input', function (e) { if (mode !== 'own') { e.target.value = st[p[1]]; return; } st[p[1]] = e.target.value; edited(); }); });
     $('bp').addEventListener('click', function () { if (mode !== 'own') return; st.b = 'p'; basisButtons(); edited(); });
     $('be').addEventListener('click', function () { if (mode !== 'own') return; st.b = 'e'; basisButtons(); edited(); });
