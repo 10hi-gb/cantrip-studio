@@ -8,6 +8,7 @@
   function key(k) { return k.split('.').reduce(function (o, p) { return o && o[p]; }, C); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function toast(t) { V.toast(t, 2600); } // shared: route() clears it (QA N2)
+  function qName(i) { var n = M.strip(st.h[i][0]); return n ? M.quote(n) : nameOf(i); } // QA D13: typed names quoted in aria too
   function nameOf(i) { return M.strip(st.h[i][0]) || (C.householdLabel + ' ' + (i + 1)); }
   // Sender-typed household names are quoted (shared MILLVIEW.quote) wherever someone else reads them: the recipient view and
   // the copied text. A blank name falls back to the app's own "Household N", which is not typed text and is not quoted.
@@ -42,7 +43,7 @@
     $('add').disabled = st.h.length >= S.MAX_H; labels();
   }
   function labels() { // aria labels that depend on current names/unit
-    var rows = $('hh').children; for (var i = 0; i < rows.length; i++) { rows[i].querySelector('.sk-rq').setAttribute('aria-label', M.fill(C.requestAria, { name: nameOf(i), unit: unit() || C.unitLabel })); rows[i].querySelector('.sk-x').setAttribute('aria-label', M.fill(C.removeHousehold, { name: nameOf(i) })); rows[i].querySelector('.sk-unit').textContent = unit(); }
+    var rows = $('hh').children; for (var i = 0; i < rows.length; i++) { rows[i].querySelector('.sk-rq').setAttribute('aria-label', M.fill(C.requestAria, { name: qName(i), unit: unit() || C.unitLabel })); rows[i].querySelector('.sk-x').setAttribute('aria-label', M.fill(C.removeHousehold, { name: nameOf(i) })); rows[i].querySelector('.sk-unit').textContent = unit(); }
     $('hcount').textContent = M.plural(C.householdCount, st.h.length);
   }
   // Editing makes the old link a snapshot: clear it from the address bar and the link box.
@@ -117,6 +118,7 @@
     var lq = $('lcd-q'); lq.textContent = ''; lq.appendChild(el('span', 'num', st.q ? (S.parseQty(st.q) != null ? S.fmtQty(S.parseQty(st.q)) : '—') : '—')); if (st.q && u) { lq.appendChild(document.createTextNode(' ')); lq.appendChild(el('span', 'unit', u)); }
     $('lcd-p').textContent = S.parseMoney(st.p) != null ? money(S.parseMoney(st.p)) : '—';
     $('lcd-f').textContent = money(S.parseMoney(st.f) || 0);
+    ['lcd-p', 'lcd-f'].forEach(function (id) { $(id).classList.toggle('is-long', $(id).textContent.length >= 10); }); // QA D13 (optional): app max $9999999.99 stays in its own cell at 320
     // D11: on the recipient page the item is the sender's typed text (quoted, typed style), on its own line; the app's
     // "Split in steps of" line is a separate element so the two never run together.
     var inc = S.parseQty(st.i), sn = $('sname'), stepTxt = inc ? C.incrementLabel + ' ' + S.fmtQty(inc) + (u ? ' ' + u : '') : ''; sn.textContent = '';
@@ -192,7 +194,7 @@
     var sel = $('pick'), v = pick; sel.textContent = ''; var o0 = el('option', null, '—'); o0.value = ''; sel.appendChild(o0);
     st.h.forEach(function (_, i) { var o = el('option', null, typedName(i)); o.value = String(i); sel.appendChild(o); }); sel.value = v >= 0 ? String(v) : '';
     $('change').disabled = pick < 0; var inc = S.parseQty(st.i);
-    if (pick >= 0) { $('amt-l').textContent = M.fill(C.answerAmountLabel, { increment: S.fmtQty(inc), unit: unit() }); $('down').setAttribute('aria-label', M.fill(C.stepDownAria, { name: nameOf(pick) })); $('up').setAttribute('aria-label', M.fill(C.stepUpAria, { name: nameOf(pick) })); $('amt').textContent = S.fmtQty(S.parseQty(String(st.h[pick][1]).trim() || '0')) + ' ' + unit(); }
+    if (pick >= 0) { $('amt-l').textContent = M.fill(C.answerAmountLabel, { increment: S.fmtQty(inc), unit: unit() }); $('down').setAttribute('aria-label', M.fill(C.stepDownAria, { name: qName(pick) })); $('up').setAttribute('aria-label', M.fill(C.stepUpAria, { name: qName(pick) })); $('amt').textContent = S.fmtQty(S.parseQty(String(st.h[pick][1]).trim() || '0')) + ' ' + unit(); }
     var res = result(), oc = $('owncost'); oc.textContent = '';
     if (pick >= 0 && res && res.complete) { var r = res.rows[pick]; oc.textContent = r.fee ? M.fill(C.receiverOwnCost, { qty: S.fmtQty(r.qty), unit: unit(), item: money(r.goods), fee: money(r.fee), total: money(r.total) }) : M.fill(C.receiverOwnCostNoFee, { qty: S.fmtQty(r.qty), unit: unit(), total: money(r.total) }); }
     var ok = !!(res && res.complete); $('makelink').disabled = mode === 'change' && (!ok || !wasOf(pick));

@@ -1,6 +1,6 @@
 // node tests/browser/mill-sack.qa.js <host[:port]> <ip> [scheme]  — Split the Sack full flow at 320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { typedAudit, sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const COPYV2 = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/split-the-sack/copy.js', 'utf8') + ';COPY');
 const COPY = COPYV2;
 const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
@@ -184,10 +184,14 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
         cells: [...document.querySelectorAll('#rows .ss-alloc .who')].map(e => e.textContent), opts: [...document.getElementById('pick').options].map(o => o.textContent) }; });
     ck(w + ' D11 recipient item: quoted typed text (no uppercase), the app\'s step line on its own line', rv.typed === '“You owe me, deadbeat. Pay up”' && rv.tt === 'none' && rv.step === 'Split in steps of 1 kg' && rv.sep, rv);
     ck(w + ' D12 recipient table + picker quote typed household names', rv.cells.includes('“Verified ✔ Bank”') && rv.cells.includes('“Kiwi Flat”') && rv.opts.includes('“Verified ✔ Bank”') && rv.opts.includes('“Kiwi Flat”'), rv);
+    await p.select('#pick', await p.evaluate(() => [...document.getElementById('pick').options].find(o => o.textContent === '“Kiwi Flat”').value)); await sleep(80); await p.click('#change'); await sleep(120);
+    const ar = await p.evaluate(() => ({ down: document.getElementById('down').getAttribute('aria-label'), up: document.getElementById('up').getAttribute('aria-label') }));
+    ck(w + ' D13 change mode: −/+ accessible names quote the typed household ("Less for “Kiwi Flat”")', ar.down === 'Less for “Kiwi Flat”' && ar.up === 'More for “Kiwi Flat”', ar);
+    const au = await typedAudit(p, ['Verified ✔ Bank', 'Kiwi Flat', 'You owe me, deadbeat. Pay up']); ck(w + ' D13 change mode: typedAudit (screen, aria, describedby, live regions, options, toast) finds no unquoted household or item', au.ok, au);
     for (const [nm, price] of [['100000', '100000.00'], ['app max', '9999999.99']]) {
       await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(100); await typeInto(p, '#item', 'Rice'); await typeInto(p, '#q', '100000'); await typeInto(p, '#p', price); await typeInto(p, '#f', price); await sleep(60);
-      const b = await p.evaluate(() => { const pan = document.querySelector('.ss-lcd').getBoundingClientRect(); return ['lcd-p', 'lcd-f', 'lcd-q'].map(id => { const r = document.getElementById(id).getBoundingClientRect(); const rg = document.createRange(); rg.selectNodeContents(document.getElementById(id)); const tr = rg.getBoundingClientRect(); return { id, txt: document.getElementById(id).textContent, inside: tr.right <= pan.right - 2 && tr.left >= pan.left + 2, tr: Math.round(tr.right), pr: Math.round(pan.right) }; }); });
-      ck(w + ' D1c LCD money ' + nm + ' ($' + price + ') sits inside the panel', b.every(x => x.inside) && b[0].txt.includes(price), b);
+      const b = await p.evaluate(() => { const pan = document.querySelector('.ss-lcd').getBoundingClientRect(); return ['lcd-p', 'lcd-f', 'lcd-q'].map(id => { const r = document.getElementById(id).getBoundingClientRect(); const rg = document.createRange(); rg.selectNodeContents(document.getElementById(id)); const tr = rg.getBoundingClientRect(); return { id, txt: document.getElementById(id).textContent, inside: tr.right <= pan.right - 2 && tr.left >= pan.left + 2 && tr.right <= r.right + 0.5 && tr.left >= r.left - 0.5, cr: Math.round(r.right), tr: Math.round(tr.right), pr: Math.round(pan.right) }; }); });
+      ck(w + ' D1c/D13 LCD money ' + nm + ' ($' + price + ') sits inside the panel and inside its own cell', b.every(x => x.inside) && b[0].txt.includes(price), b);
     }
     await s.b.close(); }
   process.exit(result(rows));

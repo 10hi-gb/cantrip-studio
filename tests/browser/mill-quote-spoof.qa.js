@@ -11,8 +11,7 @@ const CASES = [
   { slug: 'one-less-trip', make: (SP, G) => MILL.pack('t', 1, { h: [G, 'Ben'], r: [[0, SP, '2', 'carton', 'Corner Co-op'], [1, 'Stamps', '1', 'book', G]], m: [] }) },
   { slug: 'the-same-hour', make: (SP, G) => TSH.encode({ w: '2026-10-19', z: 'America/New_York', n: '60', u: 'min', t: SP, p: [{ id: 1, n: G, iv: [{ id: 3, d: 0, s: '18:00', e: '20:00' }] }, { id: 2, n: 'Sol', iv: [{ id: 4, d: 0, s: '19:00', e: '21:00' }] }], next: 5 }),
     known: ['TSH D3 (queued: names and title unquoted in 187 of 189 places)', h => true] },
-  { slug: 'split-the-sack', make: (SP, G) => SACKLINK.encode({ n: SP, u: 'lb', c: '$', q: '25', i: '0.5', p: '31.47', f: '2.99', b: 'p', x: -1, h: [[G, '8'], ['Unit 2B', '7.5'], ['Bao', '6']] }), prep: async p => { await p.select('#pick', '0'); await sleep(100); },
-    known: ['Sack D13 (queued: name unquoted in the −/+ aria-labels)', h => /^aria-label@(down|up)$/.test(h.where)] },
+  { slug: 'split-the-sack', make: (SP, G) => SACKLINK.encode({ n: SP, u: 'lb', c: '$', q: '25', i: '0.5', p: '31.47', f: '2.99', b: 'p', x: -1, h: [[G, '8'], ['Unit 2B', '7.5'], ['Bao', '6']] }), prep: async p => { await p.select('#pick', '0'); await sleep(100); } },
   { slug: 'one-small-ask', make: (SP, G) => ASK.encodeAsk({ w: SP, e: 10, u: 'min', d: 'Sat', s: '09:00', t: '10:00', h: '', f: G, o: 'Bo' }) },
 ];
 const outputs = async (p, clip) => { const o = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('textarea[readonly], output')].map((e, i) => ['out@' + (e.id || i), e.value || e.textContent]))); clip.forEach((c, i) => { o['clipboard#' + i] = c; }); return o; };

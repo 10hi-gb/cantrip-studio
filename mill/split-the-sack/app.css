@@ -56,3 +56,6 @@
 body.is-recv .ss-alloc .who{text-transform:none;letter-spacing:0}
 /* D1c: at 320 the LCD values shrink so $100000.00 and $9999999.99 stay inside the panel (no mid-number break) */
 @media (max-width:360px){.ss-lcd{column-gap:8px;padding:8px 10px}.ss-lcd .v{font-size:15px}.ss-lcd .k{letter-spacing:.08em}}
+
+/* QA local-652d0e0 D13 (optional): long money values ($9999999.99) fit inside their own LCD cell on narrow phones */
+@media (max-width:360px){.ss-lcd .v.is-long{font-size:13px;letter-spacing:0}}
