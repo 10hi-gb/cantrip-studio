@@ -38,7 +38,6 @@ input[aria-invalid=true],textarea[aria-invalid=true]{border-color:var(--red);box
 .tally>span{margin-right:0}
 .track{overflow:hidden}
 .stick{min-width:0}
-.stick .t .mill-typed{overflow-wrap:break-word}
 .helper .load{overflow-wrap:break-word}
 .tab{max-width:100%;overflow-wrap:break-word}
 .overtag{margin:4px 0 0}
@@ -56,8 +55,8 @@ input[aria-invalid=true],textarea[aria-invalid=true]{border-color:var(--red);box
 #fb{margin-top:14px}#fb textarea{width:100%;font:400 15px/1.4 var(--ui)}
 .fh-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--chalk);font:600 16px/1.3 var(--ui);padding:10px 16px;border-radius:6px;max-width:calc(100vw - 24px);z-index:10}
 .is-recv .fh-btnrow #b-change{display:none}
-/* Creative check 5f127ab. Wrap rule: break at spaces, then hyphens, mid-word only when one word can't fit: break-word everywhere (overrides the theme .stick and shared .mill-typed wrap values on this page only). */
-.fh .mill-typed,.fh .stick,.fh .copied{overflow-wrap:break-word;word-break:normal;hyphens:manual}
+/* Creative check 5f127ab. Wrap rule: break at spaces, then hyphens, mid-word only when one word can't fit: break-word everywhere (shared .mill-typed is break-word; this overrides the theme .stick on this page only). */
+.fh .stick,.fh .copied{overflow-wrap:break-word;word-break:normal;hyphens:manual}
 /* 1. over-tip: only the minutes past the roll's capacity, solid --fh-over, one clean colour (no grain, no overlay on the roll) */
 /* QA H6/H7: one darker red, same hue as --red (#C8361F, hsl 8deg 73%): #AE2F1B is 3.28:1 on the darkest wood (#D9B271), 5.04:1 on the page, 6.5:1 under white minutes */
 .fh{--fh-over:#AE2F1B;--fh-over-text:#AE2F1B}
