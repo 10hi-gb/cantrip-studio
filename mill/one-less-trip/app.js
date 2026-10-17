@@ -2,7 +2,7 @@
 // One Less Trip — UI. Visitor text only via textContent/value. Nothing stored; ticks live in memory; the address bar is only ever cleared.
 (function () {
   var C = COPY, M = MILL, O = OLT, $ = function (id) { return document.getElementById(id); };
-  var st = O.blank(), checks = {}, editing = null, toastT = 0;
+  var st = O.blank(), checks = {}, editing = null, toastT = 0, mode = 'own', V = window.MILLVIEW;
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function btn(cls, txt, fn) { var b = el('button', cls, txt); b.type = 'button'; b.addEventListener('click', fn); return b; }
   function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 3200); }
@@ -54,8 +54,8 @@
     if (!o || !O.compute(st).rows && false) fail('o', C.ownerMissing); else if (!st.h.some(function (h) { return h.id === o && M.strip(h.name); })) fail('o', C.ownerMissing);
     var il = M.len(M.strip(i)); if (!il) fail('i', C.itemEmpty); else if (il > O.LIM.item) fail('i', M.plural(C.itemTooLong, il - O.LIM.item));
     if (!q.ok) fail('q', q.why === 'zero' ? C.qtyInvalid : q.why === 'big' ? M.fill(C.qtyTooBig, { max: O.LIM.qtyMax }) : C.qtyNotNumber);
-    var ul = M.len(M.strip(u)); if (ul > O.LIM.unit) fail('u', M.plural(C.unitTooLong, ul - O.LIM.unit));
-    var sl = M.len(M.strip(s)); if (sl > O.LIM.stop) fail('s', M.plural(C.stopTooLong, sl - O.LIM.stop));
+    var ul = M.len(M.strip(u)); if (ul > O.LIM.unit) fail('u', M.plural(C.unitTooLong, ul - O.LIM.unit, { max: O.LIM.unit }));
+    var sl = M.len(M.strip(s)); if (sl > O.LIM.stop) fail('s', M.plural(C.stopTooLong, sl - O.LIM.stop, { max: O.LIM.stop }));
     if (bad) { $('f-' + bad).focus(); return null; }
     return { o: o, i: M.strip(i), q: q.v, u: M.strip(u), s: M.strip(s) };
   }
@@ -102,7 +102,11 @@
     Object.keys(checks).forEach(function (k) { if (keys.indexOf(k) < 0) delete checks[k]; });
     var n = keys.filter(function (k) { return checks[k]; }).length; $('progress').textContent = keys.length ? M.plural(C.progress, n).replace('{total}', String(keys.length)) + ' · ' + C.checksNote : '';
   }
-  function refresh() {
+  // Recipient view is read-only in the DOM (shared helper): the intake is disabled + inert, Start over is gone.
+  // Shopping ticks stay usable; they live in this tab only and are never in the link.
+  function applyMode() { var r = mode === 'recv'; V.readOnly($('intake'), r); $('b-reset').hidden = r; $('b-reset').disabled = r; }
+  function refresh() { refresh0(); applyMode(); }
+  function refresh0() {
     var c = O.compute(st), L = c.ledger;
     // households
     var herr = {}; c.hhErr.forEach(function (e) { if (e.id) herr[e.id] = e; });
@@ -161,20 +165,24 @@
       if (navigator.share) navigator.share({ title: C.title, text: C.shareText, url: u }).then(function () {}, function () { toast(C.shareCancel); showLink(u); });
       else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(function () { toast(C.copied); }, function () { toast(C.copyFail); showLink(u); });
       else { toast(C.copyFail); showLink(u); } });
-    $('b-reset').addEventListener('click', function () { if (!window.confirm(C.resetConfirm)) return; st = O.blank(); checks = {}; editing = null; $('f-add').textContent = C.addRow; $('f-cancel').hidden = true; clearForm(false); $('f-o').value = '';
-      ['o', 'i', 'q', 'u', 's'].forEach(function (k) { formErr(k, ''); }); $('banner').hidden = true; clearHash(); $('linkbox').hidden = true; $('link').value = ''; $('fbwrap').hidden = true; drawHouseholds(); refresh(); toast(C.resetDone); $('hh-' + st.h[0].id).focus(); });
-    $('own-copy').addEventListener('click', function () { clearHash(); $('banner').hidden = true; $('hh-' + st.h[0].id).focus(); });
-    window.addEventListener('hashchange', function () { if (location.hash) load(); });
-    load();
+    $('b-reset').addEventListener('click', function () { if (mode !== 'own' || !window.confirm(C.resetConfirm)) return; clearHash(); load(''); toast(C.resetDone); $('hh-' + st.h[0].id).focus(); });
+    $('own-copy').addEventListener('click', function () { clearHash(); $('banner').hidden = true; mode = 'own'; refresh(); $('hh-' + st.h[0].id).focus(); });
+    V.route(load);
   }
-  function load() {
-    var h = location.hash, bn = $('banner');
-    if (h && h !== '#') {
+  // Every load and every hashchange (valid, bad, old or empty) starts from a blank tab: nothing from a previous link survives.
+  function load(h) {
+    var bn = $('banner');
+    st = O.blank(); checks = {}; editing = null; mode = 'own';
+    $('f-add').textContent = C.addRow; $('f-cancel').hidden = true; V.clearInputs($('form')); $('f-s').disabled = false;
+    ['o', 'i', 'q', 'u', 's'].forEach(function (k) { formErr(k, ''); }); $('e-form').textContent = '';
+    bn.hidden = true; $('own-copy').hidden = true; $('linkbox').hidden = true; $('link').value = ''; $('fbwrap').hidden = true; $('fallback').value = '';
+    if (h) {
       var d = O.decode(h);
-      if (d.ok) { st = d.data; checks = {}; bn.hidden = false; $('banner-t').textContent = C.receiverIntro + ' ' + C.receiverNote; $('own-copy').hidden = false; }
-      else if (d.why !== 'empty') { bn.hidden = false; $('banner-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; $('own-copy').hidden = true; }
+      if (d.ok) { st = d.data; mode = 'recv'; bn.hidden = false; $('banner-t').textContent = C.receiverIntro + ' ' + C.receiverNote; $('own-copy').hidden = false; }
+      else if (d.why !== 'empty') { bn.hidden = false; $('banner-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; }
     }
     drawHouseholds(); refresh();
   }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

@@ -63,16 +63,16 @@ const COPY = {
   "unknownStop": "Stop unknown",
   "unknownStopHint": "These need a stop before anyone can pick them up.",
   "traceLine": "{owner}: {qty} {unit}",
-  "duplicateFound": "{owner1} and {owner2} both want {item} ({unit}).",
+  "duplicateFound": "Possible double, as typed: “{item}” ({unit}). Listed for “{owner1}” and “{owner2}”.",
   "mergeButton": "Merge into one line",
   "unmergeButton": "Split back out",
   "mergedLine": "{item}: {qty} {unit} total",
   "mergedTrace": "From {traces}",
   "similarNote": "Items with different names or units stay separate.",
-  "notOrdered": "Stops are in the order you entered them, not by route.",
+  "notOrdered": "Stops are in the order they were entered, not by route.",
   "checkLabel": "Got it",
   "checkAria": "Got {item} for {owner} at {stop}",
-  "checksNote": "Checks reset when you close the page.",
+  "checksNote": "Ticks live on this screen only. They clear if the page closes or reloads, the lists merge, or a new link opens.",
   "progress": {
     "one": "1 of {total} picked up",
     "other": "{n} of {total} picked up"
@@ -85,6 +85,9 @@ const COPY = {
   "shareCancel": "Not sent. The list is still here.",
   "privacy": "Nothing is uploaded or saved. A link holds the whole list, so anyone with it can read it, and it may stay in browser history.",
   "receiverIntro": "A shared list, grouped by stop.",
+  "receiverTypedNote": "Names, items and stops are as typed by the sender. Not checked.",
+  "householdHint": "A first name or nickname is plenty.",
+  "stopHint": "A shop or place name, not a home address. Anyone with the link can read it.",
   "receiverNote": "The list as it was when the link was made.",
   "receiverPrimary": "Make my own from this",
   "emptyState": "Add the households, then each item with its stop.",
@@ -126,5 +129,27 @@ const COPY = {
   "copyBlocked": "Copy and print wait until every row is fixed, so nothing drops out.",
   "skipToStops": "Jump to the stops",
   "mergedStatus": "Merged {item} into one line.",
-  "unmergedStatus": "{item} split back out."
+  "unmergedStatus": "{item} split back out.",
+  "linkLabel": "Link",
+  "editRow": "Edit",
+  "editRowAria": "Edit {item}",
+  "saveRow": "Save item",
+  "cancelEdit": "Cancel",
+  "householdDuplicate": "Two households have this name. Make them different.",
+  "qtyTooBig": "Use a number up to {max}.",
+  "ownerChoose": "Choose",
+  "mergeAria": "Merge {tags}",
+  "unitTooLong": {
+    "one": "Up to {max} characters. 1 over.",
+    "other": "Up to {max} characters. {n} over."
+  },
+  "stopTooLong": {
+    "one": "Up to {max} characters. 1 over.",
+    "other": "Up to {max} characters. {n} over."
+  },
+  "textHeader": "Shopping by stop. Items, stops and names as typed by the sender.",
+  "textStopLine": "Stop: “{stop}”",
+  "textItemLine": "☐ “{item}”: {qty} {unit} · for {owner}",
+  "textMergedItemLine": "☐ “{item}”: {qty} {unit} total · for {owners}",
+  "textUnknownStopLine": "Stop unknown"
 };

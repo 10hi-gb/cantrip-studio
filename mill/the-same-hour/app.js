@@ -2,7 +2,7 @@
 // The Same Hour — UI. Visitor text only via textContent/value. Nothing stored; the address bar is only ever read once and cleared.
 (function () {
   var C = COPY, M = MILL, T = TSH, $ = function (id) { return document.getElementById(id); };
-  var st, touched = {}, showAll = false, res = null, selA = null, asText = false, toastT = 0, lastText = '';
+  var st, touched = {}, showAll = false, res = null, selA = null, asText = false, toastT = 0, lastText = '', mode = 'own', V = window.MILLVIEW;
   var DF = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' });
   var DFY = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   [DF, DFY].forEach(function (f) { var o = f.format.bind(f); f.fmt = function (t) { return o(t).replace(/,/g, ''); }; });
@@ -110,7 +110,7 @@
       res.people.forEach(function (p, i) {
         var lane = el('div', 'tsh-lane'), m = p.merged[d.i]; lane.style.setProperty('--i', i);
         if (!m.length) { lane.classList.add('is-unknown'); var u = el('span', 'tsh-rib is-unknown'); u.style.setProperty('--i', i); lane.appendChild(u); aria.push(p.name + ': ' + C.unknownDay + ';'); }
-        else { var parts = []; m.forEach(function (x) { var a = T.localMin(x.a, d.date, st.z), b = T.localMin(x.b, d.date, st.z), r = el('span', 'tsh-rib'); r.style.setProperty('--s', frac(a, w)); r.style.setProperty('--e', frac(b, w)); r.style.setProperty('--c', color(i)); r.style.setProperty('--i', i); r.title = M.fill(C.ribbonAria, { name: p.name, day: DF.fmt(d.date) }) + ': ' + T.hhmm(a) + '–' + T.hhmm(b); lane.appendChild(r); parts.push(T.hhmm(a) + '–' + T.hhmm(b)); }); aria.push(p.name + ': ' + parts.join(', ') + ';'); }
+        else { var parts = []; m.forEach(function (x) { var a = T.localMin(x.a, d.date, st.z), b = T.localMin(x.b, d.date, st.z), r = el('span', 'tsh-rib'); r.style.setProperty('--s', frac(a, w)); r.style.setProperty('--e', frac(b, w)); r.style.setProperty('--c', color(i)); r.style.setProperty('--i', i); r.title = M.fill(C.ribbonAria, { name: p.name, day: DF.fmt(d.date) }) + ', ' + T.hhmm(a) + '–' + T.hhmm(b); lane.appendChild(r); parts.push(T.hhmm(a) + '–' + T.hhmm(b)); }); aria.push(p.name + ': ' + parts.join(', ') + ';'); }
         var lab = el('span', 'tsh-lane-label', p.name + (m.length ? '' : ' ?')); lab.title = p.name; lane.appendChild(lab); wv.appendChild(lane);
       });
       function seam(x, cls, text) { var a = T.localMin(x.a, d.date, st.z), b = T.localMin(x.b, d.date, st.z), s = el('div', 'tsh-seam' + (cls ? ' ' + cls : ''), text); s.style.setProperty('--s', frac(a, w)); s.style.setProperty('--e', frac(b, w)); s.setAttribute('aria-hidden', 'true'); wv.appendChild(s); return [T.hhmm(a), T.hhmm(b)]; }
@@ -146,6 +146,7 @@
   function picked() { var o = res.options.filter(function (x) { return x.a === selA; })[0]; if (!o) { o = res.options[0]; selA = o ? o.a : null; } return o; }
   function slot(x) { var di = x.day; return { day: DF.fmt(res.days[di]), date: DFY.fmt(res.days[di]), start: tm(x.a, di), end: endTm(x.b, di) }; }
   function names() { return res.people.map(function (p) { return p.name; }).join(', '); }
+  function shareText() { var t = M.strip(st.t); return t ? M.fill(C.shareTextTyped, { title: t }) : C.shareText; }
   function proposalText(o) { var s = slot(o), info = T.zoneInfo(o.a, st.z), title = M.strip(st.t);
     return M.fill(C.proposalText, { titleLine: title ? M.fill(C.proposalTextTitleLine, { title: title }) : '', date: s.date, start: s.start, end: s.end, zoneLine: M.fill(C.zoneLine, info), length: lenText(o.len), names: names() }); }
   function unknownList() { return res.people.map(function (p) { var ds = []; p.merged.forEach(function (m, i) { if (!m.length) ds.push(DW.format(res.days[i])); }); return ds.length ? p.name + ': ' + ds.join(', ') : ''; }).filter(Boolean).join('; '); }
@@ -178,7 +179,10 @@
     }
     if (!found && !none) lastText = '';
   }
-  function refresh() {
+  // Recipient view is read-only in the DOM (shared helper): the form is disabled + inert, both Start over buttons are gone.
+  function applyMode() { var r = mode === 'recv'; V.readOnly($('form'), r); ['b-reset', 'b-nreset'].forEach(function (id) { $(id).hidden = r; $(id).disabled = r; }); }
+  function refresh() { refresh0(); applyMode(); }
+  function refresh0() {
     res = T.compute(st);
     if (!res.days) res.days = T.days(st);
     paintErrors(); zoneLine();
@@ -197,10 +201,10 @@
   function showLink(u) { $('linkbox').hidden = false; var l = $('link'); l.value = u; l.focus(); l.select(); }
   function copyText() { var t = lastText; if (!t) return; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { toast(C.copied); }, function () { toast(C.copyFail); showFallback(); }); else { toast(C.copyFail); showFallback(); } }
   function share() { var f = T.encode(st); if (!f) { toast(C.tooLongLink); showFallback(); return; } var u = location.origin + location.pathname + '#' + f; showLink(u);
-    if (navigator.share) navigator.share({ title: C.title, text: C.shareText, url: u }).then(function () {}, function () { toast(C.shareCancel); showLink(u); });
+    if (navigator.share) navigator.share({ title: C.title, text: shareText(), url: u }).then(function () {}, function () { toast(C.shareCancel); showLink(u); });
     else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(function () { toast(C.copied); }, function () { toast(C.copyFail); showLink(u); });
     else { toast(C.copyFail); showLink(u); } }
-  function reset() { if (!window.confirm(C.resetConfirm)) return; st = T.blank(defaultWeek()); selA = null; touched = {}; showAll = false; clearHash(); $('banner').hidden = true; $('linkbox').hidden = true; $('link').value = ''; $('fbwrap').hidden = true; $('fallback').value = ''; syncForm(); drawPeople(); refresh(); toast(C.resetDone); $('z').focus(); }
+  function reset() { if (mode !== 'own' || !window.confirm(C.resetConfirm)) return; clearHash(); load(''); toast(C.resetDone); $('z').focus(); }
   function syncForm() { $('z').value = T.validZone(st.z) ? st.z : ''; $('w').value = st.w; $('n').value = st.n; $('u').value = st.u === 'hr' ? 'hr' : 'min'; $('t').value = st.t; }
 
   function init() {
@@ -226,19 +230,21 @@
     $('b-print').addEventListener('click', function () { window.print(); });
     $('b-share').addEventListener('click', share); $('b-nshare').addEventListener('click', share);
     $('b-reset').addEventListener('click', reset); $('b-nreset').addEventListener('click', reset);
-    $('own-copy').addEventListener('click', function () { clearHash(); $('banner').hidden = true; var f = st.p[0] && $('pn-' + st.p[0].id); if (f) f.focus(); });
-    window.addEventListener('hashchange', function () { if (location.hash) load(); });
-    load();
+    $('own-copy').addEventListener('click', function () { clearHash(); $('banner').hidden = true; mode = 'own'; refresh(); var f = st.p[0] && $('pn-' + st.p[0].id); if (f) f.focus(); });
+    V.route(load);
   }
-  function load() {
-    st = st || T.blank(defaultWeek());
-    var h = location.hash, bn = $('banner');
-    if (h && h !== '#') {
+  // Every load and every hashchange (valid, bad, old or empty) starts from a blank tab: nothing from a previous link survives.
+  function load(h) {
+    var bn = $('banner');
+    st = T.blank(defaultWeek()); selA = null; touched = {}; showAll = false; mode = 'own'; lastText = '';
+    bn.hidden = true; $('own-copy').hidden = true; $('linkbox').hidden = true; $('link').value = ''; $('fbwrap').hidden = true; $('fallback').value = '';
+    if (h) {
       var d = T.decode(h);
-      if (d.ok) { st = d.data; selA = null; showAll = true; bn.hidden = false; $('banner-t').textContent = C.receiverIntro + ' ' + C.receiverNote; $('own-copy').hidden = false; }
-      else if (d.why !== 'empty') { bn.hidden = false; $('banner-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; $('own-copy').hidden = true; }
+      if (d.ok) { st = d.data; showAll = true; mode = 'recv'; bn.hidden = false; $('banner-t').textContent = C.receiverIntro + ' ' + C.receiverNote; $('own-copy').hidden = false; }
+      else if (d.why !== 'empty') { bn.hidden = false; $('banner-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; }
     }
     syncForm(); drawPeople(); refresh();
   }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

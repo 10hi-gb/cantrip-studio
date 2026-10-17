@@ -193,14 +193,15 @@
   }
   function leave() { history.replaceState(null, '', location.pathname + location.search); touched = {}; $('banner').hidden = true; compose(); $('f-w').focus(); }
   function reset() { if (!confirm(C.resetConfirm)) return; history.replaceState(null, '', location.pathname + location.search); $('link').value = ''; $('linkbox').hidden = true; draft = blankDraft(); touched = {}; $('banner').hidden = true; compose(); toast(C.resetDone); $('f-w').focus(); }
-  function route() {
-    choice = null; offer = null; note = ''; $('banner').hidden = true;
-    var h = location.hash; if (!h || h === '#') { draft = draft || blankDraft(); return compose(); }
+  // Shared MILLVIEW.route: every load and every hashchange (valid, bad, old or empty) rebuilds the tab from the fragment alone.
+  function route(h) {
+    choice = null; offer = null; note = ''; touched = {}; ask = null; reply = null; $('banner').hidden = true; $('link').value = ''; $('linkbox').hidden = true;
+    if (!h) { draft = blankDraft(); return compose(); }
     var d = A.decode(h);
     if (d.ok && d.kind === 'ask') { ask = d.data; return answer(); }
     if (d.ok && d.kind === 'reply') { reply = d.data; return readReply(); }
     draft = blankDraft(); compose(); $('banner').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; $('banner').hidden = false;
   }
   $('home').textContent = C.studioLabel; $('home').setAttribute('aria-label', C.backLabel); $('linklab').textContent = C.linkLabel; document.title = C.studioLabel;
-  window.addEventListener('hashchange', route); route();
+  window.MILLVIEW.route(route);
 })();

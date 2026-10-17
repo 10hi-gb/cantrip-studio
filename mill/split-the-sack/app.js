@@ -3,7 +3,7 @@
 (function () {
   var C = COPY, M = MILL, S = SACK, L = SACKLINK, $ = function (id) { return document.getElementById(id); };
   // mode: 'own' (editor) | 'view' (read-only recipient of a link) | 'change' (recipient's local copy, one household's amount)
-  var st, lastLink = '', toastT, mode = 'own', orig = null, pick = -1;
+  var st, lastLink = '', toastT, mode = 'own', orig = null, pick = -1, V = window.MILLVIEW;
   function blank() { return { n: '', u: '', c: '$', q: '', i: '1', p: '', f: '', b: 'p', x: -1, h: [['', ''], ['', '']] }; }
   function key(k) { return k.split('.').reduce(function (o, p) { return o && o[p]; }, C); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -103,7 +103,8 @@
     var r = S.compute(inp); if (!r.ok && r.error === 'assign') { inp.assignTo = -1; r = S.compute(inp); }
     return r.ok ? r : null;
   }
-  function lockEditor() { if (mode === 'own') return; $('hh').textContent = ''; $('editor').querySelectorAll('input,select,textarea,button').forEach(function (e) { e.disabled = true; }); }
+  // Recipient view is read-only in the DOM via the shared helper (disabled + inert); household inputs are not rendered at all.
+  function lockEditor() { if (mode === 'own') return; $('hh').textContent = ''; V.readOnly($('editor'), true); }
   function render() {
     var fe = fieldErrors(); list('item-msg', fe.item); list('hh-msg', fe.hh);
     var rows = $('rows'), as = $('assign'), u = unit(); rows.textContent = ''; as.textContent = '';
@@ -174,8 +175,7 @@
     $('editor').hidden = m !== 'own'; $('recv').hidden = m === 'own'; $('changebox').hidden = m !== 'change'; $('change').hidden = m === 'change';
     $('from').hidden = m === 'own'; $('from').textContent = C.senderTextLabel; $('caption').hidden = m === 'own'; $('caption').textContent = C.senderNamesCaption;
     if (m !== 'change') { $('rlinkbox').hidden = true; $('rlink').value = ''; }
-    if (m === 'own') $('editor').querySelectorAll('input,select,textarea,button').forEach(function (e) { e.disabled = false; });
-    $('editor').inert = m !== 'own'; $('recv').inert = m === 'own';
+    V.readOnly($('editor'), m !== 'own'); $('recv').inert = m === 'own';
     if (m === 'own') { orig = null; pick = -1; $('pick').textContent = ''; $('owncost').textContent = ''; $('change-err').textContent = ''; $('amt').textContent = ''; $('amt-l').textContent = ''; } else recvPanel(); render();
   }
   function recvPanel() {
@@ -238,7 +238,7 @@
     $('copytext').addEventListener('click', function () { copy($('text').value, $('text')); });
     $('print').addEventListener('click', function () { window.print(); });
     $('reset').addEventListener('click', reset);
-    window.addEventListener('hashchange', function () { fromHash(); toForm(); render(); });
   }
-  staticText(); fromHash(); toForm(); bind(); render();
+  // Every load and every hashchange (valid, bad, old or empty) rebuilds the tab from the fragment alone.
+  staticText(); bind(); V.route(function () { fromHash(); toForm(); render(); });
 })();

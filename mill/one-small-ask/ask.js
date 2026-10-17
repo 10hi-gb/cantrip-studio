@@ -74,7 +74,7 @@
   var TERMS = [['action', 'diffAction'], ['effort', 'diffEffort'], ['window', 'diffWindow'], ['where', 'diffWhere']];
   function textAsk(C, a) {
     var v = termValues(C, a);
-    return M.fill(C.textAsk, { fromLine: a.f ? M.fill(C.textFromLine, { from: a.f }) : '', action: v.action, effort: v.effort, window: v.window, whereLine: a.h ? M.fill(C.textWhereLine, { where: a.h }) : '' });
+    return M.fill(C.textAsk, { fromLine: a.f ? M.fill(C.textFromLine, { from: a.f }) : C.textFromLineAnon, action: v.action, effort: v.effort, window: v.window, whereLine: a.h ? M.fill(C.textWhereLine, { where: a.h }) : '' });
   }
   function textReply(C, r) {
     var a = termValues(C, r.a), noteLine = r.n ? M.fill(C.textNoteLine, { note: r.n }) : '';
@@ -82,7 +82,8 @@
     if (r.v === 'n') return M.fill(C.textReplyNo, { action: a.action, noteLine: '' });
     var p = termValues(C, r.p), d = diff(r.a, r.p), ch = '', same = '';
     TERMS.forEach(function (t) { var k = t[0]; if (k === 'where' && !r.a.h && !r.p.h) return;
-      if (d[k]) ch += M.fill(C.textChangedLine, { term: C[t[1]], now: p[k] || '—', was: a[k] || '—' }); else same += M.fill(C.textSameLine, { term: C[t[1]], value: a[k] }); });
+      var typed = k === 'action' || k === 'where'; // typed text is quoted (Writer QA-83 *Typed templates)
+      if (d[k]) ch += M.fill(typed ? C.textChangedLineTyped : C.textChangedLine, { term: C[t[1]], now: p[k] || '—', was: a[k] || '—' }); else same += M.fill(typed ? C.textSameLineTyped : C.textSameLine, { term: C[t[1]], value: a[k] }); });
     return M.fill(C.textReplyPart, { action: a.action, changedLines: ch, sameLines: same, noteLine: noteLine });
   }
   return { TERMS: TERMS, effortText: effortText, windowText: windowText, termValues: termValues, textAsk: textAsk, textReply: textReply, FRAG_MAX: FRAG_MAX, CAP: CAP, EMAX: EMAX, termsError: termsError, askError: askError, replyError: replyError, diff: diff, anyChanged: anyChanged, encodeAsk: encodeAsk, encodeReply: encodeReply, decode: decode, fmtTime: fmtTime, cleanTerms: cleanTerms, stripW: stripW };

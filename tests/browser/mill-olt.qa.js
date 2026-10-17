@@ -1,6 +1,6 @@
 // node tests/browser/mill-olt.qa.js <host[:port]> <ip> [scheme] — One Less Trip @320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result, reallyHidden } = require('./mill-common');
 const BASE = `${SCHEME}://${H}/mill/one-less-trip/`;
 async function addRow(p, owner, item, qty, unit, stop) {
   await p.select('#f-o', String(owner)); await typeInto(p, '#f-i', item); await typeInto(p, '#f-q', qty); await typeInto(p, '#f-u', unit);
@@ -44,7 +44,7 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     await p.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.reject(new Error('denied')) } }); });
     await p.focus('#b-copy'); await p.keyboard.press('Enter'); await sleep(150);
     t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, f: document.activeElement.id, v: document.getElementById('fallback').value, sel: document.activeElement.selectionEnd - document.activeElement.selectionStart }));
-    ck(w + ' copy failure leaves full list selected', t.toast === "Couldn't copy. Select the text below and copy it yourself." && t.f === 'fallback' && t.sel > 100 && t.v.includes('01 · Corner Co-op\n[ ] Oat milk: 3 carton total — From Ana: 2 carton (r01), Ben: 1 carton (r02)') && t.v.includes('? · Stop unknown'), t);
+    ck(w + ' copy failure leaves full list selected', t.toast === "Couldn't copy. Select the text below and copy it yourself." && t.f === 'fallback' && t.sel > 100 && t.v.startsWith('Shopping by stop. Items, stops and names as typed by the sender.\n\nStop: “Corner Co-op”\n☐ “Oat milk”: 3 carton total · for Ana, Ben\n') && t.v.includes('\nStop unknown\n☐ “AA batteries”: 8 each · for Ana\n'), t);
     // remove a household -> rows held back, copy blocked
     await p.focus('#hhr-3'); await p.keyboard.press('Enter'); await sleep(60); t = await view(p);
     ck(w + ' removed household: its rows held back, never dropped; copy blocked', t.ledger.includes('10 rows in') && t.ledger.includes('4 held back') && t.copy && t.fix.startsWith('4 rows need fixing'), t);
@@ -72,8 +72,24 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     await addRow(p, 1, '<img src=x onerror=alert(1)>', '1', '<b>u</b>', '<i>S</i>'); t = await p.evaluate(() => ({ img: document.querySelectorAll('img, b b, .olt-ticket i').length, name: ([...document.querySelectorAll('.olt-name')].find(e => e.textContent.startsWith('<img')) || {}).textContent || '', stop: [...document.querySelectorAll('.olt-stopname')].some(e => e.textContent === '<i>S</i>') }));
     ck(w + ' text-safe rendering', !t.img && t.name.startsWith('<img') && t.stop, t);
     const of = await overflow(p); ck(w + ' no overflow (owner, receiver)', of.sw <= of.w && !of.bad.length && ofq.sw <= ofq.w && !ofq.bad.length, { of, ofq });
-    // reset (receiver with fragment) + reload
-    await q.goto(url, { waitUntil: 'load' }); await q.focus('#b-reset'); await q.keyboard.press('Enter'); await sleep(100);
+    // recipient view is read-only in the DOM (shared MILLVIEW.readOnly): no enabled control in the intake, no Start over
+    await q.goto('about:blank'); await q.goto(url, { waitUntil: 'load' }); await sleep(150);
+    let ro = await q.evaluate(() => ({ en: [...document.querySelectorAll('#intake input,#intake select,#intake textarea,#intake button')].filter(e => !e.disabled).map(e => e.id || e.className), inert: document.getElementById('intake').inert, ticks: [...document.querySelectorAll('.olt-check')].filter(e => !e.disabled).length }));
+    const rh = await reallyHidden(q, ['#b-reset']);
+    ck(w + ' recipient read-only in DOM: intake controls disabled + inert, Start over not rendered, shopping ticks still usable', !ro.en.length && ro.inert && ro.ticks > 0 && rh.ok, { ro, rh });
+    // same tab: valid link -> bad link fully resets (no rows, no read-only leftovers, empty link box)
+    await q.evaluate(() => { location.hash = 't1.broken'; }); await sleep(150);
+    ro = await q.evaluate(() => ({ rows: document.querySelectorAll('#rows li').length, tickets: document.querySelectorAll('.olt-ticket').length, hh: [...document.querySelectorAll('#hh input')].map(i => i.value).join(), b: document.getElementById('banner-t').textContent, inert: document.getElementById('intake').inert, dis: [...document.querySelectorAll('#intake input:disabled,#intake select:disabled')].map(e => e.id), reset: document.getElementById('b-reset').hidden, own: document.getElementById('own-copy').hidden, link: document.getElementById('link').value }));
+    ck(w + ' same tab: bad link after a valid one fully resets the tab', !ro.rows && !ro.tickets && ro.hh === ',' && /damaged/.test(ro.b) && !ro.inert && !ro.dis.filter(i => i !== 'f-s').length && !ro.reset && ro.own && ro.link === '', ro);
+    // same tab: back to no fragment -> blank
+    await q.evaluate(() => { location.hash = ''; }); await sleep(150);
+    ro = await q.evaluate(() => ({ ban: document.getElementById('banner').hidden, rows: document.querySelectorAll('#rows li').length }));
+    ck(w + ' same tab: empty fragment -> blank, no banner', ro.ban && !ro.rows, ro);
+    // reset (receiver -> Make my own copy -> Start over) + reload
+    await q.goto(url, { waitUntil: 'load' }); await sleep(100); await q.click('#own-copy'); await sleep(80);
+    ro = await q.evaluate(() => ({ en: [...document.querySelectorAll('#intake input,#intake select')].filter(e => !e.disabled).length, inert: document.getElementById('intake').inert, rows: document.querySelectorAll('#rows li').length, reset: document.getElementById('b-reset').hidden }));
+    ck(w + ' Make my own copy unlocks the intake and keeps the rows', ro.en > 3 && !ro.inert && ro.rows > 5 && !ro.reset, ro);
+    await q.focus('#b-reset'); await q.keyboard.press('Enter'); await sleep(100);
     t = await q.evaluate(() => ({ h: location.hash, rows: document.querySelectorAll('#rows li').length, hh: [...document.querySelectorAll('#hh input')].map(i => i.value).join(), ban: document.getElementById('banner').hidden, tickets: document.querySelectorAll('.olt-ticket').length }));
     ck(w + ' reset clears rows, merges, ticks and fragment', t.h === '' && !t.rows && t.hh === ',' && t.ban && !t.tickets, t);
     await p.reload({ waitUntil: 'load' }); t = await p.evaluate(() => ({ rows: document.querySelectorAll('#rows li').length, hh: document.getElementById('hh-1').value })); ck(w + ' reload keeps nothing', !t.rows && t.hh === '', t);
@@ -92,5 +108,14 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     t = await p.evaluate(() => ({ n: document.querySelectorAll('#rows li').length, dis: document.getElementById('f-add').disabled, meta: document.getElementById('rows-meta').textContent }));
     ck('390 30-row limit disables add with message', t.n === 30 && t.dis && t.meta.endsWith('Thirty items is the most.'), t);
     ck('390 share-cancel/limit no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // Writer QA-83 strings, exact: unit/stop limits with {max}, duplicate household name
+  for (const w of [390]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const ids = await p.evaluate(() => [...document.querySelectorAll('input[id^=hh-]')].filter(e => e.id !== 'hh-add').map(e => e.id));
+    await typeInto(p, '#' + ids[0], 'Ana'); await typeInto(p, '#' + ids[1], 'ana'); await sleep(80);
+    const dup = await p.evaluate(id => document.getElementById('hhe-' + id.slice(3)).textContent, ids[1]);
+    await typeInto(p, '#' + ids[1], 'Ben'); await p.select('#f-o', await p.$eval('#f-o', e => e.options[1].value)); await typeInto(p, '#f-i', 'Milk'); await typeInto(p, '#f-q', '1'); await typeInto(p, '#f-u', 'u'.repeat(17)); await typeInto(p, '#f-s', 's'.repeat(42));
+    await p.click('#f-add'); await sleep(80); const e = await p.evaluate(() => ({ u: document.getElementById('e-u').textContent, s: document.getElementById('e-s').textContent }));
+    ck(w + ' Writer strings exact: householdDuplicate, unitTooLong/stopTooLong with {max}', dup === 'Two households have this name. Make them different.' && e.u === 'Up to 16 characters. 1 over.' && e.s === 'Up to 40 characters. 2 over.', { dup, e });
+    await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
