@@ -552,6 +552,20 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
   // 1280. Rendered pixels: the ring = pixels that change between the focused and the blurred frame; for each solid ring
   // colour, every unchanged colour touching it (4-neighbours; contacts under 2% of that band's edge count as anti-alias)
   // must be 3:1+, and there must be a visible ring at all (L9: an ink ring on the ink bar changes nothing).
+  // QA local-2a8c67b L12: the ring's box (border box + outline offset + outline width, or the box-shadow spread) must not
+  // intersect any other visible text (each text node's line boxes, descenders included) or any other control's box (a fixed
+  // toast floats over the page for a moment and is not counted)
+  const ringOverlap = () => { const e = document.activeElement; if (!e || e === document.body) return null; const cs = getComputedStyle(e);
+    const ow = cs.outlineStyle !== 'none' ? parseFloat(cs.outlineWidth) + parseFloat(cs.outlineOffset) : 0;
+    const sp = (cs.boxShadow || '').split(/,(?![^(]*\))/).filter(x => !/inset/.test(x)).map(x => { const n = (x.replace(/rgba?\([^)]*\)|#[0-9a-f]+/gi, '').match(/-?[\d.]+px/g) || []).map(parseFloat); return n.length >= 4 ? n[3] : 0; });
+    const ext = Math.max(ow, 0, ...sp), r = e.getBoundingClientRect(), R = { l: r.left - ext, t: r.top - ext, r: r.right + ext, b: r.bottom + ext }, hits = [];
+    const vis = n => { for (let x = n; x && x !== document.documentElement; x = x.parentElement) { const c = getComputedStyle(x); if (c.position === 'fixed' || c.display === 'none' || c.visibility === 'hidden' || c.clipPath !== 'none' || (c.clip && c.clip !== 'auto') || parseFloat(c.opacity) === 0) return false; } return true; };
+    const inter = (q, what) => { const w = Math.min(R.r, q.right) - Math.max(R.l, q.left), h = Math.min(R.b, q.bottom) - Math.max(R.t, q.top); if (w > 0.5 && h > 0.5) hits.push(what + ' (' + Math.round(w) + 'x' + Math.round(h) + ')'); };
+    const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let t;
+    while ((t = tw.nextNode())) { if (!t.data.trim() || e.contains(t) || !vis(t.parentElement)) continue; const rg = document.createRange(); rg.selectNodeContents(t); const pr = t.parentElement.getBoundingClientRect(); if (pr.width < 2 || pr.height < 2) continue;
+      for (const q of rg.getClientRects()) if (q.width > 0.5) { inter(q, 'text “' + t.data.trim().slice(0, 24) + '”'); } }
+    for (const c of document.querySelectorAll('input,select,textarea,button,a[href],[tabindex]:not([tabindex="-1"])')) { if (c === e || c.contains(e) || e.contains(c) || !vis(c)) continue; const q = c.getBoundingClientRect(); if (q.width < 2 || q.height < 2) continue; inter(q, 'control #' + (c.id || c.tagName)); }
+    return { ext: Math.round(ext * 10) / 10, hits: [...new Set(hits)] }; };
   async function ringAt(p, info) { const m = info.fw + 16, x = Math.max(0, Math.floor(info.x - m)), y = Math.max(0, Math.floor(info.y - m)), clip = { x: x + info.sx, y: y + info.sy, width: Math.min(info.vw, Math.ceil(info.x + info.w + m)) - x, height: Math.min(info.vh, Math.ceil(info.y + info.h + m)) - y };
     if (clip.width < 4 || clip.height < 4) return { skip: 'off screen' };
     const B = png(await p.screenshot({ clip })); await p.evaluate(() => document.activeElement && document.activeElement.blur()); await sleep(260); const A = png(await p.screenshot({ clip }));
@@ -575,7 +589,7 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
         const r = e.getBoundingClientRect(); return { key: e.dataset.ra, id: e.id || (e.className + '').split(' ')[0] || e.tagName, label: (e.getAttribute('aria-label') || e.textContent || e.value || '').trim().replace(/\s+/g, ' ').slice(0, 28), x: r.left, y: r.top, w: r.width, h: r.height, fv: e.matches(':focus-visible'),
           fw: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--focus-w')), vw: document.documentElement.clientWidth, vh: innerHeight, sx: scrollX, sy: scrollY }; });
       if (!info) continue; if (info.key === first) break; if (!first) first = info.key; if (out.some(o => o.key === info.key)) break;
-      const r = await ringAt(p, info); out.push(Object.assign({ key: info.key, screen, id: info.id, label: info.label, fv: info.fv }, r)); }
+      const ov = await p.evaluate(ringOverlap), r = await ringAt(p, info); out.push(Object.assign({ key: info.key, screen, id: info.id, label: info.label, fv: info.fv, ov }, r)); }
     out.forEach(o => rows.push(o)); return out; }
   for (const w of (process.env.MILL_SKIP_AUDIT ? [] : [390, 1280])) {
     const s = await session(H, IP), { p } = s; await p.setBypassCSP(true); await p.setViewport({ width: w, height: w > 1000 ? 900 : 844 }); await p.evaluateOnNewDocument(clipStub);
@@ -603,10 +617,77 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
     const bad = rows.filter(r => !r.skip && (!r.visible || !r.fv || r.min < 3));
     ck(`ring audit ${w}: ${rows.length} keyboard focus stops on ${[...new Set(rows.map(r => r.screen))].length} screens all show a ring 3:1+ against every colour next to it (lowest ${Math.min(...rows.filter(r => !r.skip).map(r => r.min))})`, rows.length >= 30 && !bad.length,
       { bad: bad.map(r => ({ screen: r.screen, id: r.id, label: r.label, visible: r.visible, fv: r.fv, pairs: r.pairs })), table: rows.map(r => r.screen + ' | ' + r.id + ' “' + r.label + '” | ' + (r.skip || (r.rings.join(' + ') + ' | min ' + r.min))) });
+    const ovs = rows.filter(r => r.ov && r.ov.hits.length);
+    ck(`ring audit ${w}: L12 no ring box (offset + width out from the border box) intersects other text or another control (${rows.length} stops; ${ovs.length} overlap)`, rows.length >= 30 && !ovs.length, ovs.map(r => r.screen + ' | ' + r.id + ' ext ' + r.ov.ext + ': ' + r.ov.hits.join('; ')));
     for (const [scr, id] of [['chosen-right (Next)', 'c-next'], ['board', 'b-back'], ['recipient board', 'b-back']]) { const r = rows.find(x => x.screen === scr && x.id === id);
       ck(`ring audit ${w}: ${id} on ${scr}: visible ring, every band 3:1+ (${r ? r.pairs.map(q => q.ring + '→' + q.next + ' ' + q.ratio).join('; ') : 'not reached'})`, r && r.visible && r.min >= 3, r); }
     ck(`ring audit ${w}: no page errors`, !errsOf(s, SCHEME).filter(e => !/Content Security Policy/.test(e)).length, errsOf(s, SCHEME)); await s.b.close();
   }
+  // QA local-2a8c67b L11 + L13 (PM ruling): single Latin words. L11: every line but the last ends in a hyphen (the answer's own
+  // or an added one); an added break leaves 4+ letters each side inside its hyphen part, and only a part that can't fit a line
+  // by itself at 24px is broken inside. L13: the drawn count is the fewest at >= 24px and the size is never more than 10%
+  // under the largest size that count fits at (oracle: own-hyphen-aware first-fit with 4+-letter added breaks, page metrics,
+  // the size grid from the tile's normal size down to 24px). abc30 on the 390 chosen screen comes out at about 36px.
+  { const puppeteer = require('puppeteer-core'), WORDS = ['N' + 'o'.repeat(29), 'Abcdefghijklmnopqrstuvwxyzabcd', "Grandmother's", 'Bartholomew-Smythe', 'Jean-Baptiste-Alexandre', 'Pneumonoultramicroscopic', 'Superextraordinarily'];
+    const oracle = (p, id, tileSel) => p.evaluate((id, tileSel) => { const a = document.getElementById(id), tile = tileSel ? document.querySelector(tileSel) : (a.closest('.half') || a.parentElement), ts = getComputedStyle(tile);
+      const word = a.querySelector('.lr-sr').textContent.slice(1, -1), drawn = a.querySelector('.lr-vt').getAttribute('data-v').split('\n'), fs = parseFloat(getComputedStyle(a).fontSize);
+      const keep = [a.style.fontSize, a.style.paddingInlineStart, a.style.paddingInlineEnd]; a.style.fontSize = ''; a.style.paddingInlineStart = a.style.paddingInlineEnd = ''; const base = parseFloat(getComputedStyle(a).fontSize), cw = a.clientWidth; [a.style.fontSize, a.style.paddingInlineStart, a.style.paddingInlineEnd] = keep;
+      const pad = Math.min(parseFloat(ts.paddingLeft), parseFloat(ts.paddingRight)), full = cw + parseFloat(ts.paddingLeft) + parseFloat(ts.paddingRight) - 4;
+      const pw = document.createElement('span'), pr = document.createElement('span'); pw.className = 'lr-probe-w'; pr.className = 'lr-probe'; pr.style.fontSize = '100px'; pw.appendChild(pr); a.appendChild(pw);
+      const W = t => { pr.textContent = t; return pr.offsetWidth; }, qo = W('\u201C') / 100, qc = W('\u201D') / 100, isL = c => /\p{L}/u.test(c), lets = t => (t.match(/\p{L}/gu) || []).length;
+      const fitsAt = s => { const av = cw - Math.max(0, Math.ceil(qo * 0.8 * s - pad + 1)) - Math.max(0, Math.ceil(qc * 0.8 * s - pad + 1)), r = s / 100; return (t, f, l) => { const mo = f ? qo * 80 : 0, mc = l ? qc * 80 : 0; return (W(t) + mo + mc) * r <= av - 1 && (W(t) + 2 * Math.max(mo, mc)) * r <= full - 1; }; };
+      const parts = []; { let st = 0; for (let i = 1; i < word.length - 1; i++) if (word[i] === '-' && lets(word.slice(st, i)) >= 2 && lets(word.slice(i + 1)) >= 2) { parts.push([st, i + 1]); st = i + 1; } parts.push([st, word.length]); }
+      const count = s => { const fits = fitsAt(s), n = word.length; let ls = -1, le = -1, k = 0; const close = () => { k++; ls = -1; };
+        for (const [ps, pe] of parts) { if (ls >= 0 && fits(word.slice(ls, pe), ls === 0, pe === n)) { le = pe; continue; } if (fits(word.slice(ps, pe), ps === 0, pe === n)) { if (ls >= 0) close(); ls = ps; le = pe; continue; }
+          if (ls >= 0) close(); let pos = ps; for (;;) { if (fits(word.slice(pos, pe), pos === 0, pe === n)) { ls = pos; le = pe; break; } let j = -1;
+            for (let e = pe - 1; e > pos; e--) if (isL(word[e - 1]) && isL(word[e]) && lets(word.slice(pos, e)) >= 4 && lets(word.slice(ps, e)) >= 4 && lets(word.slice(e, pe)) >= 4 && fits(word.slice(pos, e) + '-', pos === 0, false)) { j = e; break; }
+            if (j < 0) return Infinity; k++; pos = j; } }
+        if (ls >= 0) k++; return k; };
+      const grid = []; for (let s = base; s > 24.01; s -= 2) grid.push(Math.round(s * 100) / 100); grid.push(24);
+      const cnt = grid.map(count), fewest = Math.min(...cnt), top = k => { const i = cnt.findIndex(c => c <= k); return i < 0 ? 0 : grid[i]; };
+      // L11 on the drawn lines: hyphen at every break; added breaks 4+ letters each side in their part; only parts too wide at 24px are broken inside
+      const f24 = fitsAt(24); let at = 0; const brk = [];
+      drawn.forEach((l, i) => { const own = word.slice(at, at + l.length) === l; const body = own ? l : l.slice(0, -1); brk.push({ line: l, own, added: !own && i < drawn.length - 1 && l.endsWith('-'), endsHy: l.endsWith('-'), pos: at + body.length }); at += body.length; });
+      const l11 = { allHy: drawn.slice(0, -1).every(l => l.endsWith('-')), rebuilt: at === word.length, added: brk.filter(b => b.added).map(b => { const part = parts.find(([ps, pe]) => b.pos > ps && b.pos < pe) || [0, 0];
+        return { at: b.pos, left: lets(word.slice(part[0], b.pos)), right: lets(word.slice(b.pos, part[1])), partFits24: f24(word.slice(part[0], part[1]), part[0] === 0, part[1] === word.length) }; }) };
+      pw.remove(); return { word, drawn, fs, base, fewest, top: top(drawn.length), l11 }; }, id, tileSel);
+    const okL11 = v => v.l11.allHy && v.l11.rebuilt && v.l11.added.every(x => x.left >= 4 && x.right >= 4 && !x.partFits24);
+    const sizes = []; for (const [w, mode] of [[320, 'classic'], [390, 'classic'], [320, 'overlay'], [390, 'overlay'], [1000, 'overlay'], [1280, 'overlay']]) {
+      const b = await puppeteer.launch({ executablePath: '/usr/bin/google-chrome', headless: 'new', ignoreDefaultArgs: mode === 'classic' ? ['--hide-scrollbars'] : [], args: ['--no-sandbox', `--host-resolver-rules=MAP ${H.split(':')[0]} ${IP}`] });
+      const p = await b.newPage(), errs = []; p.on('pageerror', e => errs.push(String(e))); p.on('dialog', d => d.accept().catch(() => {})); p.setDefaultTimeout(15000);
+      try { await p.setViewport({ width: w, height: w >= 1000 ? 900 : 760 });
+        for (const wd of WORDS) { await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await fillQ(p, 0, 'Pick?', wd, 'Tea'); await press(p, '#go'); await sleep(300);
+          const v = await oracle(p, 'h-l-a'); await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(650); const c = await oracle(p, 'c-a', '#s3');
+          for (const [where, x] of [['board', v], ['chosen', c]]) { sizes.push({ w, mode, where, word: wd, fs: x.fs, top: x.top, n: x.drawn.length });
+            ck(`L11/L13 ${w} ${mode} ${where} “${wd}”: ${x.drawn.join(' / ')} @${x.fs}px — fewest pieces (${x.fewest}), size within 10% of the largest for that count (${x.top}px), hyphen at every break, added breaks 4+ letters each side only in parts too wide at 24px`,
+              x.drawn.length === x.fewest && x.fs >= 0.9 * x.top - 0.01 && okL11(x), x); }
+          if (w === 390 && wd.startsWith('Abc')) ck(`L13 390 ${mode}: abc30 on the chosen screen comes out at about 36px (${c.fs}px: ${c.drawn.join(' / ')})`, c.fs >= 34, c); }
+        ck(`L11/L13 ${w} ${mode}: no page errors`, !errs.length, errs); } catch (e) { ck(`L11/L13 ${w} ${mode}: the checks ran to the end`, false, String(e && e.stack || e).slice(0, 400)); } await b.close(); }
+    const worst = sizes.reduce((m, x) => Math.min(m, x.fs / x.top), 9); ck(`L13: ${sizes.length} renders, the smallest is ${Math.round(worst * 1000) / 10}% of the largest size for its count (>= 90%)`, sizes.length >= 80 && worst >= 0.9 - 1e-4, sizes.filter(x => x.fs < x.top)); }
+  // QA local-2a8c67b L12, geometry at all five QA widths: every Tab stop on the editor (tap, switch and hold settings, link and
+  // answers), board, chosen L/R (+ copy fallback) and recipient screens; the ring box must not intersect other text or controls
+  for (const w of (process.env.MILL_SKIP_OVERLAP ? [] : [320, 390, 1000, 1280, 1440])) {
+    const s = await session(H, IP), { p } = s; await p.setBypassCSP(true); await p.setViewport({ width: w, height: w >= 1000 ? 900 : 760 }); await p.evaluateOnNewDocument(clipStub);
+    await p.evaluateOnNewDocument(() => document.addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = '*{caret-color:transparent!important;transition:none!important;animation:none!important}'; document.head.appendChild(st); }));
+    const stops = [], walk = async screen => { await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); window.scrollTo(0, 0); }); const seen = new Set();
+      for (let i = 0; i < 80; i++) { await p.keyboard.press('Tab'); await sleep(40); const o = await p.evaluate(f => { const e = document.activeElement; if (!e || e === document.body) return null; if (!e.dataset.ov) e.dataset.ov = Math.random().toString(36).slice(2, 8); return Object.assign({ k: e.dataset.ov, id: e.id || e.tagName }, (0, eval)('(' + f + ')')()); }, ringOverlap.toString());
+        if (!o) continue; if (seen.has(o.k)) break; seen.add(o.k); stops.push(Object.assign({ screen }, o)); } };
+    try {
+      await p.goto(BASE, { waitUntil: 'load' }); await sleep(250); await setVal(p, '#from', 'Maya'); await fillQ(p, 0, 'Your question here?', "Grandmother's", 'Watch a movie at home', '\u{1F475}', ''); await fillQ(p, 1, 'Park or pool?', 'Park', 'Pool');
+      await press(p, '#mk'); await sleep(150); await walk('editor tap + link');
+      await press(p, '#m-switch'); await sleep(150); await walk('editor switch'); await press(p, '#m-hold'); await sleep(150); await walk('editor hold'); await press(p, '#m-tap'); await sleep(100);
+      await p.evaluate(() => window.scrollTo(0, 0)); await press(p, '#go'); await sleep(300); await walk('board');
+      await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(700); await walk('chosen left'); await press(p, '#c-again'); await sleep(300);
+      await p.focus('#h-r'); await p.keyboard.press('Enter'); await sleep(700); await walk('chosen right'); await press(p, '#c-next'); await sleep(300);
+      await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(700); await p.evaluate(() => { window.__clipFail = true; }); await press(p, '#c-send'); await sleep(300); await walk('chosen left last + copy fallback');
+      await press(p, '#c-back'); await sleep(300); await walk('editor + answers');
+      const frag = await p.evaluate(() => MILL.pack('l', 1, { f: 'Maya', m: 0, k: 0, s: 0, e: 20, d: 15, q: [['Who reads tonight?', "Grandmother's", 'Tacos', '', '']] }));
+      await p.goto('about:blank'); await p.goto(BASE + '#' + frag, { waitUntil: 'load' }); await sleep(250); await walk('recipient');
+      await p.goto('about:blank'); await p.goto(BASE + '#garbage', { waitUntil: 'load' }); await sleep(250); await walk('bad-link banner');
+    } catch (e) { ck(`L12 overlap ${w}: the walk ran to the end`, false, String(e && e.stack || e).slice(0, 400)); }
+    const bad = stops.filter(o => o.hits.length);
+    ck(`L12 overlap ${w}: ${stops.length} Tab stops on ${new Set(stops.map(o => o.screen)).size} screens; no focus ring box intersects other text or another control (rings reach ${[...new Set(stops.map(o => o.ext))].join('/')}px)`, stops.length >= 60 && !bad.length, bad.map(o => o.screen + ' | ' + o.id + ' ext ' + o.ext + ': ' + o.hits.join('; ')));
+    ck(`L12 overlap ${w}: no page errors`, !errsOf(s, SCHEME).filter(e => !/Content Security Policy/.test(e)).length, errsOf(s, SCHEME)); await s.b.close(); }
   // PM 04:57 query-string ruling: every history write is origin + path (+ #fragment), never a ?query. A valid received link
   // with ?q=<marker>: after opening, answering, reset and making a link, location.search is '' and the marker is not in
   // location.href; links generated carry no '?'; the marker is nowhere in text, attributes (accessible names), values,

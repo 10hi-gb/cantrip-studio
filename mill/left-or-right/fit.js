@@ -7,17 +7,20 @@
 // split at its own hyphens (no hyphen added; 2+ letters each side), filled greedily too. Only a hyphen segment that still
 // can't fit a line by itself is broken inside, greedily at the latest point that fits: tier 1 dictionary points (Liang
 // patterns, hyph-en.js), tier 2 any letter point, both with 4+ letters each side (and in every piece) and an added hyphen, tier 3 grapheme
-// boundaries (emoji runs; never inside an emoji, no hyphen). Size: the largest size, normal down to the 24px floor, at
+// boundaries (emoji runs, digits, symbols: never between two letters (QA local-2a8c67b L11), never inside an emoji, no hyphen). Size: the largest size, normal down to the 24px floor, at
 // which the greedy layout fits with no inner break; only if none, the largest size with tier 1, then tier 2, then tier 3.
 // Single word (Creative r5, after f66fb8e): an answer with no space takes the FEWEST pieces before the larger size: 1 piece
 // (unbroken) at the largest size that fits, else 2 pieces at the largest size, else 3, and so on. Within one piece count the
-// break tiers keep their order (own hyphens, then dictionary, then letter fallback, then graphemes) and the size is the
-// largest that fits; a word gets another break only when fewer pieces can't fit even at the floor. The floor is the last
+// size comes first (PM ruling on QA local-2a8c67b L13): take the largest size at which any tier makes that count; the drawn
+// size is never more than 10% under it (NEAR). Within that 10% the lowest tier wins (own hyphens, then dictionary, then
+// letter fallback, then graphemes), at its own largest size, so Grand- / mother's keeps its dictionary break when a letter
+// split would only gain a step or two, while abc30 takes 2 letter pieces at 36px over a dictionary break at 26px. Own
+// hyphens always come first anyway, since a segment that fits is never broken inside; a word gets another break only when fewer pieces can't fit even at the floor. The floor is the last
 // entry of o.sizes (app.js FLOOR = 24px, measured as the answer's own font size; for the two board tiles the shared size
 // is applied afterwards, so the other tile shrinks to match). If no piece count fits at the floor, plan() falls back to
 // the multi-word search below and then to the old overflow line, unchanged.
 (function (root, factory) { var m = factory(root.LR_HYPH || (typeof require === 'function' ? require('./hyph-en.js') : null)); if (typeof module === 'object' && module.exports) module.exports = m; else root.LRFIT = m; })(this, function (HY) {
-  var PAT = null, EXC = null, MAXP = 0, MINF = 4;
+  var PAT = null, EXC = null, MAXP = 0, MINF = 4, NEAR = 0.9;
   function load() { if (PAT) return; PAT = Object.create(null); EXC = Object.create(null);
     HY.patterns.split(' ').forEach(function (p) { var ch = p.replace(/\d/g, ''); PAT[ch] = p.split(/[.a-z]/).map(function (d) { return +d || 0; }); if (ch.length > MAXP) MAXP = ch.length; });
     HY.exceptions.split(' ').forEach(function (x) { var pos = [], k = 0; for (var i = 0; i < x.length; i++) { if (x[i] === '-') pos.push(k); else k++; } EXC[x.replace(/-/g, '')] = pos; }); }
@@ -28,7 +31,7 @@
     var out = []; for (var b = 1; b < w.length; b++) if (pts[b + 1] % 2 && ok(b)) out.push(b); return out;
     function ok(b) { return b >= HY.left && w.length - b >= HY.right; } }
   function graphemes(s) { if (typeof Intl === 'object' && Intl.Segmenter) return Array.from(new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s), function (x) { return x.segment; }); return Array.from(s); }
-  var LETTER = /^\p{L}\p{M}*$/u, ASCII = /^[A-Za-z]$/, HYPH = /^[-\u2010]$/;
+  var LETTER = /^\p{L}\p{M}*$/u, WORD = /^(?:\p{L}\p{M}*|[-\u2010'\u2019])$/u, ASCII = /^[A-Za-z]$/, HYPH = /^[-\u2010]$/;
   // QA local-f66fb8e: CJK and kana (and Hangul) break between characters with no hyphen and no 4-letter minimum (kind 'c'),
   // never before closing punctuation, small kana or the long-vowel mark, never after an opening bracket
   var CJK = /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Bopomofo}\u3000-\u303F\uFF00-\uFFEF]/u,
@@ -46,7 +49,9 @@
       for (k = s; k < e;) { if (!ASCII.test(G[k])) { k++; continue; } var r = k; while (k < e && ASCII.test(G[k])) k++;
         hyphenate(G.slice(r, k).join('')).forEach(function (b) { var p = r + b; if (four(p)) { seen[p] = 1; x.t[0].push({ pos: p, skip: 0, hy: true, kind: 'd' }); } }); }
       for (k = s + 1; k < e; k++) if (!seen[k] && four(k)) { seen[k] = 1; x.t[1].push({ pos: k, skip: 0, hy: true, kind: 'f' }); }
-      for (k = s + 1; k < e; k++) if (!seen[k]) x.t[2].push({ pos: k, skip: 0, hy: LETTER.test(G[k - 1]) && LETTER.test(G[k]) && lt(k) >= MINF && L - lt(k) >= MINF, kind: 'g' });
+      // QA local-2a8c67b L11: tier 3 never splits inside a word (between two of: letter, own hyphen, apostrophe) (no "Bartholom / ew", no "Baptiste-A / lexandre"); a letter run
+      // breaks only at tiers 1-2 (4+ letters each side, hyphen added), so tier 3 is left for emoji, digits and symbols
+      for (k = s + 1; k < e; k++) if (!seen[k] && !(WORD.test(G[k - 1]) && WORD.test(G[k]))) x.t[2].push({ pos: k, skip: 0, hy: false, kind: 'g' });
       segs.push(x); }
     for (i = 0; i < n; i++) {
       if (G[i] === ' ') { seg(a, i); nat.push({ pos: i, skip: 1, hy: false, kind: 's' }); a = i + 1; }
@@ -93,9 +98,11 @@
     function fitsAt(size) { var r = size / o.R, av = typeof o.avail === 'function' ? o.avail(size) : o.avail; return function (s, f, l) { var m = mz(s, f, l); return (m.w + (m.marks || 0)) * r <= av - 1 && (m.w + m.hang) * r <= o.full - 1; }; }
     function done(size, res, level) { return { size: size, lines: res.lines, kinds: res.kinds, level: level, broken: res.kinds.some(function (k) { return k === 'd' || k === 'f' || k === 'g' || k === 'c'; }) }; }
     var memo = {}; function at(L, i) { var key = L + ':' + i; if (!(key in memo)) { var r = greedy(P, fitsAt(o.sizes[i]), L); memo[key] = r && ok(o.sizes[i], r.lines) ? r : null; } return memo[key]; }
-    if (P.G.indexOf(' ') < 0) { // single word: fewest pieces first, then break tier, then the largest size
+    if (P.G.indexOf(' ') < 0) { // single word: fewest pieces first, then the largest size, then the lowest break tier
       var most = 0; for (L = 0; L <= 3; L++) for (i = 0; i < o.sizes.length; i++) { var q = at(L, i); if (q && q.lines.length > most) most = q.lines.length; }
-      for (var k = 1; k <= most; k++) for (L = 0; L <= 3; L++) for (i = 0; i < o.sizes.length; i++) { var t = at(L, i); if (t && t.lines.length <= k) return done(o.sizes[i], t, L); } }
+      for (var k = 1; k <= most; k++) { var top = -1, j; for (i = 0; i < o.sizes.length && top < 0; i++) for (L = 0; L <= 3; L++) { var t = at(L, i); if (t && t.lines.length <= k) { top = o.sizes[i]; break; } }
+        if (top < 0) continue; // the largest size for k pieces (any tier); the lowest tier whose own largest size is within 10% of it
+        for (L = 0; L <= 3; L++) for (j = 0; j < o.sizes.length && o.sizes[j] >= NEAR * top - 0.001; j++) { var u = at(L, j); if (u && u.lines.length <= k) return done(o.sizes[j], u, L); } } }
     for (L = 0; L <= 3; L++) for (i = 0; i < o.sizes.length; i++) { var r = at(L, i); if (r) return done(o.sizes[i], r, L); }
     var last = o.sizes[o.sizes.length - 1]; return { size: last, lines: [P.G.join('')], kinds: [], level: 4, broken: false, overflow: true };
   }
