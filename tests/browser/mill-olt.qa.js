@@ -12,6 +12,26 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
   kept: [...document.querySelectorAll('.olt-note--kept')].map(e => e.textContent), tags: [...document.querySelectorAll('#lane .olt-tag, #tray-t .olt-tag')].map(e => e.textContent), copy: document.getElementById('b-copy').disabled, fix: document.getElementById('fix').textContent }));
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
+  // ---- rendered-pixel contrast (QA all9 method): text colour x opacity chain composited over the background as rendered with every glyph made
+  // transparent (gradients, textures, shadows included). Sampled in the glyph band of each line box (middle 60% of its height, 1px in from each
+  // side, so line-box padding and pill corners the glyphs never touch are left out). Returns the median-background ratio and the worst-pixel ratio.
+  const rgbOf = s => s.match(/[\d.]+/g).slice(0, 4).map(Number), lumA = c => { const f = v => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+  const crA = (a, b) => { const x = lumA(a), y = lumA(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+  async function renderedContrast(s, p, sel) {
+    const vw = p.viewport(), H = await p.evaluate(() => document.documentElement.scrollHeight); await p.setViewport({ width: vw.width, height: Math.min(H, 8000) }); await p.evaluate(() => scrollTo(0, 0)); await sleep(200);
+    const items = await p.evaluate(sel => [...document.querySelectorAll(sel)].filter(e => e.getClientRects().length && getComputedStyle(e).visibility === 'visible' && e.textContent.trim()).map(e => { const rg = document.createRange(); rg.selectNodeContents(e);
+      const rects = [...rg.getClientRects()].filter(x => x.width > 1 && x.height > 1).map(x => ({ x: x.left, y: x.top, w: x.width, h: x.height })); let a = 1; for (let x = e; x; x = x.parentElement) a *= parseFloat(getComputedStyle(x).opacity);
+      return { txt: e.textContent.trim().slice(0, 40), rects, color: getComputedStyle(e).color, a, size: getComputedStyle(e).fontSize }; }), sel);
+    await p.evaluate(() => { window.__rc = []; document.querySelectorAll('*').forEach(e => { window.__rc.push([e, e.style.getPropertyValue('color'), e.style.getPropertyPriority('color'), e.style.getPropertyValue('text-shadow'), e.style.getPropertyPriority('text-shadow')]); e.style.setProperty('color', 'transparent', 'important'); e.style.setProperty('text-shadow', 'none', 'important'); }); });
+    await sleep(150); const png = await p.screenshot({ encoding: 'base64' });
+    await p.evaluate(() => { window.__rc.forEach(([e, c, cp, t, tp]) => { if (c) e.style.setProperty('color', c, cp); else e.style.removeProperty('color'); if (t) e.style.setProperty('text-shadow', t, tp); else e.style.removeProperty('text-shadow'); }); delete window.__rc; });
+    const dp = await s.b.newPage(); const px = await dp.evaluate(async (b64, items) => { const im = new Image(); im.src = 'data:image/png;base64,' + b64; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d'); g.drawImage(im, 0, 0);
+      return items.map(it => { const out = []; it.rects.forEach(r => { const x0 = Math.max(0, Math.round(r.x + 1)), y0 = Math.max(0, Math.round(r.y + r.h * .2)), w = Math.max(1, Math.min(c.width - x0, Math.round(r.w - 2))), h = Math.max(1, Math.min(c.height - y0, Math.round(r.h * .6))); const d = g.getImageData(x0, y0, w, h).data; for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]); }); return out; }); }, png, items);
+    await dp.close(); await p.setViewport(vw); await sleep(150);
+    return items.map((it, k) => { const bg = px[k]; if (!bg.length) return Object.assign(it, { med: null, worst: null }); const L = bg.map(lumA), ord = L.map((v, i) => i).sort((a, b) => L[a] - L[b]), med = bg[ord[ord.length >> 1]];
+      const c = rgbOf(it.color), al = (c[3] === undefined ? 1 : c[3]) * it.a, comp = b => [0, 1, 2].map(i => c[i] * al + b[i] * (1 - al)), r = b => crA(comp(b), b);
+      const worst = Math.min(...[...new Set(ord.map(i => bg[i].join()))].map(sv => r(sv.split(',').map(Number))));
+      return { txt: it.txt, size: it.size, color: it.color, a: +it.a.toFixed(3), med: med.join(','), ratioMed: +r(med).toFixed(2), ratioWorst: +worst.toFixed(2), n: bg.length }; }); }
   for (const w of W) {
     const s = await session(H, IP); const { p, b } = s; await p.setViewport({ width: w, height: 800 });
     await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
@@ -325,5 +345,13 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     const r = await clickIf('#b-reset'); await sleep(250); await at('reset', r, '');
     ck('PM 04:57 query-strip (' + QN + '): ' + steps.map(x => x.step).join(' -> ') + ': every step happened; location.search empty, no marker in location.href, location.hash as expected after each', steps.length >= 5 && steps.every(x => x.did && x.search === '' && !x.mark && x.hashOk), steps.map(x => Object.assign({}, x, { hash: x.hash.slice(0, 60), exp: x.exp && x.exp.slice(0, 60) })));
     ck('PM 04:57 query-strip (' + QN + '): no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // ---------- QA all9 W-6: small grey text straight on the speckled counter (#progress, the other .olt-meta lines, strip, fine print) >= 4.5:1 against the
+  // WORST rendered texture pixel under the text, own view and received view, 320/390/1280
+  for (const w of [320, 390, 1280]) { const s = await session(H, IP), { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const f = await p.evaluate(() => MILL.pack('t', 1, { h: ['Ana', 'Ben'], r: [[0, 'Oat milk', '2', 'carton', 'Corner Co-op'], [1, 'Stamps', '1', 'book', 'Post office'], [0, 'AA batteries', '4', 'pack', ''], [1, 'Brown rice', '2', 'kg', 'Corner Co-op']], m: [] }));
+    for (const own of [true, false]) { await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(300); if (own) { await p.click('#own-copy'); await sleep(250); }
+      const r = await renderedContrast(s, p, '.olt-strip a, .olt-strip span, .olt-meta, .olt-fine, #notes'), pr = r.find(x => /picked up/.test(x.txt));
+      ck(w + ` QA all9 W-6 (${own ? 'own view' : 'received view'}): #progress (${pr ? pr.ratioWorst + ':1 worst pixel, ' + pr.ratioMed + ':1 median' : 'missing'}) and every grey line on the counter (strip, .olt-meta, .olt-fine, notes) >= 4.5:1 against the worst rendered texture pixel`, !!pr && r.every(x => x.ratioWorst >= 4.5), r.map(x => x.txt + ' | ' + x.size + ' ' + x.color + ' med ' + x.ratioMed + ' worst ' + x.ratioWorst)); }
+    ck(w + ' QA all9 W-6 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

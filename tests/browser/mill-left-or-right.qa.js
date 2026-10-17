@@ -552,6 +552,20 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
   // 1280. Rendered pixels: the ring = pixels that change between the focused and the blurred frame; for each solid ring
   // colour, every unchanged colour touching it (4-neighbours; contacts under 2% of that band's edge count as anti-alias)
   // must be 3:1+, and there must be a visible ring at all (L9: an ink ring on the ink bar changes nothing).
+  // QA local-2a8c67b L12: the ring's box (border box + outline offset + outline width, or the box-shadow spread) must not
+  // intersect any other visible text (each text node's line boxes, descenders included) or any other control's box (a fixed
+  // toast floats over the page for a moment and is not counted)
+  const ringOverlap = () => { const e = document.activeElement; if (!e || e === document.body) return null; const cs = getComputedStyle(e);
+    const ow = cs.outlineStyle !== 'none' ? parseFloat(cs.outlineWidth) + parseFloat(cs.outlineOffset) : 0;
+    const sp = (cs.boxShadow || '').split(/,(?![^(]*\))/).filter(x => !/inset/.test(x)).map(x => { const n = (x.replace(/rgba?\([^)]*\)|#[0-9a-f]+/gi, '').match(/-?[\d.]+px/g) || []).map(parseFloat); return n.length >= 4 ? n[3] : 0; });
+    const ext = Math.max(ow, 0, ...sp), r = e.getBoundingClientRect(), R = { l: r.left - ext, t: r.top - ext, r: r.right + ext, b: r.bottom + ext }, hits = [];
+    const vis = n => { for (let x = n; x && x !== document.documentElement; x = x.parentElement) { const c = getComputedStyle(x); if (c.position === 'fixed' || c.display === 'none' || c.visibility === 'hidden' || c.clipPath !== 'none' || (c.clip && c.clip !== 'auto') || parseFloat(c.opacity) === 0) return false; } return true; };
+    const inter = (q, what) => { const w = Math.min(R.r, q.right) - Math.max(R.l, q.left), h = Math.min(R.b, q.bottom) - Math.max(R.t, q.top); if (w > 0.5 && h > 0.5) hits.push(what + ' (' + Math.round(w) + 'x' + Math.round(h) + ')'); };
+    const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let t;
+    while ((t = tw.nextNode())) { if (!t.data.trim() || e.contains(t) || !vis(t.parentElement)) continue; const rg = document.createRange(); rg.selectNodeContents(t); const pr = t.parentElement.getBoundingClientRect(); if (pr.width < 2 || pr.height < 2) continue;
+      for (const q of rg.getClientRects()) if (q.width > 0.5) { inter(q, 'text “' + t.data.trim().slice(0, 24) + '”'); } }
+    for (const c of document.querySelectorAll('input,select,textarea,button,a[href],[tabindex]:not([tabindex="-1"])')) { if (c === e || c.contains(e) || e.contains(c) || !vis(c)) continue; const q = c.getBoundingClientRect(); if (q.width < 2 || q.height < 2) continue; inter(q, 'control #' + (c.id || c.tagName)); }
+    return { ext: Math.round(ext * 10) / 10, hits: [...new Set(hits)] }; };
   async function ringAt(p, info) { const m = info.fw + 16, x = Math.max(0, Math.floor(info.x - m)), y = Math.max(0, Math.floor(info.y - m)), clip = { x: x + info.sx, y: y + info.sy, width: Math.min(info.vw, Math.ceil(info.x + info.w + m)) - x, height: Math.min(info.vh, Math.ceil(info.y + info.h + m)) - y };
     if (clip.width < 4 || clip.height < 4) return { skip: 'off screen' };
     const B = png(await p.screenshot({ clip })); await p.evaluate(() => document.activeElement && document.activeElement.blur()); await sleep(260); const A = png(await p.screenshot({ clip }));
@@ -575,7 +589,7 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
         const r = e.getBoundingClientRect(); return { key: e.dataset.ra, id: e.id || (e.className + '').split(' ')[0] || e.tagName, label: (e.getAttribute('aria-label') || e.textContent || e.value || '').trim().replace(/\s+/g, ' ').slice(0, 28), x: r.left, y: r.top, w: r.width, h: r.height, fv: e.matches(':focus-visible'),
           fw: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--focus-w')), vw: document.documentElement.clientWidth, vh: innerHeight, sx: scrollX, sy: scrollY }; });
       if (!info) continue; if (info.key === first) break; if (!first) first = info.key; if (out.some(o => o.key === info.key)) break;
-      const r = await ringAt(p, info); out.push(Object.assign({ key: info.key, screen, id: info.id, label: info.label, fv: info.fv }, r)); }
+      const ov = await p.evaluate(ringOverlap), r = await ringAt(p, info); out.push(Object.assign({ key: info.key, screen, id: info.id, label: info.label, fv: info.fv, ov }, r)); }
     out.forEach(o => rows.push(o)); return out; }
   for (const w of (process.env.MILL_SKIP_AUDIT ? [] : [390, 1280])) {
     const s = await session(H, IP), { p } = s; await p.setBypassCSP(true); await p.setViewport({ width: w, height: w > 1000 ? 900 : 844 }); await p.evaluateOnNewDocument(clipStub);
@@ -603,10 +617,36 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
     const bad = rows.filter(r => !r.skip && (!r.visible || !r.fv || r.min < 3));
     ck(`ring audit ${w}: ${rows.length} keyboard focus stops on ${[...new Set(rows.map(r => r.screen))].length} screens all show a ring 3:1+ against every colour next to it (lowest ${Math.min(...rows.filter(r => !r.skip).map(r => r.min))})`, rows.length >= 30 && !bad.length,
       { bad: bad.map(r => ({ screen: r.screen, id: r.id, label: r.label, visible: r.visible, fv: r.fv, pairs: r.pairs })), table: rows.map(r => r.screen + ' | ' + r.id + ' “' + r.label + '” | ' + (r.skip || (r.rings.join(' + ') + ' | min ' + r.min))) });
+    const ovs = rows.filter(r => r.ov && r.ov.hits.length);
+    ck(`ring audit ${w}: L12 no ring box (offset + width out from the border box) intersects other text or another control (${rows.length} stops; ${ovs.length} overlap)`, rows.length >= 30 && !ovs.length, ovs.map(r => r.screen + ' | ' + r.id + ' ext ' + r.ov.ext + ': ' + r.ov.hits.join('; ')));
     for (const [scr, id] of [['chosen-right (Next)', 'c-next'], ['board', 'b-back'], ['recipient board', 'b-back']]) { const r = rows.find(x => x.screen === scr && x.id === id);
       ck(`ring audit ${w}: ${id} on ${scr}: visible ring, every band 3:1+ (${r ? r.pairs.map(q => q.ring + '→' + q.next + ' ' + q.ratio).join('; ') : 'not reached'})`, r && r.visible && r.min >= 3, r); }
     ck(`ring audit ${w}: no page errors`, !errsOf(s, SCHEME).filter(e => !/Content Security Policy/.test(e)).length, errsOf(s, SCHEME)); await s.b.close();
   }
+  // QA local-2a8c67b L12, geometry at all five QA widths: every Tab stop on the editor (tap, switch and hold settings, link and
+  // answers), board, chosen L/R (+ copy fallback) and recipient screens; the ring box must not intersect other text or controls
+  for (const w of (process.env.MILL_SKIP_OVERLAP ? [] : [320, 390, 1000, 1280, 1440])) {
+    const s = await session(H, IP), { p } = s; await p.setBypassCSP(true); await p.setViewport({ width: w, height: w >= 1000 ? 900 : 760 }); await p.evaluateOnNewDocument(clipStub);
+    await p.evaluateOnNewDocument(() => document.addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = '*{caret-color:transparent!important;transition:none!important;animation:none!important}'; document.head.appendChild(st); }));
+    const stops = [], walk = async screen => { await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); window.scrollTo(0, 0); }); const seen = new Set();
+      for (let i = 0; i < 80; i++) { await p.keyboard.press('Tab'); await sleep(40); const o = await p.evaluate(f => { const e = document.activeElement; if (!e || e === document.body) return null; if (!e.dataset.ov) e.dataset.ov = Math.random().toString(36).slice(2, 8); return Object.assign({ k: e.dataset.ov, id: e.id || e.tagName }, (0, eval)('(' + f + ')')()); }, ringOverlap.toString());
+        if (!o) continue; if (seen.has(o.k)) break; seen.add(o.k); stops.push(Object.assign({ screen }, o)); } };
+    try {
+      await p.goto(BASE, { waitUntil: 'load' }); await sleep(250); await setVal(p, '#from', 'Maya'); await fillQ(p, 0, 'Your question here?', "Grandmother's", 'Watch a movie at home', '\u{1F475}', ''); await fillQ(p, 1, 'Park or pool?', 'Park', 'Pool');
+      await press(p, '#mk'); await sleep(150); await walk('editor tap + link');
+      await press(p, '#m-switch'); await sleep(150); await walk('editor switch'); await press(p, '#m-hold'); await sleep(150); await walk('editor hold'); await press(p, '#m-tap'); await sleep(100);
+      await p.evaluate(() => window.scrollTo(0, 0)); await press(p, '#go'); await sleep(300); await walk('board');
+      await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(700); await walk('chosen left'); await press(p, '#c-again'); await sleep(300);
+      await p.focus('#h-r'); await p.keyboard.press('Enter'); await sleep(700); await walk('chosen right'); await press(p, '#c-next'); await sleep(300);
+      await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(700); await p.evaluate(() => { window.__clipFail = true; }); await press(p, '#c-send'); await sleep(300); await walk('chosen left last + copy fallback');
+      await press(p, '#c-back'); await sleep(300); await walk('editor + answers');
+      const frag = await p.evaluate(() => MILL.pack('l', 1, { f: 'Maya', m: 0, k: 0, s: 0, e: 20, d: 15, q: [['Who reads tonight?', "Grandmother's", 'Tacos', '', '']] }));
+      await p.goto('about:blank'); await p.goto(BASE + '#' + frag, { waitUntil: 'load' }); await sleep(250); await walk('recipient');
+      await p.goto('about:blank'); await p.goto(BASE + '#garbage', { waitUntil: 'load' }); await sleep(250); await walk('bad-link banner');
+    } catch (e) { ck(`L12 overlap ${w}: the walk ran to the end`, false, String(e && e.stack || e).slice(0, 400)); }
+    const bad = stops.filter(o => o.hits.length);
+    ck(`L12 overlap ${w}: ${stops.length} Tab stops on ${new Set(stops.map(o => o.screen)).size} screens; no focus ring box intersects other text or another control (rings reach ${[...new Set(stops.map(o => o.ext))].join('/')}px)`, stops.length >= 60 && !bad.length, bad.map(o => o.screen + ' | ' + o.id + ' ext ' + o.ext + ': ' + o.hits.join('; ')));
+    ck(`L12 overlap ${w}: no page errors`, !errsOf(s, SCHEME).filter(e => !/Content Security Policy/.test(e)).length, errsOf(s, SCHEME)); await s.b.close(); }
   // PM 04:57 query-string ruling: every history write is origin + path (+ #fragment), never a ?query. A valid received link
   // with ?q=<marker>: after opening, answering, reset and making a link, location.search is '' and the marker is not in
   // location.href; links generated carry no '?'; the marker is nowhere in text, attributes (accessible names), values,
