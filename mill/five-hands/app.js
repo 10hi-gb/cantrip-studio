@@ -72,7 +72,13 @@
   // cell, change summary, bench explanation, card preview), so no emoji/flag run breaks inside on any surface.
   var EMO = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
   function emoWords(node) { var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), list = [], n; while ((n = w.nextNode())) if (EMO.test(n.data) && !(n.parentElement && n.parentElement.closest('.fh-w'))) list.push(n);
-    list.forEach(function (tn) { var f = document.createDocumentFragment(); tn.data.split(/(\s+)/).forEach(function (x) { if (!x) return; if (EMO.test(x)) f.append(el('span', 'fh-w', x)); else f.append(document.createTextNode(x)); }); tn.replaceWith(f); });
+    // QA H19 (PM 09:21): the spaces stay real text, outside the emoji spans, and Chrome's AX tree keeps them. Plain words and the spaces around an emoji word stay
+    // in one text node with their neighbours (a space-only node next to an inline-block is dropped from the AX tree); a space that sits alone between two emoji
+    // words goes in a span.fh-sp (white-space:pre-wrap: not collapsible, so it is kept, and still a line-break opportunity).
+    list.forEach(function (tn) { var f = document.createDocumentFragment(), parts = tn.data.split(/(\s+)/), txt = '';
+      parts.forEach(function (x, i) { if (!x) return; if (EMO.test(x)) { if (txt) f.append(document.createTextNode(txt)); txt = ''; f.append(el('span', 'fh-w', x)); return; }
+        if (/^\s+$/.test(x) && EMO.test(parts[i - 1] || '') && EMO.test(parts[i + 1] || '')) { f.append(el('span', 'fh-sp', x)); return; } txt += x; });
+      if (txt) f.append(document.createTextNode(txt)); tn.replaceWith(f); });
     return node; }
   function typed(s) { return emoWords(V.typed(s)); }
   function stick(it, sc) { var s = el('div', 'stick'), lab = el('span', 'lab'); setv(s, '--m', it.min); setv(s, '--sc', sc); var t = el('span', 't'); t.append(typed(it.name)); lab.append(t, el('span', 'm', String(it.min))); s.append(lab);

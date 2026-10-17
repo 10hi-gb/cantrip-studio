@@ -155,4 +155,6 @@ input[aria-invalid=true],textarea[aria-invalid=true]{border-color:var(--red);box
 .fh input::selection,.fh textarea::selection{background:var(--ink);color:var(--chalk)}
 /* QA H17: an emoji/flag word is one wrapping unit (app.js emoWords) */
 .fh-w{display:inline-block;max-width:100%;text-indent:0}
+/* QA H19: a space alone between two emoji words (app.js emoWords) is not collapsible, so Chrome's AX tree keeps it; it is still a break opportunity */
+.fh-sp{white-space:pre-wrap}
 

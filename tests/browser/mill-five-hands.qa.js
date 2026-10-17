@@ -614,6 +614,15 @@ async function checkAll(p, who) { await p.evaluate(who => { const m = document.g
     { const FL = '🇫🇷🇩🇪🇮🇹', EM = '🌱🌻🪴🧤', crypto = require('crypto');
       const PST = mode => ({ title: 'Garden day ' + FL + FL + FL + ' ' + EM + EM + ' street', helpers: [['Zoë ' + FL + FL + FL, 60], ['Ana' + EM + EM, 120], ['Bo ' + FL, 60]],
         tasks: [['Plant the beds ' + EM + EM, 50], ['Weed by the shed ' + FL + FL + FL, 30], ['Rake ' + FL + ' paths and front border', 20], ['Water' + EM + FL, 15], ['Sweep the yard ' + FL, 10]], mode, assign: mode === 'check' ? [0, 1, 2, 0, 1] : undefined });
+      const axSentences = async (p, cdp, ax) => {
+        const axBy = new Map(ax.nodes.map(z => [z.nodeId, z])), axOfBackend = new Map(ax.nodes.filter(z => z.backendDOMNodeId).map(z => [z.backendDOMNodeId, z])), axMis = [], axSeen = new Set(); let axN = 0;
+        const H19SEL = ['#over', '#change', '#bench-explain', '#rolls .load', '#rolls article button', '#sheet-t td', '#preview-h'];
+        for (const sel of H19SEL) { const n = await p.$$eval(sel, es => es.length);
+          for (let i = 0; i < n; i++) { const { result: o } = await cdp.send('Runtime.evaluate', { expression: `(() => { const e = document.querySelectorAll(${JSON.stringify(sel)})[${i}]; return e.checkVisibility() && e.querySelector('.fh-w') ? e : null; })()` }); if (!o.objectId) continue;
+            const { node } = await cdp.send('DOM.describeNode', { objectId: o.objectId }), want = (await p.$$eval(sel, (es, i) => es[i].textContent, i)).replace(/\s+/g, ' ').trim(), a0 = axOfBackend.get(node.backendNodeId), parts = [];
+            const dfs = z => { if (!z) return; if (z.role && z.role.value === 'StaticText') { if (!z.ignored) parts.push(z.name ? z.name.value : ''); return; } (z.childIds || []).forEach(id => dfs(axBy.get(id))); }; dfs(a0);
+            const got = parts.join('').replace(/\s+/g, ' ').trim(); axN++; axSeen.add(sel); if (got !== want) axMis.push({ sel, i, want: want.slice(0, 90), got: got.slice(0, 90) }); } }
+        return { axN, axMis, axSeen }; };
       const SNAP = { '320 suggest': '412bfc37abc93d0b', '390 suggest': '412bfc37abc93d0b', '641 suggest': '24acdc5e3ab83353', '1280 suggest': '24acdc5e3ab83353', '320 check': '9ac21fd80293580b', '390 check': '9ac21fd80293580b', '641 check': '51776a7bcd95c3f4', '1280 check': '51776a7bcd95c3f4' }; // from 82c4667, this state
       for (const w of [320, 390, 641, 1280]) for (const mode of ['suggest', 'check']) { const s = await session(H, IP), { p } = s; await p.setViewport({ width: w, height: 900, deviceScaleFactor: 2 }); await p.evaluateOnNewDocument(clipStub); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
         await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await fillQ(p, PST(mode)); await clickq(p, '#b-split'); await sleep(400);
@@ -631,12 +640,25 @@ async function checkAll(p, who) { await p.evaluate(who => { const m = document.g
               seen.add(where); if (tops.size > 1 && ww <= cw + 0.5) viol.push({ where, tok: m[0], w: +ww.toFixed(1), box: +cw.toFixed(1) }); } }
           return { toks, viol, split, seen: [...seen] }; });
         const txt = await p.evaluate(() => ({ s2: document.getElementById('s2').textContent, sheet: document.getElementById('sheet').textContent, aria: [...document.querySelectorAll('[aria-label]')].map(e => e.getAttribute('aria-label')), clip: window.__clip.slice() }));
-        const ax = await (await p.target().createCDPSession()).send('Accessibility.getFullAXTree'), axn = ax.nodes.filter(z => !z.ignored && z.name && z.name.value && z.role && !/StaticText|InlineTextBox/.test(z.role.value)).map(z => z.role.value + ':' + z.name.value);
+        const cdp = await p.target().createCDPSession(), ax = await cdp.send('Accessibility.getFullAXTree'), axn = ax.nodes.filter(z => !z.ignored && z.name && z.name.value && z.role && !/StaticText|InlineTextBox/.test(z.role.value)).map(z => z.role.value + ':' + z.name.value);
+        // QA local-b67f087 H19 (PM 09:21): the text a screen reader gets is the visible text. Per sentence that holds a wrapped emoji word (over summary, change
+        // summary, bench explanation, roll load line, Copy-card buttons, sheet cells, card preview heading): the AX StaticText under it, in tree order, joined, must equal
+        // its textContent (whitespace runs normalised to one space, ends trimmed). Dropped spaces around an emoji word show up as a mismatch.
+        const { axN, axMis, axSeen } = await axSentences(p, cdp, ax);
+        const axNeed = mode === 'check' ? ['#over', '#rolls .load', '#rolls article button', '#sheet-t td', '#preview-h'] : ['#rolls article button', '#sheet-t td', '#preview-h'];
+        if (process.env.FH_AX) console.error('AX', w, mode, 'sentences', axN, 'mismatches', axMis.length, JSON.stringify([...axSeen]));
+        ck(w + ' ' + mode + ` QA H19 (PM 09:21): every sentence holding a wrapped emoji word reads the same in Chrome's AX tree as on screen, spaces included (${axN} sentences: ${[...axSeen].join(', ')}; ${axMis.length} mismatches)`, axN > 0 && !axMis.length && axNeed.every(x => axSeen.has(x)), { axMis: axMis.slice(0, 6), seen: [...axSeen] });
         const h = crypto.createHash('sha256').update(JSON.stringify({ ...txt, axn })).digest('hex').slice(0, 16), key = w + ' ' + mode;
         if (process.env.FH_SNAP) console.error('SNAP', key, h);
         const need = mode === 'check' ? ['p.fh-over', 'span.over', 'button', 'sheet td3', 'preview-h'] : ['button', 'preview-h'];
         ck(w + ' ' + mode + ` QA H17 remainder (PM 08:31): no emoji/flag token breaks inside when it fits its box, on any surface (${v.toks} tokens incl. ${need.join(', ')}); no flag or emoji split across lines; text, aria, copied cards and named-role names identical to 82c4667 (${h})`,
           !v.viol.length && !v.split.length && need.every(x => v.seen.includes(x)) && txt.clip.length === btns.length && btns.length > 0 && (!SNAP[key] || SNAP[key] === h), { viol: v.viol, split: v.split, seen: v.seen, h, want: SNAP[key], clips: txt.clip.length, btns: btns.length });
+        if (mode === 'suggest') { // H19: same check on the change summary (Zoë 60 -> 45, split again) and the bench explanation (a 200-min task no spare fits)
+          const hid = await p.$$eval('#helpers > .row', r => r[0].dataset.id); await setv(p, '#m-' + hid, 45); await clickq(p, '#add-task'); const tids = await p.$$eval('#tasks > .row', r => r.map(x => x.dataset.id)), tl = tids[tids.length - 1];
+          await setv(p, '#n-' + tl, 'Haul the logs ' + FL); await setv(p, '#m-' + tl, 200); await clickq(p, '#b-split'); await sleep(400);
+          const ax2 = await cdp.send('Accessibility.getFullAXTree'), r2 = await axSentences(p, cdp, ax2);
+          if (process.env.FH_AX) console.error('AX', w, 'suggest-again', 'sentences', r2.axN, 'mismatches', r2.axMis.length, JSON.stringify([...r2.axSeen]));
+          ck(w + ` suggest again QA H19 (PM 09:21): change summary and bench explanation read the same in Chrome's AX tree as on screen, spaces included (${r2.axN} sentences: ${[...r2.axSeen].join(', ')}; ${r2.axMis.length} mismatches)`, r2.axN > 0 && !r2.axMis.length && ['#change', '#bench-explain'].every(x => r2.axSeen.has(x)), { axMis: r2.axMis.slice(0, 6), seen: [...r2.axSeen] }); }
         ck(w + ' ' + mode + ' QA H17 remainder block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); } }
     // ---------- QA local-82c4667 H18 (PM 08:31, Joshua frame rule 1a): every in-bar label sits inside its own bar, fully drawn and readable, on every frame
     // of the slide-in from t=0 (QA's frame sampling: pause every animation and seek), then the end state, plus reduced motion; 320/390/1280. QA's worst glyph
