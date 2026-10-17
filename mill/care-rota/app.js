@@ -131,19 +131,24 @@
     $('b-open').textContent = C.copyStillOpen; $('b-edit').textContent = C.editAgain;
     handoffs(r, c); sheetView(CR.sheet(r), { forName: M.strip(c.forName), org: M.strip(c.org), first: c.first, last: c.last, stamp: r.stamp, std: isStd }); reading(r);
     $('link-box').hidden = true; $('link').value = ''; $('link-long').hidden = true; $('link-long').textContent = '';
-    ['s2', 's3', 's4', 's5'].forEach(function (s) { show(s, true); }); $('share').hidden = false; fitNames();
+    ['s2', 's3', 's4', 's5'].forEach(function (s) { show(s, true); }); $('share').hidden = false; refit();
     $('s2').focus({ preventScroll: true }); $('s2').scrollIntoView({ block: 'start' }); }
   // QA local-cde64e3 C14: above the phone layout, a quoted name of up to 10 graphemes stays on one line in its square: that square's names step
   // down in size (never under 10px) until the name fits. Longer names keep the base size and wrap under the PM rule (spaces, hyphens, mid-word last).
   var SEG = window.Intl && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
   function graphemes(t) { return SEG ? Array.from(SEG.segment(t)).length : Array.from(t).length; }
+  // QA local-83edf87 C14: measure against the exact text width (not the rounded clientWidth), including the closing quote, and confirm the name
+  // really sits on one line; refit after layout settles (two frames), when web fonts finish loading, and on resize.
+  function lineCount(s) { var rg = document.createRange(), tops = []; rg.selectNodeContents(s);
+    Array.prototype.forEach.call(rg.getClientRects(), function (r) { if (r.width > 0.5 && !tops.some(function (t) { return Math.abs(t - r.top) <= 3; })) tops.push(r.top); }); return tops.length; }
   function fitNames() { var wide = window.matchMedia('(min-width: 561px)').matches;
-    document.querySelectorAll('#quilts .patch .who').forEach(function (w) { w.style.fontSize = ''; var nm = w.querySelectorAll('.mill-typed'); if (!wide || !nm.length || !w.clientWidth) return;
-      var avail = w.clientWidth, f = parseFloat(getComputedStyle(w).fontSize), wid = function (s) { s.style.whiteSpace = 'nowrap'; var x = s.getBoundingClientRect().width; s.style.whiteSpace = ''; return x; };
+    document.querySelectorAll('#quilts .patch .who').forEach(function (w) { w.style.fontSize = ''; var nm = w.querySelectorAll('.mill-typed'), avail = w.getBoundingClientRect().width; if (!wide || !nm.length || !avail) return;
+      var f = parseFloat(getComputedStyle(w).fontSize), wid = function (s) { s.style.whiteSpace = 'nowrap'; var x = s.getBoundingClientRect().width; s.style.whiteSpace = ''; return x; };
       nm.forEach(function (s) { if (graphemes(s.textContent) - 2 > 10) return; // the two quote marks are not part of the name
-        for (var x = wid(s); x > avail + 0.5 && f > 10; x = wid(s)) { f = Math.max(10, Math.min(f - 0.25, Math.floor(f * avail / x * 4) / 4)); w.style.fontSize = f + 'px'; } }); }); }
-  var fitT = 0; window.addEventListener('resize', function () { cancelAnimationFrame(fitT); fitT = requestAnimationFrame(fitNames); });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNames);
+        for (var x = wid(s); (x > avail - 0.25 || lineCount(s) > 1) && f > 10; x = wid(s)) { f = Math.max(10, Math.min(f - 0.25, Math.floor(f * (avail - 0.25) / x * 4) / 4)); w.style.fontSize = f + 'px'; } }); }); }
+  function refit() { fitNames(); requestAnimationFrame(function () { fitNames(); requestAnimationFrame(fitNames); }); }
+  var fitT = 0; window.addEventListener('resize', function () { cancelAnimationFrame(fitT); fitT = requestAnimationFrame(refit); });
+  if (document.fonts) { if (document.fonts.ready) document.fonts.ready.then(refit); if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', refit); }
   // PM 04:57 / 05:15 query strip: load and hashchange keep path + #fragment; edit, reset and Make my own rota write the path only. A ?query never survives.
   function bare() { if (location.hash || location.search) history.replaceState(null, '', location.pathname); }
   // ---- copy / fallback ----

@@ -62,7 +62,7 @@ textarea.plan{font:400 17px/1.5 ui-monospace,"Courier New",monospace;min-height:
 .cr-sw--covered{background:var(--meal)}
 .cr-sw--gap{background:var(--muslin);outline:2px dashed #B8452F}
 .cr-sw--double{background:#8E3E2B}
-.cr-sw--notNeeded{outline:2px solid rgba(0,0,0,.35)}
+.cr-sw--notNeeded{outline:2px solid rgba(0,0,0,.35)} /* darkened below (QA local-83edf87 C16) */
 .selvedge{gap:6px 0}
 .cr-sep{white-space:pre}
 .qgrid .patch.dbl{padding-bottom:30px}
@@ -150,3 +150,15 @@ body{overflow-wrap:break-word}
  #tags .cr-tag-dbl{grid-column:1/-1}
  #per-l{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
 }
+/* QA local-83edf87 C14: at ≥1280 the check section uses more of the window (up to 1400px, never past it, room left for a classic scrollbar) and
+   named squares keep 7px side padding (the stitching ends at 6px), so a quoted 10-grapheme name, emoji and flags included, fits one line at ≥10px. */
+@media (min-width:1280px){
+ #s2{width:min(calc(100vw - 53px),1400px);margin-left:calc((100% - min(calc(100vw - 53px),1400px))/2)}
+ .qgrid .patch.taken,.qgrid .patch.dbl{padding-left:7px;padding-right:7px}
+}
+/* QA local-83edf87 C15: a day chip's focus ring goes around the whole chip, outside it with a 3px gap of panel colour, so it shows on a checked
+   (#2F3B4C) chip as well as an unchecked one; the checkbox itself draws no ring of its own inside the chip. */
+.cr-chip input:focus-visible{outline:none}
+.cr-chip:has(input:focus-visible){outline:4px solid var(--binding);outline-offset:3px}
+/* QA local-83edf87 C16: the empty "Not needed" swatch keeps its empty look with a ≥3:1 outline against the page */
+.cr-sw--notNeeded{outline-color:var(--muted)}
