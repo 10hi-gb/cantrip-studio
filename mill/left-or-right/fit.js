@@ -11,8 +11,9 @@
 // which the greedy layout fits with no inner break; only if none, the largest size with tier 1, then tier 2, then tier 3.
 // Single word (Creative r5, after f66fb8e): an answer with no space takes the FEWEST pieces before the larger size: 1 piece
 // (unbroken) at the largest size that fits, else 2 pieces at the largest size, else 3, and so on. Within one piece count the
-// size comes first (PM ruling on QA local-2a8c67b L13): take the largest size at which any tier makes that count; the drawn
-// size is never more than 10% under it (NEAR). Within that 10% the lowest tier wins (own hyphens, then dictionary, then
+// size comes first (PM ruling on QA local-2a8c67b L13; Creative 08:25 for L14): take the TRUE largest size at which any tier
+// makes that count (grid pass, then a binary search to 0.25px between the last passing and first failing grid step); the
+// drawn size is never more than 10% under it (NEAR). Within that 10% the lowest tier wins (own hyphens, then dictionary, then
 // letter fallback, then graphemes), at its own largest size, so Grand- / mother's keeps its dictionary break when a letter
 // split would only gain a step or two, while abc30 takes 2 letter pieces at 36px over a dictionary break at 26px. Own
 // hyphens always come first anyway, since a segment that fits is never broken inside; a word gets another break only when fewer pieces can't fit even at the floor. The floor is the last
@@ -20,7 +21,7 @@
 // is applied afterwards, so the other tile shrinks to match). If no piece count fits at the floor, plan() falls back to
 // the multi-word search below and then to the old overflow line, unchanged.
 (function (root, factory) { var m = factory(root.LR_HYPH || (typeof require === 'function' ? require('./hyph-en.js') : null)); if (typeof module === 'object' && module.exports) module.exports = m; else root.LRFIT = m; })(this, function (HY) {
-  var PAT = null, EXC = null, MAXP = 0, MINF = 4, NEAR = 0.9;
+  var PAT = null, EXC = null, MAXP = 0, MINF = 4, NEAR = 0.9, STEP = 0.25;
   function load() { if (PAT) return; PAT = Object.create(null); EXC = Object.create(null);
     HY.patterns.split(' ').forEach(function (p) { var ch = p.replace(/\d/g, ''); PAT[ch] = p.split(/[.a-z]/).map(function (d) { return +d || 0; }); if (ch.length > MAXP) MAXP = ch.length; });
     HY.exceptions.split(' ').forEach(function (x) { var pos = [], k = 0; for (var i = 0; i < x.length; i++) { if (x[i] === '-') pos.push(k); else k++; } EXC[x.replace(/-/g, '')] = pos; }); }
@@ -100,9 +101,16 @@
     var memo = {}; function at(L, i) { var key = L + ':' + i; if (!(key in memo)) { var r = greedy(P, fitsAt(o.sizes[i]), L); memo[key] = r && ok(o.sizes[i], r.lines) ? r : null; } return memo[key]; }
     if (P.G.indexOf(' ') < 0) { // single word: fewest pieces first, then the largest size, then the lowest break tier
       var most = 0; for (L = 0; L <= 3; L++) for (i = 0; i < o.sizes.length; i++) { var q = at(L, i); if (q && q.lines.length > most) most = q.lines.length; }
-      for (var k = 1; k <= most; k++) { var top = -1, j; for (i = 0; i < o.sizes.length && top < 0; i++) for (L = 0; L <= 3; L++) { var t = at(L, i); if (t && t.lines.length <= k) { top = o.sizes[i]; break; } }
-        if (top < 0) continue; // the largest size for k pieces (any tier); the lowest tier whose own largest size is within 10% of it
-        for (L = 0; L <= 3; L++) for (j = 0; j < o.sizes.length && o.sizes[j] >= NEAR * top - 0.001; j++) { var u = at(L, j); if (u && u.lines.length <= k) return done(o.sizes[j], u, L); } } }
+      // QA local-2304261 L14 (Creative 08:25): each tier's largest size for k pieces is found on the grid, then binary-searched
+      // between its last passing and first failing step to STEP px (capped at the normal size); fewest pieces, then the
+      // largest of those true sizes, then the lowest tier within 10% of it
+      var best = function (L, k) { for (var g = 0; g < o.sizes.length; g++) { var r0 = at(L, g); if (r0 && r0.lines.length <= k) break; } if (g === o.sizes.length) return null;
+        var lo = o.sizes[g], res = at(L, g), hi = g ? o.sizes[g - 1] : lo;
+        while (hi - lo > STEP) { var mid = (lo + hi) / 2, rm = greedy(P, fitsAt(mid), L); if (rm && rm.lines.length <= k && ok(mid, rm.lines)) { lo = mid; res = rm; } else hi = mid; }
+        return { size: Math.floor(lo * 100) / 100, res: res }; };
+      for (var k = 1; k <= most; k++) { var cand = [], top = -1; for (L = 0; L <= 3; L++) { cand[L] = best(L, k); if (cand[L] && cand[L].size > top) top = cand[L].size; }
+        if (top < 0) continue;
+        for (L = 0; L <= 3; L++) if (cand[L] && cand[L].size >= NEAR * top - 0.001) return done(cand[L].size, cand[L].res, L); } }
     for (L = 0; L <= 3; L++) for (i = 0; i < o.sizes.length; i++) { var r = at(L, i); if (r) return done(o.sizes[i], r, L); }
     var last = o.sizes[o.sizes.length - 1]; return { size: last, lines: [P.G.join('')], kinds: [], level: 4, broken: false, overflow: true };
   }

@@ -120,9 +120,10 @@ const P = (w, a, base = 44.8) => F.plan(w, Object.assign(fake(a), { sizes: F.siz
 const letters = x => (x.match(/\p{L}/gu) || []).length;
 t('fit: unbroken whenever it fits at any size down to 24px (no break above the floor)', () => {
   const r = P("Grandmother's", 220, 60); assert.equal(r.broken, false); assert.ok(r.size >= 24); assert.deepEqual(r.lines, ["Grandmother's"]); });
-t('fit: Grandmother\'s too wide even at 24px -> dictionary break Grand- / mother\'s when it is within 10% of the largest 2-piece size (L13 ruling)', () => {
-  const r = P("Grandmother's", 130); assert.equal(r.broken, true); assert.deepEqual(r.lines, ['Grand-', "mother's"]); assert.deepEqual(r.kinds, ['d']); assert.equal(r.level, 1); assert.ok(r.size > 24, r.size);
-  const w = n => n * 0.6 * r.size; assert.ok(w(8) + 0.32 * r.size <= 130 - 1); }); // mother's + closing mark fits the line
+t('fit: Grandmother too wide even at 24px -> dictionary break Grand- / mother, kept because it is within 10% of the largest 2-piece size (L13/L14 rulings)', () => {
+  const r = P('Grandmother', 130); assert.equal(r.broken, true); assert.deepEqual(r.lines, ['Grand-', 'mother']); assert.deepEqual(r.kinds, ['d']); assert.equal(r.level, 1); assert.ok(r.size > 24, r.size);
+  const w = n => n * 0.6 * r.size; assert.ok(w(6) + 0.32 * r.size <= 130 - 1); // both lines (6 + a mark each) fit
+  assert.ok(r.size > 30, r.size); }); // binary-searched past the 2px grid (grid step below would be 28.8)
 t('fit: no dictionary break -> fallback letter points, >= 4 letters in every piece, visible hyphens; greedy at the largest size', () => {
   assert.deepEqual(F.hyphenate('nooooooooooooooooooo'), []);
   let r = P('Nooooooooooooooooooo', 171, 54.6); assert.ok(r.lines.length >= 2, JSON.stringify(r)); assert.ok(r.kinds.every(k => k === 'f'));
@@ -204,7 +205,7 @@ t('fit: Japanese breaks between characters with no Latin hyphen; no line starts 
     assert.ok(r.lines.length > 1, w + ' ' + JSON.stringify(r.lines)); assert.equal(r.lines.join(''), w, w); assert.ok(!r.lines.some(l => /[-\u2010\u00AD]/.test(l)), w + ' ' + JSON.stringify(r.lines));
     assert.ok(r.kinds.every(k => k === 'c'), w + ' ' + JSON.stringify(r.kinds)); assert.ok(!r.lines.slice(1).some(l => /^[ぁぃぅぇぉっゃゅょァィゥェォッャュョーヽヾゝゞ々、。，．」』）】〉》！？]/.test(l)), w + ' ' + JSON.stringify(r.lines)); assert.ok(!r.lines.slice(0, -1).some(l => /[「『（【〈《]$/.test(l)), w); } });
 t('fit L13 (PM ruling on QA local-2a8c67b): within a piece count the size is never more than 10% under the largest that fits; a letter split wins when the dictionary break would be smaller than that', () => {
-  const r = P("Grandmother's", 136); assert.deepEqual(r.lines, ['Grandm-', "other's"]); assert.equal(r.size, 28.8);
+  const r = P("Grandmother's", 136); assert.deepEqual(r.lines, ['Grandm-', "other's"]); assert.ok(r.size >= 28.8 && r.size < 30.8, r.size); // true largest, not the grid's 28.8
   const a = P('Abcdefghijklmnopqrstuvwxyzabcd', 300, 60), big = F.sizes(60, 24).find(x => { const g = F.greedy(F.parse('Abcdefghijklmnopqrstuvwxyzabcd'), fitsFn(fake(300), x), 2); return g && g.lines.length <= a.lines.length; });
   assert.ok(a.size >= 0.9 * big, a.size + ' vs ' + big);
   for (const wd of ['Nooooooooooooooooooooooooooooo', 'Abcdefghijklmnopqrstuvwxyzabcd', 'Superextraordinarily', 'Bartholomew-Smythe', 'Jean-Baptiste-Alexandre', 'Pneumonoultramicroscopic', "Grandmother's"]) for (const av of [100, 120, 130, 159, 171, 220, 300]) {
@@ -216,4 +217,9 @@ t('fit L11 (QA local-2a8c67b): a Latin letter run never breaks without a hyphen;
     r.lines.slice(0, -1).forEach((l, i) => { assert.ok(l.endsWith('-'), wd + '@' + av + ' ' + JSON.stringify(r.lines)); if (r.kinds[i] !== 'h') { assert.ok(letters(l.split('-').slice(-2)[0]) >= 4 && letters(r.lines[i + 1].split('-')[0]) >= 4, wd + '@' + av + ' ' + JSON.stringify(r.lines)); } });
     assert.ok(!r.kinds.includes('g'), wd + ' ' + JSON.stringify(r)); }
   assert.ok(F.parse('Bartholomew').segs[0].t[2].length === 0); });
+t('fit L14 (Creative 08:25): the band is measured from the TRUE largest size for the piece count (0.05px brute-force scan), not the 2px grid; every plan is within 10% of it and within 0.25px of its own tier\'s true largest', () => {
+  for (const wd of ['Pneumonoultramicroscopicsi', 'Pneumonoultramicroscopic', 'Superextraordinarily', 'Nooooooooooooooooooooooooooooo', 'Abcdefghijklmnopqrstuvwxyzabcd', 'Bartholomew-Smythe', 'Jean-Baptiste-Alexandre', "Grandmother's"]) for (const av of [100, 120, 130, 159, 171, 220, 300]) {
+    const r = P(wd, av, 44.6), PP = F.parse(wd); if (r.overflow) continue; let top = 0, own = 0;
+    for (let x = 44.6; x >= 24 - 1e-9; x -= 0.05) { const ls = [0, 1, 2, 3].map(L => F.greedy(PP, fitsFn(fake(av), x), L)); if (!top && ls.some(g => g && g.lines.length <= r.lines.length)) top = x; if (!own && ls[r.level] && ls[r.level].lines.length <= r.lines.length) own = x; if (top && own) break; }
+    assert.ok(r.size >= 0.9 * top - 0.01, wd + '@' + av + ' ' + r.size + ' vs true ' + top.toFixed(2)); assert.ok(r.size >= own - 0.3, wd + '@' + av + ' tier ' + r.level + ' ' + r.size + ' vs its true ' + own.toFixed(2)); } });
 console.log('lr unit: ' + n + ' passed');
