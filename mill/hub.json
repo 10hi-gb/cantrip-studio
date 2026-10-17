@@ -235,8 +235,9 @@
     "Up to 6 questions, each with a left and a right answer (and an optional emoji). Answers chosen stay on the page for this visit only; nothing reports back. Send the answer back makes plain text to copy or send by hand.",
     "A link carries the questions and the choosing method, never the answers; anyone with the link can read them."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview f66fb8e70ba60af04aa9e1dd0ad3ac4f8db7301c: unit 35/35; browser 487/487 at 320/390/1280 plus a classic-scrollbar sweep at 320/360/390/700/1280/1440 (synthetic keys and mouse only; greedy-wrap reference, flag runs, every quote-mark location, rendered focus-ring pixels, no-?query checks). Not QA, and not a switch or dwell check.",
-   "status": "NOT READY (L5–L7 fixed; open L8 (Low), L9 (Med), L10 (Low); L5 single-word interim; shared wrap f893087, recheck pending)",
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview 2a8c67b7f480614d4c25584a42d7574d5ed8fcb4: unit 42/42; browser 543/543 at 320/390/1280 plus a classic-scrollbar sweep at 320/360/390/700/1280/1440 (synthetic keys and mouse only; single-word fewest-pieces oracle, Japanese breaks, rendered focus-ring audit of every Tab stop at 390 and 1280, bad-link path-only writes, no-?query checks). f66fb8e superseded by 2a8c67b for the single-word rule (and L8–L10) only. Not QA, and not a switch or dwell check.",
+   "status": "NOT READY (L5–L7 fixed; open L8 (Low), L9 (Med), L10 (Low); L5 single-word interim; fix L5 single-word + L8–L10 awaiting independent retest at 2a8c67b; shared wrap f893087, recheck pending)",
+   "pendingAt": "2a8c67b7f480614d4c25584a42d7574d5ed8fcb4",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
