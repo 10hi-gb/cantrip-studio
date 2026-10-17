@@ -271,6 +271,17 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     ck('C8 session: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
   }
   {
+    // PM C9 (03:48): half-spaced joiner glued to a capitalised name -> To fix (Writer tagTwoNames, line quoted); look-alikes stay placed
+    const s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const L = ['Mon 19 dinner Ana orBen', 'Tue 20 dinner Ana andBen', 'Wed 21 dinner Anaor Ben', 'Thu 22 dinner AnaorBen', 'Fri 23 dinner Ana orben', 'Mon 19 walk Igor', 'Tue 20 walk Leonor', 'Wed 21 walk Corey', 'Thu 22 walk Andrea', 'Fri 23 walk Orla', 'Wed 21 ride Brandon', 'Sun 25 dinner Sandra'];
+    await form(p, { forName: 'Priya', org: 'Jess', first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', rule: 'every' }, { key: 'ride', rule: 'every' }, { key: 'walk', rule: 'every' }], lines: L }); await check(p);
+    const st = await state(p), fx = st.tags.filter(x => x.startsWith('To fix')), want = [L[0], L[1]].map(l => M.fill(C.tagTwoNames, { line: l }));
+    const placedAs = ['Anaor Ben', 'AnaorBen', 'Ana orben', 'Igor', 'Leonor', 'Corey', 'Andrea', 'Orla', 'Brandon', 'Sandra'].every(nm => st.patches.some(x => x.endsWith('“' + nm + '”')));
+    ck('PM C9 in the UI: "Ana orBen" / "Ana andBen" -> To fix with Writer tagTwoNames (line quoted), never placed; "Anaor Ben", "AnaorBen", "Ana orben", Igor, Leonor, Corey, Andrea, Orla, Brandon, Sandra placed as single helpers',
+      JSON.stringify(fx) === JSON.stringify(want) && fx[0] === 'To fix: “Mon 19 dinner Ana orBen” has more than one name. One person per line.' && placedAs && !st.patches.some(x => / orBen| andBen/.test(x)), { fx, patches: st.patches });
+    ck('C9 session: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
+  }
+  {
     // C1: the WHOLE URL is capped at 2,000, made side and received side, at 1999 / 2000 / 2001 chars, via a long path on a local
     // throwaway server (nested dirs + a symlink to the repo). Date.now frozen so the made fragment is stable.
     const os = require('os'), path = require('path'), { spawn } = require('child_process'), REPO = path.resolve(__dirname, '../..');

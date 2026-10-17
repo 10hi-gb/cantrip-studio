@@ -14,6 +14,7 @@
   var FIXED = { dinner: ['dinner', 'meal', 'food'], ride: ['ride', 'lift', 'drive'], walk: ['dog walk', 'walk', 'dog'] };
   // name separators (QA C3): a whole word and/or, & + (ASCII and full-width) ➕ and /, spaced or not. A comma counts when it sits
   // between two name words. Any of them -> TO FIX (tagTwoNames), never placed, never folded into one name.
+  var HALF = /^(?:or|and|Or|And|OR|AND)\p{Lu}/u; // C9 half-spaced joiner glued to a capitalised name (case-sensitive on purpose)
   var JOIN = { and: 1, or: 1, '&': 1, '+': 1, '\uFF06': 1, '\uFF0B': 1, '\u2795': 1, '/': 1 };
   // ---- dates ----
   function parseISO(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); if (!m) return null; var t = Date.UTC(+m[1], +m[2] - 1, +m[3]); var d = new Date(t); return d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3] ? t : null; }
@@ -55,7 +56,10 @@
     var rest = t.map(function (w, i) { return used[i] ? null : w; }).filter(function (w) { return w !== null; });
     var isSep = function (w) { return JOIN[w.toLowerCase()] || w === ','; }, real = rest.filter(function (w) { return !isSep(w); });
     var joined = rest.some(function (w) { return JOIN[w.toLowerCase()]; }) || rest.some(function (w, i) { return w === ',' && rest.slice(0, i).some(function (x) { return !isSep(x); }) && rest.slice(i + 1).some(function (x) { return !isSep(x); }); })
-      || (nLock > 0 && t.some(function (w, i) { return i >= nLock && !used[i] && !isSep(w); })); // a name before the colon AND another after it
+      || (nLock > 0 && t.some(function (w, i) { return i >= nLock && !used[i] && !isSep(w); })) // a name before the colon AND another after it
+      // PM C9 (03:48): <name> <space> or|and<Capitalised name> with no space ("Ana orBen", "Ana andBen") is two names. "Anaor Ben",
+      // "AnaorBen" and lowercase "Ana orben" stay one helper as typed; Orla, Andrea, Corey, Igor, Leonor never match (needs a name before it).
+      || real.some(function (w, i) { return i > 0 && HALF.test(w); });
     return { wd: wd, num: num, mon: mon, need: nd, extra: extra, name: real.join(' '), twoNames: !!joined };
   }
   function needLabel(x) { return typeof x === 'string' ? x : null; }
