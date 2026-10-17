@@ -68,7 +68,8 @@
 .ss-status.is-short{background:var(--ss-short-bg);border-left:5px solid var(--ss-short)}
 .ss-status.is-full{background:#EAF3EE;border-left:5px solid var(--ss-ok)}
 /* fee basis */
-.ss-basis{display:flex;gap:0;border:2px solid var(--ss-ink);border-radius:8px;overflow:hidden;width:max-content;max-width:100%}
+.ss-basis{display:flex;gap:0;border:2px solid var(--ss-ink);border-radius:8px;width:max-content;max-width:100%}
+.ss-basis button:first-child{border-radius:6px 0 0 6px}.ss-basis button:last-child{border-radius:0 6px 6px 0}.ss-basis button:focus-visible{position:relative;z-index:1} /* QA W-8a: no overflow clip (it hid the focus ring); the end buttons carry the rounded corners, the focused one paints its ring over its neighbour */
 .ss-basis button{font:700 13px var(--ss-sans);padding:10px 12px;min-height:44px;border:0;background:#fff;color:var(--ss-ink)}
 .ss-basis button[aria-pressed=true]{background:var(--ss-ink);color:#fff}
 .ss-basis-note{font:400 13px/1.45 var(--ss-sans);color:var(--ss-mute);margin:6px 0 0}
@@ -78,20 +79,20 @@
 .ss-why b{color:var(--ss-penny)}
 /* form */
 .ss-panel{display:grid;gap:10px}
-.ss-field{display:grid;gap:4px}
+.ss-field{display:grid;gap:7px} /* QA W-8a: the 3px ring 2px out clears the label's descenders */
 .ss-field label,.ss-lab{font:700 12px var(--ss-cond);letter-spacing:.12em;text-transform:uppercase}
 .ss-field input,.ss-field select{font:400 16px var(--ss-sans);padding:10px 12px;border:1.5px solid var(--ss-ink);border-radius:6px;background:#fff;color:var(--ss-ink);min-height:46px;width:100%}
 .ss-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ss-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .ss-hint{font:400 12px/1.4 var(--ss-sans);color:var(--ss-mute);margin:0}
 .ss-err{font:600 13px var(--ss-sans);color:var(--ss-short);margin:0}
-.ss-stepper{display:flex;align-items:center;gap:10px}
+.ss-stepper{display:flex;align-items:center;gap:10px;margin:6px 0 8px} /* QA W-8a: room for the stepper buttons' rings below the label and above the next row */
 .ss-stepper button{width:52px;height:52px;border-radius:10px;border:2px solid var(--ss-ink);background:#fff;font:700 24px var(--ss-sans);color:var(--ss-ink)}
 .ss-stepper output{font:700 30px var(--ss-cond);min-width:4ch;text-align:center}
 .ss-btn{font:700 15px var(--ss-sans);padding:12px 16px;min-height:48px;border-radius:8px;border:2px solid var(--ss-ink);background:#fff;color:var(--ss-ink);cursor:pointer}
 .ss-btn--primary{background:var(--ss-ink);color:#fff}
 .ss-btn[disabled]{opacity:.45;cursor:not-allowed}
-.ss-btn:focus-visible,.ss-field input:focus-visible,.ss-field select:focus-visible,.ss-stepper button:focus-visible,.ss-basis button:focus-visible{outline:3px solid var(--ss-penny);outline-offset:2px}
+.ss-btn:focus-visible,.ss-field input:focus-visible,.ss-field select:focus-visible,.ss-stepper button:focus-visible,.ss-basis button:focus-visible,.ss-text:focus-visible,.ss-linkbox textarea:focus-visible{outline:3px solid var(--ss-penny);outline-offset:2px}
 .ss-actions{display:flex;gap:10px;flex-wrap:wrap}
 .ss-fine{font:400 13px/1.45 var(--ss-sans);color:var(--ss-mute);max-width:54ch;margin:0}
 .ss-you{font:700 clamp(22px,3vw,32px)/1.15 var(--ss-cond);text-transform:uppercase;margin:0}
