@@ -149,7 +149,8 @@
   function load(h) {
     resetAll();
     if (h) {
-      var d = B.decode(h), bn = $('banner');
+      // PM 03:48: the WHOLE received URL (origin + path + # + fragment) is capped at 2,000 with the shared MILLVIEW.linkFor before decode, same as sending
+      var d = V.linkFor(h.replace(/^#/, '')) ? B.decode(h) : { ok: false, why: 'bad' }, bn = $('banner');
       if (!d.ok) { if (d.why !== 'empty') { bn.hidden = false; $('banner-t').textContent = d.why === 'oldVersion' ? C.oldVersion : d.why === 'tooLong' ? C.tooLongLink : C.badLink; } }
       else {
         st = d.data; senderName = M.strip(st.by); ownCopy = false; setMode('recv');
