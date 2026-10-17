@@ -337,5 +337,23 @@ async function textCR(p, b, sel) {
     const need = ['Copy the ask link', 'Ask again, changed'], fill = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--osa-ask').trim());
     ck(w + ' QA all9 W-2: white on the ask colour ' + fill + ' ≥4.5:1 against every background pixel under the text (buttons and the ask-side initial; ' + runs.length + ' runs)', need.every(n => runs.some(r => r.t === n)) && runs.some(r => !need.includes(r.t)) && runs.every(r => r.worst >= 4.5 && r.n > 0), runs);
     ck(w + ' QA all9 W-2: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA wp-sweep-798352d W-9a: the reply choices' sub-lines (13px/400, need 4.5:1) against the darkest/worst background pixel under their glyph band, pressed
+  // (amber) and not pressed, in recv-part, recv-no and recv-part-error, at 320/390/1280; and the pressed sub-line stays ≥4.5 with keyboard focus and with hover.
+  for (const w of [320, 390, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const ask = await p.evaluate(() => ASK.encodeAsk({ w: 'pickup', e: 20, u: 'min', d: 'Tue', s: '16:00', t: '18:00', h: '', f: 'Jordan', o: 'Sam' }));
+    const open = async () => { await p.goto('about:blank'); await p.goto(BASE + '#' + ask, { waitUntil: 'load' }); await sleep(200); await p.evaluate(() => document.fonts.ready); };
+    const pressedText = () => p.evaluate(() => { const b = document.querySelector('.osa-choice[aria-pressed="true"] small'); return b ? b.textContent.trim().slice(0, 40) : null; });
+    const runs = [], add = async (state, extra) => { const pt = await pressedText(); (await textCR(p, s.b, '.osa-choice small')).forEach(r => runs.push(Object.assign({ state, pressed: r.t === pt }, r, extra || {}))); };
+    await open(); await p.click('#c-p'); await sleep(200); await add('recv-part');
+    await open(); await p.click('#c-n'); await sleep(200); await add('recv-no');
+    await open(); await p.click('#c-p'); await sleep(150); await p.evaluate(() => document.querySelectorAll('.osa-term input,.osa-term textarea').forEach(e => { e.value = ''; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); e.dispatchEvent(new Event('blur')); }));
+    await p.click('#b-rlink'); await sleep(250); const errShown = await p.evaluate(() => [...document.querySelectorAll('.osa-err')].some(e => e.textContent.trim())); await add('recv-part-error', { errShown });
+    await open(); await p.click('#c-n'); await sleep(150); await p.keyboard.press('Shift'); await p.evaluate(() => document.getElementById('c-n').focus({ focusVisible: true })); await sleep(200);
+    const fv = await p.evaluate(() => document.getElementById('c-n').matches(':focus-visible')); await add('recv-no, pressed choice focused', { fv });
+    await p.hover('#c-p'); await sleep(50); await p.click('#c-p'); await p.hover('#c-p'); await sleep(250); await add('recv-part, pressed choice hovered');
+    const pressed = runs.filter(r => r.pressed), states = [...new Set(runs.map(r => r.state))];
+    ck(w + ' QA W-9a: reply-choice sub-lines ≥4.5:1 against the worst pixel under their glyph band, pressed (amber) and not pressed, in recv-part / recv-no / recv-part-error, and the pressed one focused and hovered', states.length === 5 && runs.length === 15 && pressed.length === 5 && runs.every(r => r.n > 0 && r.worst >= 4.5) && runs.some(r => r.errShown) && runs.some(r => r.fv),
+      runs.map(r => ({ state: r.state, t: r.t, pressed: r.pressed, color: r.color, worst: r.worst, bg: r.bg, fv: r.fv, err: r.errShown })));
+    ck(w + ' QA W-9a: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

@@ -32,3 +32,5 @@ select.osa-in{appearance:auto}
 /* Favor keeps up to 3 line breaks: show them as typed. */
 .osa-term .ask,.osa-term .ans,.osa-qtext,.osa-delta .a,.osa-delta .b{white-space:pre-line}
 .osa-ini{flex:none}
+/* QA wp-sweep-798352d W-9a: on the pressed (amber) choice the sub-line is ink, not mute (#6B5547 was 3.22:1 on #E9A23B); pressed state only */
+.osa-choice[aria-pressed="true"] small{color:var(--osa-ink)}
