@@ -12,7 +12,7 @@
   function label(k) { return B.OPTIONAL.indexOf(k) >= 0 ? C.optionalFields[k] : C.fields[k]; }
   function question(k) { var q = B.questions(st, C).filter(function (x) { return x.key === k; })[0]; return q ? q.text : (B.OPTIONAL.indexOf(k) >= 0 ? C.optionalQuestions[k] : C.questions[k]); }
   function toast(msg) { V.toast(msg, 3200); } // shared: route() clears it (QA N2)
-  function clearHash() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); }
+  function clearHash() { if (location.hash || location.search) history.replaceState(null, '', location.pathname); }
   function today() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function roomLine(node, err, value, cap, tpl) { var used = B.room(M.strip(value)), over = used - cap; node.textContent = M.fill(C.limitCounter, { n: used, max: cap }); err.textContent = over > 0 ? M.plural(tpl, over, { max: cap }) : ''; return over; }
   function edited() { clearHash(); $('linkbox').hidden = true; $('link').value = ''; }
@@ -147,6 +147,7 @@
     V.clearErrors(document, '.byg-err,#own-e,#own-e2,#pickup-e,#by-e');
   }
   function load(h) {
+    if (location.search) history.replaceState(null, '', location.pathname + location.hash); // PM 04:57: the address bar never keeps a ?query (path + #fragment only)
     resetAll();
     if (h) {
       // PM 03:48: the WHOLE received URL (origin + path + # + fragment) is capped at 2,000 with the shared MILLVIEW.linkFor before decode, same as sending

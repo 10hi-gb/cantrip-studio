@@ -243,5 +243,24 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     ck('query ruling: received link + ?q=<marker>, normal path: opens; marker nowhere; links generated onward carry no query', rcv.opened && !rcv.mark && !rcv.genQ, rcv);
     ck('query ruling: 2,002-char total incl. ?q=<marker> (long path; ' + l2002.lenNoQ + ' without the query, so within 2,000): opens; marker nowhere; no query onward', l2002.len === 2002 && l2002.lenNoQ <= 2000 && l2002.opened && !l2002.mark && !l2002.genQ, l2002);
     ck('query ruling: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // PM 04:57 query-strip (hardening): every address-bar rewrite writes path + #fragment only, never a ?query, so a URL copied from the address bar never
+  // carries it; the #fragment is kept or cleared exactly as before. For each ?q= QA probes (short; HTML/script with a visitor name; a 2,100-char pad),
+  // open a valid link with it, then take a copy, edit, make a link and reset: after each step location.search is '', the marker is not in location.href, and location.hash is as expected.
+  for (const [QN, QQ] of [['short', '?q=Qzst57'], ['html+script with a visitor name', '?q=' + encodeURIComponent('<script>alert("Ana")</script><b onclick=x>Ana Qzst57</b>')], ['2,100-char pad', '?q=Qzst57' + 'p'.repeat(2100)]]) {
+    const QM = 'Qzst57', s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 });
+    await p.evaluateOnNewDocument(() => { window.confirm = () => true; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); });
+    const steps = [], loc = () => p.evaluate(M => ({ search: location.search, hash: location.hash, mark: location.href.includes(M) }), QM);
+    const at = async (step, did, exp) => { const l = await loc(); steps.push(Object.assign({ step, did: did !== false, exp, hashOk: exp === null || l.hash === exp }, l)); };
+    const clickIf = sel => p.evaluate(sel => { const e = document.querySelector(sel); if (!e || e.disabled) return false; const b = e.getBoundingClientRect(); if (!b.width || !b.height) return false; e.click(); return true; }, sel);
+    const val = sel => p.evaluate(sel => { const e = document.querySelector(sel); return e ? e.value : ''; }, sel), frag = u => (u.match(/#.*$/) || [''])[0];
+    const open = async url => { await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(300); };
+    await open(BASE); const fq = await p.evaluate(() => { const b = BYG.blank(); b.k = 'Clinic'; b.by = 'Jo'; return BYG.encode(b); }), F = '#' + fq;
+    await open(BASE + QQ + '#' + fq); await at('open received link', true, F);
+    const c = await clickIf('#own-copy'); await sleep(200); await at('take a copy', c, '');
+    await p.focus('#pickup'); await p.keyboard.press('End'); await p.keyboard.type('x'); await sleep(150); await at('edit', (await p.$eval('#pickup', e => e.value)) === 'Clinicx', '');
+    await clickIf('#b-link'); await sleep(300); const lk = await val('#link'); await at('make link', /#b2\./.test(lk), '');
+    const r = await clickIf('#b-reset'); await sleep(250); await at('reset', r, '');
+    ck('PM 04:57 query-strip (' + QN + '): ' + steps.map(x => x.step).join(' -> ') + ': every step happened; location.search empty, no marker in location.href, location.hash as expected after each', steps.length >= 5 && steps.every(x => x.did && x.search === '' && !x.mark && x.hashOk), steps.map(x => Object.assign({}, x, { hash: x.hash.slice(0, 60), exp: x.exp && x.exp.slice(0, 60) })));
+    ck('PM 04:57 query-strip (' + QN + '): no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
