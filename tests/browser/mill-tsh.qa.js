@@ -1,6 +1,6 @@
 // node tests/browser/mill-tsh.qa.js <host[:port]> <ip> [scheme] — The Same Hour @320/390/1280 (ENGINEER SELF-CHECK, not QA)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result, reallyHidden } = require('./mill-common');
+const { textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result, reallyHidden, typedAudit, mouseAt } = require('./mill-common');
 const T = require('../../mill/the-same-hour/tsh.js'), M = require('../../mill/shared/core.js');
 const C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/the-same-hour/copy.js', 'utf8') + ';COPY');
 const BASE = `${SCHEME}://${H}/mill/the-same-hour/`, NY = 'America/New_York';
@@ -15,7 +15,7 @@ const view = p => p.evaluate(() => { const g = id => document.getElementById(id)
 const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: t => { window.__clip = t; return ok ? Promise.resolve() : Promise.reject(new Error('denied')); } } }); }, ok);
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
-  const propText = '“Coffee”\nMon 19 Oct 2026, 19:00–20:00\nAll times in America/New_York (EDT, UTC\u221204:00).\n1 hour · Free then: Rae, Sol, Tam\nWorked out from the names and times the sender typed. Nobody has replied to it yet.';
+  const propText = '“Coffee”\nMon 19 Oct 2026, 19:00–20:00\nAll times in America/New_York (EDT, UTC\u221204:00).\n1 hour · Free then: “Rae”, “Sol”, “Tam”\nWorked out from the names and times the sender typed. Nobody has replied to it yet.';
   for (const w of W) {
     const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 });
     await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
@@ -29,11 +29,11 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     await p.focus('#find'); await p.keyboard.press('Enter'); await sleep(50); ck(w + ' Find the overlap moves focus to results', (await p.evaluate(() => document.activeElement.id)) === 'res');
     await p.goto(link(ex({ t: 'Coffee' })), { waitUntil: 'load' }); await sleep(250); t = await view(p);
     ck(w + ' link opens snapshot banner (receiverIntro + receiverNote)', t.banner === C.receiverIntro + ' ' + C.receiverNote, t.banner);
-    ck(w + ' s1: only Mon 19:00–20:00 offered; proposal card states slot + zone', t.opts.join() === 'Mon 19 Oct, 19:00–20:00' && t.prop === 'Mon 19 Oct 2026, 19:00–20:00 (America/New_York)' && t.propAll.includes('America/New_York (EDT, UTC\u221204:00)') && t.propAll.includes('1 hour · Rae, Sol, Tam') && t.propAll.includes(C.proposalSnapshot), t);
+    ck(w + ' s1: only Mon 19:00–20:00 offered; proposal card states slot + zone', t.opts.join() === 'Mon 19 Oct, 19:00–20:00' && t.prop === 'Mon 19 Oct 2026, 19:00–20:00 (America/New_York)' && t.propAll.includes('America/New_York (EDT, UTC\u221204:00)') && t.propAll.includes('1 hour · “Rae”, “Sol”, “Tam”') && t.propAll.includes(C.proposalSnapshot), t);
     ck(w + ' s1: Wed touch pin at 15:00, no Wed seam; touch note shown', t.touch.join() === '15:00' && t.seams.filter(x => !/is-maybe|is-short/.test(x)).length === 1 && t.propAll.includes(C.touchNote), t.seams);
-    ck(w + ' s1: Sat blocked by unknown (dashed "Tam ?" outline + proposalExcluded line), never offered', t.seams.some(x => /is-maybe/.test(x) && x.endsWith('Tam ?')) && t.propAll.includes("Sat 24 Oct 11:00–12:00 isn't offered. Unknown Saturday: Tam."), t.propAll);
+    ck(w + ' s1: Sat blocked by unknown (dashed "Tam ?" outline + proposalExcluded line), never offered', t.seams.some(x => /is-maybe/.test(x) && x.endsWith('?')) && t.propAll.includes("Sat 24 Oct 11:00–12:00 isn't offered. Unknown Saturday: “Tam”."), t.propAll);
     ck(w + ' s1: Tue/Fri/Sun collapse to one unknown-for-everyone line', t.collapsed.length === 1 && t.collapsed[0].startsWith('Tue Fri Sun'), t.collapsed);
-    ck(w + ' s1: day weave aria-label lists everyone, unknown named', t.weaves.some(a => a.startsWith('Sat 24 Oct.') && a.includes('Tam: Not given;')) && t.weaves.some(a => a.includes(M.fill(C.overlapAria, { day: 'Mon 19 Oct', start: '19:00', end: '20:00' }))), t.weaves);
+    ck(w + ' s1: day weave aria-label lists everyone, unknown named', t.weaves.some(a => a.startsWith('Sat 24 Oct.') && a.includes('“Tam”: Not given;')) && t.weaves.some(a => a.includes(M.fill(C.overlapAria, { day: 'Mon 19 Oct', start: '19:00', end: '20:00' }))), t.weaves);
     ck(w + ' s1: Rae Wed merged before comparing (sources kept)', t.merged.length === 1 && t.merged[0] === C.mergeNote + ' Wed 12:00–14:00 + 13:30–15:00 → 12:00–15:00', t.merged);
     await stubClip(p, true); await p.focus('#b-copy'); await p.keyboard.press('Enter'); await sleep(100);
     ck(w + ' copy proposal: exact proposalText (date, start–end, zone+offset, length, names, snapshot caveat)', (await p.evaluate(() => window.__clip)) === propText, await p.evaluate(() => window.__clip));
@@ -53,7 +53,7 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     ck(w + ' s2 (90 min): no-overlap card, closest slot + shortfall, unknown count, ask line; proposal hidden', !t.prop && t.none.includes('No shared 90 minutes') && t.none.includes("Mon 19 Oct, 19:00–20:00: everyone's free, but only for 1 hour. 30 minutes short") && t.none.includes(M.plural(C.noOverlapUnknown, 3)) && t.none.includes(C.noOverlapAsk) && t.seams.some(x => /is-short/.test(x)), t.none);
     ck(w + ' editing clears the address bar and banner', (await p.evaluate(() => location.hash)) === '' && !t.banner);
     await stubClip(p, true); await p.focus('#b-ncopy'); await p.keyboard.press('Enter'); await sleep(100);
-    ck(w + ' copy no-overlap note text', (await p.evaluate(() => window.__clip)) === 'No shared 90 minutes in the week of Mon 19 Oct 2026 (America/New_York).\nClosest: Mon 19 Oct 2026, 19:00–20:00, 30 minutes short.\nUnknown: Rae: Tue, Thu, Fri, Sun; Sol: Tue, Thu, Fri, Sun; Tam: Tue, Fri, Sat, Sun', await p.evaluate(() => window.__clip));
+    ck(w + ' copy no-overlap note text', (await p.evaluate(() => window.__clip)) === 'No shared 90 minutes in the week of Mon 19 Oct 2026 (America/New_York).\nClosest: Mon 19 Oct 2026, 19:00–20:00, 30 minutes short.\nUnknown: “Rae”: Tue, Thu, Fri, Sun; “Sol”: Tue, Thu, Fri, Sun; “Tam”: Tue, Fri, Sat, Sun', await p.evaluate(() => window.__clip));
     await typeInto(p, '#n', '60'); await sleep(50); await p.emulateMediaType('print');
     t = await p.evaluate(() => ({ form: getComputedStyle(document.querySelector('.tsh-form')).display, prop: getComputedStyle(document.getElementById('prop')).display, zone: getComputedStyle(document.getElementById('zone')).display, btns: getComputedStyle(document.querySelector('#prop .tsh-actions')).display }));
     await p.emulateMediaType(null); ck(w + ' print: zone line + loom + proposal; form and buttons hidden', t.form === 'none' && t.prop !== 'none' && t.zone !== 'none' && t.btns === 'none', t);
@@ -70,7 +70,7 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     // DST correctness (Joshua 23:38): Sun 1 Nov 2026 fall-back slot that spans the change; spring-forward 8 Mar 2026 slot; slot after the change uses EST
     await p.goto(link(mk([['A', [[6, '00:00', '04:00']]], ['B', [[6, '00:30', '03:00']]]], { w: '2026-10-26', n: 30 })), { waitUntil: 'load' }); await sleep(200); t = await view(p);
     let dst = await p.evaluate(() => ({ dst: document.getElementById('prop-dst').hidden ? '' : document.getElementById('prop-dst').textContent, z: document.getElementById('prop-z').textContent })); await stubClip(p, true); await p.click('#b-copy'); await sleep(120); dst.clip = await p.evaluate(() => window.__clip);
-    ck(w + ' DST fall-back 1 Nov 2026: 00:30–03:00 offered as 210 minutes of real time; card + copied text say the clocks change inside it', t.opts.join() === 'Sun 1 Nov, 00:30–03:00' && t.propAll.includes('210 minutes') && dst.dst === 'Clocks change Sun 1 Nov 2026: 02:00 EDT becomes 01:00 EST.' && /\(EDT, UTC\u221204:00\)/.test(dst.z) && dst.clip === 'Sun 1 Nov 2026, 00:30–03:00\nAll times in America/New_York (EDT, UTC\u221204:00).\nClocks change Sun 1 Nov 2026: 02:00 EDT becomes 01:00 EST.\n210 minutes · Free then: A, B\nWorked out from the names and times the sender typed. Nobody has replied to it yet.', Object.assign(dst, t));
+    ck(w + ' DST fall-back 1 Nov 2026: 00:30–03:00 offered as 210 minutes of real time; card + copied text say the clocks change inside it', t.opts.join() === 'Sun 1 Nov, 00:30–03:00' && t.propAll.includes('210 minutes') && dst.dst === 'Clocks change Sun 1 Nov 2026: 02:00 EDT becomes 01:00 EST.' && /\(EDT, UTC\u221204:00\)/.test(dst.z) && dst.clip === 'Sun 1 Nov 2026, 00:30–03:00\nAll times in America/New_York (EDT, UTC\u221204:00).\nClocks change Sun 1 Nov 2026: 02:00 EDT becomes 01:00 EST.\n210 minutes · Free then: “A”, “B”\nWorked out from the names and times the sender typed. Nobody has replied to it yet.', Object.assign(dst, t));
     await p.goto(link(mk([['A', [[6, '03:00', '05:00']]], ['B', [[6, '03:00', '05:00']]]], { w: '2026-10-26' })), { waitUntil: 'load' }); await sleep(200);
     dst = await p.evaluate(() => ({ z: document.getElementById('prop-z').textContent, dstHidden: document.getElementById('prop-dst').hidden, panel: document.getElementById('zone').textContent }));
     ck(w + ' DST fall-back 1 Nov 2026: a slot after the change is labelled EST UTC−05:00 and has no in-slot change line; week panel still shows the change', /\(EST, UTC\u221205:00\)/.test(dst.z) && dst.dstHidden && dst.panel.includes('Clocks change Sun 1 Nov 2026: 02:00 EDT becomes 01:00 EST.'), dst);
@@ -81,7 +81,7 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     ck(w + ' DST spring-forward 8 Mar 2026: asking 3 hours finds nothing (wall clock 3 h is 2 h real), closest says 1 hour short', !t.prop && t.none.includes('only for 2 hours. 1 hour short'), t.none);
     await p.goto(link(mk([['<img src=x onerror=1>', [[0, '09:00', '10:00']]], ['B', [[0, '09:00', '10:00']]]])), { waitUntil: 'load' }); await sleep(200);
     t = await p.evaluate(() => ({ img: document.querySelectorAll('img').length, legend: document.querySelector('.tsh-legend .tsh-lname').textContent, prop: document.getElementById('prop-n').textContent }));
-    ck(w + ' text-safe: markup in a name is shown as text', !t.img && t.legend === '<img src=x onerror=1>' && t.prop.includes('<img src=x onerror=1>'), t);
+    ck(w + ' text-safe: markup in a name is shown as text', !t.img && t.legend === '“<img src=x onerror=1>”' && t.prop.includes('“<img src=x onerror=1>”'), t);
     const sg = await storage(p); ck(w + ' storage empty', !sg.cookie && !sg.ls.length && !sg.ss.length && !(Array.isArray(sg.idb) && sg.idb.length) && !sg.caches.length && !sg.sw && !sg.undef, sg);
     const net = netCheck(s.reqs, H, []); ck(w + ' no off-site / non-GET requests', !net.offending.length, net);
     ck(w + ' no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
@@ -106,7 +106,7 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     ck('320 six people max, then disabled with message', t.n === 6 && t.dis && t.msg === C.tooManyPeople, t);
     const L = 'Pneumonoultramicroscopicx'; await p.goto(link(mk([[L.slice(0, 24), [[0, '09:00', '10:00']]], ['B'.repeat(24), [[0, '09:00', '10:00']]]], { t: 'C'.repeat(40) })), { waitUntil: 'load' }); await sleep(200);
     const of = await overflow(p); const ov = await textOverlap(p, '.tsh-lane-label, .tsh-dayname, #prop-h, #prop-title, #prop-n, .tsh-legend .tsh-lname, .tsh-otext > b');
-    ck('320 longest single-word names/title: no overflow, no text overlap, full name in title attr', of.sw <= 320 && !of.bad.length && !ov.length && (await p.$eval('.tsh-lane-label', e => e.title)) === L.slice(0, 24), { of, ov });
+    ck('320 longest single-word names/title: no overflow, no text overlap, full quoted name in the legend', of.sw <= 320 && !of.bad.length && !ov.length && (await p.$eval('.tsh-legend .tsh-lname', e => e.textContent)) === '“' + L.slice(0, 24) + '”', { of, ov });
     await p.click('#own-copy'); await sleep(50);
     await typeInto(p, '#pn-1', L); await p.focus('#n'); await sleep(50); t = await view(p);
     ck('320 name over 24 characters flagged', t.errs.includes(M.plural(C.personTooLong, 1)), t.errs);
@@ -115,7 +115,7 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
   { const s = await session(H, IP, { shareCancel: true }); const { p } = s; await p.setViewport({ width: 1280, height: 900 }); await p.goto(link(ex()), { waitUntil: 'load' }); await sleep(250);
     const t = await p.evaluate(() => ({ fh: [...document.querySelectorAll('.tsh-freeh')].map(e => e.textContent), rib: [...document.querySelectorAll('.tsh-rib:not(.is-unknown)')].map(e => e.title) }));
     await p.focus('#b-share'); await p.keyboard.press('Enter'); await sleep(150); const sa = await p.evaluate(() => window.__shareArg);
-    ck('1280 Writer exact: freeHeading "Free times: Rae", ribbon title "Free times on Mon 19 Oct: Rae, 18:00–20:00", untitled share = shareText', t.fh[0] === 'Free times: Rae' && t.rib.includes('Free times on Mon 19 Oct: Rae, 18:00–20:00') && sa && sa.text === "When we're all free", { t, sa });
+    ck('1280 Writer exact: freeHeading "Free times: “Rae”", ribbon title "Free times on Mon 19 Oct: “Rae”, 18:00–20:00", untitled share = shareText', t.fh[0] === 'Free times: “Rae”' && t.rib.includes('Free times on Mon 19 Oct: “Rae”, 18:00–20:00') && sa && sa.text === "When we're all free", { t, sa });
     await s.b.close(); }
   // same tab: valid link -> bad link fully resets (shared MILLVIEW.route); then empty fragment -> blank
   { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: 390, height: 900 }); await p.goto(link(ex({ t: 'Coffee' })), { waitUntil: 'load' }); await sleep(200);
@@ -126,5 +126,63 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     t = await p.evaluate(() => ({ ban: document.getElementById('banner').hidden, names: [...document.querySelectorAll('[id^=pn-]')].map(e => e.value).join() }));
     ck('390 same tab: empty fragment -> blank, no banner', t.ban && !/Rae|Sol|Tam/.test(t.names), t);
     await s.b.close(); }
+  // ===== QA local-715aa3a: D1–D7 + KS-1r (ENGINEER SELF-CHECK) =====
+  const HOST = ['Verified ✔ Bank', 'You owe me, deadbeat', '<img src=x onerror=a()>'];
+  for (const w of [320, 390, 1280, 1440].filter(x => !process.env.MILL_W || process.env.MILL_W.split(',').map(Number).includes(x) || x === 1440 && process.env.MILL_W.includes('1280'))) {
+    const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 });
+    await p.evaluateOnNewDocument(() => { window.__clip = []; Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: t => { window.__clip.push(String(t)); return Promise.resolve(); } } }); });
+    const go = async st => { await p.goto('about:blank'); await p.goto(link(st), { waitUntil: 'load' }); await sleep(250); };
+    // D1: current IANA names open and are offered; a legacy-name link opens too and the picker shows the current name
+    for (const [z, want] of [['Asia/Kolkata', 'Asia/Kolkata'], ['Asia/Kathmandu', 'Asia/Kathmandu'], ['America/Argentina/Buenos_Aires', 'America/Argentina/Buenos_Aires'], ['Asia/Calcutta', 'Asia/Kolkata'], ['Europe/Kiev', 'Europe/Kyiv']]) {
+      await go(ex({ z })); const t = await p.evaluate(() => ({ ban: document.getElementById('banner-t').textContent, z: document.getElementById('z').value, prop: document.getElementById('prop').hidden ? '' : document.getElementById('prop-h').textContent }));
+      ck(w + ' D1: link with zone ' + z + ' opens (not "damaged"); picker shows ' + want, t.ban === C.receiverIntro + ' ' + C.receiverNote && t.z === want && t.prop.includes('(' + want + ')'), t); }
+    { const o = await p.evaluate(() => [...document.querySelectorAll('#z option')].map(o => o.value)); ck(w + ' D1: picker offers Asia/Kolkata, Asia/Kathmandu, Europe/Kyiv, America/Argentina/Buenos_Aires and not their legacy duplicates', ['Asia/Kolkata', 'Asia/Kathmandu', 'Europe/Kyiv', 'America/Argentina/Buenos_Aires'].every(z => o.includes(z)) && !['Asia/Calcutta', 'Asia/Katmandu', 'Europe/Kiev'].some(z => o.includes(z)), o.length); }
+    // D2 / PM b: over midnight = one span labelled with both days
+    await go(mk([['A', [[0, '22:00', '24:00'], [1, '00:00', '02:00']]], ['B', [[0, '22:00', '24:00'], [1, '00:00', '02:00']]]], { n: 180 }));
+    { const t = await view(p); ck(w + ' D2: Mon 22:00–24:00 + Tue 00:00–02:00 with 180 min needed: one option "Mon 19 Oct, 22:00–Tue 02:00", 4 hours, drawn on both days', t.opts.join() === 'Mon 19 Oct, 22:00–Tue 02:00' && t.propAll.includes('4 hours') && t.prop === 'Mon 19 Oct 2026, 22:00–Tue 02:00 (America/New_York)' && t.seams.filter(x => !/is-maybe|is-short/.test(x)).length === 2 && !t.none, t); }
+    // D3: hostile names + title quoted everywhere (found, none, fix states; screen, aria, title attrs, describedby, live, copy text)
+    const hs = (n, extra) => mk([[HOST[0], [[0, '18:00', '20:00'], [2, '09:00', '10:00']]], [HOST[1], [[0, '19:00', '21:00']]], [HOST[2], [[0, '18:30', '20:30'], [2, '09:00', '10:00']]]], Object.assign({ n, t: HOST[1] }, extra));
+    for (const [tag, st, btn] of [['found', hs(60), '#b-copy'], ['none', hs(600), '#b-ncopy']]) {
+      await go(st); await p.evaluate(() => { window.__clip = []; }); await p.click(btn); await sleep(120); const clip = await p.evaluate(() => window.__clip.slice());
+      const a = await typedAudit(p, HOST, Object.fromEntries(clip.map((c, i) => ['clipboard#' + i, c]))); ck(w + ' D3 (' + tag + '): every sender-typed name and the title is quoted (screen, aria, title, describedby, live, copy text)', a.ok && clip.length === 1, a.ok ? clip : a.hits);
+      if (tag === 'found') { await p.click('#astext'); await sleep(80); const b = await typedAudit(p, HOST); ck(w + ' D3 (table view) quoted', b.ok, b.hits); await p.click('#astext'); await sleep(50);
+        await p.click('#own-copy'); await sleep(120); const c = await typedAudit(p, HOST); ck(w + ' D3 (own copy: free-times headings, Remove labels) quoted', c.ok, c.hits); } }
+    await go(mk([[HOST[0], [[6, '01:30', '03:00']]], [HOST[2], [[6, '00:00', '04:00']]]], { w: '2026-10-26' }));
+    { const a = await typedAudit(p, HOST); ck(w + ' D3 (fix state: alert link prefix) quoted', a.ok && (await p.$eval('#fix-l a', e => e.textContent)).startsWith('“' + HOST[0] + '”: '), a.hits); }
+    // KS-1r: the DST error link lands (real click and Enter): focus on a named read-only wrapper, in the viewport
+    for (const how of ['click', 'Enter']) {
+      await p.evaluate(() => { document.activeElement && document.activeElement.blur(); window.scrollTo(0, 0); });
+      if (how === 'click') await mouseAt(p, '#fix-l a'); else { await p.focus('#fix-l a'); await p.keyboard.press('Enter'); await sleep(150); }
+      const t = await p.evaluate(() => { const a = document.activeElement, r = a.getBoundingClientRect(); return { tag: a.tagName, cls: a.className, ti: a.getAttribute('tabindex'), name: a.getAttribute('aria-label') || '', inView: r.top >= 0 && r.bottom <= innerHeight, has: [...a.querySelectorAll('input[id^=vs-]')].some(i => i.value === '01:30') }; });
+      ck(w + ' KS-1r: DST error link (' + how + ') moves focus to the read-only entry (tabindex=-1, named with the person, time and error) and scrolls it into view', t.ti === '-1' && t.has && t.inView && t.name.includes('“' + HOST[0] + '”') && t.name.includes('01:30') && t.name.includes('happens twice'), t); }
+    // D4: 24-character names at every width: nothing clipped (legend, lane labels, seams, captions); 12:00–12:15 overlap readable
+    await go(mk([['Wolfeschlegelsteinhausen', [[0, '09:00', '12:15'], [1, '12:00', '12:15']]], ['Ana-Maria Josephine Lee', [[0, '10:00', '13:00'], [1, '12:00', '12:15']]], ['You owe me, deadbeat', [[0, '09:30', '12:00'], [1, '12:00', '12:15']]]], { n: 15 }));
+    { const t = await p.evaluate(() => ({ clipped: [...document.querySelectorAll('.tsh-legend .tsh-lname, .tsh-lane-label, .tsh-seam, .tsh-seamcap, .tsh-otext > b, #prop-h, #prop-n')].filter(e => e.getClientRects().length && parseFloat(getComputedStyle(e).fontSize) > 0 && e.textContent && e.scrollWidth > e.clientWidth + 1).map(e => e.className + ':' + e.textContent + ' ' + e.scrollWidth + '/' + e.clientWidth),
+        legend: [...document.querySelectorAll('.tsh-legend .tsh-lname')].map(e => e.textContent), caps: [...document.querySelectorAll('.tsh-seamcap')].map(e => e.textContent) }));
+      ck(w + ' D4: 24-char names and a 12:00–12:15 overlap: no clipped text; legend shows full quoted names; every overlap time written out', !t.clipped.length && t.legend[0] === '“Wolfeschlegelsteinhausen”' && t.caps.some(c => c.includes('12:00–12:15')), t);
+      const ov = await textOverlap(p, '.tsh-lane-label, .tsh-seam, .tsh-seamcap, .tsh-legend li span'); ck(w + ' D4: lane labels never overlap seam text', !ov.length, ov);
+      const of = await overflow(p); ck(w + ' D4: no horizontal overflow', of.sw <= w && !of.bad.length, of); }
+    // D5 + D6: link A (found, "Zebulon", title "Lunchtime") -> copy -> link B ("none") -> bad -> blank -> Clear: nothing stale even in hidden DOM; no toast carries over
+    const A = mk([['Zebulon', [[0, '18:00', '20:00']]], ['Quixote', [[0, '19:00', '21:00']]]], { t: 'Lunchtime' }), B = mk([['Marigold', [[0, '08:00', '09:00']]], ['Bartholomew', [[0, '10:00', '11:00']]]]);
+    const residue = (words) => p.evaluate(ws => { const hay = document.body.textContent + [...document.querySelectorAll('*')].map(e => [...e.attributes].map(a => a.value).join(' ')).join(' ') + [...document.querySelectorAll('input,textarea')].map(e => e.value).join(' '); return ws.filter(x => hay.includes(x)); }, words);
+    await go(A); await p.click('#b-copy'); await sleep(60); await p.evaluate(h => { location.hash = h; }, T.encode(B)); await sleep(250);
+    { const t = await p.evaluate(() => ({ toast: (e => e && !e.hidden && getComputedStyle(e).display !== 'none' ? e.textContent : '')(document.getElementById('toast')) })); ck(w + ' D6: "Copied." toast does not carry over to the next link', !t.toast, t); }
+    ck(w + ' D5: link A -> link B: nothing of A in the DOM (visible, hidden, attributes, values)', !(await residue(['Zebulon', 'Quixote', 'Lunchtime'])).length, await residue(['Zebulon', 'Quixote', 'Lunchtime']));
+    await p.evaluate(() => { location.hash = 'h1.broken'; }); await sleep(200); ck(w + ' D5: -> bad link: nothing of B', !(await residue(['Marigold', 'Bartholomew'])).length, await residue(['Marigold', 'Bartholomew']));
+    await go(A); await p.click('#own-copy'); await sleep(80); await p.click('#b-reset'); await sleep(200);
+    ck(w + ' D5: Clear (confirmed): nothing of the previous state in the DOM', !(await residue(['Zebulon', 'Quixote', 'Lunchtime'])).length, await residue(['Zebulon', 'Quixote', 'Lunchtime']));
+    // D7: the WHOLE URL is capped at 2,000 (not just the fragment)
+    { const t = await p.evaluate(() => { const pre = (location.origin + location.pathname + '#').length, n = 2000 - pre; return { pre, fit: !!MILLVIEW.linkFor('x'.repeat(n)), over: MILLVIEW.linkFor('x'.repeat(n + 1)) }; });
+      ck(w + ' D7: MILLVIEW.linkFor allows exactly 2,000 characters in total and refuses 2,001', t.fit && t.over === null, t); }
+    { // a state whose fragment is under LIM.frag but whose full URL here is over 2,000 -> refused with the fallback text
+      const pre = await p.evaluate(() => (location.origin + location.pathname + '#').length); let st = null;
+      for (let k = 1; k <= 126 && !st; k++) for (let tl = 0; tl <= 40 && !st; tl++) { const people = []; for (let i = 0; i < 6; i++) people.push(['Person ' + i, []]);
+        for (let j = 0; j < k; j++) people[j % 6][1].push([Math.floor(j / 6) % 7, String(Math.floor(j / 42) * 3 + 8).padStart(2, '0') + ':00', String(Math.floor(j / 42) * 3 + 9).padStart(2, '0') + ':00']);
+        const c = mk(people, { t: 'T'.repeat(tl) }), f = T.encode(c); if (f && f.length + pre > 2000 && f.length <= T.LIM.frag) st = c; }
+      if (st) { await go(st); await p.click('#b-share'); await sleep(150); const t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, link: document.getElementById('linkbox').hidden ? '' : document.getElementById('link').value, fb: !document.getElementById('fbwrap').hidden }));
+        ck(w + ' D7: a state over 2,000 characters in total (fragment under its own limit) is refused: tooLongLink + fallback text, no link', t.toast === C.tooLongLink && !t.link && t.fb, t); }
+      else ck(w + ' D7: could build an over-cap state', false, pre); }
+    ck(w + ' D1–D7/KS-1r: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
+  }
   process.exit(result(rows));
 })();

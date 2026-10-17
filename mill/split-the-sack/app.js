@@ -208,12 +208,12 @@
   }
   // Change my amount: a NEW link built in this browser only. The original link and the sender's copy are untouched; nobody is told.
   function makeChangeLink() {
-    var f = L.encode(st); if (!f) return; if (f.length > L.FRAG_MAX) { toast(C.tooLongLink); return; }
-    var url = location.origin + location.pathname + '#' + f, box = $('rlink'); box.value = url; $('rlinkbox').hidden = false;
+    var f = L.encode(st); if (!f) return; var url = f.length > L.FRAG_MAX ? null : V.linkFor(f); if (!url) { toast(C.tooLongLink); return; } // QA D7: whole-URL cap
+    var box = $('rlink'); box.value = url; $('rlinkbox').hidden = false;
     if (navigator.share) navigator.share({ title: C.title, text: C.changeShareText, url: url }).catch(function (e) { toast(e && e.name === 'AbortError' ? C.shareCancel : C.copyFail); box.focus(); box.select(); });
     else copy(url, box);
   }
-  function makeLink() { var f = L.encode(st); if (!f) return null; if (f.length > L.FRAG_MAX) { toast(C.tooLongLink); return null; } lastLink = location.origin + location.pathname + '#' + f; history.replaceState(null, '', '#' + f); $('link').value = lastLink; $('linkbox').hidden = false; return lastLink; }
+  function makeLink() { var f = L.encode(st); if (!f) return null; var u = f.length > L.FRAG_MAX ? null : V.linkFor(f); if (!u) { toast(C.tooLongLink); return null; } lastLink = u; history.replaceState(null, '', '#' + f); $('link').value = lastLink; $('linkbox').hidden = false; return lastLink; }
   function copy(text, box) {
     function fail() { toast(C.copyFail); box.focus(); box.select(); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { toast(C.copied); }, fail); else fail();

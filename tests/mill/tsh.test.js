@@ -109,4 +109,21 @@ t('DST other zones: Sydney fall-back 5 Apr 2026 (03:00->02:00) and spring-forwar
   const LH = 'Australia/Lord_Howe';
   assert.deepEqual(codes(T.compute(oneDay(['01:45', '03:00'], ['00:00', '04:00'], { w: '2026-03-30', z: LH }))), ['dstAmbiguous s 01:45']);
   assert.equal(T.compute(oneDay(['00:00', '04:00'], ['00:00', '04:00'], { w: '2026-03-30', z: LH, n: 30 })).options[0].len, 270); });
+t('QA D2 / PM b: a window over midnight is ONE span labelled with both days (Mon 22:00-24:00 + Tue 00:00-02:00 = 4h)', () => {
+  const r = T.compute(mk([['A', [[0, '22:00', '24:00'], [1, '00:00', '02:00']]], ['B', [[0, '21:00', '24:00'], [1, '00:00', '03:00']]]], { n: 240 }));
+  assert.equal(r.state, 'found'); assert.equal(r.options.length, 1); const o = r.options[0]; assert.equal(o.len, 240); assert.equal(o.day, 0); assert.equal(o.endDay, 1);
+  assert.equal(T.hhmm(T.localMin(o.a, r.days[0], NY)), '22:00'); assert.equal(T.hhmm(T.localMin(o.b, r.days[1], NY)), '02:00');
+  // ending exactly at midnight stays one day (24:00)
+  const q = T.compute(mk([['A', [[0, '22:00', '24:00']]], ['B', [[0, '21:00', '24:00']]]], { n: 60 })); assert.equal(q.options[0].endDay, 0);
+  // a day where someone said nothing breaks the run: no merge across it
+  const u = T.compute(mk([['A', [[0, '22:00', '24:00'], [1, '00:00', '02:00']]], ['B', [[0, '21:00', '24:00']]]], { n: 180 })); assert.equal(u.state, 'none');
+  // across a DST night: Sat 22:00 - Sun 03:00 on the fall-back weekend = 6 real hours
+  const d = T.compute(mk([['A', [[5, '22:00', '24:00'], [6, '00:00', '03:00']]], ['B', [[5, '22:00', '24:00'], [6, '00:00', '03:00']]]], { w: '2026-10-26', n: 360 }));
+  assert.equal(d.options.length, 1); assert.equal(d.options[0].len, 360); assert.equal(d.options[0].endDay, 6); });
+t('QA D1: current and legacy zone names both accepted; links and the picker use the current name', () => {
+  ['Asia/Kolkata', 'Asia/Calcutta', 'Europe/Kyiv', 'Europe/Kiev', 'America/Argentina/Buenos_Aires', 'America/Buenos_Aires', 'Asia/Ho_Chi_Minh', 'Asia/Kathmandu'].forEach(z => assert.ok(T.validZone(z), z));
+  assert.ok(!T.validZone('Mars/Olympus')); const zs = T.zones(); ['Asia/Kolkata', 'Europe/Kyiv', 'America/Argentina/Buenos_Aires'].forEach(z => assert.ok(zs.includes(z), z));
+  ['Asia/Calcutta', 'Europe/Kiev', 'America/Buenos_Aires'].forEach(z => assert.ok(!zs.includes(z), 'picker lists only current ' + z)); assert.equal(new Set(zs).size, zs.length);
+  const st = ex({ z: 'Asia/Calcutta' }); const d = T.decode(T.encode(st)); assert.ok(d.ok); assert.equal(d.data.z, 'Asia/Kolkata');
+  const r = T.compute(ex({ z: 'Asia/Kolkata' })); assert.equal(r.options.length, 1); assert.equal(T.zoneInfo(0, 'Asia/Kolkata').offset, '+05:30'); assert.equal(T.zoneInfo(0, 'Europe/Kyiv').offset.length > 0, true); });
 console.log('PASS ' + n + ' tests');

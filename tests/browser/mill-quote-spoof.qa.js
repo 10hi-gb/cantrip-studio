@@ -9,8 +9,7 @@ const SP = 'Milk\u201D from \u201CYour bank', G = '\u00ABBank\u00BB \u201Ex\u201
 const CASES = [
   { slug: 'before-you-go', make: (SP, G) => { const st = BYG.blank(); st.k = SP; st.by = 'Jo'; st.f.place.v = G; st.f.bring.a = SP; st.f.bring.c = true; st.o = [SP]; return BYG.encode(st); } },
   { slug: 'one-less-trip', make: (SP, G) => MILL.pack('t', 1, { h: [G, 'Ben'], r: [[0, SP, '2', 'carton', 'Corner Co-op'], [1, 'Stamps', '1', 'book', G]], m: [] }) },
-  { slug: 'the-same-hour', make: (SP, G) => TSH.encode({ w: '2026-10-19', z: 'America/New_York', n: '60', u: 'min', t: SP, p: [{ id: 1, n: G, iv: [{ id: 3, d: 0, s: '18:00', e: '20:00' }] }, { id: 2, n: 'Sol', iv: [{ id: 4, d: 0, s: '19:00', e: '21:00' }] }], next: 5 }),
-    known: ['TSH D3 (queued: names and title unquoted in 187 of 189 places)', h => true] },
+  { slug: 'the-same-hour', make: (SP, G) => TSH.encode({ w: '2026-10-19', z: 'America/New_York', n: '60', u: 'min', t: SP, p: [{ id: 1, n: G, iv: [{ id: 3, d: 0, s: '18:00', e: '20:00' }] }, { id: 2, n: 'Sol', iv: [{ id: 4, d: 0, s: '19:00', e: '21:00' }] }], next: 5 }) },
   { slug: 'split-the-sack', make: (SP, G) => SACKLINK.encode({ n: SP, u: 'lb', c: '$', q: '25', i: '0.5', p: '31.47', f: '2.99', b: 'p', x: -1, h: [[G, '8'], ['Unit 2B', '7.5'], ['Bao', '6']] }), prep: async p => { await p.select('#pick', '0'); await sleep(100); } },
   { slug: 'one-small-ask', make: (SP, G) => ASK.encodeAsk({ w: SP, e: 10, u: 'min', d: 'Sat', s: '09:00', t: '10:00', h: '', f: G, o: 'Bo' }) },
   { slug: 'one-small-ask', tag: ' (Part of it, F-A1)', make: (SP, G) => ASK.encodeAsk({ w: SP, e: 10, u: 'min', d: 'Sat', s: '09:00', t: '10:00', h: G, f: 'Ana', o: 'Bo' }), prep: async p => { await p.click('#c-p'); await sleep(120); } },

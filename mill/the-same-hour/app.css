@@ -8,16 +8,23 @@
 .tsh-status p{margin:0 0 6px}
 .tsh-status ul{margin:4px 0 0;padding-left:18px}
 .tsh-status a{color:var(--tsh-err);font-weight:700}
+#fix-l a{display:block;padding:2px 0} /* QA KS-1r: the whole wrapped line is the target */
 .tsh-zone>span{overflow-wrap:anywhere}
 .tsh-dst{font-weight:700;color:var(--tsh-err)}
 .tsh-loomhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:10px;margin-bottom:6px}
 .tsh-loomhead .tsh-h2{margin:0}
 .tsh-btn--quiet{background:transparent}
-.tsh-legend .tsh-lname{max-width:16ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tsh-legend .tsh-lname{overflow-wrap:anywhere;unicode-bidi:plaintext;min-width:0}
+.tsh-legend li{min-width:0;max-width:100%}
+.tsh-lnum{font:700 11px var(--tsh-sans);min-width:1.2em;text-align:center}
+.tsh-weavecell{min-width:0}
+.tsh-seamcap{margin:2px 0 0 var(--tsh-gut);font-size:12px;color:var(--tsh-ink);overflow-wrap:anywhere}
+.tsh-seam{overflow:hidden;white-space:nowrap}
+.tsh-seam.is-tight{font-size:0!important}
 /* tape and guides follow the fitted window (--hrs) instead of the mock's fixed 14h */
 #vis .tsh-tape{background-image:repeating-linear-gradient(90deg,var(--tsh-tape-ink) 0 1px,transparent 1px calc(100%/(var(--hrs,14)*4))),repeating-linear-gradient(90deg,var(--tsh-tape-ink) 0 1.5px,transparent 1.5px calc(100%/var(--hrs,14)))}
 #vis .tsh-weave{background-image:repeating-linear-gradient(90deg,rgba(220,210,200,.55) 0 1px,transparent 1px calc(200%/var(--hrs,14)))}
-.tsh-lane-label{max-width:calc(var(--tsh-gut) - 5px);overflow:hidden;text-overflow:ellipsis}
+.tsh-lane-label{max-width:calc(var(--tsh-gut) - 5px)}
 .tsh-seam.is-picked{box-shadow:0 0 0 3px var(--tsh-stitch)}
 .tsh-touch span{padding:0 2px}
 .tsh-dayname{min-width:0;overflow-wrap:anywhere}

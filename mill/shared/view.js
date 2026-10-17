@@ -53,5 +53,16 @@
     scope.querySelectorAll('[aria-invalid]').forEach(function (e) { e.removeAttribute('aria-invalid'); });
     if (sel) scope.querySelectorAll(sel).forEach(function (e) { e.textContent = ''; if (e.hasAttribute('data-err-hide')) e.hidden = true; });
   }
-  root.MILLVIEW = { afterPointer: afterPointer, toast: toast, clearToast: clearToast, clearErrors: clearErrors, route: route, clearInputs: clearInputs, readOnly: readOnly, typed: typed, quote: quote };
+  // QA KS-1r (all pieces): an in-page link never touches the address bar (that would replace a shared link's fragment and
+  // reload the tab as "damaged") and always lands: scroll the target into view and move focus to it (tabindex=-1 if needed).
+  // Pieces that handle their own links (preventDefault) are left alone.
+  function land(t) { if (!t) return; if (!t.matches('a[href],button,input,select,textarea,[tabindex]') || t.disabled) { t = t.disabled ? (t.closest('[tabindex]') || t.parentNode) : t; if (!t.hasAttribute('tabindex')) t.setAttribute('tabindex', '-1'); }
+    t.scrollIntoView({ block: 'start' }); try { t.focus({ preventScroll: true }); } catch (e) { t.focus(); } }
+  if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('click', function (ev) {
+    if (ev.defaultPrevented || ev.button) return; var a = ev.target && ev.target.closest && ev.target.closest('a[href^="#"]'); if (!a) return;
+    var id = a.getAttribute('href').slice(1), t = id && document.getElementById(id); if (!t) return; ev.preventDefault(); land(t); });
+  // QA D7 (all pieces): the WHOLE link (origin + path + '#' + fragment) is capped at 2,000 characters, whatever the origin.
+  var URL_MAX = 2000;
+  function linkFor(frag) { var u = location.origin + location.pathname + '#' + frag; return u.length <= URL_MAX ? u : null; }
+  root.MILLVIEW = { land: land, URL_MAX: URL_MAX, linkFor: linkFor, afterPointer: afterPointer, toast: toast, clearToast: clearToast, clearErrors: clearErrors, route: route, clearInputs: clearInputs, readOnly: readOnly, typed: typed, quote: quote };
 })(this);

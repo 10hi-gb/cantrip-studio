@@ -16,7 +16,10 @@
   function lenText(min) { return min % 60 === 0 ? M.plural(C.durationLine.hr, min / 60) : M.plural(C.durationLine.min, min); }
   function durText() { var n = +String(st.n).trim(); return M.plural(C.durationLine[st.u === 'hr' ? 'hr' : 'min'], n); }
   function color(i) { return 'var(--tsh-a' + (i + 1) + ')'; }
-  function nm(i) { return res.people[i].name; }
+  // QA D3: every sender-typed name goes through the shared quote helper (screen, aria, title, copy text); the fallback label is ours, unquoted.
+  function qn(n, i) { n = M.strip(n || ''); return n ? V.quote(n) : C.personLabel + ' ' + (i + 1); }
+  function nm(i) { return qn(res.people[i].name, i); }
+  function pidName(pid) { for (var k = 0; k < st.p.length; k++) if (st.p[k].id === pid) return qn(st.p[k].n, k); return C.personLabel; }
   function tm(t, di) { return T.hhmm(T.localMin(t, res.days[di], st.z)); }
   function endTm(t, di) { var m = T.localMin(t, res.days[di], st.z); return T.hhmm(m); }
   function changed() { clearHash(); $('linkbox').hidden = true; $('fbwrap').hidden = true; $('banner').hidden = true; }
@@ -34,7 +37,7 @@
       inp.addEventListener('input', function () { p.n = inp.value; changed(); updateNames(); refresh(); });
       f.appendChild(lab); f.appendChild(inp); f.appendChild(er); h.appendChild(f);
       var rm = btn('tsh-mini', C.removeInterval, function () { st.p.splice(st.p.indexOf(p), 1); changed(); drawPeople(); refresh(); $('addp').focus(); }); rm.id = 'pr-' + p.id; rm.disabled = st.p.length <= T.LIM.pMin;
-      rm.setAttribute('aria-label', M.fill(C.removePerson, { name: M.strip(p.n) || C.personLabel + ' ' + (pi + 1) })); h.appendChild(rm); li.appendChild(h);
+      rm.setAttribute('aria-label', M.fill(C.removePerson, { name: qn(p.n, pi) })); h.appendChild(rm); li.appendChild(h);
       var fh = el('p', 'tsh-lab tsh-freeh'); fh.id = 'fh-' + p.id; li.appendChild(fh);
       var ivs = el('ul', 'tsh-ivs'); ivs.setAttribute('aria-labelledby', fh.id);
       p.iv.forEach(function (v) { ivs.appendChild(ivRow(p, v)); }); li.appendChild(ivs);
@@ -55,7 +58,7 @@
     var rm = btn('tsh-mini', C.removeInterval, function () { var i = p.iv.indexOf(v); p.iv.splice(i, 1); changed(); drawPeople(); refresh(); var nx = p.iv[i] || p.iv[i - 1]; (nx ? $('vs-' + nx.id) : $('pa-' + p.id)).focus(); }); rm.id = 'vr-' + v.id;
     li.appendChild(rm); var er = el('span', 'tsh-err'); er.id = 'e-iv-' + v.id; li.appendChild(er); return li;
   }
-  function updateNames() { st.p.forEach(function (p, pi) { var n = M.strip(p.n) || C.personLabel + ' ' + (pi + 1); var fh = $('fh-' + p.id); if (fh) { fh.textContent = ''; var parts = C.freeHeading.split('{name}'); fh.appendChild(document.createTextNode(parts[0])); fh.appendChild(el('span', 'tsh-typed', n)); if (parts[1]) fh.appendChild(document.createTextNode(parts[1])); } var rm = $('pr-' + p.id); if (rm) rm.setAttribute('aria-label', M.fill(C.removePerson, { name: n })); p.iv.forEach(function (v) { var r = $('vr-' + v.id); if (r) r.setAttribute('aria-label', C.removeInterval + ' ' + n + ' ' + (String(v.s).trim() || '') + '–' + (String(v.e).trim() || '')); }); }); }
+  function updateNames() { st.p.forEach(function (p, pi) { var n = qn(p.n, pi); var fh = $('fh-' + p.id); if (fh) { fh.textContent = ''; var parts = C.freeHeading.split('{name}'); fh.appendChild(document.createTextNode(parts[0])); fh.appendChild(el('span', 'tsh-typed', n)); if (parts[1]) fh.appendChild(document.createTextNode(parts[1])); } var rm = $('pr-' + p.id); if (rm) rm.setAttribute('aria-label', M.fill(C.removePerson, { name: n })); p.iv.forEach(function (v) { var r = $('vr-' + v.id); if (r) r.setAttribute('aria-label', C.removeInterval + ' ' + n + ' ' + (String(v.s).trim() || '') + '–' + (String(v.e).trim() || '')); }); }); }
   function redrawDaySelects() { st.p.forEach(function (p) { p.iv.forEach(function (v) { var s = $('vd-' + v.id); if (s) dayOpts(s, v.d); }); }); }
 
   // ---------- errors ----------
@@ -75,10 +78,17 @@
     var seen = {}, vis = res.errors.filter(function (e) { return showAll || touched[fieldId(e.f)]; }); vis.forEach(function (e) { var i = $(fieldId(e.f)), b = $(errBox(e.f)); if (i) i.setAttribute('aria-invalid', 'true'); if (b && !seen[b.id]) { b.textContent = errText(e); seen[b.id] = 1; } });
     var show = res.state === 'fix' && (showAll || vis.length > 0), fx = $('fix'), ul = $('fix-l'); fx.hidden = !show; ul.textContent = '';
     if (show) { var n = res.errors.length + (res.tooMany ? 1 : 0); $('fix-t').textContent = M.plural(C.entriesNeedFixing, n);
-      res.errors.forEach(function (e) { var li = el('li'), a = el('a', null, (e.pid ? (M.strip((st.p.filter(function (p) { return p.id === e.pid; })[0] || {}).n) || C.personLabel) + ': ' : '') + errText(e)); a.href = '#' + fieldId(e.f); a.addEventListener('click', function (ev) { ev.preventDefault(); var x = $(fieldId(e.f)); if (x) x.focus(); }); li.appendChild(a); ul.appendChild(li); });
+      res.errors.forEach(function (e) { var li = el('li'), a = el('a', null, (e.pid ? pidName(e.pid) + ': ' : '') + errText(e)); a.href = '#' + fieldId(e.f); a.addEventListener('click', function (ev) { ev.preventDefault(); goTo(fieldId(e.f)); }); li.appendChild(a); ul.appendChild(li); });
       if (res.tooMany) ul.appendChild(el('li', null, C.tooManyPeople)); }
   }
 
+  // QA KS-1r: an error link always lands. In the recipient view the field is disabled (focus() would do nothing), so focus moves
+  // to its read-only wrapper (tabindex=-1, named after the field) and that is scrolled into view.
+  function goTo(id) { var x = $(id); if (!x) return; var t = x;
+    if (x.disabled) { t = x.closest('.tsh-iv, .tsh-field, .tsh-person-h, li') || x; t.setAttribute('tabindex', '-1'); var lb = x.getAttribute('aria-label') || (x.labels && x.labels[0] && x.labels[0].textContent) || '';
+      var er = x.getAttribute('aria-describedby'), et = er && $(er) ? $(er).textContent : ''; if (!t.getAttribute('aria-label') || t.dataset.ro) { t.setAttribute('aria-label', [rowName(x), lb, x.value, et].filter(Boolean).join(', ')); t.dataset.ro = '1'; } }
+    t.scrollIntoView({ block: 'center' }); try { t.focus({ preventScroll: true }); } catch (e) { t.focus(); } }
+  function rowName(x) { var li = x.closest('.tsh-person'); if (!li) return ''; var k = st.p.findIndex(function (p) { return 'person-' + p.id === li.id; }); return k < 0 ? '' : qn(st.p[k].n, k); }
   // ---------- loom ----------
   function zoneLine() {
     var z = $('zone'); z.textContent = '';
@@ -90,7 +100,7 @@
   }
   function legend() {
     var ul = $('legend'); ul.textContent = '';
-    res.people.forEach(function (p, i) { var li = el('li'), k = el('span', 'tsh-key'); k.style.background = color(i); k.style.opacity = '.7'; li.appendChild(k); li.appendChild(el('span', 'tsh-lname', p.name || C.personLabel + ' ' + (i + 1))); ul.appendChild(li); });
+    res.people.forEach(function (p, i) { var li = el('li'), k = el('span', 'tsh-key'); k.style.background = color(i); k.style.opacity = '.7'; li.appendChild(k); var num = el('span', 'tsh-lnum', String(i + 1)); num.setAttribute('aria-hidden', 'true'); li.appendChild(num); li.appendChild(el('span', 'tsh-lname', nm(i))); ul.appendChild(li); });
     [['is-unknown', C.legendUnknown], ['is-seam', C.legendAll]].forEach(function (x) { var li = el('li'); li.appendChild(el('span', 'tsh-key ' + x[0])); li.appendChild(el('span', null, x[1])); ul.appendChild(li); });
   }
   function frac(min, w) { return Math.max(0, Math.min(1, (min - w[0] * 60) / ((w[1] - w[0]) * 60))).toFixed(4); }
@@ -109,33 +119,40 @@
       var aria = [DF.fmt(d.date) + '.'];
       res.people.forEach(function (p, i) {
         var lane = el('div', 'tsh-lane'), m = p.merged[d.i]; lane.style.setProperty('--i', i);
-        if (!m.length) { lane.classList.add('is-unknown'); var u = el('span', 'tsh-rib is-unknown'); u.style.setProperty('--i', i); lane.appendChild(u); aria.push(p.name + ': ' + C.unknownDay + ';'); }
-        else { var parts = []; m.forEach(function (x) { var a = T.localMin(x.a, d.date, st.z), b = T.localMin(x.b, d.date, st.z), r = el('span', 'tsh-rib'); r.style.setProperty('--s', frac(a, w)); r.style.setProperty('--e', frac(b, w)); r.style.setProperty('--c', color(i)); r.style.setProperty('--i', i); r.title = M.fill(C.ribbonAria, { name: p.name, day: DF.fmt(d.date) }) + ', ' + T.hhmm(a) + '–' + T.hhmm(b); lane.appendChild(r); parts.push(T.hhmm(a) + '–' + T.hhmm(b)); }); aria.push(p.name + ': ' + parts.join(', ') + ';'); }
-        var lab = el('span', 'tsh-lane-label', p.name + (m.length ? '' : ' ?')); lab.title = p.name; lane.appendChild(lab); wv.appendChild(lane);
+        if (!m.length) { lane.classList.add('is-unknown'); var u = el('span', 'tsh-rib is-unknown'); u.style.setProperty('--i', i); lane.appendChild(u); aria.push(nm(i) + ': ' + C.unknownDay + ';'); }
+        else { var parts = []; m.forEach(function (x) { var a = T.localMin(x.a, d.date, st.z), b = T.localMin(x.b, d.date, st.z), r = el('span', 'tsh-rib'); r.style.setProperty('--s', frac(a, w)); r.style.setProperty('--e', frac(b, w)); r.style.setProperty('--c', color(i)); r.style.setProperty('--i', i); r.title = M.fill(C.ribbonAria, { name: nm(i), day: DF.fmt(d.date) }) + ', ' + T.hhmm(a) + '–' + T.hhmm(b); lane.appendChild(r); parts.push(T.hhmm(a) + '–' + T.hhmm(b)); }); aria.push(nm(i) + ': ' + parts.join(', ') + ';'); }
+        var lab = el('span', 'tsh-lane-label', String(i + 1) + (m.length ? '' : ' ?')); lab.setAttribute('aria-hidden', 'true'); lane.appendChild(lab); /* QA D4: lane number keys to the legend; names are never clipped */ wv.appendChild(lane);
       });
-      function seam(x, cls, text) { var a = T.localMin(x.a, d.date, st.z), b = T.localMin(x.b, d.date, st.z), s = el('div', 'tsh-seam' + (cls ? ' ' + cls : ''), text); s.style.setProperty('--s', frac(a, w)); s.style.setProperty('--e', frac(b, w)); wv.appendChild(s); return [T.hhmm(a), T.hhmm(b)]; }
-      d.options.forEach(function (x) { var tt = seam(x, x.a === selA ? 'is-picked' : '', ''); var s = wv.lastChild; s.textContent = tt[0] + '–' + tt[1]; aria.push(M.fill(C.overlapAria, { day: DF.fmt(d.date), start: tt[0], end: tt[1] }) + '.'); });
-      d.short.forEach(function (x) { var tt = seam(x, 'is-short', lenText(x.len)); aria.push(M.fill(C.tooShortLine, { day: DF.fmt(d.date), start: tt[0], end: tt[1], length: lenText(x.len) })); });
-      d.maybe.forEach(function (x) { var who = d.unknown.map(nm).join(', '); var tt = seam(x, 'is-maybe', who + ' ?'); aria.push(M.fill(C.proposalExcluded, { day: DF.fmt(d.date), start: tt[0], end: tt[1], name: who, dayName: DL.format(d.date) })); });
+      var d0 = res.starts[d.i], d1 = res.starts[d.i + 1], cap = [];
+      function seam(x, cls, text) { var a = T.localMin(Math.max(x.a, d0), d.date, st.z), b = T.localMin(Math.min(x.b, d1), d.date, st.z), s = el('div', 'tsh-seam' + (cls ? ' ' + cls : ''), text); s.style.setProperty('--s', frac(a, w)); s.style.setProperty('--e', frac(b, w)); wv.appendChild(s); return [T.hhmm(a), T.hhmm(b)]; }
+      var on = function (x) { return x.a < d1 && x.b > d0; }; // QA D2: a span over midnight is drawn on both days, labelled with both days
+      res.options.filter(on).forEach(function (x) { var sl = slot(x); seam(x, x.a === selA ? 'is-picked' : '', sl.start + '–' + sl.end); var t = M.fill(C.overlapAria, { day: sl.day, start: sl.start, end: sl.end }); aria.push(t + '.'); cap.push(sl.start + '–' + sl.end); });
+      res.short.filter(on).forEach(function (x) { var sl = slot(x); seam(x, 'is-short', lenText(x.len)); aria.push(M.fill(C.tooShortLine, { day: sl.day, start: sl.start, end: sl.end, length: lenText(x.len) })); });
+      d.maybe.forEach(function (x) { var who = d.unknown.map(nm).join(', '); var tt = seam(x, 'is-maybe', '?'); aria.push(M.fill(C.proposalExcluded, { day: DF.fmt(d.date), start: tt[0], end: tt[1], name: who, dayName: DL.format(d.date) })); });
       d.touch.forEach(function (t) { var m = T.localMin(t, d.date, st.z), p = el('div', 'tsh-touch'); p.style.setProperty('--s', frac(m, w)); p.appendChild(el('span', null, T.hhmm(m))); wv.appendChild(p); });
       if (d.touch.length) aria.push(C.touchNote);
-      wv.setAttribute('aria-label', aria.join(' ')); row2.appendChild(wv); days.appendChild(row2);
+      wv.setAttribute('aria-label', aria.join(' ')); var cell = el('div', 'tsh-weavecell'); cell.appendChild(wv);
+      // QA D4: every overlap's times are also written out under the row (seam text is only a bonus where it fits)
+      if (cap.length) { var cp = el('p', 'tsh-seamcap', C.legendAll + ': ' + cap.join(', ')); cell.appendChild(cp); }
+      row2.appendChild(cell); days.appendChild(row2);
     });
     $('touchnote').hidden = !res.touches; $('touchnote').textContent = res.touches ? C.touchNote : '';
-    drawTable();
+    fitSeams(); drawTable();
   }
+  // seam text only where it fits whole; otherwise the bar is plain and the caption line carries the times (never clipped)
+  function fitSeams() { document.querySelectorAll('#days .tsh-seam').forEach(function (s) { s.classList.remove('is-tight'); if (s.textContent && s.scrollWidth > s.clientWidth + 1) s.classList.add('is-tight'); }); }
   function drawTable() {
     var t = $('tbl'); t.textContent = ''; var ds = res.days;
     var cap = el('caption', null, M.fill(C.tableCaption, { zone: st.z, date: DFY.fmt(ds[0]) })); t.appendChild(cap);
-    var th = el('thead'), tr = el('tr'); [C.dayLabel].concat(res.people.map(function (p) { return p.name; })).concat([C.legendAll]).forEach(function (h) { var c = el('th', null, h); c.scope = 'col'; tr.appendChild(c); }); th.appendChild(tr); t.appendChild(th);
+    var th = el('thead'), tr = el('tr'); [C.dayLabel].concat(res.people.map(function (p, i) { return nm(i); })).concat([C.legendAll]).forEach(function (h) { var c = el('th', null, h); c.scope = 'col'; tr.appendChild(c); }); th.appendChild(tr); t.appendChild(th);
     var tb = el('tbody');
     res.dayRes.forEach(function (d) {
       var r = el('tr'), h = el('th', null, DF.fmt(d.date)); h.scope = 'row'; r.appendChild(h);
       res.people.forEach(function (p) { var m = p.merged[d.i]; r.appendChild(el('td', null, m.length ? m.map(function (x) { return tm(x.a, d.i) + '–' + endTm(x.b, d.i); }).join(', ') : C.unknownDay)); });
       var lines = [];
       if (d.kind === 'allUnknown') lines.push(C.unknownForAll);
-      d.options.forEach(function (x) { lines.push(tm(x.a, d.i) + '–' + endTm(x.b, d.i) + ' · ' + M.fill(C.optionLength, { length: lenText(x.len) })); });
-      d.short.forEach(function (x) { lines.push(M.fill(C.tooShortLine, { day: DF.fmt(d.date), start: tm(x.a, d.i), end: endTm(x.b, d.i), length: lenText(x.len) })); });
+      d.options.forEach(function (x) { lines.push(tm(x.a, d.i) + '–' + endLab(x) + ' · ' + M.fill(C.optionLength, { length: lenText(x.len) })); });
+      d.short.forEach(function (x) { lines.push(M.fill(C.tooShortLine, { day: DF.fmt(d.date), start: tm(x.a, d.i), end: endLab(x), length: lenText(x.len) })); });
       d.maybe.forEach(function (x) { lines.push(M.fill(C.proposalExcluded, { day: DF.fmt(d.date), start: tm(x.a, d.i), end: endTm(x.b, d.i), name: d.unknown.map(nm).join(', '), dayName: DL.format(d.date) })); });
       if (d.touch.length) lines.push(C.touchNote + ' (' + d.touch.map(function (x) { return tm(x, d.i); }).join(', ') + ')');
       var td = el('td'); lines.forEach(function (l, i) { if (i) td.appendChild(el('br')); td.appendChild(document.createTextNode(l)); }); if (!lines.length) td.textContent = '—'; r.appendChild(td); tb.appendChild(r);
@@ -144,14 +161,16 @@
   }
   // ---------- results / proposal ----------
   function picked() { var o = res.options.filter(function (x) { return x.a === selA; })[0]; if (!o) { o = res.options[0]; selA = o ? o.a : null; } return o; }
-  function slot(x) { var di = x.day; return { day: DF.fmt(res.days[di]), date: DFY.fmt(res.days[di]), start: tm(x.a, di), end: endTm(x.b, di) }; }
+  // QA D2: a span that ends on a later day names that day in its end ("Mon 19 Oct, 22:00–Tue 02:00"); ending exactly at midnight stays 24:00
+  function endLab(x) { var ed = x.endDay != null ? x.endDay : x.day; return ed !== x.day ? DW.format(res.days[ed]) + ' ' + tm(x.b, ed) : endTm(x.b, x.day); }
+  function slot(x) { var di = x.day; return { day: DF.fmt(res.days[di]), date: DFY.fmt(res.days[di]), start: tm(x.a, di), end: endLab(x) }; }
   // DST: a slot that runs across a clock change says so (Writer's dstChangeLine), so 00:30–03:00 on a fall-back day isn't read as 2½ h.
   function spanChange(o) { var c = (res.changes || []).filter(function (c) { return o.a < c.t && c.t < o.b; })[0]; return c ? M.fill(C.dstChangeLine, { date: DFY.fmt(res.days[c.day]), from: c.from, to: c.to }) : ''; }
-  function names() { return res.people.map(function (p) { return p.name; }).join(', '); }
+  function names() { return res.people.map(function (p, i) { return nm(i); }).join(', '); }
   function shareText() { var t = M.strip(st.t); return t ? M.fill(C.shareTextTyped, { title: t }) : C.shareText; }
   function proposalText(o) { var s = slot(o), info = T.zoneInfo(o.a, st.z), title = M.strip(st.t);
     return M.fill(C.proposalText, { titleLine: title ? M.fill(C.proposalTextTitleLine, { title: title }) : '', date: s.date, start: s.start, end: s.end, zoneLine: M.fill(C.zoneLine, info) + (spanChange(o) ? '\n' + spanChange(o) : ''), length: lenText(o.len), names: names() }); }
-  function unknownList() { return res.people.map(function (p) { var ds = []; p.merged.forEach(function (m, i) { if (!m.length) ds.push(DW.format(res.days[i])); }); return ds.length ? p.name + ': ' + ds.join(', ') : ''; }).filter(Boolean).join('; '); }
+  function unknownList() { return res.people.map(function (p) { var ds = []; p.merged.forEach(function (m, i) { if (!m.length) ds.push(DW.format(res.days[i])); }); return ds.length ? nm(p.i != null ? p.i : res.people.indexOf(p)) + ': ' + ds.join(', ') : ''; }).filter(Boolean).join('; '); }
   function noOverlapText() { var c = res.closest, s = c ? slot(c) : null, ul = unknownList();
     return M.fill(C.noOverlapText, { duration: durText(), date: DFY.fmt(res.days[0]), zone: st.z, closestLine: c ? M.fill(C.noOverlapTextClosest, { day: s.date, start: s.start, end: s.end, length: lenText(res.dur - c.len) }) : '', unknownLine: ul ? M.fill(C.noOverlapTextUnknown, { list: ul }) : '' }).replace(/\n+$/, ''); }
   function drawResults() {
@@ -165,7 +184,7 @@
       var sh = $('shorts'); sh.textContent = ''; res.short.forEach(function (x) { sh.appendChild(el('li', null, M.fill(C.tooShortLine, { day: slot(x).day, start: slot(x).start, end: slot(x).end, length: lenText(x.len) }))); });
       var s = slot(o), info = T.zoneInfo(o.a, st.z);
       $('prop-l').textContent = C.proposalHeading; $('prop-h').textContent = M.fill(C.proposalLine, { day: s.date, start: s.start, end: s.end, zone: st.z });
-      var ttl = M.strip(st.t); $('prop-title').hidden = !ttl; $('prop-title').textContent = ttl;
+      var ttl = M.strip(st.t); $('prop-title').hidden = !ttl; $('prop-title').textContent = ttl ? V.quote(ttl) : '';
       $('prop-z').textContent = M.fill(C.proposalZone, info); $('prop-dst').textContent = spanChange(o); $('prop-dst').hidden = !spanChange(o); $('prop-n').textContent = lenText(o.len) + ' · ' + M.fill(C.proposalNames, { names: names() });
       $('prop-s').textContent = C.proposalSnapshot;
       var px = $('prop-x'); px.textContent = ''; res.maybe.slice(0, 5).forEach(function (x) { var d = res.dayRes[x.day]; px.appendChild(el('p', 'tsh-fine', M.fill(C.proposalExcluded, { day: slot(x).day, start: slot(x).start, end: slot(x).end, name: d.unknown.map(nm).join(', '), dayName: DL.format(d.date) }))); });
@@ -180,6 +199,9 @@
       $('none-a').textContent = C.noOverlapAsk; lastText = noOverlapText();
     }
     if (!found && !none) lastText = '';
+    // QA D5: nothing from a previous state stays in hidden DOM
+    if (!found) ['opts', 'shorts', 'prop-x', 'prop-h', 'prop-title', 'prop-z', 'prop-dst', 'prop-n', 'res-n'].forEach(function (id) { $(id).textContent = ''; });
+    if (!none) ['none-l', 'none-h', 'none-c', 'none-u', 'none-a'].forEach(function (id) { $(id).textContent = ''; });
   }
   // Recipient view is read-only in the DOM (shared helper): the form controls are disabled (never inert: names and times stay readable), both Start over buttons are gone.
   function applyMode() { var r = mode === 'recv'; V.readOnly($('form'), r); ['b-reset', 'b-nreset'].forEach(function (id) { $(id).hidden = r; $(id).disabled = r; }); }
@@ -192,7 +214,7 @@
     $('vis').hidden = !ok || asText; $('tblwrap').hidden = !ok || !asText; $('legend').hidden = !ok; $('astext').hidden = !ok;
     var em = $('empty'); em.hidden = ok;
     $('empty-t').textContent = res.state === 'fix' ? C.fixToContinue : res.state === 'nozone' ? C.emptyState : (st.p.length < T.LIM.pMin ? C.tooFewPeople : C.emptyState);
-    if (ok) { legend(); drawLoom(); } else { $('touchnote').hidden = true; }
+    if (ok) { legend(); drawLoom(); } else { $('touchnote').hidden = true; ['legend', 'tape', 'days', 'tbl', 'touchnote'].forEach(function (id) { $(id).textContent = ''; }); }
     st.p.forEach(function (p, pi) { var mg = $('mg-' + p.id); if (!mg) return; var P = res.people[pi], lines = []; if (ok && P && P.merged) P.merged.forEach(function (list, di) { list.forEach(function (x) { if (x.src.length > 1) lines.push(DW.format(res.days[di]) + ' ' + x.src.map(function (s) { return s.s + '–' + s.e; }).join(' + ') + ' → ' + tm(x.a, di) + '–' + endTm(x.b, di)); }); });
       mg.hidden = !lines.length; mg.textContent = lines.length ? C.mergeNote + ' ' + lines.join('; ') : ''; });
     drawResults();
@@ -202,12 +224,12 @@
   function showFallback() { var w = $('fbwrap'), f = $('fallback'); f.value = lastText; w.hidden = false; f.focus(); f.select(); }
   function showLink(u) { $('linkbox').hidden = false; var l = $('link'); l.value = u; l.focus(); l.select(); }
   function copyText() { var t = lastText; if (!t) return; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { toast(C.copied); }, function () { toast(C.copyFail); showFallback(); }); else { toast(C.copyFail); showFallback(); } }
-  function share() { var f = T.encode(st); if (!f) { toast(C.tooLongLink); showFallback(); return; } var u = location.origin + location.pathname + '#' + f; showLink(u);
+  function share() { var f = T.encode(st), u = f ? V.linkFor(f) : null; if (!u) { toast(C.tooLongLink); showFallback(); return; } showLink(u); // QA D7: the WHOLE URL is capped at 2,000
     if (navigator.share) navigator.share({ title: C.title, text: shareText(), url: u }).then(function () {}, function () { toast(C.shareCancel); showLink(u); });
     else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(function () { toast(C.copied); }, function () { toast(C.copyFail); showLink(u); });
     else { toast(C.copyFail); showLink(u); } }
   function reset() { if (mode !== 'own' || !window.confirm(C.resetConfirm)) return; clearHash(); load(''); toast(C.resetDone); $('z').focus(); }
-  function syncForm() { $('z').value = T.validZone(st.z) ? st.z : ''; $('w').value = st.w; $('n').value = st.n; $('u').value = st.u === 'hr' ? 'hr' : 'min'; $('t').value = st.t; }
+  function syncForm() { $('z').value = T.validZone(st.z) ? T.canon(st.z) : ''; $('w').value = st.w; $('n').value = st.n; $('u').value = st.u === 'hr' ? 'hr' : 'min'; $('t').value = st.t; }
 
   function init() {
     document.title = C.title + ' · ' + C.studioName; $('home').textContent = '← ' + C.backLabel; $('strip').textContent = C.studioLabel; $('title').textContent = C.title; $('lede').textContent = C.invitation;

@@ -5,12 +5,26 @@
 // touching) before intersecting. Intersections are open: an end meeting a start is a touch, not an overlap.
 // A day with no entries for a person is UNKNOWN, never free; unknown people never join an intersection.
 (function (root, factory) { var m = factory(root.MILL || (typeof require === 'function' ? require('../shared/core.js') : null)); if (typeof module === 'object' && module.exports) module.exports = m; else root.TSH = m; })(this, function (M) {
-  var LIM = { pMin: 2, pMax: 6, name: 24, title: 40, ivPer: 21, minMax: 1440, hrMax: 24, frag: 2000 };
+  var LIM = { pMin: 2, pMax: 6, name: 24, title: 40, ivPer: 21, minMax: 1440, hrMax: 24, frag: 2000 }; // frag: decode limit; the app caps the FULL URL at 2,000 (QA D7)
   var DAY = 864e5, MIN = 6e4;
   var fmts = {};
-  function zones() { var z = []; try { z = Intl.supportedValuesOf('timeZone').slice(); } catch (e) {} if (z.indexOf('UTC') < 0) z.push('UTC'); return z; }
-  var ZSET = null; function validZone(z) { if (!ZSET) { ZSET = {}; zones().forEach(function (k) { ZSET[k] = 1; }); } return typeof z === 'string' && ZSET[z] === 1; }
-  function fmt(z) { if (!fmts[z]) fmts[z] = new Intl.DateTimeFormat('en-US', { timeZone: z, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }); return fmts[z]; }
+  // QA local-715aa3a D1: current IANA names and their legacy aliases both work; links and the picker always use the current
+  // (canonical) name. Browsers' Intl lists can return either form (Chrome/Node return the legacy ICU ids).
+  var RENAMED = { 'Asia/Calcutta': 'Asia/Kolkata', 'Asia/Katmandu': 'Asia/Kathmandu', 'Europe/Kiev': 'Europe/Kyiv', 'America/Buenos_Aires': 'America/Argentina/Buenos_Aires',
+    'America/Catamarca': 'America/Argentina/Catamarca', 'America/Cordoba': 'America/Argentina/Cordoba', 'America/Jujuy': 'America/Argentina/Jujuy', 'America/Mendoza': 'America/Argentina/Mendoza',
+    'Asia/Saigon': 'Asia/Ho_Chi_Minh', 'Asia/Rangoon': 'Asia/Yangon', 'America/Godthab': 'America/Nuuk', 'Atlantic/Faeroe': 'Atlantic/Faroe', 'Pacific/Enderbury': 'Pacific/Kanton',
+    'Pacific/Truk': 'Pacific/Chuuk', 'Pacific/Ponape': 'Pacific/Pohnpei', 'America/Indianapolis': 'America/Indiana/Indianapolis', 'America/Louisville': 'America/Kentucky/Louisville',
+    'America/Coral_Harbour': 'America/Atikokan', 'Asia/Dacca': 'Asia/Dhaka', 'Asia/Thimbu': 'Asia/Thimphu', 'Asia/Ulan_Bator': 'Asia/Ulaanbaatar', 'Asia/Macao': 'Asia/Macau',
+    'Asia/Chongqing': 'Asia/Shanghai', 'Asia/Kashgar': 'Asia/Urumqi', 'Europe/Uzhgorod': 'Europe/Kyiv', 'Europe/Zaporozhye': 'Europe/Kyiv', 'Asia/Ujung_Pandang': 'Asia/Makassar' };
+  var LEGACY = {}; Object.keys(RENAMED).forEach(function (k) { if (!LEGACY[RENAMED[k]]) LEGACY[RENAMED[k]] = k; });
+  function canon(z) { return typeof z === 'string' && RENAMED[z] ? RENAMED[z] : z; }
+  function intlOk(z) { try { new Intl.DateTimeFormat('en-US', { timeZone: z }); return true; } catch (e) { return false; } }
+  var ZL = null; function zones() { if (ZL) return ZL.slice(); var z = []; try { z = Intl.supportedValuesOf('timeZone').slice(); } catch (e) {} if (z.indexOf('UTC') < 0) z.push('UTC');
+    var seen = {}; ZL = []; z.forEach(function (k) { var c = canon(k); if (!seen[c] && (c === k || intlOk(c))) { seen[c] = 1; ZL.push(c); } else if (!seen[c] && !seen[k]) { seen[k] = 1; ZL.push(k); } }); ZL.sort(); return ZL.slice(); }
+  var ZSET = null; function validZone(z) { if (!ZSET) { ZSET = {}; zones().forEach(function (k) { ZSET[k] = 1; if (LEGACY[k]) ZSET[LEGACY[k]] = 1; }); } return typeof z === 'string' && ZSET[z] === 1 && intlOk(z); }
+  // the id Intl is given: the canonical name when the engine knows it, else its legacy alias
+  var ZID = {}; function zid(z) { if (!(z in ZID)) ZID[z] = intlOk(z) ? z : (LEGACY[z] && intlOk(LEGACY[z]) ? LEGACY[z] : z); return ZID[z]; }
+  function fmt(z) { if (!fmts[z]) fmts[z] = new Intl.DateTimeFormat('en-US', { timeZone: zid(z), hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }); return fmts[z]; }
   // wall clock of instant t in zone z, expressed as a UTC-epoch number (ms)
   function wall(t, z) { var p = {}; fmt(z).formatToParts(new Date(t)).forEach(function (x) { p[x.type] = x.value; }); return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second); }
   function off(t, z) { return wall(t, z) - Math.floor(t / 1000) * 1000; }
@@ -32,7 +46,7 @@
   function days(st) { var w = parseDate(st.w); if (w === null) return null; var a = []; for (var i = 0; i < 7; i++) a.push(w + i * DAY); return a; }
   function zoneInfo(t, z) {
     var o = off(t, z) / MIN, sg = o < 0 ? '\u2212' : '+', a = Math.abs(o), offs = sg + (Math.floor(a / 60) < 10 ? '0' : '') + Math.floor(a / 60) + ':' + (a % 60 < 10 ? '0' : '') + (a % 60), abbr = '';
-    try { new Intl.DateTimeFormat('en-US', { timeZone: z, timeZoneName: 'short' }).formatToParts(new Date(t)).forEach(function (x) { if (x.type === 'timeZoneName') abbr = x.value; }); } catch (e) {}
+    try { new Intl.DateTimeFormat('en-US', { timeZone: zid(z), timeZoneName: 'short' }).formatToParts(new Date(t)).forEach(function (x) { if (x.type === 'timeZoneName') abbr = x.value; }); } catch (e) {}
     return { zone: z, abbr: abbr, offset: offs, minutes: o };
   }
   // clock changes whose local date falls inside the week: [{t, dayIndex, from:'02:00 EDT', to:'01:00 EST'}]
@@ -95,22 +109,31 @@
     if (!validZone(z)) { res.state = 'nozone'; return res; }
     if (people.length < LIM.pMin || !people.some(function (p) { return M.strip(p.n) || (p.iv || []).some(function (v) { return String(v.s || '').trim() || String(v.e || '').trim(); }); })) { res.state = 'empty'; return res; }
     if (errs.length || tooMany) { res.state = 'fix'; return res; }
-    // per person per day: merge
-    P.forEach(function (p) { p.merged = p.byDay.map(mergeIv); });
+    // per person per day: merge (for the day rows); and across the whole week (QA D2 / PM b: a window over midnight,
+    // e.g. Mon 22:00-24:00 + Tue 00:00-02:00, is ONE 4-hour span, labelled with both days).
+    P.forEach(function (p) { p.merged = p.byDay.map(mergeIv); p.week = mergeIv([].concat.apply([], p.byDay)); });
+    var starts = []; for (var si = 0; si <= 7; si++) starts.push(dayStart(ds[0] + si * DAY, z));
+    var dayOf = function (t) { for (var k = 6; k >= 0; k--) if (t >= starts[k]) return k; return 0; };
+    var allKnown = ds.map(function (dt, di) { return P.every(function (p) { return p.merged[di].length; }); });
+    var spans = [], wtouch = [];
+    if (P.length) { var X = interAll(P.map(function (p) { return p.week; }));
+      for (var i0 = 0; i0 < 7; i0++) { if (!allKnown[i0] || (i0 && allKnown[i0 - 1])) continue; var j0 = i0; while (j0 < 6 && allKnown[j0 + 1]) j0++; // a run of days where everyone said something
+        var lo = starts[i0], hi = starts[j0 + 1];
+        X.pos.forEach(function (x) { var a = Math.max(x.a, lo), b = Math.min(x.b, hi); if (b > a) { var len = Math.round((b - a) / MIN); spans.push({ a: a, b: b, len: len, day: dayOf(a), endDay: dayOf(b - 1), ok: len >= dm }); } });
+        X.touch.forEach(function (t) { if (t >= lo && t <= hi) wtouch.push(t); }); } }
     var dayRes = ds.map(function (dt, di) {
       var known = P.filter(function (p) { return p.merged[di].length; }), unknown = P.filter(function (p) { return !p.merged[di].length; });
       var r = { i: di, date: dt, known: known.map(function (p) { return p.i; }), unknown: unknown.map(function (p) { return p.i; }), options: [], short: [], maybe: [], touch: [] };
       if (!known.length) { r.kind = 'allUnknown'; return r; }
       if (!unknown.length) {
-        r.kind = 'all'; var x = interAll(P.map(function (p) { return p.merged[di]; }));
-        x.pos.forEach(function (s) { var len = Math.round((s.b - s.a) / MIN); (len >= dm ? r.options : r.short).push({ a: s.a, b: s.b, len: len, day: di }); });
-        r.touch = x.touch; return r;
+        r.kind = 'all'; spans.forEach(function (x) { if (x.day === di) (x.ok ? r.options : r.short).push(x); });
+        r.touch = wtouch.filter(function (t) { return dayOf(t) === di; }); return r;
       }
       r.kind = 'partial';
       if (known.length >= 2) { var y = interAll(known.map(function (p) { return p.merged[di]; })); y.pos.forEach(function (s) { var len = Math.round((s.b - s.a) / MIN); if (len >= dm) r.maybe.push({ a: s.a, b: s.b, len: len, day: di }); }); }
       return r;
     });
-    res.dayRes = dayRes;
+    res.dayRes = dayRes; res.starts = starts;
     res.options = [].concat.apply([], dayRes.map(function (d) { return d.options; }));
     res.short = [].concat.apply([], dayRes.map(function (d) { return d.short; }));
     res.maybe = [].concat.apply([], dayRes.map(function (d) { return d.maybe; }));
@@ -120,6 +143,8 @@
     res.state = res.options.length ? 'found' : 'none';
     return res;
   }
+  // instant of local midnight of day dt (UTC-epoch of the local date); if midnight is skipped, the first valid minute
+  function dayStart(dt, z) { for (var m = 0; m <= 120; m += 30) { var r = resolve(dt, m, z); if (r.ok) return r.t - m * MIN; if (r.why === 'ambiguous') return dt - off(dt, z); } return dt - off(dt, z); }
   // local wall-clock minutes-of-day of instant t relative to day dt
   function localMin(t, dt, z) { return Math.round((wall(t, z) - dt) / MIN); }
   // axis window [startHour, endHour] fitted to entered data; whole hours, at least 6h, within 0..24
@@ -132,7 +157,7 @@
   }
   // ---- fragment #h1
   function encode(st) {
-    var o = { w: st.w, z: st.z, n: String(st.n), u: st.u, t: M.strip(st.t), p: st.p.map(function (p) { return [M.strip(p.n), (p.iv || []).filter(function (v) { return String(v.s || '').trim() || String(v.e || '').trim(); }).map(function (v) { return [+v.d, String(v.s || '').trim(), String(v.e || '').trim()]; })]; }) };
+    var o = { w: st.w, z: canon(st.z), n: String(st.n), u: st.u, t: M.strip(st.t), p: st.p.map(function (p) { return [M.strip(p.n), (p.iv || []).filter(function (v) { return String(v.s || '').trim() || String(v.e || '').trim(); }).map(function (v) { return [+v.d, String(v.s || '').trim(), String(v.e || '').trim()]; })]; }) };
     var f = M.pack('h', 1, o); return f.length > LIM.frag ? '' : f;
   }
   function decode(h) {
@@ -141,7 +166,7 @@
     if (!s(d.w, 10) || !s(d.z, 64) || !s(d.n, 4) || (d.u !== 'min' && d.u !== 'hr') || !s(d.t, LIM.title) || !Array.isArray(d.p) || d.p.length > LIM.pMax) return { ok: false, why: 'bad' };
     if (d.w && parseDate(d.w) === null) return { ok: false, why: 'bad' };
     if (d.z && !validZone(d.z)) return { ok: false, why: 'bad' };
-    var st = { w: d.w, z: d.z, n: d.n, u: d.u, t: d.t, p: [], next: 1 }, okAll = true;
+    var st = { w: d.w, z: canon(d.z), n: d.n, u: d.u, t: d.t, p: [], next: 1 }, okAll = true;
     d.p.forEach(function (pp) {
       if (!Array.isArray(pp) || pp.length !== 2 || !s(pp[0], LIM.name) || !Array.isArray(pp[1]) || pp[1].length > LIM.ivPer) { okAll = false; return; }
       var p = { id: st.next++, n: pp[0], iv: [] };
@@ -152,5 +177,5 @@
     while (st.p.length < LIM.pMin) st.p.push({ id: st.next++, n: '', iv: [] });
     return { ok: true, data: st };
   }
-  return { LIM: LIM, zones: zones, validZone: validZone, wall: wall, off: off, parseDate: parseDate, iso: iso, parseTime: parseTime, hhmm: hhmm, resolve: resolve, blank: blank, durMin: durMin, days: days, zoneInfo: zoneInfo, changes: changes, mergeIv: mergeIv, interAll: interAll, compute: compute, localMin: localMin, windowOf: windowOf, encode: encode, decode: decode };
+  return { LIM: LIM, zones: zones, validZone: validZone, canon: canon, dayStart: dayStart, wall: wall, off: off, parseDate: parseDate, iso: iso, parseTime: parseTime, hhmm: hhmm, resolve: resolve, blank: blank, durMin: durMin, days: days, zoneInfo: zoneInfo, changes: changes, mergeIv: mergeIv, interAll: interAll, compute: compute, localMin: localMin, windowOf: windowOf, encode: encode, decode: decode };
 });

@@ -40,8 +40,8 @@
   // ---------- copy / share ----------
   function selectText(node) { node.focus(); if (node.select) node.select(); else { var r = document.createRange(); r.selectNodeContents(node); var s = getSelection(); s.removeAllRanges(); s.addRange(r); } }
   function copy(text, node) { function fail() { toast(C.copyFail); selectText(node); } if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { toast(C.copied); }, fail); else fail(); }
-  function showLink(frag) { var url = location.origin + location.pathname + '#' + frag; $('link').value = url; $('linkbox').hidden = false; return url; }
-  function linkOrText(frag) { if (frag === '') { toast(C.tooLongLink); selectText($('text')); return null; } return frag ? showLink(frag) : null; }
+  function showLink(frag) { var url = V.linkFor(frag); $('link').value = url; $('linkbox').hidden = false; return url; }
+  function linkOrText(frag) { if (frag === '' || (frag && !V.linkFor(frag))) { /* QA D7: whole-URL cap */ toast(C.tooLongLink); selectText($('text')); return null; } return frag ? showLink(frag) : null; }
   function share(frag, title, text, cancelMsg) {
     var url = linkOrText(frag); if (!url) return;
     if (navigator.share) navigator.share({ title: title, text: text, url: url }).catch(function (e) { toast(e && e.name === 'AbortError' ? cancelMsg : C.copyFail); selectText($('link')); });
