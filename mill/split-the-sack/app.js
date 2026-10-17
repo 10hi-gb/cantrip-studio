@@ -78,7 +78,7 @@
   }
   // Editing makes the old link a snapshot: clear it from the address bar and the link box.
   function edited() {
-    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    if (location.hash || location.search) history.replaceState(null, '', location.pathname);
     if (lastLink) { lastLink = ''; $('linkbox').hidden = true; }
     $('banner').hidden = true; labels(); render();
   }
@@ -275,7 +275,7 @@
     if (navigator.share) navigator.share({ title: C.title, text: C.changeShareText, url: url }).catch(function (e) { toast(e && e.name === 'AbortError' ? C.shareCancel : C.copyFail); box.focus(); box.select(); });
     else copy(url, box);
   }
-  function makeLink() { var f = L.encode(st); if (!f) return null; var u = f.length > L.FRAG_MAX ? null : V.linkFor(f); if (!u) { toast(C.tooLongLink); return null; } lastLink = u; history.replaceState(null, '', '#' + f); $('link').value = lastLink; $('linkbox').hidden = false; return lastLink; }
+  function makeLink() { var f = L.encode(st); if (!f) return null; var u = f.length > L.FRAG_MAX ? null : V.linkFor(f); if (!u) { toast(C.tooLongLink); return null; } lastLink = u; history.replaceState(null, '', location.pathname + '#' + f); $('link').value = lastLink; $('linkbox').hidden = false; return lastLink; }
   function copy(text, box) {
     function fail() { toast(C.copyFail); box.focus(); box.select(); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { toast(C.copied); }, fail); else fail();
@@ -288,6 +288,7 @@
   function reset() { if (mode !== 'own') return; if (!confirm(C.resetConfirm)) return; st = blank(); orig = null; pick = -1; lastLink = ''; $('link').value = ''; history.replaceState(null, '', location.pathname); $('linkbox').hidden = true; $('banner').hidden = true; setMode('own'); toForm(); render(); toast(C.resetDone); $('item').focus(); }
   function banner(t) { $('banner-h').hidden = true; $('banner-q').hidden = true; $('banner-t').textContent = t; $('banner').hidden = false; }
   function fromHash() {
+    if (location.search) history.replaceState(null, '', location.pathname + location.hash); // PM 04:57: the address bar never keeps a ?query (path + #fragment only)
     V.clearErrors(document, '#item-msg,#hh-msg,#change-err'); $('banner').hidden = true; lastLink = ''; $('link').value = ''; $('linkbox').hidden = true; $('rlink').value = ''; $('rlinkbox').hidden = true;
     if (!location.hash || location.hash === '#') { st = blank(); setMode('own'); return; }
     // QA local-d8d1dce D7r: the WHOLE received URL (origin + path + # + fragment) is capped at 2,000 like sending (shared MILLVIEW.linkFor), not just the fragment

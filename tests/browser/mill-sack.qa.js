@@ -489,5 +489,29 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     ck('query ruling: received link + ?q=<marker>, normal path: opens; marker nowhere; links generated onward carry no query', rcv.opened && !rcv.mark && !rcv.genQ, rcv);
     ck('query ruling: 2,002-char total incl. ?q=<marker> (long path; ' + l2002.lenNoQ + ' without the query, so within 2,000): opens; marker nowhere; no query onward', l2002.len === 2002 && l2002.lenNoQ <= 2000 && l2002.opened && !l2002.mark && !l2002.genQ, l2002);
     ck('query ruling: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // PM 04:57 query-strip (hardening): every address-bar rewrite writes path + #fragment only, never a ?query, so a URL copied from the address bar never
+  // carries it; the #fragment is kept or cleared exactly as before. For each ?q= QA probes (short; HTML/script with a visitor name; a 2,100-char pad),
+  // open a valid link with it, then change my amount and make that link; then, as the sender, edit, make a link, edit again and reset: after each step location.search is '', the marker is not in location.href, and location.hash is as expected.
+  for (const [QN, QQ] of [['short', '?q=Qzst57'], ['html+script with a visitor name', '?q=' + encodeURIComponent('<script>alert("Ana")</script><b onclick=x>Ana Qzst57</b>')], ['2,100-char pad', '?q=Qzst57' + 'p'.repeat(2100)]]) {
+    const QM = 'Qzst57', s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 });
+    await p.evaluateOnNewDocument(() => { window.confirm = () => true; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); });
+    const steps = [], loc = () => p.evaluate(M => ({ search: location.search, hash: location.hash, mark: location.href.includes(M) }), QM);
+    const at = async (step, did, exp) => { const l = await loc(); steps.push(Object.assign({ step, did: did !== false, exp, hashOk: exp === null || l.hash === exp }, l)); };
+    const clickIf = sel => p.evaluate(sel => { const e = document.querySelector(sel); if (!e || e.disabled) return false; const b = e.getBoundingClientRect(); if (!b.width || !b.height) return false; e.click(); return true; }, sel);
+    const val = sel => p.evaluate(sel => { const e = document.querySelector(sel); return e ? e.value : ''; }, sel), frag = u => (u.match(/#.*$/) || [''])[0];
+    const open = async url => { await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(300); };
+    await open(BASE); const fq = await p.evaluate(() => SACKLINK.encode({ n: 'Rice', u: 'kg', c: '$', q: '10', i: '1', p: '10', f: '', b: 'p', x: -1, h: [['Ana', '4'], ['Bo', '3']] })), F = '#' + fq;
+    await open(BASE + QQ + '#' + fq); await at('open received link', true, F);
+    await p.select('#pick', '0'); await p.focus('#change'); await p.keyboard.press('Enter'); await sleep(80); await p.focus('#down'); await p.keyboard.press('Enter'); await sleep(80); await at('change my amount', true, F);
+    await p.focus('#makelink'); await p.keyboard.press('Enter'); await sleep(300); await at('make my new link', /#s1\./.test(await val('#rlink')), F);
+    await open(BASE + QQ); await at('open sender', true, '');
+    await typeInto(p, '#item', 'Jasmine rice'); await typeInto(p, '#q', '10'); await typeInto(p, '#u', 'lb'); await typeInto(p, '#inc', '1'); await typeInto(p, '#p', '10.00');
+    const hn = await p.$$('#hh input:not(.sk-rq)'); await hn[0].focus(); await p.keyboard.type('Ana'); await hn[1].focus(); await p.keyboard.type('Ben');
+    const rq = await p.$$('#hh .sk-rq'); for (const r of rq) { await r.focus(); await p.keyboard.type('5'); } await sleep(100); await at('edit', true, '');
+    await p.focus('#share'); await p.keyboard.press('Enter'); await sleep(300); const lk = await val('#link'); await at('make link', /#s1\./.test(lk), frag(lk));
+    await typeInto(p, '#item', 'Basmati rice'); await sleep(100); await at('edit after the link', true, '');
+    const r = await clickIf('#reset'); await sleep(250); await at('reset', r, '');
+    ck('PM 04:57 query-strip (' + QN + '): ' + steps.map(x => x.step).join(' -> ') + ': every step happened; location.search empty, no marker in location.href, location.hash as expected after each', steps.length >= 8 && steps.every(x => x.did && x.search === '' && !x.mark && x.hashOk), steps.map(x => Object.assign({}, x, { hash: x.hash.slice(0, 60), exp: x.exp && x.exp.slice(0, 60) })));
+    ck('PM 04:57 query-strip (' + QN + '): no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
