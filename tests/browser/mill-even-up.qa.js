@@ -37,21 +37,22 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
   // side, so line-box padding and pill corners the glyphs never touch are left out). Returns the median-background ratio and the worst-pixel ratio.
   const rgbOf = s => s.match(/[\d.]+/g).slice(0, 4).map(Number), lumA = c => { const f = v => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
   const crA = (a, b) => { const x = lumA(a), y = lumA(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
-  async function renderedContrast(s, p, sel) {
+  // QA W-9m (PM 08:26 worst-pixel rule): full = the whole line box of every line, 1px in from each edge (not the middle 60%), outlines hidden.
+  async function renderedContrast(s, p, sel, full) {
     const vw = p.viewport(), H = await p.evaluate(() => document.documentElement.scrollHeight); await p.setViewport({ width: vw.width, height: Math.min(H, 8000) }); await p.evaluate(() => scrollTo(0, 0)); await sleep(200);
     const items = await p.evaluate(sel => [...document.querySelectorAll(sel)].filter(e => e.getClientRects().length && getComputedStyle(e).visibility === 'visible' && e.textContent.trim()).map(e => { const rg = document.createRange(); rg.selectNodeContents(e);
       const rects = [...rg.getClientRects()].filter(x => x.width > 1 && x.height > 1).map(x => ({ x: x.left, y: x.top, w: x.width, h: x.height })); let a = 1; for (let x = e; x; x = x.parentElement) a *= parseFloat(getComputedStyle(x).opacity);
-      return { txt: e.textContent.trim().slice(0, 40), rects, color: getComputedStyle(e).color, a, size: getComputedStyle(e).fontSize }; }), sel);
-    await p.evaluate(() => { window.__rc = []; document.querySelectorAll('*').forEach(e => { window.__rc.push([e, e.style.getPropertyValue('color'), e.style.getPropertyPriority('color'), e.style.getPropertyValue('text-shadow'), e.style.getPropertyPriority('text-shadow')]); e.style.setProperty('color', 'transparent', 'important'); e.style.setProperty('text-shadow', 'none', 'important'); }); });
+      return { txt: e.textContent.trim().slice(0, 40), el: e.id ? '#' + e.id : (e.parentElement.closest('[id]') ? e.parentElement.closest('[id]').id + '>' : '') + e.tagName.toLowerCase() + (e.className ? '.' + String(e.className).split(' ')[0] : ''), rects, color: getComputedStyle(e).color, a, size: getComputedStyle(e).fontSize }; }), sel);
+    await p.evaluate(full => { window.__rcFull = !!full; window.__rco = []; window.__rc = []; document.querySelectorAll('*').forEach(e => { window.__rc.push([e, e.style.getPropertyValue('color'), e.style.getPropertyPriority('color'), e.style.getPropertyValue('text-shadow'), e.style.getPropertyPriority('text-shadow')]); e.style.setProperty('color', 'transparent', 'important'); e.style.setProperty('text-shadow', 'none', 'important'); }); if (window.__rcFull) document.querySelectorAll('*').forEach(e => { window.__rco.push([e, e.style.getPropertyValue('outline-color'), e.style.getPropertyPriority('outline-color')]); e.style.setProperty('outline-color', 'transparent', 'important'); }); }, full);
     await sleep(150); const png = await p.screenshot({ encoding: 'base64' });
-    await p.evaluate(() => { window.__rc.forEach(([e, c, cp, t, tp]) => { if (c) e.style.setProperty('color', c, cp); else e.style.removeProperty('color'); if (t) e.style.setProperty('text-shadow', t, tp); else e.style.removeProperty('text-shadow'); }); delete window.__rc; });
-    const dp = await s.b.newPage(); const px = await dp.evaluate(async (b64, items) => { const im = new Image(); im.src = 'data:image/png;base64,' + b64; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d'); g.drawImage(im, 0, 0);
-      return items.map(it => { const out = []; it.rects.forEach(r => { const x0 = Math.max(0, Math.round(r.x + 1)), y0 = Math.max(0, Math.round(r.y + r.h * .2)), w = Math.max(1, Math.min(c.width - x0, Math.round(r.w - 2))), h = Math.max(1, Math.min(c.height - y0, Math.round(r.h * .6))); const d = g.getImageData(x0, y0, w, h).data; for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]); }); return out; }); }, png, items);
+    await p.evaluate(() => { window.__rco.forEach(([e, c, cp]) => { if (c) e.style.setProperty('outline-color', c, cp); else e.style.removeProperty('outline-color'); }); window.__rc.forEach(([e, c, cp, t, tp]) => { if (c) e.style.setProperty('color', c, cp); else e.style.removeProperty('color'); if (t) e.style.setProperty('text-shadow', t, tp); else e.style.removeProperty('text-shadow'); }); delete window.__rc; });
+    const dp = await s.b.newPage(); const px = await dp.evaluate(async (b64, items, full) => { const im = new Image(); im.src = 'data:image/png;base64,' + b64; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d'); g.drawImage(im, 0, 0);
+      return items.map(it => { const out = []; it.rects.forEach(r => { const x0 = Math.max(0, Math.round(r.x + 1)), y0 = Math.max(0, Math.round(full ? r.y + 1 : r.y + r.h * .2)), w = Math.max(1, Math.min(c.width - x0, Math.round(r.w - 2))), h = Math.max(1, Math.min(c.height - y0, Math.round(full ? r.h - 2 : r.h * .6))); const d = g.getImageData(x0, y0, w, h).data; for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]); }); return out; }); }, png, items, full);
     await dp.close(); await p.setViewport(vw); await sleep(150);
     return items.map((it, k) => { const bg = px[k]; if (!bg.length) return Object.assign(it, { med: null, worst: null }); const L = bg.map(lumA), ord = L.map((v, i) => i).sort((a, b) => L[a] - L[b]), med = bg[ord[ord.length >> 1]];
       const c = rgbOf(it.color), al = (c[3] === undefined ? 1 : c[3]) * it.a, comp = b => [0, 1, 2].map(i => c[i] * al + b[i] * (1 - al)), r = b => crA(comp(b), b);
       const worst = Math.min(...[...new Set(ord.map(i => bg[i].join()))].map(sv => r(sv.split(',').map(Number))));
-      return { txt: it.txt, size: it.size, color: it.color, a: +it.a.toFixed(3), med: med.join(','), ratioMed: +r(med).toFixed(2), ratioWorst: +worst.toFixed(2), n: bg.length }; }); }
+      return { txt: it.txt, el: it.el, size: it.size, color: it.color, a: +it.a.toFixed(3), med: med.join(','), ratioMed: +r(med).toFixed(2), ratioP5: +r(bg[ord[Math.floor(ord.length * .05)]]).toFixed(2), ratioWorst: +worst.toFixed(2), worstPx: bg[ord[0]].join(','), n: bg.length }; }); }
   for (const w of W) {
     // ---------- sender flow
     let s = await session(H, IP); let { p } = s; await p.setViewport({ width: w, height: 900 }); await p.evaluateOnNewDocument(clipStub());
@@ -438,5 +439,31 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     const op = await p.$$eval('#rods .eu-token small', es => es.map(e => getComputedStyle(e).opacity));
     ck(w + ` QA all9 W-5: token figures and tags >= 4.5:1 against the worst rendered pixel (Owes tag ${owes.map(x => x.ratioWorst).join('/')}:1), tags at full opacity`, owes.length > 0 && tags.length >= 3 && r.every(x => x.ratioWorst >= 4.5) && op.every(o => o === '1'), r.map(x => x.txt + ' ' + x.size + ' ' + x.color + ' a' + x.a + ' med ' + x.ratioMed + ' worst ' + x.ratioWorst));
     ck(w + ' QA all9 W-5 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // ---------- QA W-9m (wp-sweep-bfca3c8): every line of muted text (--eu-mute: home link, strip, event line, labels, scale, legend, empty line, "?",
+  // fine print, unpicked chips) >= 4.5:1 against the DARKEST rendered pixel in its full line box (body dot texture, frame stripes), QA's 5 states, 320/390/1280.
+  // Disabled controls are exempt (PM ruling).
+  { const W24 = 'Pneumonoultramicroscopic', HY = 'twenty-two-year-old', FL = 'Ana \u{1F1F3}\u{1F1FF}\u{1F1EF}\u{1F1F5} \u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}', cut = (x, n) => [...x].slice(0, n).join('');
+    // QA's long-content event (qa/even-up/wp-sweep-bfca3c8/gen9.js)
+    const qst = { ev: cut(W24 + ' ' + HY + ' weekend ' + FL, 60), cur: 0, p: ['Wolfeschlegelsteinhausen', cut('Anne-Marie-Louise-Ottoline', 24), cut('Bartholomew Quatermaine', 24), cut(FL, 24)].map((n, i) => ({ id: i + 1, name: n })), x: [], next: 5 };
+    [[W24 + ' ' + HY, 12345, 1], ['Grandmother-of-the-bride cake', 4000, 2], [FL + ' ' + W24, 999, 3]].forEach(([wh, a, py]) => qst.x.push({ id: qst.next++, what: cut(wh, 40), amt: a, payer: py, gone: '', mode: 'e', inc: [1, 2, 3, 4], w: { 1: 100, 2: 100, 3: 100, 4: 100 } }));
+    for (const w of [320, 390, 1280]) { const s = await session(H, IP), { p } = s; await p.setViewport({ width: w, height: 900 }); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+      await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); const fq = await p.evaluate(st => EU.encode(st, 0), qst);
+      const go = async h => { await p.goto('about:blank'); await p.goto(BASE + (h ? '#' + h : ''), { waitUntil: 'load' }); await sleep(350); };
+      const setv = (sel, v) => p.evaluate((sel, v) => { const e = document.querySelector(sel); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(e, v); e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); }, sel, v);
+      const clk = sel => p.evaluate(sel => { const e = document.querySelector(sel); if (e && !e.disabled) e.click(); return !!e; }, sel);
+      const states = [['received', () => go(fq)], ['own copy', async () => { await go(fq); await clk('#own-copy'); await sleep(250); }], ['sender blank', () => go('')],
+        ['sender form error', async () => { await go(fq); await clk('#own-copy'); await sleep(250); await clk('#p-add'); await sleep(150); await setv('#f-amt', 'abc'); await clk('#f-add'); await sleep(250); }], ['bad link', () => go('eu1.AAAAbroken.000000')]];
+      const all = [];
+      for (const [nm, fn] of states) { await fn();
+        const want = await p.evaluate(() => { const t = document.createElement('span'); t.style.color = 'var(--eu-mute)'; document.body.append(t); const c = getComputedStyle(t).color; t.remove();
+          document.querySelectorAll('[data-w9m]').forEach(e => e.removeAttribute('data-w9m'));
+          document.querySelectorAll('body *').forEach(e => { if (getComputedStyle(e).color === c && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && !e.closest('button:disabled,input:disabled,select:disabled,[aria-disabled=true]')) e.setAttribute('data-w9m', ''); }); return c; });
+        const r = await renderedContrast(s, p, '[data-w9m]', true), key = ['#home', '#strip', '#event-line'];
+        r.forEach(x => { x.state = nm; }); all.push(...r);
+        const got = key.filter(k => r.some(x => x.el === k)), bad = r.filter(x => x.ratioWorst < 4.5);
+        ck(w + ` QA W-9m (${nm}): every muted-text line (${r.length} items, ${want}; ${got.map(k => k + ' ' + Math.min(...r.filter(x => x.el === k).map(x => x.ratioWorst))).join(', ')}; worst item ${r.length ? Math.min(...r.map(x => x.ratioWorst)) : '-'}) >= 4.5:1 against the DARKEST rendered pixel in its full line box`, r.length > 0 && got.includes('#home') && got.includes('#strip') && !bad.length, bad.map(x => x.el + ' "' + x.txt + '" ' + x.size + ' med ' + x.ratioMed + ' p5 ' + x.ratioP5 + ' worst ' + x.ratioWorst + ' @' + x.worstPx)); }
+      if (process.env.EU_W9M_LOG) require('fs').appendFileSync(process.env.EU_W9M_LOG, JSON.stringify({ w, items: all.map(x => [x.state, x.el, x.txt.slice(0, 24), x.ratioMed, x.ratioP5, x.ratioWorst]) }) + '\n');
+      ck(w + ' QA W-9m: #event-line measured (received / own copy / form error)', ['received', 'own copy', 'sender form error'].every(st => all.some(x => x.state === st && x.el === '#event-line')), [...new Set(all.map(x => x.state + ' ' + x.el))]);
+      ck(w + ' QA W-9m block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); } }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

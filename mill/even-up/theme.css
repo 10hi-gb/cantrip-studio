@@ -19,7 +19,7 @@
   --eu-even-ring:#B9A88A;
   --eu-line:#2A2F6B;       /* indigo settlement ink */
   --eu-ink:#26211C;
-  --eu-mute:#6A6157;
+  --eu-mute:#665D53;          /* QA W-9m: was #6A6157 (4.26:1 on the body dot #E0D7C9 at the darkest pixel); 4.53 on the dot (rendered), 4.86 on the frame stripe #ECDEC4 */
   --eu-tape:#FBFAF4;       /* adding-machine tape */
   --eu-tape-ink:#3B3A55;
   --eu-tape-red:#B0322A;   /* residual-cent mark, printed in "second ribbon" red */

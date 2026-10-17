@@ -110,6 +110,20 @@ textarea{width:100%;font:400 16px/1.4 var(--ui);padding:12px;border:3px solid va
 .lr-page .modes{gap:calc(var(--ring-x) + 2px)}
 .lr-top{padding-bottom:calc(var(--ring-x) + 3px)} /* padding, so the title's own margin still adds (its glyphs rise above its box at 64px) */
 .lr-chosen .lr-box{margin-top:calc(var(--ring-x) + 6px)} /* the copy box under the chosen-screen buttons */
+/* QA local-2304261 L15: clearance, not just no overlap. Every neighbour of a focusable (side-by-side fields and pictures, the
+   switch selects, the mode buttons, labels and hints above and below, the question card's own border, the privacy note,
+   the studio strip) sits at least the ring's reach + 3px from it; text gets +6px because its glyph box rises above and
+   below a tight line box. The ring itself is unchanged. This also clears the Remove ring from the emoji hint (was -0.41px). */
+.lr-page .pair{column-gap:calc(var(--ring-x) + 6px)} /* + the 2px red ring an invalid neighbour wears */
+.lr-page .lr-set{column-gap:calc(var(--ring-x) + 6px)}
+.lr-page .modes{gap:calc(var(--ring-x) + 4px)}
+.lr-page label{margin-top:calc(var(--ring-x) + 6px)}
+.lr-page .lr-box label{margin-top:0}
+.lr-page .lr-fine,.lr-page .lr-meta,.lr-page .lr-err,.lr-page .privacy{margin-top:calc(var(--ring-x) + 6px)}
+.lr-page .lr-rm{margin-top:calc(var(--ring-x) + 6px)}
+.lr-page .lr-q{margin-top:calc(var(--ring-x) + 14px);padding-left:calc(var(--ring-x) + 4px);padding-right:calc(var(--ring-x) + 4px);padding-bottom:calc(var(--ring-x) + 4px)}
+.lr-page .lr-box{margin-top:calc(var(--ring-x) + 4px)}
+.lr-top{row-gap:calc(var(--ring-x) + 8px)}
 /* chosen (S3): the felt swell, in normal flow */
 .lr-clip{overflow:hidden} /* the swell's soft overshoot never pushes the page sideways */
 .lr-chosen{position:relative;inset:auto;min-height:100vh;min-height:100dvh}

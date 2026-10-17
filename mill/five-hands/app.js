@@ -68,6 +68,8 @@
   // a stick is the bar (width = its minutes, to scale); .lab holds the name then the minutes (display:contents unless the label has to sit outside the bar)
   // QA H17: a space-free word that holds emoji or flags (with any quote glued to it) is one unit for wrapping (typed values and the sheet's task cells): an inline-block, so the whole word
   // moves to the next line when it fits there, and only a word wider than its box breaks inside (break-word). Text, copy and names unchanged.
+  // QA local-82c4667 H17: the product sentences that quote a typed name get the same treatment (over summary, roll load line, Copy-the-card button, sheet minutes
+  // cell, change summary, bench explanation, card preview), so no emoji/flag run breaks inside on any surface.
   var EMO = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
   function emoWords(node) { var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), list = [], n; while ((n = w.nextNode())) if (EMO.test(n.data) && !(n.parentElement && n.parentElement.closest('.fh-w'))) list.push(n);
     list.forEach(function (tn) { var f = document.createDocumentFragment(); tn.data.split(/(\s+)/).forEach(function (x) { if (!x) return; if (EMO.test(x)) f.append(el('span', 'fh-w', x)); else f.append(document.createTextNode(x)); }); tn.replaceWith(f); });
@@ -88,13 +90,25 @@
   var WIDE = window.matchMedia ? window.matchMedia('(min-width:641px)') : { matches: true }, cx = document.createElement('canvas').getContext('2d');
   function tw(node, text, px) { var cs = getComputedStyle(node); cx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + (px || cs.fontSize) + ' ' + cs.fontFamily; return cx.measureText(text).width; }
   function widest(node, text) { return text.split(/\s+|(?<=[-\u2010\u2011])/).reduce(function (w, x) { return Math.max(w, tw(node, x)); }, 0); }
-  var LBL = ['in', 'inr', 'out', 'split', 'under', 'below', 'gc', 'gk', 'chip'], LV = ['--pl', '--pr', '--lx', '--ly', '--lw', '--nx', '--nw', '--below'];
+  var LBL = ['in', 'inr', 'out', 'split', 'under', 'below', 'gc', 'gk', 'chip'], LV = ['--pl', '--pr', '--lx', '--ly', '--lw', '--nx', '--nw', '--below', '--sd', '--hx'];
   // A name too long for its line is cut inside its quotes (“Greenhou…”), so the closing quote stays visible: the cut copy is aria-hidden, the full
   // name stays in the DOM (visually hidden), so the accessible name and copied text keep all of it.
   function uncut(t) { var c = t.querySelector('.cut'); if (c) { c.remove(); t.firstChild.classList.remove('fh-vh'); } }
   function cut(t, avail) { var full = t.textContent; if (tw(t, full) <= avail) return; var a = full.charAt(0), z = full.charAt(full.length - 1), mid = full.slice(1, -1), lo = 0, hi = mid.length;
     while (lo < hi) { var k = Math.ceil((lo + hi) / 2); if (tw(t, a + mid.slice(0, k).replace(/\s+$/, '') + '\u2026' + z) <= avail) lo = k; else hi = k - 1; }
     var c = el('span', 'cut', a + mid.slice(0, lo).replace(/\s+$/, '') + '\u2026' + z); c.setAttribute('aria-hidden', 'true'); t.firstChild.classList.add('fh-vh'); t.append(c); }
+  // QA H18 (PM 08:31, frame rule 1a): an in-bar label stays inside its own bar and inside the track on every frame of the slide-in. The bar slides in from
+  // --sd px to the left; the label moves with it except for --hx px of hold (same easing, so every frame is a straight mix of the first and the last).
+  // From settled geometry: R = room between the label's end and the bar's rounded end, L = room between the label's start and the track's clip edge.
+  // The label's end gains on the bar's end by hx ≤ R, and it moves left by sd − hx ≤ L, so sd = min(14, R + L) and hx = min(sd, R). Out labels keep the
+  // full 14px slide and hold (their .lab box, app.css). Reduced motion: no animation, nothing to do.
+  function slideRoom(box, ins) { if (!ins.length) return; var tr = box.closest('.track') || box, tb = tr.getBoundingClientRect(), clipL = tb.left + (parseFloat(getComputedStyle(tr).borderLeftWidth) || 0);
+    var dxOf = function (e) { var tf = getComputedStyle(e).transform; return tf && tf !== 'none' && window.DOMMatrixReadOnly ? new DOMMatrixReadOnly(tf).m41 : 0; };
+    ins.forEach(function (s) { var sb = s.getBoundingClientRect(), sdx = dxOf(s), lo = Infinity, hi = -Infinity;
+      ['.t', '.m'].forEach(function (q) { var e = s.querySelector(q), rg = document.createRange(), own = dxOf(e); rg.selectNodeContents(e); [].forEach.call(rg.getClientRects(), function (r) { if (!r.width) return; lo = Math.min(lo, r.left - own - sb.left); hi = Math.max(hi, r.right - own - sb.left); }); });
+      if (lo === Infinity) return;
+      var R = Math.max(0, Math.floor(sb.width - hi - 2)), L = Math.max(0, Math.floor(sb.left - sdx + lo - clipL - 1)), sd = Math.min(14, R + L);
+      setv(s, '--sd', sd + 'px'); setv(s, '--hx', Math.min(sd, R) + 'px'); }); }
   function layOne(box) { var sts = [].slice.call(box.children).filter(function (x) { return x.classList.contains('stick'); });
     sts.forEach(function (s) { LBL.forEach(function (c) { s.classList.remove(c); }); LV.forEach(function (k) { s.style.removeProperty(k); }); uncut(s.querySelector('.t')); });
     box.style.removeProperty('--outh'); if (!box.getClientRects().length) return;
@@ -104,6 +118,7 @@
       if (wood - pad >= need) { s.classList.add('in'); if (red) setv(s, '--pr', Math.ceil(red + pad / 2) + 'px'); }
       else if (red - pad >= need) { s.classList.add('inr'); setv(s, '--pl', Math.ceil(wood + pad / 2) + 'px'); }
       else { s.classList.add('out'); outs.push(s); } });
+    slideRoom(box, sts.filter(function (s) { return !s.classList.contains('out'); }));
     if (!outs.length) return;
     // QA H15: a stick may still be sliding in (translateX, app.css) when this runs, so its box is read without the transform: the final,
     // settled geometry. The label itself is held still against the slide (fh-hold), so it sits at that final place on every frame.
@@ -131,9 +146,9 @@
   function helperCard(r, sc, title, mode) { var a = el('article', 'helper' + (r.cap === 0 ? ' zero' : '') + (r.cap === 0 && !r.items.length ? ' idle' : '')), nm = q(M.strip(r.name)), ll = M.fill(C.loadLine, { load: r.load, cap: r.cap });
     var idle = r.cap === 0 && !r.items.length, ov = r.over ? M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : '', sp = !ov && r.cap > 0 && r.spare > 0 ? M.fill(C.loadSpare, { n: r.spare }) : '';
     var hh = el('div', 'hhead'), tab = el('span', 'tab'); tab.append(typed(r.name)); var ld = el('span', 'load', idle ? C.zeroHead : ll);
-    if (ov) ld.append(el('span', 'over', C.tallySep + ov)); else if (sp) ld.append(el('span', 'spare', C.tallySep + sp));
+    if (ov) ld.append(emoWords(el('span', 'over', C.tallySep + ov))); else if (sp) ld.append(el('span', 'spare', C.tallySep + sp));
     a.setAttribute('aria-label', nm + ': ' + ld.textContent);
-    var b = el('button', 'btn noprint', M.fill(C.copyCard, { name: nm })); b.type = 'button'; b.addEventListener('click', function () { var t = FH.cardText(C, title, r, mode); preview(nm, t); copy(t); });
+    var b = emoWords(el('button', 'btn noprint', M.fill(C.copyCard, { name: nm }))); b.type = 'button'; b.addEventListener('click', function () { var t = FH.cardText(C, title, r, mode); preview(nm, t); copy(t); });
     hh.append(tab, ld, b); a.append(hh);
     var me = el('div', 'meter'); me.setAttribute('aria-hidden', 'true'); setv(me, '--sc', sc); setv(me, '--cap', r.cap); setv(me, '--ld', Math.min(r.load, r.cap)); setv(me, '--ov', r.over);
     me.append(el('span', 'cap'), el('span', 'fill')); if (r.over) me.append(el('span', 'ovr')); a.append(me);
@@ -144,20 +159,20 @@
     else { var rl = el('span', 'roll'); rl.setAttribute('aria-hidden', 'true'); tr.append(rl); }
     var st = el('div', 'sticks'); r.items.forEach(function (it) { st.append(stick(it, sc)); }); tr.append(st); a.append(tr);
     a.append(el('div', 'stampline', FH.stampFor(C, mode))); return a; }
-  function preview(nm, t) { $('preview-h').textContent = M.fill(C.cardPreviewLabel, { name: nm }); $('preview-t').textContent = t; $('preview').hidden = false; }
+  function preview(nm, t) { $('preview-h').textContent = M.fill(C.cardPreviewLabel, { name: nm }); $('preview-t').textContent = t; emoWords($('preview-h')); emoWords($('preview-t')); $('preview').hidden = false; }
   function render(d, res, recv) { last = { d: d, res: res }; var title = M.strip(d.title);
     $('s2-h').textContent = res.mode === 'check' ? C.checkTotals : res.bench.length ? C.suggestHeadingShort : C.suggestHeading;
     tally(res); $('cons-fail').hidden = res.conserved; $('cons-fail').textContent = res.conserved ? '' : C.conservationFail; $('result').hidden = !res.conserved;
     // the simple-rule label line rides on every Suggest result
     $('rule').hidden = res.mode !== 'suggest'; $('rule-h').textContent = C.ruleHeading; $('rule-t').textContent = C.ruleText;
     var ov = $('over'); ov.hidden = res.mode !== 'check';
-    ov.textContent = res.over.length ? M.plural(C.overList, res.over.length, { list: M.raw(res.over.map(function (r) { return M.fill(C.overItem, { name: q(M.strip(r.name)), n: r.over }); }).join(', ')) }) : C.checkNoneOver;
+    ov.textContent = res.over.length ? M.plural(C.overList, res.over.length, { list: M.raw(res.over.map(function (r) { return M.fill(C.overItem, { name: q(M.strip(r.name)), n: r.over }); }).join(', ')) }) : C.checkNoneOver; emoWords(ov);
     var sc = res.scale, host = $('rolls'); host.textContent = ''; res.rows.forEach(function (r) { host.append(helperCard(r, sc, title, res.mode)); });
     // bench
     var bh = $('bench-h'), pl = $('plank'); pl.textContent = ''; bh.textContent = res.bench.length ? M.plural(C.benchHeading, res.bench.length, { m: res.benchMin }) : C.benchHeadingEmpty;
     if (res.bench.length) { var bs = el('div', 'sticks'), bsc = Math.max(sc, res.benchMin); res.bench.forEach(function (t) { bs.append(stick(t, bsc)); }); pl.append(bs); }
     else pl.append(el('p', 'empty', C.benchEmpty));
-    var be = $('bench-explain'); be.hidden = !res.benchExplain; be.textContent = res.benchExplain ? M.fill(C.benchExplain, { m: res.benchMin, list: M.raw(res.spares.map(function (r) { return M.fill(C.spareItem, { name: q(M.strip(r.name)), n: r.spare }); }).join(' · ')) }) : '';
+    var be = $('bench-explain'); be.hidden = !res.benchExplain; be.textContent = res.benchExplain ? M.fill(C.benchExplain, { m: res.benchMin, list: M.raw(res.spares.map(function (r) { return M.fill(C.spareItem, { name: q(M.strip(r.name)), n: r.spare }); }).join(' · ')) }) : ''; emoWords(be);
     $('b-bench').hidden = !res.bench.length; $('preview').hidden = true;
     $('b-change').hidden = !!recv; sheet(title, res); $('link-box').hidden = true; $('link').value = ''; $('link-long').hidden = true; $('share').hidden = !!recv;
     show('s2', true); show('s5', true); lay(); }
@@ -165,7 +180,7 @@
     var line = function (its) { return its.map(function (it) { return M.fill(C.sheetTaskCell, { task: M.strip(it.name), m: it.min }); }).join(' · '); };
     res.rows.forEach(function (r) { var tr = el('tr'), n = el('td', 'n'); n.append(typed(r.name)); var nm = q(M.strip(r.name));
       var mt = M.fill(C.loadLine, { load: r.load, cap: r.cap }) + (r.over ? C.tallySep + M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : r.cap > 0 && r.spare > 0 ? C.tallySep + M.fill(C.loadSpare, { n: r.spare }) : ''); // PM: loadSpare on the sheet too
-      tr.append(n, emoWords(el('td', null, r.items.length ? line(r.items) : r.cap === 0 ? C.rolledUp : '')), el('td', null, mt)); tb.append(tr); });
+      tr.append(n, emoWords(el('td', null, r.items.length ? line(r.items) : r.cap === 0 ? C.rolledUp : '')), emoWords(el('td', null, mt))); tb.append(tr); });
     var br = el('tr', 'fh-benchrow'); br.append(el('td', 'n', C.sheetBenchRow), emoWords(el('td', null, res.bench.length ? line(res.bench) : C.benchEmpty)), el('td', null, M.fill(C.sheetMinutes, { n: res.benchMin }))); tb.append(br); // always printed, empty too
     $('sheet-stamp').textContent = FH.stampFor(C, res.mode); $('sheet-rule').textContent = res.mode === 'check' ? C.sheetRuleCheck : C.sheetRule; $('sheet-note').textContent = C.sheetNote; }
   function split() { tried = true; var d = read(), errs = FH.validate(d.helpers, d.tasks, d.title), first = showErrs(errs, d);
@@ -178,7 +193,7 @@
     if (res.mode === 'suggest') { var now = d.helpers.map(function (h) { return [M.strip(h.name).toLowerCase(), h.min, M.strip(h.name)]; });
       if (prevSuggest && prevSuggest.length === now.length && now.every(function (h, i) { return h[0] === prevSuggest[i][0]; })) {
         var items = now.filter(function (h, i) { return h[1] !== prevSuggest[i][1]; }).map(function (h) { var i = now.indexOf(h); return M.fill(C.changeItem, { name: q(h[2]), was: prevSuggest[i][1], now: h[1] }); });
-        if (items.length) { ch.textContent = M.fill(C.changeSummary, { list: M.raw(items.join(' · ')) }); ch.hidden = false; } }
+        if (items.length) { ch.textContent = M.fill(C.changeSummary, { list: M.raw(items.join(' · ')) }); emoWords(ch); ch.hidden = false; } }
       prevSuggest = now; }
     render({ title: d.title, helpers: d.helpers, tasks: d.tasks }, res, false); hideFb();
     $('s2').scrollIntoView({ block: 'start' }); $('s2').focus({ preventScroll: true }); }
