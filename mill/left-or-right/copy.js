@@ -70,13 +70,14 @@ const COPY = {
   "shareText": "Left or right?",
   "shareCancel": "Not sent. The questions are still here.",
   "privacy": "Questions stay on this page and nothing is uploaded. A link carries them, so anyone with it can read them, and it may stay in browser history.",
-  "fromLine": "From {from} · {i} of {n}",
+  "fromLine": "From: {from} · {i} of {n}",
   "fromLineAnon": "{i} of {n}",
   "leftSide": "LEFT",
   "rightSide": "RIGHT",
   "hint": {
     "tap": "Tap a side.",
     "switch": "Press {key} to pick the highlighted side.",
+    "switchAny": "Press any key to pick the highlighted side.",
     "switchStep": "{stepKey} moves. {selectKey} picks.",
     "hold": "Hold a side for {seconds} to pick it.",
     "keys": "← → to move · Space or Enter to pick"
@@ -96,8 +97,8 @@ const COPY = {
   "limitBanner": "Review build: switch and hold modes haven't been tested with switch users yet.",
   "halfAria": "{side}: {answer}",
   "chosenAria": "Chosen: {answer}, {side}",
-  "receiverIntro": "{from} has {n} questions for you.",
-  "receiverIntroOne": "{from} has a question for you.",
+  "receiverIntro": "{n} questions from: {from}",
+  "receiverIntroOne": "A question from: {from}",
   "receiverIntroAnon": {
     "one": "1 question to answer.",
     "other": "{n} questions to answer."
@@ -112,5 +113,10 @@ const COPY = {
   "badLink": "This link is damaged or cut off, so it can't open. Ask for a fresh one.",
   "oldVersion": "This link comes from an older version and can't open here. Ask for a fresh one.",
   "tooLongLink": "Too long for a link. Shorten a question or send fewer.",
-  "error": "Something broke. Reload and try again."
+  "error": "Something broke. Reload and try again.",
+  "fromLabel": "Your name (optional)",
+  "emojiBad": "Use one emoji, or leave it empty.",
+  "boardBack": "Back to the questions",
+  "linkLabel": "Link",
+  "answerShareCancel": "Not sent. The answer is below if you want to copy it."
 };

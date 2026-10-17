@@ -8,7 +8,7 @@
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
 const { typedAudit, recipientAccess, sameTabBadLink, mouseAt, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const fs = require('fs');
-const C = Object.assign({}, require('vm').runInNewContext(fs.readFileSync(__dirname + '/../../mill/left-or-right/copy-extra.js', 'utf8') + ';COPY_EXTRA'), require('vm').runInNewContext(fs.readFileSync(__dirname + '/../../mill/left-or-right/copy.js', 'utf8') + ';COPY'));
+const C = require('vm').runInNewContext(fs.readFileSync(__dirname + '/../../mill/left-or-right/copy.js', 'utf8') + ';COPY');
 const BASE = `${SCHEME}://${H}/mill/left-or-right/`;
 const Q = '\u201C', E = '\u201D', q = s => Q + s.replace(/[\u201C\u201D\u201E\u201F\u00AB\u00BB]/g, '"') + E;
 const BANNED = /\bAAC\b|therap|speech|assistive|communication device|augmentative|accessib/i;
@@ -26,6 +26,19 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     if (r.right > w + 1 || r.left < -1) bad.push('edge:' + (e.id || e.className || e.tagName)); if (!/INPUT|SELECT|TEXTAREA/.test(e.tagName) && e.scrollWidth > e.clientWidth + 1 && e.clientWidth) bad.push('clip:' + (e.id || e.className || e.tagName) + ' ' + e.scrollWidth + '>' + e.clientWidth); });
   document.querySelectorAll('.half').forEach(h => { if (h.getClientRects().length && (h.scrollWidth > h.clientWidth + 1 || h.scrollHeight > h.clientHeight + 1)) bad.push('half:' + h.id + ' ' + h.scrollWidth + 'x' + h.scrollHeight + '>' + h.clientWidth + 'x' + h.clientHeight); });
   return { bad: bad.slice(0, 10), sw: document.documentElement.scrollWidth, w }; }); }
+// accessibility tree: every name/value (for "no soft hyphen anywhere") and the in-order text under one element
+async function axAll(p) { const snap = await p.accessibility.snapshot({ interestingOnly: false }); const out = []; (function walk(n) { if (!n) return; if (n.name) out.push(String(n.name)); if (n.value) out.push(String(n.value)); (n.children || []).forEach(walk); })(snap); return out; }
+async function axText(p, sel) { const h = await p.$(sel); const snap = await p.accessibility.snapshot({ root: h, interestingOnly: false }); const out = [];
+  (function walk(n) { if (!n) return; if (n.role === 'StaticText' || n.role === 'text') { out.push(n.name || ''); return; } (n.children || []).forEach(walk); })(snap); return out.join('').replace(/\s+/g, ' ').trim(); }
+async function axName(p, sel) { const h = await p.$(sel); const snap = await p.accessibility.snapshot({ root: h, interestingOnly: false }); return snap ? snap.name : null; }
+// long-word state of one half / the chosen answer: size, generated hyphenated copy, the CSS that forbids bare splits,
+// and whether the unbroken text would overflow at the current size (so a break is only ever taken when it must be)
+const lw = (p, id) => p.evaluate(id => { const a = document.getElementById(id), cs = getComputedStyle(a), af = getComputedStyle(a, '::after'), src = a.querySelector('.lr-shy-src');
+  const pr = document.createElement('span'); pr.className = 'lr-probe'; pr.textContent = a.textContent; a.appendChild(pr); const raw = pr.offsetWidth; a.removeChild(pr);
+  const avail = a.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  return { fs: parseFloat(cs.fontSize), shy: a.classList.contains('lr-shy'), v: a.getAttribute('data-v'), text: a.textContent, ow: cs.overflowWrap, wb: cs.wordBreak, hy: cs.hyphens, afHy: af.hyphens, afOw: af.overflowWrap, afWb: af.wordBreak, srcSr: !!(src && src.classList.contains('lr-sr')), rawW: Math.round(raw), avail: Math.round(avail), over: a.scrollWidth > a.clientWidth + 1 }; }, id);
+const noBareSplit = x => x.ow === 'normal' && x.wb === 'normal' && x.hy === 'manual' && !x.over && (!x.shy || (x.afHy === 'manual' && x.afOw === 'normal' && x.afWb === 'normal' && x.srcSr));
+const shyOk = (x, word) => x.shy && x.fs === 24 && x.rawW > x.avail && x.v.includes('\u00AD') && x.v.replace(/\u00AD/g, '') === x.text && x.v.split(' ').every(t => !t.includes('\u00AD') || t.replace(/\u00AD/g, '').length > 1) && !x.text.includes('\u00AD') && x.text === '\u201C' + word + '\u201D';
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
   for (const w of W) {
@@ -52,7 +65,7 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     if (w === 1280) { t = await p.evaluate(() => ({ d: getComputedStyle(document.getElementById('preview')).display, q: document.getElementById('pv-q').textContent, l: document.getElementById('pv-l').textContent })); ck(w + ' wide: live preview of the question being edited (quoted)', t.d !== 'none' && t.q === '“Watch a movie now?”' && t.l === '“Watch a movie at home”', t); }
     await press(p, '#go'); await sleep(150);
     t = await p.evaluate(() => ({ from: document.getElementById('b-from').textContent, q: document.getElementById('b-q').textContent, la: document.getElementById('h-l').getAttribute('aria-label'), ra: document.getElementById('h-r').getAttribute('aria-label'), lt: document.getElementById('h-l').innerText.replace(/\s+/g, ' '), f: document.activeElement.id, hint: document.getElementById('hint').textContent, lim: document.getElementById('limit2').textContent, lw: document.getElementById('h-l').getBoundingClientRect().width, rw: document.getElementById('h-r').getBoundingClientRect().width, lh: document.getElementById('h-l').getBoundingClientRect().height, side: document.getElementById('h-l').getBoundingClientRect().right <= document.getElementById('h-r').getBoundingClientRect().left + 1 }));
-    ck(w + ' board: "1 of 2", question + answers quoted, names "LEFT: “Pizza”" / "RIGHT: “Tacos”", emoji quoted, focus on left, tap hint, limit banner', t.from === '1 of 2' && t.q === '“What should we eat tonight?”' && t.la === 'LEFT: “Pizza”' && t.ra === 'RIGHT: “Tacos”' && t.lt.includes('“🍕”') && t.lt.includes('“Pizza”') && t.f === 'h-l' && t.hint === C.hint.tap + ' ' + C.hint.keys && t.lim === C.limitBanner, t);
+    ck(w + ' board: "1 of 2", question + answers quoted, names "LEFT: “Pizza” “🍕”" (emoji quoted in the name) / "RIGHT: “Tacos”", emoji quoted, focus on left, tap hint, limit banner', t.from === '1 of 2' && t.q === '“What should we eat tonight?”' && t.la === 'LEFT: “Pizza” “🍕”' && t.ra === 'RIGHT: “Tacos”' && t.lt.includes('“🍕”') && t.lt.includes('“Pizza”') && t.f === 'h-l' && t.hint === C.hint.tap + ' ' + C.hint.keys && t.lim === C.limitBanner, t);
     ck(w + ' board: halves side by side (never stacked), each ≥140 wide and ≥300 tall', t.side && t.lw >= 140 && t.rw >= 140 && t.lh >= 300, t);
     let f = await fits(p); ck(w + ' board fits: nothing past the edge, no clipped answer', !f.bad.length && f.sw <= f.w, f);
     await p.keyboard.press('ArrowRight'); await sleep(40); const fr = await p.evaluate(() => document.activeElement.id); await p.keyboard.press('Enter'); await sleep(200);
@@ -107,6 +120,7 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     ck(w + ' two-switch step-scan: no timer movement; Enter moves, Space picks; "Any key" not offered for step', t.any && t.every && hint === 'Enter moves. Space picks.' && st1 === 'h-l' && st2 === 'h-r' && t3.a === '“Library”', { t, hint, st1, st2, t3 });
     await sleep(600); await press(p, '#c-back'); await setMode(p, 'switch', { scan: 'auto', key: 'any', every: 40 }); await press(p, '#go'); await sleep(100);
     await p.keyboard.press('Tab'); await sleep(50); const tf = await p.evaluate(() => document.activeElement.id); const sc3 = await scr(p); await p.keyboard.press('Shift'); await sleep(50);
+    const anyHint = await p.$eval('#hint', e => e.textContent); ck(w + ' Any key: Writer hint.switchAny on the board', anyHint === C.hint.switchAny, anyHint);
     await p.evaluate(() => document.getElementById('halves').focus()); await p.keyboard.press('KeyX'); await sleep(200); t = await s3(p);
     ck(w + ' any key: Tab/Shift never pick (Tab still moves focus); a letter key picks the highlighted side', sc3 === 's2' && tf === 'h-l' && t.a === '“Park”', { tf, sc3, t });
     await sleep(600); await press(p, '#c-back'); await setMode(p, 'hold', { dwell: 10 }); await press(p, '#go'); await sleep(100);
@@ -135,14 +149,28 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     await setVal(p, '#q-1', 'Park or pool?'); ck(w + ' editing after making a link hides the stale link', await p.$eval('#linkbox', e => e.hidden), null);
     await p.goto('about:blank'); await p.goto(link, { waitUntil: 'load' }); await sleep(300);
     t = await p.evaluate(() => ({ intro: document.getElementById('recv-intro').textContent, items: [...document.querySelectorAll('#recv-list li')].map(l => l.innerText.replace(/\s+/g, ' ')), ed: document.getElementById('edit').hidden, dis: [...document.querySelectorAll('#edit input,#edit button,#edit select')].every(e => e.disabled), lim: document.getElementById('limit1').textContent, pv: getComputedStyle(document.getElementById('preview')).display }));
-    ck(w + ' recipient: receiverIntro with “Maya”, read-only list of both questions (quoted), editor hidden + disabled, limit banner, no preview', t.intro === '“Maya” has 2 questions for you.' && t.items[0].includes('“What should we eat tonight?”') && t.items[0].includes('LEFT: “Pizza” “🍕”') && t.items[1].includes('RIGHT: “Library”') && t.ed && t.dis && t.lim === C.limitBanner && t.pv === 'none', t);
+    ck(w + ' recipient: receiverIntro with “Maya”, read-only list of both questions (quoted), editor hidden + disabled, limit banner, no preview', t.intro === '2 questions from: “Maya”' && t.items[0].includes('“What should we eat tonight?”') && t.items[0].includes('LEFT: “Pizza” “🍕”') && t.items[1].includes('RIGHT: “Library”') && t.ed && t.dis && t.lim === C.limitBanner && t.pv === 'none', t);
+    let axi = await axText(p, '#recv-intro'), vis = await p.$eval('#recv-intro .mill-typed', e => ({ t: e.textContent, d: getComputedStyle(e).display, v: getComputedStyle(e).visibility, w: e.getBoundingClientRect().width }));
+    ck(w + ' PM: sender name quoted in receiverIntro — visible marks and in the a11y tree: 2 questions from: “Maya”', axi === '2 questions from: “Maya”' && vis.t === '“Maya”' && vis.d !== 'none' && vis.v === 'visible' && vis.w > 0, { axi, vis });
     const ra = await recipientAccess(p, { facts: ['“Maya”', '“What should we eat tonight?”', '“Pizza”', '“Tacos”', '“Park or library?”', '“Library”', C.limitBanner], tabTo: ['#home', '#r-go', '#reset'], click: '#r-go' });
     ck(w + ' recipientAccess: no inert, no aria-hidden facts, facts in the a11y tree, Tab reaches the link + buttons, real click works', ra.ok, ra);
     await sleep(200); t = await p.evaluate(() => ({ scr: ['s1', 's2', 's3'].find(id => !document.getElementById(id).hidden), from: document.getElementById('b-from').textContent, hint: document.getElementById('hint').textContent }));
-    ck(w + ' recipient "Show it big": the sender\'s method comes with the link (hold 2 s), fromLine "From “Maya” · 1 of 2"', t.scr === 's2' && t.from === 'From “Maya” · 1 of 2' && t.hint === 'Hold a side for 2 seconds to pick it.', t);
+    ck(w + ' recipient "Show it big": the sender\'s method comes with the link (hold 2 s), fromLine "From: “Maya” · 1 of 2"', t.scr === 's2' && t.from === 'From: “Maya” · 1 of 2' && t.hint === 'Hold a side for 2 seconds to pick it.', t);
+    axi = await axText(p, '#b-from'); ck(w + ' PM: board From line keeps the quoted name in the a11y tree: From: “Maya” · 1 of 2', axi === 'From: “Maya” · 1 of 2', axi);
     await press(p, '#b-back'); await press(p, '#reset'); await sleep(150);
     t = await p.evaluate(() => ({ hash: location.hash, ed: document.getElementById('edit').hidden, recv: document.getElementById('recv').hidden, q: document.getElementById('q-0').value, from: document.getElementById('from').value, dis: document.getElementById('q-0').disabled, toast: document.getElementById('toast').textContent, f: document.activeElement.id }));
     ck(w + ' Start over on a received link: fragment cleared, blank editable page, resetDone, focus on the question', !t.hash && !t.ed && t.recv && !t.q && !t.from && !t.dis && t.toast === C.resetDone && t.f === 'q-0', t);
+    // receiverIntroOne: one question, quoted name on screen + a11y tree; board halves name the quoted answer + quoted emoji
+    const one = await p.evaluate(() => MILL.pack('l', 1, { f: 'Maya', m: 0, k: 0, s: 0, e: 20, d: 15, q: [['What should we eat tonight?', 'Pizza', 'Tacos', '\u{1F355}', '']] }));
+    await p.goto('about:blank'); await p.goto(BASE + '#' + one, { waitUntil: 'load' }); await sleep(300);
+    axi = await axText(p, '#recv-intro'); t = await p.$eval('#recv-intro', e => ({ t: e.textContent, typed: e.querySelector('.mill-typed') && e.querySelector('.mill-typed').textContent }));
+    ck(w + ' PM: receiverIntroOne with the quoted name, visible and in the a11y tree: A question from: “Maya”', t.t === 'A question from: “Maya”' && t.typed === '“Maya”' && axi === t.t, { t, axi });
+    await press(p, '#r-go'); await sleep(200); t = { from: await axText(p, '#b-from'), l: await axName(p, '#h-l'), r: await axName(p, '#h-r'), lt: await p.$eval('#h-l', e => e.innerText.replace(/\s+/g, ' ')) };
+    ck(w + ' PM: board From: “Maya” · 1 of 1 in the a11y tree; half names "LEFT: “Pizza” “🍕”" / "RIGHT: “Tacos”"; quotes visible on answer and emoji', t.from === 'From: “Maya” · 1 of 1' && t.l === 'LEFT: “Pizza” “🍕”' && t.r === 'RIGHT: “Tacos”' && t.lt.includes('“🍕”') && t.lt.includes('“Pizza”'), t);
+    await p.keyboard.press('Enter'); await sleep(700); t = { a: await axText(p, '#c-a'), live: await p.$eval('#live', e => e.textContent) };
+    ck(w + ' PM: chosen answer quoted in the a11y tree and the live region', t.a === '“Pizza”' && t.live === 'Chosen: “Pizza”, left', t);
+    await sleep(100); await press(p, '#c-send'); await sleep(150); t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, vis: !document.getElementById('c-fb').hidden, f: document.activeElement.id, sel: document.activeElement.selectionEnd - document.activeElement.selectionStart, v: document.getElementById('c-fbt').value, arg: window.__shareArg }));
+    ck(w + ' Send the answer back -> share sheet closed: answerShareCancel toast, the quoted answer selected in the box below', t.toast === C.answerShareCancel && t.vis && t.f === 'c-fbt' && t.sel === t.v.length && t.v.includes('“Pizza”') && t.arg && t.arg.text === t.v, t);
     // malformed links in the same tab
     const frag = link.split('#')[1]; const bads = [['x', 'badLink'], [frag.slice(0, -1), 'badLink'], [frag.slice(0, 30), 'badLink'], [frag.replace('l1.', 'l2.'), 'badLink'], ['l1.' + 'A'.repeat(2100) + '.abcdef', 'badLink'], ['l1.%%%.000000', 'badLink'], ['e1.' + frag.slice(3), 'badLink']];
     const mk = await p.evaluate(() => { const b = { f: '', m: 0, k: 0, s: 0, e: 20, d: 15, q: [['A?', 'b', 'c', '', '']] }; const o = (k, v) => MILL.pack('l', 1, Object.assign({}, b, { [k]: v }));
@@ -165,7 +193,7 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     const outs = async () => { const c = await p.evaluate(() => window.__clip.slice()); const o = { fb1: await p.$eval('#c-fbt', e => e.value), fb2: await p.$eval('#ans-fbt', e => e.value) }; c.forEach((x, i) => { o['clip' + i] = x; }); return o; };
     let a = await typedAudit(p, [SN, SQ, SL, SR]); ck(w + ' Q1 spoof (received view): “ ” „ ‟ « » shown as " inside one “…” frame (screen, a11y names, live)', a.ok, a.hits);
     ck(w + ' Q1: the link keeps the original typed marks', await p.evaluate((SQ) => { const u = MILL.unpack(location.hash, 'l', 1, 1e6); return u.ok && u.data.q[0][0] === SQ; }, SQ), null);
-    await press(p, '#r-go'); await sleep(150); a = await typedAudit(p, [SN, SQ, SL, SR]); ck(w + ' Q1 spoof (board: from line, question, halves, aria-labels)', a.ok && (await p.$eval('#b-from', e => e.textContent)) === 'From “Maya" from "Bank” · 1 of 2', a.hits);
+    await press(p, '#r-go'); await sleep(150); a = await typedAudit(p, [SN, SQ, SL, SR]); ck(w + ' Q1 spoof (board: from line, question, halves, aria-labels)', a.ok && (await p.$eval('#b-from', e => e.textContent)) === 'From: “Maya" from "Bank” · 1 of 2', a.hits);
     f = await fits(p); ck(w + ' board with typed quotes fits', !f.bad.length, f);
     await p.keyboard.press('ArrowRight'); await p.keyboard.press('Enter'); await sleep(250); await sleep(500);
     await press(p, '#c-send'); await p.evaluate(() => { window.__clipFail = true; }); await press(p, '#c-send'); await sleep(100);
@@ -193,10 +221,38 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     ck(w + ' URL cap: over 2,000 -> no link (tooLongLink), questions still on the page, address bar untouched', t.toast === C.tooLongLink && t.box && !t.hash && t.q === 80, t);
     await press(p, '#reset'); await fillQ(p, 0, 'W'.repeat(80), "Grandmother's", 'Watch a movie at home'); await fillQ(p, 1, 'Two?', 'Abcdefghijklmnopqrstuvwxyzabcd', 'x y');
     f = await fits(p); ck(w + ' editor fits (80-char question, 30-char answers)', !f.bad.length && f.sw <= f.w, f);
-    await press(p, '#go'); await sleep(200); f = await fits(p); t = await p.evaluate(() => ({ fs: getComputedStyle(document.getElementById('h-l')).fontSize, brk: document.getElementById('h-l-a').classList.contains('lr-brk') }));
-    ck(w + ' board fits: “Grandmother\'s” / “Watch a movie at home” never past their half', !f.bad.length && f.sw <= f.w, { f, t });
-    await p.keyboard.press('Enter'); await sleep(700); f = await fits(p); ck(w + ' chosen “Grandmother\'s” fits', !f.bad.length && f.sw <= f.w, f);
-    await sleep(100); await press(p, '#c-next'); await sleep(200); f = await fits(p); ck(w + ' board with a 30-letter single word fits', !f.bad.length && f.sw <= f.w, f);
+    await press(p, '#go'); await sleep(200); f = await fits(p); let L1 = await lw(p, 'h-l-a'), R1 = await lw(p, 'h-r-a');
+    ck(w + ' board fits: “Grandmother\'s” / “Watch a movie at home” never past their half', !f.bad.length && f.sw <= f.w, { f, L1, R1 });
+    // Creative 2026-10-17 long words: same size on both halves, ≥ 24px, breaks only at spaces; a word breaks only once 24px is reached and the unbroken word is wider than the tile, then at a soft hyphen (visible hyphen), never a bare split
+    ck(w + ' long word “Grandmother\'s”: both halves the same size, ≥ 24px, no bare split' + (w === 1280 ? '; unbroken above the floor' : '; at 320/390 it is wider than the tile even at 24px, so it takes one hyphenated break at the floor'),
+      L1.fs === R1.fs && L1.fs >= 24 && noBareSplit(L1) && noBareSplit(R1) && !R1.shy && (w === 1280 ? (!L1.shy && L1.fs > 24) : shyOk(L1, "Grandmother's")), { L1, R1 });
+    const nm = await axName(p, '#h-l'), ax1 = await axAll(p);
+    ck(w + ' long word: accessible name of the half is clean (no soft hyphen) and quoted; no soft hyphen anywhere in the a11y tree', nm === 'LEFT: “Grandmother\'s”' && !ax1.some(x => x.includes('\u00AD')), { nm, shy: ax1.filter(x => x.includes('\u00AD')) });
+    // refit on resize / orientation change: narrow -> wide -> narrow gives the same result as a fresh render
+    const w2 = w === 1280 ? 390 : 1280; await p.setViewport({ width: w2, height: 900 }); await sleep(250); const Lw = await lw(p, 'h-l-a'); await p.setViewport({ width: w, height: 900 }); await p.evaluate(() => window.dispatchEvent(new Event('orientationchange'))); await sleep(250); const Lb = await lw(p, 'h-l-a');
+    ck(w + ' long word: the fit re-runs on resize/orientation change (' + w + '→' + w2 + '→' + w + ')', Lw.fs !== L1.fs && Lb.fs === L1.fs && Lb.shy === L1.shy && Lb.v === L1.v && noBareSplit(Lw) && noBareSplit(Lb), { L1, Lw, Lb });
+    // the guard after a pick is visible: buttons at reduced opacity for 500ms, then full
+    await p.keyboard.press('Enter'); await sleep(40); let g1 = await p.evaluate(() => ({ g: document.getElementById('s3').classList.contains('lr-guard'), o: [...document.querySelectorAll('#s3 .btn')].filter(b => b.getClientRects().length).map(b => +getComputedStyle(b).opacity) }));
+    await sleep(700); let g2 = await p.evaluate(() => ({ g: document.getElementById('s3').classList.contains('lr-guard'), o: [...document.querySelectorAll('#s3 .btn')].filter(b => b.getClientRects().length).map(b => +getComputedStyle(b).opacity) }));
+    ck(w + ' post-pick guard visible: chosen-screen buttons below full opacity at once, back to full after 500ms', g1.g && g1.o.length >= 3 && g1.o.every(o => o < 1) && !g2.g && g2.o.every(o => o === 1), { g1, g2 });
+    f = await fits(p); ck(w + ' chosen “Grandmother\'s” fits', !f.bad.length && f.sw <= f.w, f);
+    await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]); await press(p, '#c-again'); await sleep(150); await p.keyboard.press('Enter'); await sleep(30);
+    g1 = await p.evaluate(() => ({ g: document.getElementById('s3').classList.contains('lr-guard'), o: [...document.querySelectorAll('#s3 .btn')].filter(b => b.getClientRects().length).map(b => +getComputedStyle(b).opacity), tr: getComputedStyle(document.getElementById('c-next')).transitionDuration }));
+    await sleep(700); g2 = await p.evaluate(() => [...document.querySelectorAll('#s3 .btn')].filter(b => b.getClientRects().length).map(b => +getComputedStyle(b).opacity)); await p.emulateMediaFeatures([]);
+    ck(w + ' reduced motion: the guard still shows (instant 0.45), then full', g1.g && g1.o.every(o => o === 0.45) && g1.tr === '0s' && g2.every(o => o === 1), { g1, g2 });
+    await press(p, '#c-next'); await sleep(200); f = await fits(p); ck(w + ' board with a 30-letter single word fits', !f.bad.length && f.sw <= f.w, f);
+    L1 = await lw(p, 'h-l-a'); R1 = await lw(p, 'h-r-a'); ck(w + ' 30-letter word: same size both halves, no bare split', L1.fs === R1.fs && noBareSplit(L1) && noBareSplit(R1), { L1, R1 });
+    // a 20-character single word: hyphenated only below the floor; clean name, clean copy
+    await press(p, '#b-back'); await sleep(150); await press(p, '#reset'); await p.evaluate(() => { window.__clip = []; Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: t => { window.__clip.push(String(t)); return Promise.resolve(); } } }); });
+    await fillQ(p, 0, 'How was it?', 'Superextraordinarily', 'Fine'); await press(p, '#go'); await sleep(200); L1 = await lw(p, 'h-l-a'); R1 = await lw(p, 'h-r-a'); f = await fits(p);
+    ck(w + ' 20-char word “Superextraordinarily”: both halves the same size; ' + (w === 1280 ? 'unbroken above the floor' : 'hyphenated break only at the 24px floor (soft hyphen at the break, visible hyphen), never a bare split'),
+      !f.bad.length && L1.fs === R1.fs && noBareSplit(L1) && noBareSplit(R1) && (w === 1280 ? !L1.shy && L1.fs > 24 : shyOk(L1, 'Superextraordinarily')), { L1, R1, f });
+    const nm2 = await axName(p, '#h-l'), ax2 = await axAll(p);
+    ck(w + ' 20-char word: accessible name "LEFT: “Superextraordinarily”" has no soft hyphen; none anywhere in the a11y tree', nm2 === 'LEFT: “Superextraordinarily”' && !ax2.some(x => x.includes('\u00AD')), nm2);
+    await p.keyboard.press('Enter'); await sleep(700); const CA = await lw(p, 'c-a'); const cax = await axText(p, '#c-a'), ax3 = await axAll(p);
+    ck(w + ' chosen 20-char word: no bare split, a11y text “Superextraordinarily” clean, no soft hyphen in the tree', noBareSplit(CA) && (!CA.shy || shyOk(CA, 'Superextraordinarily')) && cax === '“Superextraordinarily”' && !ax3.some(x => x.includes('\u00AD')), { CA, cax });
+    await press(p, '#c-send'); await sleep(150); const clip = await p.evaluate(() => window.__clip.join('\n'));
+    ck(w + ' copied answer text: quoted, no soft hyphen', clip.includes('“Superextraordinarily”') && !clip.includes('\u00AD'), clip);
     ck(w + ' cap/fit: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
 
     // ---------- keyboard reach

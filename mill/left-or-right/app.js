@@ -1,10 +1,10 @@
 'use strict';
 // Left or Right (P018, original scope): UI. Memory only: no storage, no network, no timers that pick for anyone.
 // Every sender-typed string (name, questions, answers, emoji) reaches the screen, aria, live regions, toasts, print and
-// copied text only through the shared quote rule (MILLVIEW.typed / MILL.quote). Writer copy.js wins over copy-extra.js.
+// copied text only through the shared quote rule (MILLVIEW.typed / MILL.quote). All strings come from Writer copy.js.
 (function () {
   var M = window.MILL, V = window.MILLVIEW, L = window.LR;
-  var C = Object.assign({}, typeof COPY_EXTRA === 'object' ? COPY_EXTRA : {}, COPY);
+  var C = COPY;
   var $ = function (id) { return document.getElementById(id); };
   var st = L.blank(), recv = false, answers = [null], cur = 0, edRow = 0;
   var bd = null, scanT = 0, dueT = 0, raf = 0, armT = 0, armed = true, swallowUp = false, lastPtr = -1e9, lastShare = '';
@@ -97,17 +97,37 @@
     if (st.mode === 'tap') return C.hint.tap + ' ' + C.hint.keys;
     if (st.mode === 'hold') return M.fill(C.hint.hold, { seconds: L.secondsText(C.holdFor, st.dwell) });
     if (st.scan === 'step') return M.fill(C.hint.switchStep, { stepKey: C.switchKeys[L.stepKey(cfg()) === 'Enter' ? 'enter' : 'space'], selectKey: C.switchKeys[st.key] });
+    if (st.key === 'any') return C.hint.switchAny;
     return M.fill(C.hint.switch, { key: C.switchKeys[st.key] });
   }
-  function fit(box, sizer, min) { // shrink the answer type until no word overflows its half (and it fits the half's height); break words only below the floor
-    sizer.style.fontSize = ''; box.classList.remove('lr-brk'); var size = parseFloat(getComputedStyle(sizer).fontSize), guard = 80;
-    function over() { return box.scrollWidth > box.clientWidth + 1 || sizer.scrollHeight > sizer.clientHeight + 1; }
-    while (over() && size > min && guard--) { size = Math.max(min, size - 2); sizer.style.fontSize = size + 'px'; }
-    if (over()) box.classList.add('lr-brk'); return size;
+  // ---------- long answers (Creative 2026-10-17): break only at spaces; shrink the answer text in 2px steps to a 24px floor
+  // (the tile-height squeeze stops at 30px); both halves take the same size; only below the floor may a word break, and then
+  // only at a visible hyphen. The hyphenated copy is drawn as CSS generated content with empty alt text, so the DOM text, the
+  // accessible name and copied text never carry a soft hyphen.
+  var FLOOR = 24, TALL_FLOOR = 30, SHY = '\u00AD';
+  function wOver(box) { return box.scrollWidth > box.clientWidth + 1; }
+  function hOver(t) { return t.scrollHeight > t.clientHeight + 1; }
+  function unshy(box) { var w = box.querySelector('.lr-shy-src'); if (w) { while (w.firstChild) box.insertBefore(w.firstChild, w); box.removeChild(w); } box.classList.remove('lr-shy'); box.removeAttribute('data-v'); }
+  function fitSize(box, tile) { // largest size (2px steps from the design size) at which no word is wider than the tile
+    unshy(box); box.style.fontSize = ''; var size = parseFloat(getComputedStyle(box).fontSize), g = 100;
+    while (g-- && size > FLOOR && (wOver(box) || (tile && hOver(tile) && size > TALL_FLOOR))) { size = Math.max(FLOOR, size - 2); box.style.fontSize = size + 'px'; }
+    return size;
   }
-  function fitBoard() { if ($('s2').hidden) return; var a = fit($('h-l-a'), $('h-l'), 30), b = fit($('h-r-a'), $('h-r'), 30), m = Math.min(a, b) + 'px';
-    $('h-l').style.fontSize = m; $('h-r').style.fontSize = m; ['l', 'r'].forEach(function (s) { var bx = $('h-' + s + '-a'); bx.classList.remove('lr-brk'); bx.classList.toggle('lr-brk', bx.scrollWidth > bx.clientWidth + 1); }); }
-  function fitChosen() { if ($('s3').hidden) return; var a = $('c-a'); fit(a, a, 30); }
+  function graphemes(s) { if (window.Intl && Intl.Segmenter) return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s), function (x) { return x.segment; }); return Array.from(s); }
+  function hyph(box) { // still too wide at the floor: put a soft hyphen exactly where each overlong word must break
+    if (!wOver(box)) return false;
+    var text = box.textContent, avail = box.clientWidth - parseFloat(getComputedStyle(box).paddingLeft) - parseFloat(getComputedStyle(box).paddingRight), probe = el('span', 'lr-probe');
+    box.appendChild(probe); var wd = function (t) { probe.textContent = t; return probe.offsetWidth; }; // layout width: the chosen screen's swell transform must not skew it
+    var out = text.split(' ').map(function (word) { if (wd(word) <= avail) return word; var parts = [], cur = '';
+      graphemes(word).forEach(function (g) { if (cur && wd(cur + g + '-') > avail) { parts.push(cur); cur = g; } else cur += g; }); parts.push(cur); return parts.join(SHY); }).join(' ');
+    box.removeChild(probe);
+    var src = el('span', 'lr-sr lr-shy-src'); while (box.firstChild) src.appendChild(box.firstChild); box.appendChild(src);
+    box.setAttribute('data-v', out); box.classList.add('lr-shy'); return true;
+  }
+  function fitBoard() { if ($('s2').hidden) return; var a = $('h-l-a'), b = $('h-r-a'), m = Math.min(fitSize(a, $('h-l')), fitSize(b, $('h-r'))) + 'px';
+    a.style.fontSize = m; b.style.fontSize = m; hyph(a); hyph(b); } // the same size on both halves, so neither looks favoured
+  function fitChosen() { if ($('s3').hidden) return; var a = $('c-a'); fitSize(a, null); hyph(a); }
+  function refit() { fitBoard(); fitChosen(); }
   function setHi() { ['l', 'r'].forEach(function (s) { $('h-' + s).classList.toggle('scan', st.mode === 'switch' && bd && bd.hi === s); }); }
   function stopBoard() { clearInterval(scanT); clearTimeout(dueT); cancelAnimationFrame(raf); scanT = dueT = raf = 0; ringOff(); }
   function ringOff() { cancelAnimationFrame(raf); raf = 0; ['l', 'r'].forEach(function (s) { var h = $('h-' + s); h.classList.remove('holding'); h.style.removeProperty('--p'); }); }
@@ -118,7 +138,7 @@
     ['l', 'r'].forEach(function (s) { var h = $('h-' + s), e = L.clean(s === 'l' ? x.le : x.re);
       $('h-' + s + '-s').textContent = s === 'l' ? '\u25C0 ' + C.leftSide : C.rightSide + ' \u25B6';
       put($('h-' + s + '-e'), e ? typed(e) : document.createDocumentFragment()); $('h-' + s + '-e').hidden = !e;
-      put($('h-' + s + '-a'), typed(L.answerOf(x, s))); h.setAttribute('aria-label', M.fill(C.halfAria, { side: sideLabel(s), answer: qt(L.answerOf(x, s)) })); });
+      put($('h-' + s + '-a'), typed(L.answerOf(x, s))); h.setAttribute('aria-label', M.fill(C.halfAria, { side: sideLabel(s), answer: qt(L.answerOf(x, s)) }) + (e ? ' ' + qt(e) : '')); });
     $('hint').textContent = hintText(); $('b-back').textContent = C.boardBack;
     $('s2').setAttribute('data-mode', st.mode);
     bd = L.board(cfg()); screen(2); setHi(); fitBoard();
@@ -137,11 +157,11 @@
   function chosen(side) {
     stopBoard(); answers[cur] = side; var x = st.qs[cur], last = cur >= st.qs.length - 1, s3 = $('s3');
     s3.classList.remove('l', 'r'); s3.classList.add(side);
-    put($('c-q'), typed(x.q)); put($('c-a'), typed(L.answerOf(x, side))); $('c-tag').textContent = M.fill(C.chosenTag, { side: L.sideWord(C, side) });
+    put($('c-q'), typed(x.q)); unshy($('c-a')); put($('c-a'), typed(L.answerOf(x, side))); $('c-tag').textContent = M.fill(C.chosenTag, { side: L.sideWord(C, side) });
     $('c-next').hidden = last; $('c-done').hidden = !last; $('c-done').textContent = C.done; $('c-fb').hidden = true;
     $('live').textContent = M.fill(C.chosenAria, { answer: qt(L.answerOf(x, side)), side: L.sideWord(C, side) });
     screen(3); fitChosen(); renderAnswers();
-    armed = false; clearTimeout(armT); armT = setTimeout(function () { armed = true; }, 500); // the press that picked can't also press a button here
+    armed = false; s3.classList.add('lr-guard'); clearTimeout(armT); armT = setTimeout(function () { armed = true; s3.classList.remove('lr-guard'); }, 500); // the press that picked can't also press a button here; the buttons show it (reduced opacity) for those 500ms
     (last ? $('c-send') : $('c-next')).focus({ preventScroll: true });
   }
   function sideOf(t) { var h = t && t.closest && t.closest('.half'); return h ? (h.id === 'h-l' ? 'l' : 'r') : null; }
@@ -229,10 +249,11 @@
     $('c-next').addEventListener('click', function () { if (armed) startBoard(cur + 1); });
     $('c-again').addEventListener('click', function () { if (armed) startBoard(cur); });
     $('c-send').addEventListener('click', function () { if (!armed) return; var t = L.answerText(C, st.qs[cur], answers[cur]);
-      if (navigator.share) navigator.share({ text: t }).then(function () {}, function () { fallback('c-fb', 'c-fbt', t); });
+      if (navigator.share) navigator.share({ text: t }).then(function () {}, function () { toast(C.answerShareCancel); fallback('c-fb', 'c-fbt', t); });
       else copyText(t, 'c-fb', 'c-fbt'); });
     boardKeys();
-    window.addEventListener('resize', function () { fitBoard(); fitChosen(); });
+    window.addEventListener('resize', refit); window.addEventListener('orientationchange', refit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(refit);
     V.route(load);
   }
   try { wire(); } catch (e) { document.body.textContent = C.error; throw e; }
