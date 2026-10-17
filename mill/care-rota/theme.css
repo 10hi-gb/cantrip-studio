@@ -132,8 +132,9 @@ textarea.plan{min-height:300px;font:400 17px/1.5 ui-monospace,"Courier New",mono
 .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
 .sheet{background:#fff;border:3px solid var(--binding);border-radius:6px;padding:20px 22px;max-width:900px;margin:0 auto}
 .sheet h2{font:700 34px/1.05 var(--serif);margin:0 0 4px}
-.sheet table{width:100%;border-collapse:collapse;font:500 21px/1.35 var(--serif)}
-.sheet td{padding:10px 8px;border-bottom:2px dashed #C9BC9E;vertical-align:top;overflow-wrap:anywhere}
+/* QA W-7: break-word only (PM rule). A fixed table layout lets a long typed name wrap inside its cell instead of widening the table. */
+.sheet table{width:100%;border-collapse:collapse;font:500 21px/1.35 var(--serif);table-layout:fixed}
+.sheet td{padding:10px 8px;border-bottom:2px dashed #C9BC9E;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:0}
 .sheet td.day{font:700 21px/1.2 var(--sans);width:7.5em}
 .sheet .stamp{font-size:18px}
 section{display:none}section.on{display:block}

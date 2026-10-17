@@ -182,3 +182,6 @@ label{margin-bottom:10px}
 .cr-err a:focus-visible{outline-offset:2px}
 /* an invalid field keeps its red border while focused, but drops the extra 2px red halo so the ring keeps its 3px gap of field colour */
 [aria-invalid=true]:focus-visible{box-shadow:none}
+/* Creative 07:05: inside a selected (navy) day chip the checkbox is a cream box with a dark tick, not the browser's default blue. Native checkbox,
+   so semantics, keyboard and focus are unchanged; Chrome draws a dark tick on a light accent colour. Unchecked chips are untouched. */
+.cr-chip input:checked{accent-color:#FFFDF8}
