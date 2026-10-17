@@ -285,7 +285,7 @@
     "QA local-64ea179 NOT TESTED: everything outside C14, C15, C16 and the listed regressions, including the full text-contrast scan (C11 scope), print and PDF, the recipient view beyond the address-bar rows, the 2,000-character URL boundary, timezone and DST, and copy text; window widths between 391 and 1279 except as used for resize; real devices and other browsers (Chrome headless only)."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 83edf87d032af47d88508f7eed08a8e1a528a9a2: cr unit 24/24; care-rota browser 216/216 at 305–1440. Not QA.",
-   "status": "NOT READY (C11–C16 fixed; open W-7 (Medium) from the all-9 recheck; local-64ea179 retest READY for its scope, C14–C16)",
+   "status": "NOT READY (C11–C16 fixed: local-64ea179 retest PASS for C14–C16; open W-7 (Medium) from the all-9 recheck)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
