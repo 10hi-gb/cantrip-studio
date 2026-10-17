@@ -10,7 +10,7 @@
   --ss-lcd:#B9D79B; --ss-lcd-ink:#1E2A16;
   --ss-sack:#F4F4EE; --ss-sack-weave:#DADBD2; --ss-sack-band:#2B5FA8; --ss-sack-band2:#D93A2B;
   --ss-grain:#E9DDB5; --ss-grain-dot:#C9B57E; --ss-bin:#5E6B73; --ss-bin-hi:#7C8990;
-  --ss-penny:#B8733A; --ss-penny-hi:#E3A46C; --ss-unalloc:#B4561B; --ss-unalloc-bg:#FFF3E9; --ss-short:#B3261E; --ss-short-bg:#FDECEA; --ss-ok:#2E6B4F;
+  --ss-penny:#B8733A; --ss-penny-hi:#E3A46C; --ss-unalloc:#AD531A; --ss-unalloc-bg:#FFF3E9; --ss-short:#B3261E; --ss-short-bg:#FDECEA; --ss-ok:#2A6248; /* QA all9 W-3/W-4: --ss-ok was #2E6B4F (4.29-4.37:1 on the lower table gradient), now 4.86:1 on the worst rendered pixel; --ss-unalloc was #B4561B (4.49:1 on its tint), now 4.78:1; same hues */
   --ss-cond:"Barlow Condensed",system-ui,sans-serif; --ss-sans:"Inter Tight",system-ui,sans-serif;
 }
 .ss{margin:0;min-height:100dvh;background:var(--ss-floor);color:var(--ss-ink);font-family:var(--ss-sans);font-variant-numeric:tabular-nums}
@@ -53,7 +53,7 @@
 .ss-alloc.is-unalloc{border:2px dashed var(--ss-unalloc);background:var(--ss-unalloc-bg)}
 .ss-alloc.is-unalloc .who{color:var(--ss-unalloc)}
 .ss-alloc.is-unalloc .ss-bin .b{fill:none;stroke:var(--ss-unalloc);stroke-width:2;stroke-dasharray:4 3}
-.ss-alloc.is-unalloc.is-zero{opacity:.6}
+.ss-alloc.is-unalloc.is-zero .ss-bin{opacity:.6} /* QA all9 W-4: only the bin fades when nothing is unclaimed; the row's text stays full strength (was the whole row at .6: 2.2:1) */
 .ss-alloc.is-you{border-width:3px;box-shadow:0 0 0 3px var(--ss-lcd)}
 .ss-alloc.is-changed .qty::after{content:attr(data-was);display:block;font:600 11px var(--ss-sans);color:var(--ss-unalloc);text-decoration:line-through}
 .ss-alloc.is-short{border:2px solid var(--ss-short);background:var(--ss-short-bg)}

@@ -282,22 +282,23 @@ window.MILL_HUB = {
     "Lines that combine needs or people are set aside with a request to split them, never guessed.",
     "Nothing is booked or confirmed. Messages are copied and the sheet is printed by hand, each stamped with when the plan was checked.",
     "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it.",
-    "QA all-9 NOT TESTED: C11–C14 and the tag grid (covered by the other QA run); the Edit lines address-bar step (control not shown on a received sheet, 3 cases)."
+    "QA all-9 NOT TESTED: C11–C14 and the tag grid (covered by the other QA run); the Edit lines address-bar step (control not shown on a received sheet, 3 cases).",
+    "QA local-64ea179 NOT TESTED: everything outside C14, C15, C16 and the listed regressions, including the full text-contrast scan (C11 scope), print and PDF, the recipient view beyond the address-bar rows, the 2,000-character URL boundary, timezone and DST, and copy text; window widths between 391 and 1279 except as used for resize; real devices and other browsers (Chrome headless only)."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 83edf87d032af47d88508f7eed08a8e1a528a9a2: cr unit 24/24; care-rota browser 216/216 at 305–1440. Not QA.",
-   "status": "NOT READY (C11–C13 fixed; open C14 (Low), C15 (Med), C16 (Low); all-9 recheck NOT CLEAN: W-7 (Medium), wrap)",
+   "status": "NOT READY (C11–C16 fixed; open W-7 (Medium) from the all-9 recheck; local-64ea179 retest READY for its scope, C14–C16)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "83edf87d032af47d88508f7eed08a8e1a528a9a2",
-    "report": "qa/care-rota/local-83edf87/QA-local-83edf87.md",
-    "note": "C11–C13 fixed; open C14 (Low), C15 (Med), C16 (Low); QA all-9 @f893087 (care-rota tree 95f8e78, unchanged at c07008e, qa/all9/local-f893087/QA-all9-f893087.md): A wrap FAIL, W-7 (Medium) .sheet td overflow-wrap:anywhere; B contrast PASS 0 of 92; C address bar PASS 30/30 executed, 3 NOT TESTED. Verdict for this pass: NOT CLEAN: W-7 (Medium)"
+    "sha": "64ea1799741988c047941a8fa5a0c37cfc138152",
+    "report": "qa/care-rota/local-64ea179/QA-local-64ea179.md",
+    "note": "C11–C16 fixed; open W-7 (Medium)"
    },
    "qaPrevious": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "cde64e3b02ca689ee7442fa3bc5bf48434c79c1c",
-    "report": "qa/care-rota/local-cde64e3/QA-local-cde64e3.md"
+    "sha": "83edf87d032af47d88508f7eed08a8e1a528a9a2",
+    "report": "qa/care-rota/local-83edf87/QA-local-83edf87.md"
    }
   },
   {

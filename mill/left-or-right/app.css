@@ -100,6 +100,16 @@ textarea{width:100%;font:400 16px/1.4 var(--ui);padding:12px;border:3px solid va
 .lr-page .lr-actions{gap:calc(var(--focus-w) * 2 + 10px)}
 .lr-page .btn-main:focus-visible{box-shadow:none}
 .lr-top{gap:calc(var(--focus-w) + 8px) calc(var(--focus-w) * 2 + 12px)}
+/* QA local-2a8c67b L12: the ring reaches its offset (4px) + its width out from a control (--ring-x: 12px on this page), so
+   the text and controls next to each focusable keep at least that much room plus 3px for descenders: labels above fields,
+   hints, counts and errors below them, the mode buttons beside each other, the title under Home. Same ring (8px ink, 4px
+   off, 13.1:1 on oat); only the spacing grows. */
+.lr-page,.lr-chosen{--ring-x:calc(var(--focus-w) + 4px)}
+.lr-page label,.lr-page .lr-lab,.lr-chosen .lr-box label{margin-bottom:calc(var(--ring-x) + 3px)}
+.lr-page .lr-fine,.lr-page .lr-meta,.lr-page .lr-err{margin-top:calc(var(--ring-x) + 3px)}
+.lr-page .modes{gap:calc(var(--ring-x) + 2px)}
+.lr-top{padding-bottom:calc(var(--ring-x) + 3px)} /* padding, so the title's own margin still adds (its glyphs rise above its box at 64px) */
+.lr-chosen .lr-box{margin-top:calc(var(--ring-x) + 6px)} /* the copy box under the chosen-screen buttons */
 /* chosen (S3): the felt swell, in normal flow */
 .lr-clip{overflow:hidden} /* the swell's soft overshoot never pushes the page sideways */
 .lr-chosen{position:relative;inset:auto;min-height:100vh;min-height:100dvh}

@@ -5,6 +5,21 @@ const COPYV2 = require('vm').runInNewContext(require('fs').readFileSync(__dirnam
 const COPY = COPYV2;
 const M_fill = (t, name) => t.replace('{name}', name);
 const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
+// QA all9 W-2/W-3/W-4: worst rendered contrast of a text run against every background pixel under its glyph boxes (the text itself is hidden for the background shot)
+const lum = c => { const v = c.map(x => x / 255).map(x => x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4)); return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]; };
+const crOf = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+async function textCR(p, b, sel) {
+  const runs = await p.evaluate(sel => { const sh = new CSSStyleSheet(); sh.replaceSync('.qa-tx,.qa-tx *{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;transition:none!important;text-decoration-color:transparent!important}'); document.adoptedStyleSheets = [...document.adoptedStyleSheets, sh];
+    return [...document.querySelectorAll(sel)].filter(e => e.checkVisibility()).map(e => { const rg = document.createRange(); rg.selectNodeContents(e); const c = getComputedStyle(e), col = c.color, fs = c.fontSize, fw = c.fontWeight; let op = 1; for (let a = e; a; a = a.parentElement) op *= +getComputedStyle(a).opacity;
+      const rs = [...rg.getClientRects()].filter(r => r.width > 1 && r.height > 1).map(r => [r.left + scrollX, r.top + scrollY, r.right + scrollX, r.bottom + scrollY]); return { e, t: e.textContent.trim().slice(0, 40), color: col, op, fs, fw, rs }; }).map(r => { r.e.classList.add('qa-tx'); delete r.e; return r; }); }, sel); // colours read for every run before any text is hidden
+  await new Promise(r => setTimeout(r, 60));
+  const png = await p.screenshot({ encoding: 'base64', fullPage: true }), dpr = await p.evaluate(() => devicePixelRatio);
+  await p.evaluate(() => { document.querySelectorAll('.qa-tx').forEach(e => e.classList.remove('qa-tx')); document.adoptedStyleSheets = document.adoptedStyleSheets.slice(0, -1); });
+  const q = await b.newPage(); const px = await q.evaluate(async (png, runs, dpr) => { const im = new Image(); im.src = 'data:image/png;base64,' + png; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+    return runs.map(r => { const all = []; r.rs.forEach(([l, t, rr, bb]) => { const L = Math.ceil(l * dpr), T = Math.ceil(t * dpr), W = Math.max(1, Math.floor(rr * dpr) - L), H = Math.max(1, Math.floor(bb * dpr) - T), d = x.getImageData(L, T, W, H).data; for (let i = 0; i < d.length; i += 4) all.push(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); });
+      return [...new Set(all)].map(v => [v >> 16 & 255, v >> 8 & 255, v & 255]); }); }, png, runs, dpr); await q.close();
+  return runs.map((r, i) => { const m = r.color.match(/[\d.]+/g).map(Number), col = m.slice(0, 3), a = (m.length > 3 ? m[3] : 1) * r.op; let worst = 99, bg = null; px[i].forEach(c => { const k = crOf(col.map((v, j) => a * v + (1 - a) * c[j]), c); /* text alpha x ancestor opacity, composited over each pixel */ if (k < worst) { worst = k; bg = c; } });
+    return { t: r.t, color: r.color, op: +r.op.toFixed(2), fs: r.fs, fw: r.fw, n: px[i].length, worst: +worst.toFixed(2), bg }; }); }
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
   for (const w of W) {
@@ -513,5 +528,14 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     const r = await clickIf('#reset'); await sleep(250); await at('reset', r, '');
     ck('PM 04:57 query-strip (' + QN + '): ' + steps.map(x => x.step).join(' -> ') + ': every step happened; location.search empty, no marker in location.href, location.hash as expected after each', steps.length >= 8 && steps.every(x => x.did && x.search === '' && !x.mark && x.hashOk), steps.map(x => Object.assign({}, x, { hash: x.hash.slice(0, 60), exp: x.exp && x.exp.slice(0, 60) })));
     ck('PM 04:57 query-strip (' + QN + '): no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA all9 local-f893087 W-3 / W-4: the green sum line (incl. the quoted unit) ≥4.5:1 against the worst rendered table-gradient pixel under it; "Unclaimed" ≥4.5:1
+  // on its tint (with and without unclaimed amount), 8 households, received view at 390/1280 (rendered pixels, text alpha x ancestor opacity)
+  for (const w of [390, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); const ok = [], un = [];
+    for (const q of ['10', '8']) { const st = { n: 'Rice', u: 'kilograms-ish', c: '$', q, i: '1', p: '20.00', f: '1.00', b: 'p', x: -1, h: Array.from({ length: 8 }, (_, i) => ['Home ' + (i + 1), '1']) };
+      const f = await p.evaluate(o => SACKLINK.encode(o), st); await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(300); await p.evaluate(() => document.fonts.ready);
+      ok.push(...(await textCR(p, s.b, '.ss-sum .ok, .ss-sum .ok .qu')).map(r => Object.assign(r, { q }))); un.push(...(await textCR(p, s.b, '.ss-alloc.is-unalloc .who')).map(r => Object.assign(r, { q }))); }
+    ck(w + ' QA all9 W-3: green sum line (' + ok.length + ' runs incl. “kilograms-ish”) ≥4.5:1 against every rendered background pixel under the text', ok.length >= 8 && ok.some(r => r.t.includes('“kilograms-ish”')) && ok.every(r => r.worst >= 4.5 && r.n > 0), ok);
+    ck(w + ' QA all9 W-4: "Unclaimed" ≥4.5:1 against its tint, with and without an unclaimed amount', un.length === 2 && un.every(r => r.t === COPY.unallocatedRow && r.worst >= 4.5 && r.n > 0), un);
+    ck(w + ' QA all9 W-3/W-4: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
