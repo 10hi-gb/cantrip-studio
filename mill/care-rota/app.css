@@ -1,0 +1,85 @@
+/* Care Rota r1c, engineer layer over Creative's theme.css (verbatim). */
+.top a.studio{text-decoration:none}
+.top a.studio:hover{text-decoration:underline}
+section.on{display:block}
+.cr-sh{font:700 clamp(30px,5vw,44px)/1.05 var(--serif);margin:28px 0 10px}
+section:focus{outline:none}
+.cr-h2label{font:inherit;margin:0;display:inline}
+.cr-banner{background:#FFF8E6;border:2px solid var(--binding);border-radius:8px;padding:12px 14px;margin:12px 0}
+.cr-banner p{margin:0 0 6px;font:500 18px/1.4 var(--sans)}
+.cr-banner--err{border-color:#9E2A1C}
+.cr-err{background:#FFF8E6;border:2px solid #9E2A1C;border-radius:8px;padding:8px 14px;margin:8px 0}
+.cr-err ul{margin:0;padding-left:18px}
+.cr-err a{color:#9E2A1C;font:700 16px/1.4 var(--sans);display:block;padding:3px 0}
+.cr-fe{color:#9E2A1C;font:700 15px/1.35 var(--sans);margin:4px 0 0}
+[aria-invalid=true]{border-color:#9E2A1C!important;box-shadow:0 0 0 2px #9E2A1C}
+.cr-needs{border:0;padding:0;margin:14px 0 0;min-width:0}
+.cr-needs>legend{font:700 15px/1.2 var(--sans);padding:0;margin:0 0 6px}
+.cr-need{border-top:2px dashed #C9BC9E;padding:8px 0}
+.cr-need-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cr-need-h input[type=checkbox]{width:22px;height:22px;margin:0}
+.cr-need-h label.chip{margin:0;cursor:pointer}
+.cr-need-h input[type=text]{flex:1 1 9em;min-height:44px}
+.cr-need-b label{font-size:14px;margin:10px 0 4px}
+.cr-chips{border:0;padding:0;margin:8px 0 0;display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.cr-chips legend{font:700 14px/1.2 var(--sans);padding:0;margin:0 0 4px;float:left;width:100%}
+.cr-chip{display:inline-flex;align-items:center;gap:4px;font:500 15px/1 var(--sans)!important;margin:0!important;padding:8px 10px;border:2px solid var(--ink);border-radius:999px;background:#fff;cursor:pointer;min-height:40px}
+.cr-chip input{margin:0}
+.cr-chip:has(input:checked){background:var(--binding);color:#fff;border-color:var(--binding)}
+textarea.plan{font:400 17px/1.5 ui-monospace,"Courier New",monospace;min-height:16em}
+.selvedge{position:relative;align-items:baseline}
+.cr-sep{color:#C9BC9E}
+.cr-clear{font:700 18px/1.3 var(--sans);color:#2D5A3A;margin:10px 0 0}
+.cr-check{margin-top:14px}
+.quilt{margin:0 0 10px;overflow:hidden}
+.qgrid .patch{min-width:0}
+.patch .who{min-width:0}
+.patch.gap .who{text-transform:uppercase}
+.pocket ul,.cr-per ul{margin:0;padding-left:18px;font:500 16px/1.45 var(--serif)}
+.pocket li{overflow-wrap:anywhere}
+.cr-per h3{font:800 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+.hcard{min-width:0}
+.msg{overflow-wrap:anywhere}
+.st.fix{color:#9E2A1C}
+.cr-center{justify-content:center}
+.cr-share{max-width:900px;margin:16px auto 0}
+.cr-share h3{font:700 20px/1.15 var(--serif);margin:0 0 6px}
+.cr-share p{margin:4px 0}
+.cr-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--binding);color:#fff;font:700 16px/1.3 var(--sans);padding:10px 16px;border-radius:8px;max-width:calc(100vw - 24px);z-index:10}
+#fb{margin-top:14px}
+@media (max-width:560px){
+ .readas td::before{content:attr(data-l)!important;font-weight:700}
+ .readas td:first-child::before,.readas td:last-child::before{content:none!important}
+ .qgrid{grid-template-columns:1fr!important}
+ .btnrow .btn{flex:1 1 100%}
+}
+@media print{
+ .noprint,#toast,#fb{display:none!important}
+ .wrap{padding:0;max-width:none}
+ .sheet{page-break-inside:avoid}
+ .sheet .stamp{color:#000}
+}
+.cr-sw--covered{background:var(--meal)}
+.cr-sw--gap{background:var(--muslin);outline:2px dashed #B8452F}
+.cr-sw--double{background:#8E3E2B}
+.cr-sw--notNeeded{outline:2px solid rgba(0,0,0,.35)}
+.selvedge{gap:6px 0}
+.cr-sep{white-space:pre}
+.qgrid .patch.dbl{padding-bottom:30px}
+.patch.dbl .who{white-space:pre-line}
+@media (max-width:560px){.qgrid .patch.dbl{padding-bottom:7px}}
+#s4{margin-top:28px}
+@media print{
+ body{min-height:0!important}
+ #s4{margin:0}
+ .sheet table{font-size:17px}
+ .sheet td{padding:5px 8px}
+ .sheet td.day{font-size:17px}
+}
+@media print{
+ .sheet.is-long{padding:10px 14px}
+ .sheet.is-long h2{font-size:24px}
+ .sheet.is-long table,.sheet.is-long td.day{font-size:12.5px;line-height:1.2}
+ .sheet.is-long td{padding:2px 6px;border-bottom-width:1px}
+ .sheet.is-long .stamp{font-size:13px;margin-top:4px}
+}
