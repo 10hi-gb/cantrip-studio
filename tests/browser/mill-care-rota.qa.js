@@ -601,5 +601,28 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     ck('QA C17: organizer page with a 40-char one-word name — nothing offscreen, no sideways scroll, and no mid-word break of a word that fits its cell (reading table + household sheet), every 10px 320–1440 plus 561/580/600', !bad.length && results.length >= 5 && seen.broken > 0, { widths: widths.length, results, seen, bad: bad.slice(0, 8), failWidths: bad.map(b => b.w).slice(0, 40) });
     ck('QA C17: reading-table and sheet cells use break-word, never anywhere/break-all', await p.evaluate(() => [...document.querySelectorAll('#readas td, #readas th, #readas .st, #sheet-t td')].every(e => { const c = getComputedStyle(e); return c.overflowWrap !== 'anywhere' && c.wordBreak !== 'break-all'; })), null);
     ck('QA C17: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA local-b6a90aa C18 (PM 08:59): in the reading table no ordinary word (≤10 letters, from QA's 5 plans, with its attached quote) splits at any px
+  // 561–640 or every 10px to 760 — QA's five plans incl. the dinner/Carla line; plus a C17 regression (no sideways scroll, nothing offscreen) over the same widths.
+  { const s = await session(H, IP); const { p } = s; const W40 = 'Abcdefghijklmnopqrstuvwxyzabcdefghijklmn', extra = ['Tue 20 dinner Carla', 'Tue 20 dinner Dev', 'Tue 20 dinner Dev', 'dinner Carla', 'blah blah', 'Mon 26 dinner Ana', 'Wed 21 ride Ana'];
+    const SC = { 'w40-aside': [[['dinner', 'every'], ['walk', 'weekdays'], ['other', 'every', 'Groceries']], ['Mon 19 dinner ' + W40, 'Tue 20 dinner Wolfeschlegelsteinhausen', 'Wed 21 dinner Pneumonoultramicroscopic', 'Sat 24 walk ' + W40, ...extra]],
+      'w40-noaside': [[['dinner', 'every'], ['ride', 'every'], ['walk', 'every'], ['other', 'every', 'Groceries']], ['Mon 19 dinner ' + W40, 'Mon 19 walk ' + W40, 'Tue 20 dinner Ana', 'Tue 20 dinner Ben', 'Wed 21 ride Ana', 'Wed 21 ride Ana', 'Thu 22 groceries Carla']],
+      'ord-aside': [[['dinner', 'every'], ['walk', 'weekdays']], ['Mon 19 dinner Ana', 'Mon 19 walk Ben', 'Sat 24 walk Ben', 'Thu 22 dinner Bartholomew Quatermaine', 'Fri 23 dinner Anne-Marie-Louise-Ottoline', ...extra]],
+      'ord-noaside': [[['dinner', 'every'], ['ride', 'every'], ['walk', 'every']], ['Mon 19 dinner Ana', 'Mon 19 walk Ben', 'Tue 20 dinner Carla', 'Wed 21 ride Dev', 'Thu 22 dinner Ellie', 'Fri 23 walk Fatima', 'Sun 25 dinner Gus']],
+      'w40-longother-aside': [[['dinner', 'every'], ['other', 'every', 'Abcdefghijklmnop']], ['Mon 19 abcdefghijklmnop ' + W40, 'Mon 19 dinner ' + W40, 'Tue 20 walk ' + W40, 'Wed 21 ride Ana', 'Wed 21 ride Ana', 'blah blah', 'dinner Carla', 'Mon 26 dinner Ana', 'Tue 20 dinner Carla', 'Tue 20 dinner Dev']] };
+    const widths = []; for (let w = 561; w <= 640; w++) widths.push(w); for (let w = 650; w <= 760; w += 10) widths.push(w);
+    const splits = [], c17 = [], seen = { runs: 0, words: 0 };
+    for (const [name, [needs, lines]] of Object.entries(SC)) { await p.setViewport({ width: 561, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+      await form(p, { forName: 'Priya & Sam', org: 'Jess', first: '2026-10-19', last: '2026-10-25', needs: needs.map(([key, rule, label]) => ({ key, rule, label })), lines }); await check(p);
+      for (const w of widths) { await p.setViewport({ width: w, height: 900 }); await sleep(40); seen.runs++;
+        const m = await p.evaluate(() => { const cw = document.documentElement.clientWidth, out = { sw: document.documentElement.scrollWidth, cw, off: 0, split: [], words: 0 };
+          document.querySelectorAll('section.on *').forEach(e => { if (!e.getClientRects().length) return; const r = e.getBoundingClientRect(); if (r.width && (r.right > cw + 0.5 || r.left < -0.5)) out.off++; });
+          document.querySelectorAll('#readas td').forEach(td => { const tw = document.createTreeWalker(td, NodeFilter.SHOW_TEXT); let tn; while ((tn = tw.nextNode())) { const re = /\S+/g; let mm; while ((mm = re.exec(tn.data))) { const letters = mm[0].replace(/[^\p{L}]/gu, '');
+            if (!letters.length || letters.length > 10 || /-/.test(mm[0])) continue; out.words++; const rg = document.createRange(); rg.setStart(tn, mm.index); rg.setEnd(tn, mm.index + mm[0].length);
+            const tops = []; [...rg.getClientRects()].filter(q => q.width > 0.5).forEach(q => { if (!tops.some(t => Math.abs(t - q.top) < 3)) tops.push(q.top); }); if (tops.length > 1) out.split.push(mm[0]); } } });
+          return out; });
+        seen.words += m.words; if (m.split.length) splits.push(name + '@' + w + ': ' + [...new Set(m.split)].join(' ')); if (m.sw > m.cw || m.off) c17.push({ name, w, sw: m.sw, cw: m.cw, off: m.off }); } }
+    ck('QA C18: reading table — no ordinary word (≤10 letters, QA\'s 5 plans incl. "dinner Carla") splits at any px 561–640 or every 10px 650–760', !splits.length && seen.runs === 5 * widths.length && seen.words > 1000, { seen, splits: splits.slice(0, 20), n: splits.length });
+    ck('QA C18 / C17 regression: same plans and widths — no sideways scroll, nothing offscreen', !c17.length, c17.slice(0, 10));
+    ck('QA C18: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })();

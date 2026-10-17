@@ -39,6 +39,11 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .olt-form > p,.olt-form > .olt-err{grid-column:1/-1}
 @media (max-width:480px){.olt-form .olt-field{grid-column:1/-1}.olt-form .olt-field.is-s{grid-column:span 3}.olt-form .olt-field.is-stop{grid-column:1/-1}}
 .olt-item.is-done .olt-unit{text-decoration:line-through;text-decoration-thickness:2px;color:var(--olt-mute)}
-/* QA W-6b (PM 08:26): the belt's drop shadow (theme.css, unchanged) reaches ~20px below the belt; #progress sat right under it with no gap, so its first
-   line was grey on shadow (darkest pixel 3.25:1). It now starts 14px below the belt, the same gap the set-aside tray uses, clear of the shade. */
+/* QA W-6b (PM 08:26): #progress starts 14px below the belt, the same gap the set-aside tray uses. QA local-68e592f: the belt's drop shadow
+   (theme.css 0 14px 24px -18px) still reached 20px down (offset + blur + spread), so a counter speck in its fading tail sat under line 1 (4.33:1).
+   The shadow is now 0 10px 20px -18px: same colour, same narrow spread, reach 12px, which ends above any text under the belt (first line box 13.6px). */
 #progress{margin-top:14px}
+@media screen{.olt-belt{box-shadow:inset 0 0 0 5px var(--olt-roller),inset 0 0 0 7px #6F7873,0 10px 20px -18px rgba(0,0,0,.6)}} /* print keeps theme.css box-shadow:none */
+/* QA W-6c: the set-aside tray's "?" ticket number was white on the grey hatch (2.45:1 on the light stripe); it now uses ink, as stop 4's number does
+   (#1D2321: 4.73:1 on the dark stripe #8B8F86, 6.37:1 on the light one). The hatch is unchanged. */
+.olt-ticket.is-unknown .olt-num{color:var(--olt-ink)}
