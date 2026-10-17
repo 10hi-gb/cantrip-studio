@@ -83,3 +83,18 @@ textarea.plan{font:400 17px/1.5 ui-monospace,"Courier New",monospace;min-height:
  .sheet.is-long td{padding:2px 6px;border-bottom-width:1px}
  .sheet.is-long .stamp{font-size:13px;margin-top:4px}
 }
+/* QA local-ea5aabe C5/C6: PM wrap rule in quilt patches. Spaces, then hyphens, mid-word only when a word is wider than its box
+   (overflow-wrap:break-word keeps a word's min-content, unlike the theme's `anywhere`); patches grow instead of clipping. */
+.qgrid .patch{overflow:visible;height:auto}
+.qgrid .patch>span{flex-shrink:0} /* a patch grows to fit its text (aspect-ratio is a minimum here), never squeezes it */
+.patch .need,.patch .who{overflow-wrap:break-word;word-break:normal;min-width:0;max-width:100%}
+.qgrid .patch .need{letter-spacing:.02em;hyphens:manual}
+.cr-nw{white-space:nowrap}
+@media (max-width:560px){
+ .qgrid .patch{flex-wrap:wrap;row-gap:4px}
+ .patch .who{overflow-wrap:break-word;flex:0 1 auto}
+ .qgrid .patch .need{flex:1 1 6em}
+}
+/* QA C2: theme.css:156 shows section.printme unconditionally in print; Creative's theme stays verbatim, so this overrides it:
+   the sheet prints only while a current sheet exists (body.has-sheet, set by sheetView, cleared on Start over / own copy / bad link). */
+@media print{body:not(.has-sheet) section.printme{display:none!important}}

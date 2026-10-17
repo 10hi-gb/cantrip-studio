@@ -4,7 +4,7 @@
 // everywhere: screen, aria, print and copied text (PM 02:34: no exemption; Writer's templates are filled with quoted values).
 // Shared helpers: MILLVIEW.route/readOnly/toast/quote/typed/linkFor/clearInputs.
 (function () {
-  var C = COPY, M = MILL, V = MILLVIEW, $ = function (id) { return document.getElementById(id); };
+  var C = COPY, X = COPY_EXTRA, M = MILL, V = MILLVIEW, $ = function (id) { return document.getElementById(id); };
   var KEYS = ['dinner', 'ride', 'walk', 'other'], NC = { dinner: 'meal', ride: 'ride', walk: 'walk', other: 'other' };
   var last = null, lastCfg = null, prevPatch = {}, fbText = '';
   var q = V.quote;
@@ -53,6 +53,9 @@
       a.addEventListener('click', function (ev) { ev.preventDefault(); var t = $(id); if (!t) return; if (t.tagName === 'FIELDSET') t = t.querySelector('input') || t; t.scrollIntoView({ block: 'center' }); t.focus({ preventScroll: true }); }); });
     $('errs').hidden = false; var first = ul.querySelector('a'); if (first) first.focus(); }
   // ---- render the check ----
+  // PM wrap rule in quilt patches (QA C5/C6): break at spaces, then hyphens; mid-word only when one word can't fit its box; a
+  // closing quote never alone on a line (the last letter and ” are kept together). Same quote rule as MILLVIEW.typed.
+  function qn(s) { var t = q(s), e = el('span', 'mill-typed'); e.append(document.createTextNode(t.slice(0, -2)), el('span', 'cr-nw', t.slice(-2))); return e; }
   function names(list) { return list.map(function (n) { return q(n); }).join(' + '); }
   function show(id, on) { $(id).classList.toggle('on', !!on); }
   function tallyRow(r) { var t = CR.tally(r), box = $('tally'); box.textContent = '';
@@ -70,10 +73,10 @@
         var nshow = n.key === 'other' ? q(n.label) : n.label;
         wk.forEach(function (t, di) { var key = t + '|' + n.label, on = r.needSet[key], who = r.got[key] || [], p = el('div', 'patch'), d = CR.d2(t).split(' ');
           p.style.setProperty('--o', String((w + di) * 10 + ni)); p.setAttribute('role', 'img');
-          var dd = el('span', 'd'); dd.append(el('span', 'wd', d[0] + ' '), document.createTextNode(d[2])); p.append(dd, el('span', 'need', nshow));
+          var dd = el('span', 'd'); dd.append(el('span', 'wd', d[0] + ' '), document.createTextNode(d[2])); var ne = el('span', 'need'); ne.append(n.key === 'other' ? qn(n.label) : document.createTextNode(n.label)); p.append(dd, ne);
           if (!on) { p.classList.add('hole'); p.append(el('span', 'who', C.legend.notNeeded)); p.setAttribute('aria-label', M.fill(C.patchNotNeeded, { date: CR.d2(t), need: nshow })); }
           else if (!who.length) { p.classList.add('gap'); p.append(el('span', 'who', C.legend.gap)); p.setAttribute('aria-label', M.fill(C.patchGap, { date: CR.d2(t), need: nshow })); }
-          else { p.classList.add(who.length > 1 ? 'dbl' : 'taken'); if (who.length === 1) p.classList.add(NC[n.key]); p.append(el('span', 'who', who.length > 1 ? who.map(function (n) { return q(n); }).join(' +\n') : names(who))); if (who.length > 1) p.append(el('span', 'pin', '×' + who.length));
+          else { p.classList.add(who.length > 1 ? 'dbl' : 'taken'); if (who.length === 1) p.classList.add(NC[n.key]); var wh = el('span', 'who'); who.forEach(function (nm, wi) { if (wi) wh.append(document.createTextNode(' +\n')); wh.append(qn(nm)); }); p.append(wh); if (who.length > 1) p.append(el('span', 'pin', '×' + who.length));
             p.setAttribute('aria-label', M.fill(C.patchNames, { date: CR.d2(t), need: nshow, names: M.raw((who.length > 1 ? C.legend.double + ': ' : '') + names(who)) })); }
           var sig = (on ? 1 : 0) + ':' + who.join('\u0001'); next[key] = sig; if (prevPatch[key] != null && prevPatch[key] !== sig) p.classList.add('new');
           g.append(p); }); });
@@ -84,7 +87,7 @@
   function issueText(i) { switch (i.kind) {
     case 'wrongWeekday': return M.fill(C.tagToFix, { line: i.line, date: CR.d2(i.t), weekday: i.weekday, typedWeekday: i.typedWeekday, name: q(i.name) });
     case 'twoNeeds': return M.fill(C.tagTwoNeeds, { line: i.line }); case 'twoNames': return M.fill(C.tagTwoNames, { line: i.line });
-    case 'noDay': return M.fill(C.tagNoDay, { line: i.line }); case 'ambiguous': return M.fill(C.tagAmbiguous, { line: i.line, n: i.n });
+    case 'noDay': return M.fill(C.tagNoDay, { line: i.line }); case 'nameTooLong': return M.fill(X.tagNameTooLong, { line: i.line, max: i.max }); case 'ambiguous': return M.fill(C.tagAmbiguous, { line: i.line, n: i.n });
     default: return M.fill(C.tagCouldntRead, { line: i.line }); } }
   function tags(r) { var host = $('tags'); host.textContent = ''; var add = function (txt, info) { var d = el('div', 'tag' + (info ? ' info' : '')); d.append(el('p', null, txt)); host.append(d); };
     r.issues.forEach(function (i) { add(issueText(i)); });
@@ -111,7 +114,10 @@
     s.forEach(function (d) { var tr = el('tr'), td = el('td', 'day', CR.d2(d.t)), tw = el('td'); tr.append(td, tw);
       if (!d.who.length) tw.textContent = C.sheetNothing; else tw.textContent = d.who.map(function (w) { return M.fill(C.sheetLine, { name: q(w.name), needs: w.needs.map(function (n) { return head.std(n) ? n : q(n); }).join(' + ') }); }).join(' · ');
       tb.append(tr); });
-    $('stamp-4').textContent = M.fill(C.stamp, { datetime: head.stamp, org: q(head.org) }); $('sheet-note').textContent = M.fill(C.sheetChangeNote, { org: q(head.org) }); $('b-print').textContent = C.printSheet; }
+    $('stamp-4').textContent = M.fill(C.stamp, { datetime: head.stamp, org: q(head.org) }); $('sheet-note').textContent = M.fill(C.sheetChangeNote, { org: q(head.org) }); $('b-print').textContent = C.printSheet;
+    document.body.classList.add('has-sheet'); } // print shows #s4 only while a current sheet exists (QA C2)
+  // QA C2: Start over, Make my own rota and a damaged link all drop the old sheet (DOM and state), so print can't carry it over
+  function clearSheet() { ['sheet-h', 'sheet-range', 'stamp-4', 'sheet-note'].forEach(function (id) { $(id).textContent = ''; }); $('sheet-t').tBodies[0].textContent = ''; $('sheet').classList.remove('is-long'); document.body.classList.remove('has-sheet'); }
   function isStd(n) { return KEYS.slice(0, 3).some(function (k) { return C.needs[k] === n; }); }
   function reading(r) { var tr = $('readas').tHead.rows[0]; tr.textContent = ''; ['line', 'day', 'need', 'name', 'result'].forEach(function (k) { tr.append(el('th', null, C.readingCols[k])); });
     var tb = $('readas').tBodies[0]; tb.textContent = '';
@@ -141,10 +147,11 @@
     $('f-plan-l').textContent = C.planLabel; $('plan-hint').textContent = C.planHint; $('b-check').textContent = C.primary; $('b-reset').textContent = C.reset; $('empty-state').textContent = C.emptyState;
     $('share-h').textContent = C.shareSheetHeading; $('link-warn').textContent = C.linkWarning; $('link-holds').textContent = C.linkHolds; $('b-link').textContent = C.makeLink; $('link-l').textContent = C.linkLabel;
     $('fb-l').textContent = C.copyTextLabel; $('privacy').textContent = C.privacy; $('own').textContent = C.receiverPrimary; $('b-print').textContent = C.printSheet; }
-  function fresh() { last = null; lastCfg = null; prevPatch = {}; V.readOnly($('form'), false); V.clearInputs($('form')); buildNeeds(); clearErrs(); hideFb();
+  function fresh() { last = null; lastCfg = null; prevPatch = {}; clearSheet(); $('quilts').textContent = ''; $('cards').textContent = ''; $('tags').textContent = ''; $('readas').tBodies[0].textContent = ''; $('link-box').hidden = true; $('link').value = ''; V.readOnly($('form'), false); V.clearInputs($('form')); buildNeeds(); clearErrs(); hideFb();
     ['s2', 's3', 's4', 's5'].forEach(function (s) { show(s, false); }); show('s1', true); $('recv').hidden = true; $('bad').hidden = true; $('share').hidden = false; $('privacy').hidden = false; document.body.classList.remove('is-recv'); }
   function routeTo(h) { fresh(); if (!h) return;
-    var d = CR.decodeSheet(h); if (!d.ok) { $('bad-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; $('bad').hidden = false; return; }
+    // QA C1: the WHOLE received URL is capped at 2,000 like every piece (shared linkFor), not just the fragment
+    var d = V.linkFor(String(h).replace(/^#/, '')) ? CR.decodeSheet(h) : { ok: false, why: 'bad' }; if (!d.ok) { $('bad-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; $('bad').hidden = false; return; }
     var s = d.data; document.body.classList.add('is-recv');
     // recipient: the household sheet only, read-only; the organizer form is disabled in the DOM (shared readOnly) and not shown
     V.readOnly($('form'), true); show('s1', false); $('share').hidden = true;
