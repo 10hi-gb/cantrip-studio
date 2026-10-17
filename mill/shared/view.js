@@ -26,5 +26,8 @@
     });
     scope.inert = !!on; if (on) scope.setAttribute('aria-disabled', 'true'); else scope.removeAttribute('aria-disabled');
   }
-  root.MILLVIEW = { route: route, clearInputs: clearInputs, readOnly: readOnly };
+  // 3. Sender framing: text someone else typed is shown quoted, in body type, never inside a product sentence and
+  //    never styled as a product heading. typed('Ana') -> <span class="mill-typed">“Ana”</span> (text node only).
+  function typed(text, cls, tag) { var e = document.createElement(tag || 'span'); e.className = 'mill-typed' + (cls ? ' ' + cls : ''); e.textContent = '\u201C' + text + '\u201D'; return e; }
+  root.MILLVIEW = { route: route, clearInputs: clearInputs, readOnly: readOnly, typed: typed };
 })(this);

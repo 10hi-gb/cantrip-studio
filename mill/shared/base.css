@@ -1,0 +1,9 @@
+/* Mill shared base (engineer). Loaded by every Mill piece BEFORE its own app.css; Creative's theme.css stays verbatim.
+   One place for the classes QA failed on in every piece:
+   - [hidden] always wins over a piece's display rules (no "hidden but rendered").
+   - 320px layout: form controls may shrink inside grid/flex rows; typed text breaks anywhere instead of pushing the page sideways.
+   - sender framing: .mill-typed is text someone else typed, shown in body type (never heading style). */
+[hidden]{display:none!important}
+input,select,textarea{min-width:0;max-width:100%;box-sizing:border-box}
+.mill-typed{font-family:inherit;font-weight:inherit;overflow-wrap:anywhere;word-break:normal;unicode-bidi:plaintext}
+.mill-typed-note{font-size:13px;line-height:1.35;margin:4px 0 0}
