@@ -16,7 +16,7 @@
 .eu-rod-row{display:grid;grid-template-columns:var(--eu-name) minmax(0,1fr);align-items:center;min-height:var(--eu-row);min-width:0}
 .eu-rod{height:48px;min-width:0}
 .eu-name{min-width:0}
-.eu-token{max-width:calc(50% - 8px);white-space:normal;overflow-wrap:anywhere;text-align:center;height:auto;min-height:44px;padding:4px 10px;line-height:1.05}
+.eu-token{width:max-content;max-width:none;white-space:nowrap;text-align:center;height:auto;min-height:44px;padding:4px 10px;line-height:1.05}
 .eu-token small{margin-top:3px}
 .eu-lines{min-width:0}
 .eu-link-num{position:absolute;z-index:1;left:calc(4px + 16px + var(--k)*var(--gap,26px) + 3px);transform:translateY(-50%);min-width:18px;height:18px;padding:0 3px;border-radius:9px;
@@ -81,4 +81,39 @@
 /* s5 empty state: the frame stays, two bare "?" rods (no tokens, no scale), the empty line below */
 .eu-frame.is-empty .eu-scale{display:none}
 .eu-frame.is-empty .eu-trail{display:none}
-.eu-frame.is-empty .eu-unnamed{opacity:.35}
+
+/* QA E1: an amount on the frame never breaks inside the number; tokens size to the figure, and step the type down
+   (is-tight / is-tighter, set by app.js from the measured box) instead of wrapping */
+.eu-token .eu-fig,.eu-token small{white-space:nowrap}
+.eu-token.is-tight{font-size:12px;padding-left:5px;padding-right:5px;min-width:0}
+.eu-token.is-tighter{font-size:11px;padding-left:4px;padding-right:4px;letter-spacing:-.01em}
+.eu-token.is-tighter small{font-size:8px;letter-spacing:.04em}
+/* QA E2: a wider name column on wide screens; names wrap between words; a single over-long word may break, but the
+   closing quote stays with the end of the last word (.eu-nobr, app.js frameName) */
+@media(min-width:700px){.eu-board{--eu-name:150px}.eu-scale{grid-template-columns:150px minmax(0,1fr) var(--eu-settle)}}
+@media(min-width:1000px){.eu-board{--eu-name:200px}.eu-scale{grid-template-columns:200px minmax(0,1fr) var(--eu-settle)}}
+.eu-rods .eu-name{overflow-wrap:break-word;word-break:normal;hyphens:manual}
+.eu-nobr{white-space:nowrap}
+/* QA E8: the people cap is a neutral hint (muted, no error colour, icon or aria-invalid) */
+.eu-hint{margin:0 0 8px}
+.eu-hint:empty{display:none}
+/* Creative (QA a695196): empty-state rods. A person with no name yet: full-opacity --eu-mute "?" and a 3px dashed rod,
+   8px on / 6px off with round caps (core 5px + two 1.5px caps); the zero post stays solid --eu-post. Named -> solid --eu-rod. */
+.eu-rods .eu-unnamed{opacity:1;color:var(--eu-mute)}
+.eu-rod-row.is-unnamed .eu-rod::before{background:
+  radial-gradient(circle 1.5px at 1.5px 50%,var(--eu-mute) 1.4px,transparent 1.6px) 0 50%/14px 3px repeat-x,
+  radial-gradient(circle 1.5px at 6.5px 50%,var(--eu-mute) 1.4px,transparent 1.6px) 0 50%/14px 3px repeat-x,
+  repeating-linear-gradient(90deg,transparent 0 1.5px,var(--eu-mute) 1.5px 6.5px,transparent 6.5px 14px);border-radius:0}
+/* QA E5: share rows. Amounts keep one right-aligned column; Writer's rounding note follows on the same line in
+   .eu-fine size, Lexend 400, --eu-tape-red, in its own column so it never moves the figure. Narrow: under the amount, right-aligned. */
+.eu-x dl{grid-template-columns:minmax(0,1fr) auto auto}
+.eu-x dd{grid-column:2/4;display:grid;grid-template-columns:subgrid;column-gap:8px;align-items:baseline}
+.eu-x dd .eu-amt{text-align:right}
+.eu-rmark{font:400 13px/1.3 var(--eu-sans);color:var(--eu-tape-red);text-align:left;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.eu-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+@media(max-width:359px){
+  .eu-x dl{grid-template-columns:minmax(0,1fr) auto}
+  .eu-x dd{grid-column:2;display:block;text-align:right}
+  .eu-x dd .eu-amt,.eu-x dd .eu-rmark{display:block;text-align:right}
+  .eu-x dd .eu-rmark:empty{display:none}
+}
