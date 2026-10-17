@@ -5,7 +5,7 @@
   if (typeof module === 'object' && module.exports) module.exports = factory(require('../shared/core.js'), require('./sack.js'));
   else root.SACKLINK = factory(root.MILL, root.SACK);
 })(this, function (M, S) {
-  var FRAG_MAX = 1800, ITEM_MAX = 40, NAME_MAX = 24, UNIT_MAX = 16, SYM_MAX = 3;
+  var FRAG_MAX = 2000, ITEM_MAX = 40, NAME_MAX = 24, UNIT_MAX = 16, SYM_MAX = 3;
   var STR = ['n', 'u', 'c', 'q', 'i', 'p', 'f', 'b'];
   function clean(st) {
     var o = { h: st.h.map(function (x) { return [M.strip(x[0]), String(x[1]).trim()]; }), x: st.x };

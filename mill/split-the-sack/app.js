@@ -18,22 +18,21 @@
   }
   function toForm() {
     $('item').value = st.n; $('u').value = st.u; $('c').value = st.c; $('q').value = st.q; $('inc').value = st.i; $('p').value = st.p; $('f').value = st.f;
-    document.querySelectorAll('input[name=b]').forEach(function (r) { r.checked = r.value === st.b; });
-    drawHouseholds();
+    basisButtons(); drawHouseholds();
   }
   function drawHouseholds() {
     var ol = $('hh'); ol.textContent = '';
     st.h.forEach(function (x, i) {
-      var li = el('li', 'sk-hrow');
-      var nl = el('label', 'sk-f'); nl.appendChild(el('span', null, C.householdLabel + ' ' + (i + 1)));
-      var n = el('input'); n.value = x[0]; n.maxLength = 48; n.autocomplete = 'off'; n.placeholder = i === 0 ? C.householdPlaceholder : '';
-      n.addEventListener('input', function () { st.h[i][0] = n.value; edited(); }); nl.appendChild(n);
-      var rl = el('label', 'sk-req'); rl.appendChild(el('span', null, C.requestLabel));
-      var r = el('input'); r.value = x[1]; r.inputMode = 'decimal'; r.autocomplete = 'off'; r.placeholder = C.requestPlaceholder; r.className = 'sk-rq';
-      r.addEventListener('input', function () { st.h[i][1] = r.value; edited(); }); rl.appendChild(r); rl.appendChild(el('span', 'sk-unit', unit()));
-      var rm = el('button', 'sk-x', '×'); rm.type = 'button'; rm.disabled = st.h.length <= S.MIN_H;
+      var li = el('li', 'ss-hrow');
+      var nf = el('div', 'ss-field'), nl = el('label', null, C.householdLabel + ' ' + (i + 1)), n = el('input');
+      n.id = 'hn' + i; nl.htmlFor = n.id; n.value = x[0]; n.maxLength = 48; n.autocomplete = 'off'; n.className = 'ss-hn'; n.placeholder = i === 0 ? C.householdPlaceholder : '';
+      n.addEventListener('input', function () { st.h[i][0] = n.value; edited(); }); nf.appendChild(nl); nf.appendChild(n);
+      var rf = el('div', 'ss-field'), rlab = el('label', null, C.requestLabel), w = el('div', 'ss-wants'), r = el('input');
+      r.id = 'hr' + i; rlab.htmlFor = r.id; r.value = x[1]; r.inputMode = 'decimal'; r.autocomplete = 'off'; r.placeholder = C.requestPlaceholder; r.className = 'sk-rq';
+      r.addEventListener('input', function () { st.h[i][1] = r.value; edited(); }); w.appendChild(r); w.appendChild(el('span', 'u sk-unit', unit())); rf.appendChild(rlab); rf.appendChild(w);
+      var rm = el('button', 'ss-x sk-x', '×'); rm.type = 'button'; rm.disabled = st.h.length <= S.MIN_H;
       rm.addEventListener('click', function () { st.h.splice(i, 1); if (st.x === i) st.x = -1; else if (st.x > i) st.x--; drawHouseholds(); edited(); ($('hh').querySelectorAll('input')[Math.max(0, (i - 1) * 2)] || $('add')).focus(); });
-      li.appendChild(nl); li.appendChild(rl); li.appendChild(rm); ol.appendChild(li);
+      li.appendChild(nf); li.appendChild(rf); li.appendChild(rm); ol.appendChild(li);
     });
     $('add').disabled = st.h.length >= S.MAX_H; labels();
   }
@@ -52,12 +51,13 @@
     if (/^-/.test(v) && /^-\d*\.?\d+$/.test(v)) return C.errorNegative;
     if (!/^(\d+\.?\d*|\.\d+)$/.test(v)) return C.errorNumber;
     if (/^\d{14,}/.test(v)) return C.errorTooBig;
-    var q = S.parseQty(v); if (q == null) return inc ? M.fill(C.errorIncrement, { increment: S.fmtQty(inc), unit: unit() }) : C.errorNumber;
+    var q = S.parseQty(v); if (q != null && q > 1e12) return M.fill(C.errorRange, { max: '1000000000' });
+    if (q == null) return inc ? M.fill(C.errorIncrement, { increment: S.fmtQty(inc), unit: unit() }) : C.errorNumber;
     if (!allowZero && q === 0) return C.errorZero;
     if (inc && q % inc) return M.fill(C.errorIncrement, { increment: S.fmtQty(inc), unit: unit() });
     return '';
   }
-  function moneyErr(v) { v = String(v).trim(); if (v === '') return ''; if (/^-/.test(v)) return C.errorNegative; if (S.parseMoney(v) == null) return /^\d{14,}/.test(v) ? C.errorTooBig : C.errorNumber; return ''; }
+  function moneyErr(v) { v = String(v).trim(); if (v === '') return ''; if (/^-/.test(v)) return C.errorNegative; if (S.parseMoney(v) > 1e11) return M.fill(C.errorRange, { max: money(1e11) }); if (S.parseMoney(v) == null) return /^\d{14,}/.test(v) ? C.errorTooBig : C.errorNumber; return ''; }
   function fieldErrors() {
     var e = [], h = [], q = S.parseQty(st.q), inc = S.parseQty(st.i), x;
     if ((x = M.len(M.strip(st.n)) - L.ITEM_MAX) > 0) e.push(C.itemLabel + ' ' + M.plural(C.itemTooLong, x));
@@ -77,6 +77,23 @@
     if (dup) h.push(C.duplicateHousehold);
     return { item: e, hh: h };
   }
+  function basisButtons() { $('bp').setAttribute('aria-pressed', String(st.b === 'p')); $('be').setAttribute('aria-pressed', String(st.b === 'e')); }
+  var BIN = 'M4 10 L36 10 L33 38 L7 38 Z';
+  function bin(qty, Q) { var NS = 'http://www.w3.org/2000/svg', sp = el('span', 'ss-bin'), sv = document.createElementNS(NS, 'svg'); sv.setAttribute('viewBox', '0 0 40 40'); sv.setAttribute('aria-hidden', 'true');
+    var h = Q > 0 ? 26 * Math.min(1, 2 * qty / Q) : 0, y = (37 - h).toFixed(1);
+    [['path', { 'class': 'b', d: BIN }], ['path', { 'class': 'f', d: 'M6 ' + y + ' L34 ' + y + ' L33 37 L7 37 Z' }], ['rect', { 'class': 'rim', x: 2, y: 7, width: 36, height: 5, rx: 2 }]].forEach(function (p) { var e = document.createElementNS(NS, p[0]); for (var k in p[1]) e.setAttribute(k, p[1][k]); if (p[0] === 'path' && p[1]['class'] === 'f' && h === 0) e.setAttribute('d', 'M6 37 L34 37 L33 37 L7 37 Z'); sv.appendChild(e); });
+    sp.appendChild(sv); sp.setAttribute('role', 'presentation'); return sp; }
+  function arow(cls, who, qty, item, fee, tot, penny) {
+    var r = el('div', 'ss-alloc' + (cls ? ' ' + cls : '')); r.setAttribute('role', 'row');
+    r.appendChild(bin(qty.n, qty.Q));
+    var w = el('span', 'who', who); w.setAttribute('role', 'rowheader'); r.appendChild(w);
+    var q = el('span', 'qty', qty.t); q.setAttribute('role', 'cell'); r.appendChild(q);
+    var it = el('span', 'm item', item); it.setAttribute('role', 'cell'); r.appendChild(it);
+    var fe = el('span', 'm fee', fee); fe.setAttribute('role', 'cell'); if (fee !== '—') fe.appendChild(el('span', 'fw', ' ' + C.colFee.toLowerCase())); r.appendChild(fe);
+    var t = el('span', 'tot', tot); t.setAttribute('role', 'cell'); if (penny) t.appendChild(el('span', 'p', penny)); r.appendChild(t);
+    return r;
+  }
+  function colhead(qtyLabel) { var r = el('div', 'ss-colhead'); r.setAttribute('role', 'row'); [' ', C.colWho, qtyLabel, C.colItem, C.colFee, C.colPays].forEach(function (t, k) { var c = el('span', null, k ? t : ''); c.setAttribute('role', k ? 'columnheader' : 'presentation'); r.appendChild(c); }); return r; }
   function list(id, arr) { var u = $(id); u.textContent = ''; arr.forEach(function (t) { u.appendChild(el('li', null, t)); }); }
   function row(cells, cls) { var tr = el('tr', cls); cells.forEach(function (c, k) { var td = el(k ? 'td' : 'th', null, c); if (!k) td.scope = 'row'; tr.appendChild(td); }); return tr; }
   function result() {
@@ -87,34 +104,49 @@
   }
   function render() {
     var fe = fieldErrors(); list('item-msg', fe.item); list('hh-msg', fe.hh);
-    var tb = $('tb'), tf = $('tf'), as = $('assign'), u = unit(); tb.textContent = ''; tf.textContent = ''; as.textContent = '';
-    $('basisline').textContent = C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'];
-    var res = result(), status = $('status'); status.className = 'sk-status'; $('reconcile').textContent = ''; $('residual').textContent = ''; $('unhint').hidden = true;
-    if (!res) { status.textContent = C.emptyState; status.classList.add('is-idle'); }
-    else if (res.status === 'over') { status.textContent = M.fill(C.statusShortage, { qty: S.fmtQty(res.shortage), unit: u }) + ' ' + M.fill(C.overAllocationBlock, { qty: S.fmtQty(res.shortage), unit: u }); status.classList.add('is-over'); }
-    else if (res.status === 'under') { status.textContent = M.fill(C.statusRemainder, { qty: S.fmtQty(res.unallocated.qty), unit: u }); status.classList.add('is-under'); }
-    else { status.textContent = M.fill(C.statusExact, { package: S.fmtQty(res.pkgQty), unit: u }); status.classList.add('is-exact'); }
-    $('tbl').setAttribute('aria-label', M.fill(C.tableAria, { n: st.h.length }));
+    var rows = $('rows'), as = $('assign'), u = unit(); rows.textContent = ''; as.textContent = '';
+    $('basisnote').textContent = C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'] + ' ' + C.feeUnallocatedNote;
+    var res = result(), status = $('status'), q = S.parseQty(st.q) || 0;
+    $('lcd-q').textContent = st.q ? (S.parseQty(st.q) != null ? S.fmtQty(S.parseQty(st.q)) : '—') + (u ? ' ' + u : '') : '—';
+    $('lcd-p').textContent = S.parseMoney(st.p) != null ? money(S.parseMoney(st.p)) : '—';
+    $('lcd-f').textContent = money(S.parseMoney(st.f) || 0);
+    var inc = S.parseQty(st.i); $('sname').textContent = (M.strip(st.n) || C.itemPlaceholder) + (inc ? ' · ' + C.incrementLabel + ' ' + S.fmtQty(inc) + (u ? ' ' + u : '') : '');
+    status.className = 'ss-status'; status.setAttribute('role', 'status'); $('reconcile').textContent = ''; $('residual').textContent = '';
+    rows.setAttribute('aria-label', M.fill(C.tableAria, { n: st.h.length }));
+    if (!res) { status.textContent = C.emptyState; }
+    else if (res.status === 'over') {
+      status.textContent = M.fill(C.statusShortage, { qty: S.fmtQty(res.shortage), unit: u }) + ' ' + M.fill(C.overAllocationBlock, { qty: S.fmtQty(res.shortage), unit: u }) + ' ' + C.noProrateNote;
+      status.classList.add('is-short'); status.setAttribute('role', 'alert');
+      rows.appendChild(colhead(C.colAsked));
+      st.h.forEach(function (x, i) { var r = S.parseQty(String(x[1]).trim() === '' ? '0' : x[1]) || 0; rows.appendChild(arow(r ? '' : 'is-zero', nameOf(i), { n: Math.min(r, q), Q: q, t: S.fmtQty(r) + ' ' + u }, '—', '—', '—')); });
+      rows.appendChild(arow('is-short', C.shortRow, { n: 0, Q: q, t: S.fmtQty(res.shortage) + ' ' + u }, '—', '—', '—'));
+    }
+    else if (res.status === 'under') { status.textContent = M.fill(C.statusRemainder, { qty: S.fmtQty(res.unallocated.qty), unit: u }) + ' ' + C.unallocatedHint; status.classList.add('is-unalloc'); }
+    else { status.textContent = M.fill(C.statusExact, { package: S.fmtQty(res.pkgQty), unit: u }); status.classList.add('is-full'); }
     if (res && res.complete) {
-      res.rows.forEach(function (r, i) { tb.appendChild(row([nameOf(i), S.fmtQty(r.qty) + ' ' + u, money(r.goods), money(r.fee), money(r.total)], res.assigned === i ? 'is-assigned' : '')); });
-      var un = res.unallocated; tb.appendChild(row([C.unallocatedRow, S.fmtQty(un.qty) + ' ' + u, money(un.goods), money(un.fee), money(un.total)], 'sk-un' + (un.qty ? ' is-on' : '')));
-      tf.appendChild(row([C.rowTotal, S.fmtQty(res.pkgQty) + ' ' + u, money(res.price), money(res.fee), money(res.total)]));
+      rows.appendChild(colhead(C.colQty));
+      res.rows.forEach(function (r, i) { rows.appendChild(arow((r.qty ? '' : 'is-zero') + (res.assigned === i ? ' is-assigned' : ''), nameOf(i), { n: r.qty, Q: res.pkgQty, t: S.fmtQty(r.qty) + ' ' + u }, money(r.goods), money(r.fee), money(r.total), r.extraCents ? M.plural(C.pennyTag, r.extraCents) : '')); });
+      var un = res.unallocated; rows.appendChild(arow('is-unalloc' + (un.qty ? '' : ' is-zero'), C.unallocatedRow, { n: un.qty, Q: res.pkgQty, t: S.fmtQty(un.qty) + ' ' + u }, money(un.goods), money(un.fee), money(un.total), un.extraCents ? M.plural(C.pennyTag, un.extraCents) : ''));
       var sumQ = res.rows.reduce(function (a, r) { return a + r.qty; }, un.qty), sumM = res.rows.reduce(function (a, r) { return a + r.total; }, un.total);
-      if (sumQ === res.pkgQty && sumM === res.total) $('reconcile').textContent = M.fill(C.reconcileLine, { qty: S.fmtQty(sumQ), unit: u, total: money(sumM) });
+      var sum = el('div', 'ss-sum'); sum.setAttribute('role', 'row'); var ok = sumQ === res.pkgQty && sumM === res.total;
+      [['', 'presentation'], [C.reconcileLabel, 'rowheader'], [S.fmtQty(sumQ) + ' ' + u + (ok ? ' ✓' : ''), 'cell', 'ok'], [money(res.price), 'cell', 'ok'], [money(res.fee), 'cell', 'ok'], [money(sumM) + (ok ? ' ✓' : ''), 'cell', 'ok']].forEach(function (c) { var e = el('span', c[2] || null, c[0]); e.setAttribute('role', c[1]); sum.appendChild(e); });
+      rows.appendChild(sum);
+      if (ok) $('reconcile').textContent = M.fill(C.reconcileLine, { qty: S.fmtQty(sumQ), unit: u, total: money(sumM) });
       var ex = [], exn = 0; res.rows.forEach(function (r, i) { if (r.extraCents) { ex.push(nameOf(i)); exn += r.extraCents; } }); if (un.extraCents) { ex.push(C.unallocatedRow); exn += un.extraCents; }
       $('residual').textContent = exn ? M.plural(C.residualLine, exn, { names: ex.join(', ') }) : C.residualNone;
       if (un.qty > 0) {
-        $('unhint').hidden = false;
-        as.appendChild(el('p', 'sk-fine', M.fill(C.assignUnallocated, { qty: S.fmtQty(un.qty), unit: u })));
-        st.h.forEach(function (_, i) { var b = el('button', 'sk-btn sk-btn--ghost sk-btn--sm', M.fill(C.assignTo, { name: nameOf(i) })); b.type = 'button'; b.addEventListener('click', function () { st.x = i; edited(); $('unassign') && $('unassign').focus(); }); as.appendChild(b); });
+        as.appendChild(el('p', null, M.fill(C.assignUnallocated, { qty: S.fmtQty(un.qty), unit: u })));
+        st.h.forEach(function (_, i) { var b = el('button', 'ss-btn', M.fill(C.assignTo, { name: nameOf(i) })); b.type = 'button'; b.addEventListener('click', function () { st.x = i; edited(); var ub = $('unassign'); if (ub) ub.focus(); }); as.appendChild(b); });
       } else if (res.assigned >= 0) {
-        var b = el('button', 'sk-btn sk-btn--ghost sk-btn--sm', C.unassign); b.type = 'button'; b.id = 'unassign'; b.addEventListener('click', function () { st.x = -1; edited(); var f = as.querySelector('button'); if (f) f.focus(); }); as.appendChild(b);
+        var b = el('button', 'ss-btn', C.unassign); b.type = 'button'; b.id = 'unassign'; b.addEventListener('click', function () { st.x = -1; edited(); var f = as.querySelector('button'); if (f) f.focus(); }); as.appendChild(b);
       }
     }
-    var blocked = L.check(st), ready = !blocked && !fe.item.length && !fe.hh.length;
+    var blocked = L.check(st), feeNoTaker = res && res.complete && res.fee > 0 && res.rows.every(function (r) { return r.qty === 0; });
+    if (feeNoTaker) fe.item.push(C.errorFeeNoBasis), list('item-msg', fe.item);
+    var ready = !blocked && !fe.item.length && !fe.hh.length;
     ['share', 'copytext', 'print'].forEach(function (id) { $(id).disabled = !ready; });
-    $('notready').textContent = ready ? '' : (blocked === 'over' && res ? M.fill(C.overAllocationBlock, { qty: S.fmtQty(res.shortage), unit: u }) : blocked === 'count' ? C.tooFewHouseholds : blocked === 'duplicate' ? C.duplicateHousehold : C.notReady);
-    var txt = ready ? proposal(res) : ''; $('text').value = txt; $('printout').textContent = txt;
+    $('notready').textContent = ready ? '' : (blocked === 'over' && res ? M.fill(C.overAllocationBlock, { qty: S.fmtQty(res.shortage), unit: u }) : blocked === 'count' ? C.tooFewHouseholds : blocked === 'duplicate' ? C.duplicateHousehold : feeNoTaker ? C.errorFeeNoBasis : C.notReady);
+    var txt = ready ? proposal(res) : ''; $('text').value = txt; $('printout').textContent = ready ? M.fill(C.proposalPolicy, { feeBasisLine: C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'], residualNote: C.residualNote }) + '\n' + C.feeUnallocatedNote + '\n' + C.proposalSnapshot + '\n' + C.noPaymentNote : '';
   }
   function proposal(res) {
     var u = unit(), out = [C.proposalHeading + ': ' + M.strip(st.n), C.packageQtyLabel + ': ' + S.fmtQty(res.pkgQty) + ' ' + u + ' · ' + C.priceLabel + ': ' + money(res.price) + ' · ' + C.feeLabel + ': ' + money(res.fee), ''];
@@ -122,7 +154,7 @@
     out.push(C.unallocatedRow + ': ' + M.fill(C.unallocatedLine, { qty: S.fmtQty(res.unallocated.qty), unit: u, cost: money(res.unallocated.total) }));
     out.push(C.rowTotal + ': ' + S.fmtQty(res.pkgQty) + ' ' + u + ' · ' + money(res.total), '');
     out.push(M.fill(C.proposalPolicy, { feeBasisLine: C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'], residualNote: C.residualNote }));
-    out.push($('residual').textContent, C.proposalSnapshot, C.noPaymentNote);
+    out.push(C.feeUnallocatedNote, $('residual').textContent, C.proposalSnapshot, C.noPaymentNote);
     return out.join('\n');
   }
   function makeLink() { var f = L.encode(st); if (!f) return null; if (f.length > L.FRAG_MAX) { toast(C.tooLongLink); return null; } lastLink = location.origin + location.pathname + '#' + f; history.replaceState(null, '', '#' + f); $('link').value = lastLink; $('linkbox').hidden = false; return lastLink; }
@@ -146,7 +178,8 @@
   }
   function bind() {
     [['item', 'n'], ['q', 'q'], ['inc', 'i'], ['p', 'p'], ['f', 'f'], ['c', 'c'], ['u', 'u']].forEach(function (p) { $(p[0]).addEventListener('input', function (e) { st[p[1]] = e.target.value; edited(); }); });
-    document.querySelectorAll('input[name=b]').forEach(function (r) { r.addEventListener('change', function () { if (r.checked) { st.b = r.value; edited(); } }); });
+    $('bp').addEventListener('click', function () { st.b = 'p'; basisButtons(); edited(); });
+    $('be').addEventListener('click', function () { st.b = 'e'; basisButtons(); edited(); });
     $('add').addEventListener('click', function () { if (st.h.length >= S.MAX_H) return; st.h.push(['', '']); drawHouseholds(); edited(); var ins = $('hh').querySelectorAll('input'); ins[ins.length - 2].focus(); });
     $('own').addEventListener('click', function () { edited(); $('item').focus(); });
     $('share').addEventListener('click', share);

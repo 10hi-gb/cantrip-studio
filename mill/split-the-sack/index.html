@@ -9,6 +9,7 @@
 <meta name="description" content="A small tool from Cantrip Studio.">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="app.css">
 <script src="copy.js" defer></script>
 <script src="copy-extra.js" defer></script>
 <script src="../shared/core.js" defer></script>
@@ -16,69 +17,66 @@
 <script src="link.js" defer></script>
 <script src="app.js" defer></script>
 </head>
-<body class="sk">
-<header class="sk-top"><a href="../" class="sk-home" data-c="studioName" data-aria="backLabel"></a></header>
-<main class="sk-page" id="main">
- <h1 class="sk-title" data-c="title"></h1>
- <p class="sk-lede" data-c="invitation"></p>
- <div class="sk-banner" id="banner" role="status" hidden><p id="banner-t"></p><p id="banner-n"></p><button type="button" class="sk-btn sk-btn--sm" id="own" data-c="receiverPrimary" hidden></button></div>
-
- <section class="sk-crate" aria-labelledby="h-item">
-  <h2 id="h-item" data-c="itemHeading"></h2>
-  <div class="sk-grid">
-   <label class="sk-f sk-f--wide"><span data-c="itemLabel"></span><input id="item" maxlength="80" autocomplete="off" data-ph="itemPlaceholder"></label>
-   <label class="sk-f"><span data-c="packageQtyLabel"></span><input id="q" inputmode="decimal" autocomplete="off" data-ph="packageQtyPlaceholder"></label>
-   <label class="sk-f"><span data-c="unitLabel"></span><input id="u" maxlength="32" autocomplete="off" data-ph="unitPlaceholder" aria-describedby="u-h"><small id="u-h" data-c="unitHint"></small></label>
-   <label class="sk-f"><span data-c="incrementLabel"></span><input id="inc" inputmode="decimal" autocomplete="off" data-ph="incrementPlaceholder" aria-describedby="inc-h"><small id="inc-h" data-c="incrementHint"></small></label>
-   <label class="sk-f sk-f--sym"><span data-c="currencyLabel"></span><input id="c" maxlength="6" autocomplete="off" data-ph="currencyPlaceholder" value="$"></label>
-   <label class="sk-f"><span data-c="priceLabel"></span><input id="p" inputmode="decimal" autocomplete="off" data-ph="pricePlaceholder"></label>
-   <label class="sk-f"><span data-c="feeLabel"></span><input id="f" inputmode="decimal" autocomplete="off" data-ph="feePlaceholder" aria-describedby="f-h"><small id="f-h" data-c="feeHint"></small></label>
-   <fieldset class="sk-f sk-f--wide sk-basis"><legend data-c="feeBasisLabel"></legend>
-    <label><input type="radio" name="b" value="p" checked> <span data-c="feeBasis.proportional"></span></label>
-    <label><input type="radio" name="b" value="e"> <span data-c="feeBasis.equal"></span></label>
-   </fieldset>
-  </div>
-  <ul class="sk-msg" id="item-msg" aria-live="polite"></ul>
- </section>
-
- <section class="sk-crate" aria-labelledby="h-hh">
-  <h2 id="h-hh" data-c="householdsHeading"></h2>
-  <p class="sk-fine" id="hcount"></p>
-  <ol class="sk-hh" id="hh"></ol>
-  <button type="button" class="sk-btn sk-btn--ghost" id="add" data-c="addHousehold"></button>
-  <ul class="sk-msg" id="hh-msg" aria-live="polite"></ul>
- </section>
-
- <section class="sk-table" aria-labelledby="h-res">
-  <h2 id="h-res" data-c="statusHeading"></h2>
-  <p class="sk-status" id="status" aria-live="polite" data-aria="statusAria"></p>
-  <h3 data-c="tableHeading"></h3>
-  <div class="sk-scroll"><table id="tbl"><thead><tr><th scope="col" data-c="colWho"></th><th scope="col" data-c="colQty"></th><th scope="col" data-c="colItem"></th><th scope="col" data-c="colFee"></th><th scope="col" data-c="colPays"></th></tr></thead><tbody id="tb"></tbody><tfoot id="tf"></tfoot></table></div>
-  <p class="sk-fine" id="unhint" data-c="unallocatedHint"></p>
-  <div class="sk-assign" id="assign"></div>
-  <p class="sk-fine sk-rec" id="reconcile"></p>
-  <p class="sk-fine" id="basisline"></p>
-  <p class="sk-fine" data-c="residualNote"></p>
-  <p class="sk-fine" id="residual"></p>
-  <p class="sk-fine" data-c="noPaymentNote"></p>
- </section>
-
- <section class="sk-out" aria-labelledby="h-out">
-  <h2 id="h-out" data-c="proposalHeading"></h2>
-  <p class="sk-msg" id="notready"></p>
-  <div class="sk-actions">
-   <button type="button" class="sk-btn" id="share" data-c="share"></button>
-   <button type="button" class="sk-btn sk-btn--ghost" id="copytext" data-c="copyProposal"></button>
-   <button type="button" class="sk-btn sk-btn--ghost" id="print" data-c="printProposal"></button>
-  </div>
-  <div id="linkbox" hidden><label class="sk-f"><span data-c="linkLabel"></span><textarea id="link" readonly rows="3"></textarea></label></div>
-  <label class="sk-f"><span data-c="proposalHeading"></span><textarea id="text" class="sk-text" readonly rows="12"></textarea></label>
-  <p class="sk-fine" data-c="proposalSnapshot"></p>
-  <p class="sk-fine" data-c="privacy"></p>
-  <button type="button" class="sk-btn sk-btn--ghost" id="reset" data-c="reset"></button>
- </section>
-</main>
-<pre class="sk-print" id="printout"></pre>
-<div class="sk-toast" id="toast" role="status" hidden></div>
+<body class="ss">
+<div class="ss-page">
+ <div class="ss-top"><a href="../" data-c="studioLabel" data-aria="backLabel"></a></div>
+ <h1 class="ss-title" data-c="title"></h1>
+ <p class="ss-lede" data-c="invitation"></p>
+ <div class="ss-banner" id="banner" role="status" hidden><p id="banner-t"></p><p id="banner-n"></p><button type="button" class="ss-btn" id="own" data-c="receiverPrimary" hidden></button></div>
+ <div class="ss-grid">
+  <section class="ss-table" aria-labelledby="h-table">
+   <div class="ss-head">
+    <div class="ss-sack"><svg viewBox="0 0 96 120" aria-hidden="true"><path class="bag" d="M10 14 Q48 4 86 14 L90 110 Q48 118 6 110 Z"/><line class="weave" x1="16" y1="12" x2="14" y2="112"/><line class="weave" x1="28" y1="12" x2="26" y2="112"/><line class="weave" x1="40" y1="12" x2="38" y2="112"/><line class="weave" x1="52" y1="12" x2="50" y2="112"/><line class="weave" x1="64" y1="12" x2="62" y2="112"/><line class="weave" x1="76" y1="12" x2="74" y2="112"/><rect class="band" x="12" y="46" width="72" height="26" rx="2"/><rect class="band2" x="12" y="72" width="72" height="6"/><path d="M16 14 Q30 22 48 14 Q66 22 80 14" fill="none" stroke="#A9AA9E" stroke-width="2"/></svg></div>
+    <div><div class="ss-lcd"><span class="k" data-c="packageQtyLabel"></span><span class="k" data-c="priceLabel"></span><span class="k" data-c="feeLabel"></span><span class="v" id="lcd-q"></span><span class="v" id="lcd-p"></span><span class="v" id="lcd-f"></span></div><p class="ss-name" id="sname"></p></div>
+   </div>
+   <h2 class="ss-lab" id="h-table" data-c="tableHeading"></h2>
+   <div class="ss-rows" id="rows" role="table"></div>
+   <div class="ss-status" id="status" role="status"></div>
+   <div class="ss-assign" id="assign"></div>
+   <div class="ss-why"><h3 data-c="residualHeading"></h3><p data-c="residualNote"></p><p id="residual"></p><p id="reconcile"></p></div>
+   <div class="ss-print-only" id="printout"></div>
+  </section>
+  <section class="ss-panel" aria-labelledby="h-item">
+   <h2 class="ss-lab" id="h-item" data-c="itemHeading"></h2>
+   <div class="ss-field"><label for="item" data-c="itemLabel"></label><input id="item" maxlength="80" autocomplete="off" data-ph="itemPlaceholder"></div>
+   <div class="ss-row3">
+    <div class="ss-field"><label for="q" data-c="packageQtyLabel"></label><input id="q" inputmode="decimal" autocomplete="off" data-ph="packageQtyPlaceholder"></div>
+    <div class="ss-field"><label for="u" data-c="unitLabel"></label><input id="u" maxlength="32" autocomplete="off" data-ph="unitPlaceholder" aria-describedby="u-h"></div>
+    <div class="ss-field"><label for="inc" data-c="incrementLabel"></label><input id="inc" inputmode="decimal" autocomplete="off" data-ph="incrementPlaceholder" aria-describedby="inc-h"></div>
+   </div>
+   <p class="ss-hint" id="u-h" data-c="unitHint"></p>
+   <p class="ss-hint" id="inc-h" data-c="incrementHint"></p>
+   <div class="ss-row3">
+    <div class="ss-field"><label for="c" data-c="currencyLabel"></label><input id="c" maxlength="6" autocomplete="off" data-ph="currencyPlaceholder" value="$"></div>
+    <div class="ss-field"><label for="p" data-c="priceLabel"></label><input id="p" inputmode="decimal" autocomplete="off" data-ph="pricePlaceholder"></div>
+    <div class="ss-field"><label for="f" data-c="feeLabel"></label><input id="f" inputmode="decimal" autocomplete="off" data-ph="feePlaceholder" aria-describedby="f-h"></div>
+   </div>
+   <p class="ss-hint" id="f-h" data-c="feeHint"></p>
+   <div class="ss-lab" id="basis-l" data-c="feeBasisLabel"></div>
+   <div class="ss-basis" role="group" aria-labelledby="basis-l"><button type="button" id="bp" aria-pressed="true" data-c="feeBasis.proportional"></button><button type="button" id="be" aria-pressed="false" data-c="feeBasis.equal"></button></div>
+   <p class="ss-basis-note" id="basisnote"></p>
+   <ul class="ss-err ss-errs" id="item-msg" aria-live="polite"></ul>
+   <h2 class="ss-lab" data-c="householdsHeading"></h2>
+   <p class="ss-hint" id="hcount"></p>
+   <ol class="ss-hh" id="hh"></ol>
+   <ul class="ss-err ss-errs" id="hh-msg" aria-live="polite"></ul>
+   <div class="ss-actions"><button type="button" class="ss-btn" id="add" data-c="addHousehold"></button></div>
+   <h2 class="ss-lab" data-c="proposalHeading"></h2>
+   <p class="ss-err" id="notready"></p>
+   <div class="ss-actions">
+    <button type="button" class="ss-btn ss-btn--primary" id="copytext" data-c="copyProposal"></button>
+    <button type="button" class="ss-btn" id="share" data-c="share"></button>
+    <button type="button" class="ss-btn" id="print" data-c="printProposal"></button>
+   </div>
+   <p class="ss-fine" data-c="privacy"></p>
+   <div class="ss-linkbox" id="linkbox" hidden><div class="ss-field"><label for="link" data-c="linkLabel"></label><textarea id="link" readonly rows="3"></textarea></div></div>
+   <div class="ss-field"><label for="text" data-c="proposalHeading"></label><textarea id="text" class="ss-text" readonly></textarea></div>
+   <p class="ss-fine" data-c="proposalSnapshot"></p>
+   <p class="ss-fine" data-c="noPaymentNote"></p>
+   <div class="ss-actions"><button type="button" class="ss-btn" id="reset" data-c="reset"></button></div>
+  </section>
+ </div>
+</div>
+<div class="ss-toast" id="toast" role="status" hidden></div>
 </body>
 </html>

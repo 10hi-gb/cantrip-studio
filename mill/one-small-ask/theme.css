@@ -1,0 +1,113 @@
+/* One Small Ask: "Across the Table". A two-sided warm exchange. The requester's half (terracotta) and the recipient's half (marigold)
+   meet on a stitched seam. Every term of the favor is one row across the seam, so a counteroffer reads as changed terms against the original.
+   Self-hosted OFL fonts (Chivo, Hanken Grotesk). Memory-only. */
+@font-face{font-family:"Chivo";src:url(fonts/chivo-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Chivo";src:url(fonts/chivo-900-normal.woff2) format("woff2");font-weight:900;font-display:swap}
+@font-face{font-family:"Hanken Grotesk";src:url(fonts/hanken-grotesk-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Hanken Grotesk";src:url(fonts/hanken-grotesk-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Hanken Grotesk";src:url(fonts/hanken-grotesk-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+:root{
+  --osa-paper:#FFF7EE; --osa-ink:#2B1D16; --osa-mute:#6B5547;
+  --osa-ask:#C8553D; --osa-ask-ink:#9E3B26; --osa-ask-tint:#F9DED5; --osa-ask-soft:#FCEDE7;
+  --osa-ans:#E9A23B; --osa-ans-ink:#7A4E00; --osa-ans-tint:#FCE6BE; --osa-ans-soft:#FEF3DE;
+  --osa-seam:#2B1D16; --osa-chg:#2B1D16; --osa-focus:#1F5FBF;
+  --osa-head:"Chivo",system-ui,sans-serif; --osa-body:"Hanken Grotesk",system-ui,sans-serif;
+}
+.osa{margin:0;min-height:100dvh;background:var(--osa-paper);color:var(--osa-ink);font:400 16px/1.45 var(--osa-body)}
+.osa *{box-sizing:border-box}
+.osa :focus-visible{outline:3px solid var(--osa-focus);outline-offset:2px}
+.osa-page{max-width:1120px;margin:0 auto;padding:14px 16px 36px}
+.osa-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font:700 12px var(--osa-head);letter-spacing:.12em;text-transform:uppercase;color:var(--osa-mute)}
+.osa-draft{background:var(--osa-ink);color:var(--osa-paper);padding:2px 8px;border-radius:99px;white-space:nowrap;letter-spacing:.08em}
+.osa-title{font:900 clamp(30px,5vw,56px)/1 var(--osa-head);letter-spacing:-.02em;margin:12px 0 6px}
+.osa-lede{margin:0 0 16px;max-width:52ch;color:var(--osa-mute)}
+/* the delta line: Joshua's "A -> B" in one glance */
+.osa-delta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 14px;font:700 clamp(17px,2.2vw,22px)/1.25 var(--osa-head)}
+.osa-delta .a{background:var(--osa-ask-tint);color:var(--osa-ask-ink);padding:3px 10px;border-radius:8px;text-decoration:line-through;text-decoration-thickness:2px}
+.osa-delta .b{background:var(--osa-ans-tint);color:var(--osa-ans-ink);padding:3px 10px;border-radius:8px}
+.osa-delta .to{font-weight:900}
+/* the exchange */
+.osa-x{position:relative;border:2px solid var(--osa-ink);border-radius:18px;overflow:hidden;background:var(--osa-paper);box-shadow:6px 6px 0 var(--osa-ink)}
+.osa-heads,.osa-term,.osa-foot{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr)}
+.osa-x::before{content:"";position:absolute;inset:0 auto 0 0;width:calc(50% - 24px);background:var(--osa-ask-soft);z-index:0}
+.osa-x::after{content:"";position:absolute;inset:0 0 0 auto;width:calc(50% - 24px);background:var(--osa-ans-soft);z-index:0}
+.osa-x > *{position:relative;z-index:1}
+.osa-seamline{position:absolute;top:0;bottom:0;left:50%;width:0;border-left:2px dashed var(--osa-seam);opacity:.55;z-index:1}
+.osa-heads > div{padding:16px 18px 12px}
+.osa-who{display:flex;align-items:center;gap:10px}
+.osa-ini{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font:900 17px var(--osa-head);color:#fff}
+.is-ask .osa-ini{background:var(--osa-ask)} .is-ans .osa-ini{background:var(--osa-ans);color:var(--osa-ink)}
+.osa-who b{display:block;font:900 18px/1.1 var(--osa-head)}
+.osa-who small{display:block;font:600 13px var(--osa-body);color:var(--osa-mute)}
+.osa-verdict{display:inline-block;margin-top:8px;font:900 15px var(--osa-head);padding:4px 12px;border-radius:99px;border:2px solid var(--osa-ink);background:#fff}
+.osa-verdict.is-part{background:var(--osa-ans);}
+.osa-verdict.is-yes{background:var(--osa-ink);color:var(--osa-paper)}
+.osa-verdict.is-no{background:#fff;color:var(--osa-ink)}
+.osa-heads .is-ans{text-align:left}
+/* term rows */
+.osa-term{border-top:1.5px solid rgba(43,29,22,.18);grid-template-areas:"k k k" "ask seam ans"}
+.osa-term .k{grid-area:k;justify-self:center;margin-top:10px;font:900 11px var(--osa-head);letter-spacing:.14em;text-transform:uppercase;background:var(--osa-ink);color:var(--osa-paper);padding:3px 10px;border-radius:99px}
+.osa-term .ask{grid-area:ask;padding:8px 18px 14px;font:600 17px/1.35 var(--osa-body);color:var(--osa-ink);overflow-wrap:anywhere;unicode-bidi:plaintext}
+.osa-term .ans{grid-area:ans;padding:8px 18px 14px;font:600 17px/1.35 var(--osa-body);overflow-wrap:anywhere;unicode-bidi:plaintext}
+.osa-term .seam{grid-area:seam;align-self:center;justify-self:center;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:900 16px var(--osa-head);background:var(--osa-paper);border:2px solid var(--osa-ink)}
+.osa-term.is-same .seam{border-style:dashed;color:var(--osa-mute);font-size:18px}
+.osa-term.is-same .ans{color:var(--osa-mute);font-weight:400}
+.osa-term.is-changed .seam{background:var(--osa-ans);color:var(--osa-ink)}
+.osa-term.is-changed .ans{color:var(--osa-ans-ink)}
+.osa-term.is-changed .ans::before{content:"Changed";display:block;font:900 10px var(--osa-head);letter-spacing:.14em;text-transform:uppercase;color:var(--osa-ink);margin-bottom:2px}
+.osa-term.is-changed .ask{color:var(--osa-ink);font-weight:400}
+.osa-term .ask s{text-decoration-color:var(--osa-ask);text-decoration-thickness:2px}
+.osa-term.is-changed .ask::before{content:"Asked";display:block;font:900 10px var(--osa-head);letter-spacing:.14em;text-transform:uppercase;color:var(--osa-ask-ink);margin-bottom:2px;text-decoration:none}
+.osa-term.is-absent .ask{color:var(--osa-mute);font-weight:400;font-style:italic}
+.osa-term .ghost{display:block;border:2px dashed rgba(122,78,0,.35);border-radius:10px;padding:8px 10px;color:var(--osa-ans-ink);font:400 14px var(--osa-body);opacity:.85}
+.osa-term .none{color:var(--osa-mute);font-weight:400}
+/* inputs inside halves */
+.osa-in{width:100%;font:600 16px var(--osa-body);color:var(--osa-ink);background:#fff;border:2px solid var(--osa-ink);border-radius:10px;padding:9px 11px;min-height:44px}
+.osa-in.is-ask{border-color:var(--osa-ask)} .osa-in.is-ans{border-color:var(--osa-ans-ink)}
+textarea.osa-in{min-height:64px;resize:vertical;field-sizing:content}
+.osa-hint{display:block;font:400 12px var(--osa-body);color:var(--osa-mute);margin-top:4px}
+.osa-err{display:block;font:700 13px var(--osa-body);color:#A3241A;margin-top:4px}
+.osa-inline{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* choices */
+.osa-choices{display:grid;gap:8px;margin-top:10px}
+.osa-choice{display:flex;align-items:center;gap:10px;min-height:48px;padding:10px 14px;border:2px solid var(--osa-ink);border-radius:12px;background:#fff;font:700 16px var(--osa-body);color:var(--osa-ink);text-align:left;cursor:pointer}
+.osa-choice small{display:block;font:400 13px var(--osa-body);color:var(--osa-mute)}
+.osa-choice[aria-pressed="true"]{background:var(--osa-ans);box-shadow:3px 3px 0 var(--osa-ink)}
+.osa-choice .dot{flex:none;width:18px;height:18px;border-radius:50%;border:2px solid var(--osa-ink);background:#fff}
+.osa-choice[aria-pressed="true"] .dot{background:var(--osa-ink);box-shadow:inset 0 0 0 3px #fff}
+/* footers */
+.osa-foot{border-top:2px solid var(--osa-ink)}
+.osa-foot > div{padding:12px 18px 16px}
+.osa-btns{display:flex;flex-wrap:wrap;gap:8px}
+.osa-btn{min-height:44px;padding:10px 16px;border-radius:12px;border:2px solid var(--osa-ink);background:#fff;color:var(--osa-ink);font:700 15px var(--osa-body);cursor:pointer}
+.osa-btn--ask{background:var(--osa-ask);border-color:var(--osa-ask-ink);color:#fff}
+.osa-btn--ans{background:var(--osa-ink);color:var(--osa-paper)}
+.osa-btn[disabled]{opacity:.45;cursor:not-allowed}
+.osa-fine{font:400 13px/1.45 var(--osa-body);color:var(--osa-mute);margin:8px 0 0}
+.osa-note{margin:14px 0 0;padding:10px 14px;border-left:4px solid var(--osa-ink);background:#fff;font:400 14px/1.45 var(--osa-body)}
+.osa-copytext{white-space:pre-wrap;font:400 14px/1.5 var(--osa-body);background:#fff;border:2px dashed var(--osa-mute);border-radius:10px;padding:10px 12px;margin-top:10px;user-select:all}
+/* mobile: the seam turns horizontal; ask blocks hug the left, answers hug the right */
+@media (max-width:720px){
+  .osa-x::before,.osa-x::after,.osa-seamline{display:none}
+  .osa-heads,.osa-foot{grid-template-columns:1fr}
+  .osa-heads .gap,.osa-foot .gap{display:none}
+  .osa-heads .is-ask{background:var(--osa-ask-soft)} .osa-heads .is-ans{background:var(--osa-ans-soft);border-top:2px dashed var(--osa-seam)}
+  .osa-heads .is-ans{order:9}
+  .osa-term{grid-template-columns:1fr;grid-template-areas:"k" "ask" "seam" "ans";padding:6px 12px 12px}
+  .osa-term .k{justify-self:start;margin:6px 0 6px}
+  .osa-term .ask{background:var(--osa-ask-soft);border-left:5px solid var(--osa-ask);border-radius:10px;margin-right:12%;padding:8px 12px}
+  .osa-term .ans{background:var(--osa-ans-soft);border-right:5px solid var(--osa-ans);border-radius:10px;margin-left:12%;padding:8px 12px}
+  .osa-term .seam{width:28px;height:28px;margin:4px 0;font-size:14px}
+  .osa-term.is-changed .seam{transform:rotate(90deg)}
+  textarea.osa-in{min-height:92px}
+  .osa-foot .is-ask{background:var(--osa-ask-soft)} .osa-foot .is-ans{background:var(--osa-ans-soft)}
+  .osa-foot .is-ask:empty,.osa-foot .is-ans:empty{display:none}
+  .osa-heads > div:empty{display:none}
+}
+@media (max-width:360px){.osa-page{padding:12px 10px 28px}.osa-term .ask{margin-right:6%}.osa-term .ans{margin-left:6%}.osa-inline{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.osa-term{transition:background-color .2s}.osa-choice{transition:background-color .15s,box-shadow .15s}}
+@media print{
+  .osa{background:#fff}.osa-btns,.osa-draft,.osa-choices,.osa-fine{display:none!important}
+  .osa-x{box-shadow:none}.osa-x::before,.osa-x::after{background:#fff}
+  .osa-term .seam{background:#fff!important}.osa-foot{display:none}.osa{background:#fff}.osa-x{background:#fff}
+}

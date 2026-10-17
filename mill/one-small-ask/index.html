@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>One Small Ask · Cantrip Studio</title>
+<meta name="description" content="A small tool from Cantrip Studio.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="app.css">
+<script src="copy.js" defer></script>
+<script src="copy-extra.js" defer></script>
+<script src="../shared/core.js" defer></script>
+<script src="ask.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="osa">
+<div class="osa-page">
+ <div class="osa-top"><a href="../" id="home"></a></div>
+ <h1 class="osa-title" id="title"></h1>
+ <p class="osa-lede" id="lede"></p>
+ <p class="osa-delta" id="delta" hidden></p>
+ <p class="osa-banner" id="banner" role="status" hidden></p>
+ <div class="osa-x" id="x" role="group"></div>
+ <p class="osa-note" id="note" hidden></p>
+ <div class="osa-linkbox" id="linkbox" hidden><label class="osa-lab" for="link" id="linklab"></label><textarea id="link" readonly rows="3"></textarea></div>
+ <div class="osa-copytext" id="text" tabindex="0" role="textbox" aria-readonly="true" aria-multiline="true"></div>
+</div>
+<div class="osa-toast" id="toast" role="status" hidden></div>
+</body>
+</html>

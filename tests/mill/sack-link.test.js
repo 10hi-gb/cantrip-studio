@@ -7,7 +7,7 @@ t('worst-case emoji at every cap fits FRAG_MAX', () => { const E = k => '😀'.r
 t('unfinished states do not encode (shortage, dup names, empty name, 1 household)', () => { assert.equal(L.encode({ ...base, h: [['A', '20'], ['B', '20']] }), null); assert.equal(L.encode({ ...base, h: [['A', '1'], ['a', '1']] }), null); assert.equal(L.encode({ ...base, h: [['', '1'], ['B', '1']] }), null); assert.equal(L.encode({ ...base, h: [['A', '1']] }), null); assert.equal(L.encode({ ...base, n: 'x'.repeat(41) }), null); });
 t('malformed: empty, truncated, bad checksum, oversize, wrong tag, old version, extra key, bad JSON', () => {
   const f = L.encode(base); assert.equal(L.decode('').why, 'empty'); assert.equal(L.decode(f.slice(0, 50)).ok, false);
-  assert.equal(L.decode(f.slice(0, -1) + (f.endsWith('0') ? '1' : '0')).why, 'bad'); assert.equal(L.decode('s1.' + 'A'.repeat(1900) + '.aaaaaa').why, 'tooLong');
+  assert.equal(L.decode(f.slice(0, -1) + (f.endsWith('0') ? '1' : '0')).why, 'bad'); assert.equal(L.decode('s1.' + 'A'.repeat(2100) + '.aaaaaa').why, 'tooLong');
   assert.equal(L.decode(M.pack('a', 1, base)).why, 'otherTag'); assert.equal(L.decode(M.pack('s', 2, base)).why, 'oldVersion');
   assert.equal(L.decode(M.pack('s', 1, { ...base, z: 1 })).why, 'bad'); assert.equal(L.decode(M.pack('s', 1, [1, 2])).why, 'bad');
   const head = 's1.' + M.b64e('{not json'); assert.equal(L.decode(head + '.' + M.ck(head)).why, 'bad');
