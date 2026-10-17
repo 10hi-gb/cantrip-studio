@@ -213,12 +213,23 @@ window.MILL_HUB = {
   {
    "id": "P017",
    "name": "Care Rota r1c",
-   "status": "QUEUED, NOT BUILT",
-   "path": null,
+   "score": "7.30",
+   "wave": 3,
+   "path": "care-rota/",
+   "sources": [
+    "https://old.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf79nth/",
+    "https://old.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf5knni/",
+    "https://old.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pgdhlk9/"
+   ],
    "limits": [
+    "Loose support: commenters say coordination needs people (one of them about a large volunteer platform). Nobody asked for this tool; checking one organizer's plan is our idea.",
+    "Checks a plan the group already worked out: up to 28 days, 4 kinds of help and 60 pasted lines like “Tue 20 dinner Ana”. It doesn't read chat messages.",
     "Lines that combine needs or people are set aside with a request to split them, never guessed.",
-    "Nothing is booked or confirmed."
-   ]
+    "Nothing is booked or confirmed. Messages are copied and the sheet is printed by hand, each stamped with when the plan was checked.",
+    "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it."
+   ],
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview dc8bdf35d2642107803a9825cf6de7f6ea1eddbe: unit 14 (every proto r1d assert, build rules, Nov 1 2026 DST); browser 146/146 at 320/390/1280. Not QA.",
+   "status": "No QA verdict, NOT READY"
   },
   {
    "id": "P012",
