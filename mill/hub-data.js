@@ -21,7 +21,7 @@ window.MILL_HUB = {
     "Loose support only: the seed comment is about a grocery co-op, and no comment mentions splitting a bulk buy.",
     "One item, one unit, one currency per split. No savings, purchase or payment features."
    ],
-   "engineer": "Not deployed yet.",
+   "engineer": "ENGINEER SELF-CHECK on deploy a297a0e9 (commit 4adef9d6): unit tests 18+5 pass; live browser check 68/68 at 320/390/1280; byte-compare 35/35. Not QA.",
    "qa": "Awaiting QA"
   },
   {
@@ -47,7 +47,7 @@ window.MILL_HUB = {
    "name": "One Small Ask",
    "score": "7.70",
    "wave": 1,
-   "path": null,
+   "path": "one-small-ask/",
    "sources": [
     "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf5o31i/",
     "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf6gfqe/",
@@ -57,7 +57,7 @@ window.MILL_HUB = {
     "No comment mentions a counteroffer.",
     "Replies travel only by a link the recipient chooses to send back. It never tells the asker anything by itself."
    ],
-   "engineer": "Not built yet.",
+   "engineer": "ENGINEER SELF-CHECK: unit tests 11/11 pass; local browser check (sender → recipient → reply) 78/78 at 320/390/1280. Live numbers in ENGINEER-STATUS.txt. Not QA.",
    "qa": "Awaiting QA"
   },
   {

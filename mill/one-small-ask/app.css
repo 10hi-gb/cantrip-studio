@@ -12,3 +12,4 @@ select.osa-in{appearance:auto}
 .osa-copytext:empty{display:none}
 .osa-copytext:focus-visible{outline:3px solid var(--osa-focus)}
 @media print{.osa-banner,.osa-linkbox,.osa-toast,.osa-top a{display:none!important}}
+.osa-in.osa-note-in{border-color:var(--osa-ans-ink);margin:4px 0 8px}

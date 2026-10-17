@@ -1,7 +1,7 @@
 'use strict';
 // One Small Ask: pure model + link codec. Ask link "#a1.<b64url JSON>.<ck>", reply link "#r1.<b64url JSON>.<ck>", each <= 2000 chars.
-// Ask JSON  {w: favor, e: effort number, u: 'min'|'hr', d: day text, s: 'HH:MM', t: 'HH:MM', f: from, o: to}
-// Reply JSON {a: <ask>, v: 'y'|'p'|'n', p: <offer {w,e,u,d,s,t}> | null, n: note}
+// Ask JSON  {w: favor, e: effort number, u: 'min'|'hr', d: day text, s: 'HH:MM', t: 'HH:MM', h: where ('' = none), f: from, o: to}
+// Reply JSON {a: <ask>, v: 'y'|'p'|'n', p: <offer {w,e,u,d,s,t,h}> | null, n: note}
 //   y: p null, note optional. p: offer required and must differ from the ask in at least one term. n: p null, note must be '' (no reason).
 // encodeAsk/encodeReply return null when invalid and '' when valid but over the 2000-char cap (UI then offers text only).
 // Text is kept exactly as typed (after stripping control/bidi characters and collapsing whitespace). No time-zone math.
@@ -9,7 +9,7 @@
   if (typeof module === 'object' && module.exports) module.exports = factory(require('../shared/core.js'));
   else root.ASK = factory(root.MILL);
 })(this, function (M) {
-  var FRAG_MAX = 2000, CAP = { w: 120, d: 40, name: 24, note: 120 }, EMAX = { min: 600, hr: 24 };
+  var FRAG_MAX = 2000, CAP = { w: 120, d: 40, h: 80, name: 24, note: 120 }, EMAX = { min: 600, hr: 24 };
   var TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
   function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
   function exact(o, keys) { return o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length === keys.length && keys.every(function (k) { return own(o, k); }); }
@@ -22,20 +22,22 @@
     if (typeof t.d !== 'string' || typeof t.s !== 'string' || typeof t.t !== 'string' || !M.strip(t.d) || !TIME.test(t.s) || !TIME.test(t.t)) return 'windowMissing';
     if (M.len(M.strip(t.d)) > CAP.d) return 'windowMissing';
     if (t.t <= t.s) return 'windowOrder';
+    if (typeof t.h !== 'string') return 'shape';
+    if (M.len(M.strip(t.h)) > CAP.h) return 'whereTooLong';
     return null;
   }
   function askError(a) {
-    if (!exact(a, ['w', 'e', 'u', 'd', 's', 't', 'f', 'o'])) return 'shape';
+    if (!exact(a, ['w', 'e', 'u', 'd', 's', 't', 'h', 'f', 'o'])) return 'shape';
     var e = termsError(a); if (e) return e;
     if (typeof a.f !== 'string' || typeof a.o !== 'string') return 'shape';
     if (M.len(M.strip(a.f)) > CAP.name || M.len(M.strip(a.o)) > CAP.name) return 'nameTooLong';
     return null;
   }
-  function cleanTerms(t) { return { w: M.strip(t.w), e: t.e, u: t.u, d: M.strip(t.d), s: t.s, t: t.t }; }
+  function cleanTerms(t) { return { w: M.strip(t.w), e: t.e, u: t.u, d: M.strip(t.d), s: t.s, t: t.t, h: M.strip(t.h) }; }
   function cleanAsk(a) { var c = cleanTerms(a); c.f = M.strip(a.f); c.o = M.strip(a.o); return c; }
   // Which terms changed between the ask and an offer. Byte-for-byte after the same cleaning.
-  function diff(a, p) { a = cleanTerms(a); p = cleanTerms(p); return { action: a.w !== p.w, effort: a.e !== p.e || a.u !== p.u, window: a.d !== p.d || a.s !== p.s || a.t !== p.t }; }
-  function anyChanged(d) { return d.action || d.effort || d.window; }
+  function diff(a, p) { a = cleanTerms(a); p = cleanTerms(p); return { action: a.w !== p.w, effort: a.e !== p.e || a.u !== p.u, window: a.d !== p.d || a.s !== p.s || a.t !== p.t, where: a.h !== p.h }; }
+  function anyChanged(d) { return d.action || d.effort || d.window || d.where; }
   function replyError(r) {
     if (!exact(r, ['a', 'v', 'p', 'n'])) return 'shape';
     if (askError(r.a)) return 'ask';
@@ -43,7 +45,7 @@
     if (r.v === 'y') return r.p === null ? null : 'shape';
     if (r.v === 'n') return r.p === null && M.strip(r.n) === '' ? null : 'shape';
     if (r.v !== 'p') return 'shape';
-    if (!exact(r.p, ['w', 'e', 'u', 'd', 's', 't'])) return 'shape';
+    if (!exact(r.p, ['w', 'e', 'u', 'd', 's', 't', 'h'])) return 'shape';
     var e = termsError(r.p); if (e) return e;
     return anyChanged(diff(r.a, r.p)) ? null : 'partNothingChanged';
   }
@@ -63,5 +65,23 @@
     var d = u.data; return { ok: true, kind: 'reply', data: { a: cleanAsk(d.a), v: d.v, p: d.p ? cleanTerms(d.p) : null, n: M.strip(d.n) } };
   }
   function fmtTime(hm) { var h = +hm.slice(0, 2), m = hm.slice(3), ap = h < 12 ? 'AM' : 'PM', h12 = h % 12 || 12; return h12 + (m === '00' ? '' : ':' + m) + ' ' + ap; }
-  return { FRAG_MAX: FRAG_MAX, CAP: CAP, EMAX: EMAX, termsError: termsError, askError: askError, replyError: replyError, diff: diff, anyChanged: anyChanged, encodeAsk: encodeAsk, encodeReply: encodeReply, decode: decode, fmtTime: fmtTime, cleanTerms: cleanTerms };
+  // Display strings and plain-text exports. C = Writer COPY. Values are verbatim user text.
+  function effortText(C, t) { return M.plural(C.effortLine[t.u], t.e); }
+  function windowText(C, t) { return M.fill(C.windowLine, { day: t.d, start: fmtTime(t.s), end: fmtTime(t.t) }); }
+  function termValues(C, t) { return { action: t.w, effort: effortText(C, t), window: windowText(C, t), where: t.h }; }
+  var TERMS = [['action', 'diffAction'], ['effort', 'diffEffort'], ['window', 'diffWindow'], ['where', 'diffWhere']];
+  function textAsk(C, a) {
+    var v = termValues(C, a);
+    return M.fill(C.textAsk, { fromLine: a.f ? M.fill(C.textFromLine, { from: a.f }) : '', action: v.action, effort: v.effort, window: v.window, whereLine: a.h ? M.fill(C.textWhereLine, { where: a.h }) : '' });
+  }
+  function textReply(C, r) {
+    var a = termValues(C, r.a), noteLine = r.n ? M.fill(C.textNoteLine, { note: r.n }) : '';
+    if (r.v === 'y') return M.fill(C.textReplyYes, { action: a.action, effort: a.effort, window: a.window, whereSuffix: r.a.h ? M.fill(C.textWhereSuffix, { where: r.a.h }) : '', noteLine: noteLine });
+    if (r.v === 'n') return M.fill(C.textReplyNo, { action: a.action, noteLine: '' });
+    var p = termValues(C, r.p), d = diff(r.a, r.p), ch = '', same = '';
+    TERMS.forEach(function (t) { var k = t[0]; if (k === 'where' && !r.a.h && !r.p.h) return;
+      if (d[k]) ch += M.fill(C.textChangedLine, { term: C[t[1]], now: p[k] || '—', was: a[k] || '—' }); else same += M.fill(C.textSameLine, { term: C[t[1]], value: a[k] }); });
+    return M.fill(C.textReplyPart, { action: a.action, changedLines: ch, sameLines: same, noteLine: noteLine });
+  }
+  return { TERMS: TERMS, effortText: effortText, windowText: windowText, termValues: termValues, textAsk: textAsk, textReply: textReply, FRAG_MAX: FRAG_MAX, CAP: CAP, EMAX: EMAX, termsError: termsError, askError: askError, replyError: replyError, diff: diff, anyChanged: anyChanged, encodeAsk: encodeAsk, encodeReply: encodeReply, decode: decode, fmtTime: fmtTime, cleanTerms: cleanTerms };
 });
