@@ -224,7 +224,8 @@
     ['o', 'i', 'q', 'u', 's'].forEach(function (k) { formErr(k, ''); }); $('e-form').textContent = ''; V.clearErrors(document, '.olt-err');
     bn.hidden = true; $('own-copy').hidden = true; $('linkbox').hidden = true; $('link').value = ''; $('fbwrap').hidden = true; $('fallback').value = '';
     if (h) {
-      var d = O.decode(h);
+      // PM 03:48: the WHOLE received URL (origin + path + # + fragment) is capped at 2,000 with the shared MILLVIEW.linkFor before decode, same as sending
+      var d = V.linkFor(h.replace(/^#/, '')) ? O.decode(h) : { ok: false, why: 'bad' };
       if (d.ok) { st = d.data; mode = 'recv'; bn.hidden = false; $('banner-t').textContent = C.receiverIntro + ' ' + C.receiverNote; $('banner-typed').textContent = C.receiverTypedNote; $('banner-typed').hidden = false; $('own-copy').hidden = false; }
       else if (d.why !== 'empty') { bn.hidden = false; $('banner-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; }
     }

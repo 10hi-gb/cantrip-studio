@@ -159,15 +159,19 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     t = await p.evaluate(() => ({ arriving: document.querySelectorAll('.is-arriving,.is-dropping').length, adv: document.getElementById('belt').classList.contains('is-advancing') && getComputedStyle(document.getElementById('belt')).animationName !== 'none' }));
     await p.emulateMediaFeatures([]); ck(w + ' PM4 reduced motion: no motion classes, instant change', !t.arriving && !t.adv, t);
     // D11 max length: a list whose fragment fits but whose WHOLE URL would pass 2,000 is refused for a link, fallback shown; one row less fits
-    const big = await p.evaluate(base => { const h = ['A', 'B']; let r = []; let f = ''; for (let i = 0; i < 30; i++) { r.push([i % 2, 'Item ' + 'x'.repeat(28), '1', 'u', 'Stop ' + i]); f = MILL.pack('t', 1, { h, r, m: [] }); if (f.length > 1960) break; }
-      // trim the last item until the fragment is in (2000 - prefix, 2000]
-      const pre = base.length + 1; let k = 28; while (f.length > 2000 && k > 0) { r[r.length - 1][1] = 'Item ' + 'x'.repeat(--k); f = MILL.pack('t', 1, { h, r, m: [] }); }
-      while (f.length + pre <= 2000) { r[r.length - 1][1] += 'y'; f = MILL.pack('t', 1, { h, r, m: [] }); } return { f, n: r.length, url: f.length + pre }; }, BASE);
-    await p.goto('about:blank'); await p.goto(BASE + '#' + big.f, { waitUntil: 'load' }); await sleep(150); await p.click('#own-copy'); await sleep(60);
+    // (PM 03:48 receive cap: a received link over 2,000 in total no longer opens, so the over-cap list is reached the way a sender would: open the list
+    //  just under the cap with a 1-letter household name, take a copy, then type the name out to 24 letters, which pushes the whole URL over 2,000.)
+    const big = await p.evaluate(base => { const LN = 'A' + 'a'.repeat(23), pk = (h0, r) => MILL.pack('t', 1, { h: [h0, 'B'], r, m: [] }), pre = base.length + 1; let r = [];
+      for (let i = 0; i < 30; i++) { r.push([i % 2, 'Item ' + 'x'.repeat(28), '1', 'u', 'Stop ' + i]); if (pk(LN, r).length + pre > 2000) break; }
+      let k = 28; while (pk(LN, r).length + pre > 2000 && k > 0) r[r.length - 1][1] = 'Item ' + 'x'.repeat(--k);
+      while (pk(LN, r).length + pre <= 2000) r[r.length - 1][1] += 'y';
+      const f = pk(LN, r), under = pk('A', r); return { f, under, n: r.length, url: f.length + pre, underUrl: under.length + pre, frag: f.length }; }, BASE);
+    await p.goto('about:blank'); await p.goto(BASE + '#' + big.under, { waitUntil: 'load' }); await sleep(150); await p.click('#own-copy'); await sleep(60);
+    await typeInto(p, '#hh li:first-child input', 'A' + 'a'.repeat(23)); await sleep(80);
     await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); });
     await p.click('#b-share'); await sleep(120);
     t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, lb: document.getElementById('linkbox').hidden, fb: document.getElementById('fbwrap').hidden, over: document.getElementById('linkroom').classList.contains('is-over'), room: document.getElementById('linkroom').textContent }));
-    ck(w + ' D11 whole URL over 2,000 (fragment fits): no link made, tooLongLink, list text selectable, length shown as over', big.url > 2000 && t.toast === 'Too much for a link. Copy or print the list instead.' && t.lb && !t.fb && t.over, { big: big.url, t });
+    ck(w + ' D11 whole URL over 2,000 (fragment fits): no link made, tooLongLink, list text selectable, length shown as over', big.url > 2000 && big.frag <= 2000 && big.underUrl <= 2000 && t.toast === 'Too much for a link. Copy or print the list instead.' && t.lb && !t.fb && t.over, { big: { url: big.url, frag: big.frag, underUrl: big.underUrl }, t });
     const lastId = await p.evaluate(() => [...document.querySelectorAll('[id^=rm-]')].pop().id); await p.click('#' + lastId); await sleep(60); await p.click('#b-share'); await sleep(120);
     t = await p.evaluate(() => ({ link: document.getElementById('link').value, lb: document.getElementById('linkbox').hidden, ok: OLT.decode(document.getElementById('link').value.split('#')[1]).ok }));
     ck(w + ' D11 one row less: link made, whole URL <= 2,000 and opens', !t.lb && t.link.length <= 2000 && t.link.length > 1900 && t.ok, { len: t.link.length, ok: t.ok });
@@ -216,7 +220,9 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     t = await p.evaluate(() => ({ i: document.getElementById('f-i').value, err: [...document.querySelectorAll('[id^=hhe-]')].map(e => e.textContent).filter(Boolean) }));
     ck(w + ' N1 Add household -> first mouse click on Edit opens the edit; empty-name error still shown in place', t.i === 'Tea' && t.err.length === 1, { act2, t });
     // N4: an over-cap list shows its REAL link length (not a made-up FRAG_MAX + prefix + 1)
-    const N4 = await p.evaluate(() => { const h = ['A', 'B'], r = []; for (let i = 0; i < 26; i++) r.push([i % 2, 'Item ' + i + 'x'.repeat(24), '1', 'u', 'Stop ' + i]); return { h, r, f: MILL.pack('t', 1, { h, r, m: [] }) }; });
+    // (PM 03:48 receive cap: the starting list must itself open, so rows are dropped until its whole URL is within 2,000; the four added rows take it over)
+    const N4 = await p.evaluate(base => { const h = ['A', 'B'], r = []; for (let i = 0; i < 26; i++) r.push([i % 2, 'Item ' + i + 'x'.repeat(24), '1', 'u', 'Stop ' + i]);
+      while (base.length + 1 + MILL.pack('t', 1, { h, r, m: [] }).length > 2000) r.pop(); return { h, r, f: MILL.pack('t', 1, { h, r, m: [] }) }; }, BASE);
     await p.goto('about:blank'); await p.goto(BASE + '#' + N4.f, { waitUntil: 'load' }); await sleep(200); await mouseOn(p, '#own-copy');
     const extra = []; for (let k = 0; k < 4; k++) { const it = 'More ' + k + 'z'.repeat(30); extra.push([0, it, '1', 'u', 'Stop Z' + k]); await addRow(p, 1, it, '1', 'u', 'Stop Z' + k); }
     t = await p.evaluate((N4, extra, base) => ({ txt: document.getElementById('linkroom').textContent, real: base.length + 1 + MILL.pack('t', 1, { h: N4.h, r: N4.r.concat(extra), m: [] }).length, fake: OLT.FRAG_MAX + base.length + 1 + 1 }), N4, extra, BASE);
@@ -233,5 +239,35 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
       fill: async p => { await p.click('#f-add'); await sleep(50); await typeInto(p, '#hh-1', 'Ana'); await typeInto(p, '#hh-2', 'Ben'); await addRow(p, 1, 'Milk', '1', 'l', 'Shop'); await typeInto(p, '#f-q', 'abc'); await p.click('#f-add'); await sleep(50); },
       link: async p => { await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.click('#b-share'); await sleep(200); return p.$eval('#link', e => e.value); } });
     ck(w + ' N1 same tab: bad link after fill + link + open shows zero validation errors', r.ok, r); await s.b.close(); }
+  // PM 03:48 (audit 04:00): the WHOLE received URL is capped at 2,000 with the shared MILLVIEW.linkFor before decode (as in Sack, Even Up, Care Rota).
+  // Normal path /mill/one-less-trip/ under a long *.localhost origin (Chrome resolves *.localhost to this server; hostnames up to 253) and a long path (throwaway
+  // server, nested dirs + symlink to this tree): 1999 and 2000 open; 2001 and 2040 show this piece's bad-link message and nothing received.
+  { const fsx = require('fs'), osx = require('os'), pathx = require('path'), { spawn } = require('child_process'), REPO = pathx.resolve(__dirname, '../..');
+    const X = require('../../mill/one-less-trip/olt.js'), CX = require('vm').runInNewContext(fsx.readFileSync(__dirname + '/../../mill/one-less-trip/copy.js', 'utf8') + ';COPY');
+    const MARK = 'Zqxd7', em = '\u{1F600}', E = (k, ch) => ch.repeat(k);
+    const pickF = (gen, lo, hi) => { for (let k = 0; k < 400; k++) { const f = gen(k); if (f && f.length >= lo && f.length <= hi) return f; } return null; };
+    const BIG = pickF(k => { const st = { h: [{ id: 1, name: MARK }, { id: 2, name: 'Ben' }], r: [], m: [], next: 200 }; for (let i = 0; i < Math.min(k, 30); i++) st.r.push({ id: 100 + i, o: 1 + (i % 2), i: 'Item' + i + ' ' + E(8, em), q: 1, u: 'bag', s: 'Shop ' + E(6, em) }); return X.encode(st); }, 1760, 1960), SMALL = X.encode({ h: [{ id: 1, name: MARK }, { id: 2, name: 'Ben' }], r: [{ id: 100, o: 1, i: 'Milk', q: 2, u: 'carton', s: 'Shop' }, { id: 101, o: 2, i: 'Tea', q: 1, u: '', s: 'Shop' }], m: [], next: 102 });
+    const s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 });
+    const openAt = async url => { await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(300);
+      return p.evaluate((MARK, bad) => { const t = document.body.innerText; return { len: location.href.length, opened: t.includes(MARK) && !t.includes(bad), bad: t.includes(bad) && !t.includes(MARK) }; }, MARK, CX.badLink); };
+    const port = H.includes(':') ? ':' + H.split(':').pop() : '', PATH = '/mill/one-less-trip/', fixed = (SCHEME + '://').length + port.length + PATH.length + 1 + BIG.length;
+    const hostOf = n => { const labels = []; let left = n - 10; while (left > 0) { const k = Math.min(63, left > 63 ? left - 1 : left); labels.push('a'.repeat(k)); left -= k + 1; } const h = labels.join('.') + '.localhost'; if (h.length !== n) throw new Error('host ' + h.length + ' != ' + n); return h; };
+    const normal = {}, maxN = fixed + 253;
+    for (const want of [1999, 2000, 2001, 2040]) { const total = Math.min(want, maxN); const r = await openAt(SCHEME + '://' + hostOf(total - fixed) + port + PATH + '#' + BIG); r.want = want; normal[want] = r; }
+    const root = fsx.mkdtempSync(osx.tmpdir() + '/d7-one-less-trip-'); const srv = spawn('python3', ['-u', '-m', 'http.server', '0', '--bind', '127.0.0.1', '--directory', root], { stdio: ['ignore', 'pipe', 'pipe'] }); const long = {};
+    try { const lport = await new Promise((res, rej) => { let b = ''; const f = d => { b += d; const m = /port (\d+)/.exec(b); if (m) res(+m[1]); }; srv.stdout.on('data', f); srv.stderr.on('data', f); setTimeout(() => rej(new Error('no port')), 8000); });
+      const ORIGIN = 'http://127.0.0.1:' + lport; let tag = 0;
+      const pathOf = total => { let left = total - 1 - PATH.length; const segs = []; tag++;
+        while (left > 0) { let k = left > 200 ? (left === 201 ? 199 : 200) : left; left -= k; if (left) left -= 1; segs.push(segs.length ? 'a'.repeat(k) : ('t' + tag + '_' + 'a'.repeat(k)).slice(0, k)); }
+        let dir = root; segs.slice(0, -1).forEach(x => { dir = pathx.join(dir, x); fsx.mkdirSync(dir, { recursive: true }); }); fsx.symlinkSync(REPO, pathx.join(dir, segs[segs.length - 1]));
+        const P = '/' + segs.join('/') + PATH; if (P.length !== total) throw new Error('path ' + P.length + ' != ' + total); return P; };
+      for (const total of [1999, 2000, 2001, 2040]) long[total] = await openAt(ORIGIN + pathOf(total - ORIGIN.length - 1 - SMALL.length) + '#' + SMALL);
+    } finally { srv.kill(); }
+    const over = Object.values(normal).filter(r => r.len > 2000);
+    ck('whole-URL receive cap, normal path (fragment ' + BIG.length + ', long origin): 1999 and 2000 open; over 2,000 (2001, ' + (maxN >= 2040 ? '2040' : maxN + ' = longest reachable with a 253-char host') + ') -> bad-link message, nothing received',
+      normal[1999].len === 1999 && normal[1999].opened && normal[2000].len === 2000 && normal[2000].opened && normal[2001].len === 2001 && over.length >= 2 && over.every(r => r.bad && !r.opened) && (maxN >= 2040 ? normal[2040].len === 2040 : normal[2040].len === maxN), normal);
+    ck('whole-URL receive cap, long path (fragment ' + SMALL.length + '): 1999 and 2000 open; 2001 and 2040 -> bad-link message, nothing received',
+      [1999, 2000].every(t => long[t].len === t && long[t].opened) && [2001, 2040].every(t => long[t].len === t && long[t].bad && !long[t].opened), long);
+    ck('whole-URL receive cap: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
