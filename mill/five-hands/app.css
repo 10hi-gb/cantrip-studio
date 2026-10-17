@@ -1,0 +1,58 @@
+/* Five Hands r1c, engineer layer over Creative's theme.css (verbatim). Sizes come from CSS custom properties set via CSSOM. */
+.top{margin:0 0 10px}.top a.studio{font-weight:600;text-decoration:none}.top a.studio:hover{text-decoration:underline}
+section:focus{outline:none}
+.fh-vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.fh-ph{font:800 15px/1.3 var(--ui);margin:0 0 6px;letter-spacing:.02em}
+.fh-session{margin:0 0 16px;max-width:40em}
+.fh-session input{margin-bottom:2px}
+.row.fh-row{grid-template-columns:minmax(0,1fr) 6.5em 2.75em;position:relative}
+.fh-heads{margin-bottom:0}.fh-heads .l{font:600 13px/1.2 var(--ui)}
+.fh-cell{min-width:0}
+.fh-rm{padding:8px 0;min-height:40px;font-size:18px}
+.fh-rm[disabled]{opacity:.35}
+input[aria-invalid=true]{border-color:var(--red);box-shadow:0 0 0 2px rgba(200,54,31,.25)}
+.btn[aria-disabled=true]{opacity:.55;cursor:not-allowed}
+.btn{min-height:40px}
+.panel .btn{margin-top:6px}
+.fh-zero{margin:6px 0 0}
+.fh-modefs{border:0;padding:0;margin:16px 0 0;min-width:0}
+.fh-modefs legend{font:800 15px/1.3 var(--ui);padding:0;margin:0 0 4px}
+.modes label{position:relative;display:block;cursor:pointer}
+.modes input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+.modes span{display:block}
+.modes input:checked+span{background:var(--ink);color:var(--chalk)}
+.modes input:focus-visible+span{outline:3px solid var(--focus);outline-offset:-3px}
+.fh-check{margin-top:4px;max-width:40em}
+.row.chk{align-items:center}
+.fh-cn{min-width:0;font-weight:600;overflow-wrap:anywhere}
+.fh-cm{font-weight:600;white-space:nowrap}
+.fh-btnrow{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 0;align-items:center}
+.fh-banner{background:var(--chalk);border-left:6px solid var(--leather);border-radius:4px;padding:10px 14px;margin:8px 0 12px}
+.fh-banner p{margin:0 0 8px;font-weight:600}
+.fh-banner--err{border-left-color:var(--red)}
+.fh-change{font-weight:600;margin:0 0 6px}
+.fh-over{font-weight:600}
+.fh-sep{opacity:.6;white-space:pre}
+.tally{gap:6px 0}
+.tally>span{margin-right:0}
+.track{overflow:hidden}
+.stick{min-width:0}
+.stick .t .mill-typed{overflow-wrap:anywhere}
+.helper .load{overflow-wrap:anywhere}
+.tab{max-width:100%;overflow-wrap:anywhere}
+.overtag{margin:4px 0 0}
+.bench .sticks{flex-wrap:wrap;row-gap:4px}
+.fh-explain{font-weight:600;margin:10px 0 0}
+.fh-preview{margin-top:16px}.fh-preview h3{margin-bottom:6px}
+.copied{overflow-wrap:anywhere}
+.sheet{margin-top:22px}
+.sheet td,.sheet h2,.fh-change,.fh-over,.fh-explain,.overtag,.errmsg,.tally>span,.fh-preview h3,.load{overflow-wrap:anywhere}
+.sheet td.n{white-space:normal}
+.linkbox h3{margin:0 0 6px}.linkbox .btn{margin:6px 0}
+#link{margin-top:4px}
+#fb{margin-top:14px}#fb textarea{width:100%;font:400 15px/1.4 var(--ui)}
+.fh-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--chalk);font:600 16px/1.3 var(--ui);padding:10px 16px;border-radius:6px;max-width:calc(100vw - 24px);z-index:10}
+.is-recv .fh-btnrow #b-change{display:none}
+@media (max-width:640px){.row.fh-row{grid-template-columns:minmax(0,1fr) 4.6em 2.75em}}
+@media (max-width:380px){.row.fh-row{grid-template-columns:minmax(0,1fr) 4.2em 2.5em}.row.fh-row input.min{width:100%}.fh-heads .l:nth-child(2){font-size:12px}}
+@media print{.sheet{margin-top:0}.sheet td.n{white-space:nowrap}}

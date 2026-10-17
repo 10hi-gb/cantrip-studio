@@ -65,7 +65,7 @@
     var helpers = o.h.map(function (x) { return { name: x[0], min: x[1] }; }), tasks = o.k.map(function (x) { return { name: x[0], min: x[1] }; });
     if (validate(helpers, tasks, o.t).length) return { ok: false, why: 'bad' };
     var res; try { res = check(helpers, o.a, tasks); } catch (e) { return { ok: false, why: 'bad' }; }
-    if (o.m === 's') { var s = suggest(helpers, tasks); if (s.assign.join() !== o.a.join()) return { ok: false, why: 'bad' }; res.mode = 'suggest'; }
+    if (o.m === 's') { res = suggest(helpers, tasks); if (res.assign.join() !== o.a.join()) return { ok: false, why: 'bad' }; } // the rule's own result (its stick order)
     return { ok: true, data: { title: o.t, helpers: helpers, tasks: tasks, res: res } }; }
   return { LIM: LIM, minutes: minutes, validate: validate, suggest: suggest, check: check, result: result, cardText: cardText, benchText: benchText, encode: encode, decode: decode };
 });
