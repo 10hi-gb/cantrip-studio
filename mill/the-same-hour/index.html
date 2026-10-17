@@ -9,10 +9,12 @@
 <meta name="description" content="A small tool from Cantrip Studio.">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="../shared/base.css">
 <link rel="stylesheet" href="app.css">
 <script src="copy.js" defer></script>
 <script src="copy-extra.js" defer></script>
 <script src="../shared/core.js" defer></script>
+<script src="../shared/view.js" defer></script>
 <script src="tsh.js" defer></script>
 <script src="app.js" defer></script>
 </head>
@@ -62,7 +64,7 @@
    <div class="tsh-linkbox" id="linkbox" hidden><label class="tsh-lab" for="link" id="link-l"></label><textarea id="link" readonly rows="3"></textarea></div>
    <div class="tsh-linkbox" id="fbwrap" hidden><label class="tsh-lab" for="fallback" id="fb-l"></label><textarea id="fallback" readonly rows="6"></textarea></div>
   </div>
-  <section class="tsh-panel tsh-form" aria-labelledby="form-h">
+  <section class="tsh-panel tsh-form" id="form" aria-labelledby="form-h">
    <h2 class="tsh-h2" id="form-h"></h2>
    <div class="tsh-field"><label for="z" id="l-z"></label><select id="z" aria-describedby="h-z e-z"></select><span class="tsh-hint" id="h-z"></span><span class="tsh-err" id="e-z"></span></div>
    <div class="tsh-row2">

@@ -13,7 +13,7 @@ async function session(host, ip, opts = {}) {
   const s = await open(host, ip); s.p.setDefaultTimeout(15000);
   s.p.on('dialog', d => (opts.dialog === 'dismiss' ? d.dismiss() : d.accept()).catch(() => {}));
   // share-cancel path: emulate a share sheet the visitor closes (AbortError). Real devices show the sheet; headless has none.
-  if (opts.shareCancel) await s.p.evaluateOnNewDocument(() => { navigator.share = () => Promise.reject(new DOMException('cancel', 'AbortError')); });
+  if (opts.shareCancel) await s.p.evaluateOnNewDocument(() => { navigator.share = (a) => { window.__shareArg = a; return Promise.reject(new DOMException('cancel', 'AbortError')); }; });
   return s;
 }
 async function overflow(p) { return p.evaluate(() => { const w = document.documentElement.clientWidth, bad = []; document.querySelectorAll('body *').forEach(e => { if (e.closest('.sk-scroll,[data-scroll]')) return; const r = e.getBoundingClientRect(); if (r.width && (r.right > w + 1 || r.left < -1) && getComputedStyle(e).position !== 'fixed' && e.offsetParent !== null) bad.push((e.id || e.className || e.tagName) + ':' + Math.round(r.right)); }); return { sw: document.documentElement.scrollWidth, w, bad: bad.slice(0, 8) }; }); }
