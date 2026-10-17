@@ -4,7 +4,7 @@
 @font-face{font-family:"Schibsted Grotesk";src:url(fonts/schibsted-grotesk-latin-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
 @font-face{font-family:"Schibsted Grotesk";src:url(fonts/schibsted-grotesk-latin-800-normal.woff2) format("woff2");font-weight:800;font-display:swap}
 :root{--floor:#D7D5CF;--floor2:#C9C6BE;--canvas:#3A3D40;--canvas2:#2E3033;--stitch:#9FA3A6;--pine:#E8C98E;--pine2:#D9B271;--grain:#C99F5E;--burn:#4A2A17;
- --leather:#6B3E26;--leather2:#55301C;--brass:#B08D3C;--red:#C8361F;--chalk:#F4EFE3;--ink:#1F2124;--focus:#F2C230;
+ --leather:#6B3E26;--leather2:#55301C;--brass:#B08D3C;--red:#AE2F1B;--chalk:#F4EFE3;--ink:#1F2124;--focus:#F2C230;
  --stencil:"Saira Stencil One",Impact,sans-serif;--ui:"Schibsted Grotesk",system-ui,sans-serif}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
