@@ -153,7 +153,8 @@
     if (deep) { fr.classList.add('eu-notags'); rows.forEach(fit); }
     rows.forEach(function (R) { R.rod.style.setProperty('--half', Math.ceil(R.tok.offsetWidth / 2) + 'px'); });
     // Creative check 9daa483: "← Owes" ends 6px left of the post unless that leaves it less than its own width; then it starts at the inner left edge
-    var sc = document.querySelector('.eu-scale'), ow = $('sc-owes'); if (sc && ow && rows.length) { sc.classList.remove('is-owes-left'); var rr = rows[0].rod.getBoundingClientRect(), post = rr.left + rr.width / 2, inner = fr.getBoundingClientRect().left + fr.clientLeft + parseFloat(getComputedStyle(fr).paddingLeft); if (post - 6 - inner < ow.offsetWidth) sc.classList.add('is-owes-left'); }
+    var sc = document.querySelector('.eu-scale'), ow = $('sc-owes'); if (sc && ow && rows.length) { sc.classList.remove('is-owes-left', 'is-axis-wide'); var rr = rows[0].rod.getBoundingClientRect(), post = rr.left + rr.width / 2, inner = fr.getBoundingClientRect().left + fr.clientLeft + parseFloat(getComputedStyle(fr).paddingLeft), small = window.matchMedia && window.matchMedia('(max-width: 360px)').matches;
+      if (!small && rr.width / 2 >= 220) sc.classList.add('is-axis-wide'); else if (post - (small ? 6 : 20) - inner < ow.offsetWidth) sc.classList.add('is-owes-left'); }
     var bTop = box.getBoundingClientRect().top, cy = rows.map(function (R) { var r = R.rod.getBoundingClientRect(); return r.top + r.height / 2 - bTop; });
     T.forEach(function (t) {
       var ln = el('div', 'eu-link'); ln.setAttribute('data-dir', t.dir); ln.style.setProperty('--k', String(t.k)); ln.style.top = cy[t.top] + 'px'; ln.style.height = Math.max(2, cy[t.bot] - cy[t.top]) + 'px'; box.appendChild(ln);

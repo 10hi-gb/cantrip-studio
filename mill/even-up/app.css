@@ -133,6 +133,14 @@
 .eu-frame .eu-scale span:nth-child(2) i:nth-child(2){left:50%;transform:translateX(-50%)}
 .eu-frame .eu-scale span:nth-child(2) i:last-child{left:calc(50% + 6px)}
 @media(max-width:360px){.eu-frame .eu-scale span:nth-child(2) i:nth-child(2){display:none}}
+/* Above 360px: labels 20px either side of the post; with rod halves of 220px or more (.is-axis-wide, app.js) they spread to the
+   midpoints of each half (Owes right-aligned at the left midpoint, Gets back left-aligned at the right midpoint). */
+@media(min-width:361px){
+  .eu-frame .eu-scale span:nth-child(2) i:first-child{right:calc(50% + 20px)}
+  .eu-frame .eu-scale span:nth-child(2) i:last-child{left:calc(50% + 20px)}
+  .eu-frame .eu-scale.is-axis-wide span:nth-child(2) i:first-child{right:75%}
+  .eu-frame .eu-scale.is-axis-wide span:nth-child(2) i:last-child{left:75%}
+}
 /* Creative check 9daa483: rows grow with their name (min-height var(--eu-row), height auto) with breathing room; rod and token
    centre on the name block; lines and dots use each row's measured centre (app.js layoutLines, re-run on resize and font load). */
 .eu-rods .eu-rod-row{height:auto;min-height:var(--eu-row);padding-top:6px;padding-bottom:6px;align-items:center}
