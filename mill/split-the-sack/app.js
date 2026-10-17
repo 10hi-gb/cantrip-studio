@@ -12,8 +12,10 @@
   function nameOf(i) { return M.strip(st.h[i][0]) || (C.householdLabel + ' ' + (i + 1)); }
   // Sender-typed household names are quoted (shared MILLVIEW.quote) wherever someone else reads them: the recipient view and
   // the copied text. A blank name falls back to the app's own "Household N", which is not typed text and is not quoted.
-  function typedName(i) { return M.strip(st.h[i][0]) ? V.quote(M.strip(st.h[i][0])) : nameOf(i); }
-  function shownName(i) { return mode === 'own' ? nameOf(i) : typedName(i); }
+  // QA local-7b5ceeb D14: one accessor for every place a household name is shown (sender editor included): typed names quoted,
+  // the product fallback "Household N" not. nameOf() is only for comparisons, never for display.
+  function typedName(i) { return qName(i); }
+  function shownName(i) { return qName(i); }
   function unit() { return M.strip(st.u); }
   function money(c) { return S.fmtMoney(c, M.strip(st.c)); }
   function staticText() {
@@ -43,7 +45,7 @@
     $('add').disabled = st.h.length >= S.MAX_H; labels();
   }
   function labels() { // aria labels that depend on current names/unit
-    var rows = $('hh').children; for (var i = 0; i < rows.length; i++) { rows[i].querySelector('.sk-rq').setAttribute('aria-label', M.fill(C.requestAria, { name: qName(i), unit: unit() || C.unitLabel })); rows[i].querySelector('.sk-x').setAttribute('aria-label', M.fill(C.removeHousehold, { name: nameOf(i) })); rows[i].querySelector('.sk-unit').textContent = unit(); }
+    var rows = $('hh').children; for (var i = 0; i < rows.length; i++) { rows[i].querySelector('.sk-rq').setAttribute('aria-label', M.fill(C.requestAria, { name: qName(i), unit: unit() || C.unitLabel })); rows[i].querySelector('.sk-x').setAttribute('aria-label', M.fill(C.removeHousehold, { name: qName(i) })); rows[i].querySelector('.sk-unit').textContent = unit(); }
     $('hcount').textContent = M.plural(C.householdCount, st.h.length);
   }
   // Editing makes the old link a snapshot: clear it from the address bar and the link box.
@@ -76,9 +78,9 @@
     if ((x = moneyErr(st.f))) e.push(C.feeLabel + ': ' + x);
     var seen = {}, dup = false;
     st.h.forEach(function (r, i) {
-      var nm = M.strip(r[0]); if ((x = M.len(nm) - L.NAME_MAX) > 0) h.push(nameOf(i) + ': ' + M.plural(C.householdTooLong, x));
+      var nm = M.strip(r[0]); if ((x = M.len(nm) - L.NAME_MAX) > 0) h.push(qName(i) + ': ' + M.plural(C.householdTooLong, x));
       if (nm) { if (seen[nm.toLowerCase()]) dup = true; seen[nm.toLowerCase()] = 1; }
-      if ((x = numErr(r[1], true, inc > 0 ? inc : 0))) h.push(nameOf(i) + ': ' + x);
+      if ((x = numErr(r[1], true, inc > 0 ? inc : 0))) h.push(qName(i) + ': ' + x);
     });
     if (dup) h.push(C.duplicateHousehold);
     return { item: e, hh: h };
@@ -123,7 +125,7 @@
     // "Split in steps of" line is a separate element so the two never run together.
     var inc = S.parseQty(st.i), sn = $('sname'), stepTxt = inc ? C.incrementLabel + ' ' + S.fmtQty(inc) + (u ? ' ' + u : '') : ''; sn.textContent = '';
     if (mode !== 'own' && M.strip(st.n)) { sn.appendChild(V.typed(M.strip(st.n), 'ss-typedname')); if (stepTxt) sn.appendChild(el('span', 'ss-step', stepTxt)); }
-    else sn.textContent = (M.strip(st.n) || C.itemPlaceholder) + (stepTxt ? ' · ' + stepTxt : '');
+    else sn.textContent = (M.strip(st.n) ? M.quote(M.strip(st.n)) : C.itemPlaceholder) + (stepTxt ? ' · ' + stepTxt : ''); // D14: typed item quoted in the editor preview too
     status.className = 'ss-status'; status.setAttribute('role', 'status'); $('reconcile').textContent = ''; $('residual').textContent = '';
     rows.setAttribute('aria-label', M.fill(C.tableAria, { n: st.h.length }));
     if (!res) { status.textContent = C.emptyState; }
@@ -150,7 +152,7 @@
       if (mode !== 'own') {}
       else if (un.qty > 0) {
         as.appendChild(el('p', null, M.fill(C.assignUnallocated, { qty: S.fmtQty(un.qty), unit: u })));
-        st.h.forEach(function (_, i) { var b = el('button', 'ss-btn', M.fill(C.assignTo, { name: nameOf(i) })); b.type = 'button'; b.addEventListener('click', function () { st.x = i; edited(); var ub = $('unassign'); if (ub) ub.focus(); }); as.appendChild(b); });
+        st.h.forEach(function (_, i) { var b = el('button', 'ss-btn', M.fill(C.assignTo, { name: qName(i) })); b.type = 'button'; b.addEventListener('click', function () { st.x = i; edited(); var ub = $('unassign'); if (ub) ub.focus(); }); as.appendChild(b); });
       } else if (res.assigned >= 0) {
         var b = el('button', 'ss-btn', C.unassign); b.type = 'button'; b.id = 'unassign'; b.addEventListener('click', function () { st.x = -1; edited(); var f = as.querySelector('button'); if (f) f.focus(); }); as.appendChild(b);
       }

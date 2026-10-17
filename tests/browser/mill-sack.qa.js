@@ -3,6 +3,7 @@ const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'ht
 const { typedAudit, sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const COPYV2 = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/split-the-sack/copy.js', 'utf8') + ';COPY');
 const COPY = COPYV2;
+const M_fill = (t, name) => t.replace('{name}', name);
 const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
@@ -78,7 +79,7 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     await q.close();
     // text-safe rendering: hostile names stay text
     const hn2 = await p.$$('#hh input:not(.sk-rq)'); await hn2[0].click({ clickCount: 3 }); await p.keyboard.type('<b>x</b>');
-    t = await p.evaluate(() => ({ b: document.querySelectorAll('#rows b').length, cell: document.querySelector('#rows .ss-alloc .who').textContent })); ck(w + ' text-safe', t.b === 0 && t.cell === '<b>x</b>', t);
+    t = await p.evaluate(() => ({ b: document.querySelectorAll('#rows b').length, cell: document.querySelector('#rows .ss-alloc .who').textContent })); ck(w + ' text-safe', t.b === 0 && t.cell === '“<b>x</b>”', t); // D14: editor preview quotes typed names too
     // editing clears the stale link from the address bar
     t = await p.evaluate(() => location.hash); ck(w + ' edit clears old link', t === '', t);
     const of = await overflow(p); ck(w + ' no overflow', of.sw <= of.w && !of.bad.length, of);
@@ -94,8 +95,8 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     // D2: 24-char single word is ellipsized (not broken mid-word), full text kept
     await typeInto(p, '#item', 'Rice'); await typeInto(p, '#q', '10'); await typeInto(p, '#p', '10'); await typeInto(p, '#f', '');
     { const hn3 = await p.$$('#hh input:not(.sk-rq)'); await hn3[0].click({ clickCount: 3 }); await p.keyboard.type('Pneumonoultramicroscopic'); const rq3 = await p.$$('#hh input.sk-rq'); if (rq3[0]) { await rq3[0].click({ clickCount: 3 }); await p.keyboard.type('1'); } await sleep(80);
-      const e2 = await p.evaluate(() => { const w = [...document.querySelectorAll('#rows .ss-alloc .who')].find(e => e.textContent === 'Pneumonoultramicroscopic'); if (!w) return null; const r = document.createRange(); r.selectNodeContents(w); const cs = getComputedStyle(w); return { lines: new Set([...r.getClientRects()].map(x => Math.round(x.top))).size, ell: cs.textOverflow, title: w.title, text: w.textContent }; });
-      ck(w + ' long single-word name ellipsized, one line, full text kept (D2)', e2 && e2.lines === 1 && e2.ell === 'ellipsis' && e2.title === 'Pneumonoultramicroscopic', e2); }
+      const e2 = await p.evaluate(() => { const w = [...document.querySelectorAll('#rows .ss-alloc .who')].find(e => e.textContent === '“Pneumonoultramicroscopic”'); if (!w) return null; const r = document.createRange(); r.selectNodeContents(w); const cs = getComputedStyle(w); return { lines: new Set([...r.getClientRects()].map(x => Math.round(x.top))).size, ell: cs.textOverflow, title: w.title, text: w.textContent }; });
+      ck(w + ' long single-word name ellipsized, one line, full text kept (D2)', e2 && e2.lines === 1 && e2.ell === 'ellipsis' && e2.title === '“Pneumonoultramicroscopic”', e2); }
     const stg = await storage(p); ck(w + ' storage empty', !stg.cookie && !stg.ls.length && !stg.ss.length && !(Array.isArray(stg.idb) && stg.idb.length) && !stg.caches.length && !stg.sw && !stg.undef, { ...stg, meta: undefined });
     const net = netCheck(s.reqs, H, []); ck(w + ' no off-site / non-GET requests', !net.offending.length, net);
     ck(w + ' no console/page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME));
@@ -194,5 +195,17 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
       ck(w + ' D1c/D13 LCD money ' + nm + ' ($' + price + ') sits inside the panel and inside its own cell', b.every(x => x.inside) && b[0].txt.includes(price), b);
     }
     await s.b.close(); }
+  // QA local-7b5ceeb D14: the SENDER editor quotes typed names too (× aria, validation messages, Give to buttons, preview)
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    await typeInto(p, '#item', 'Zqx rice'); await typeInto(p, '#q', '10'); await typeInto(p, '#inc', '1'); await typeInto(p, '#p', '20.00'); await typeInto(p, '#f', '1.00'); await typeInto(p, '#u', 'kg');
+    let hh = await p.$$('#hh input'); await hh[0].click({ clickCount: 3 }); await hh[0].type('Zqx Ana'); await hh[1].click({ clickCount: 3 }); await hh[1].type('4'); await hh[2].click({ clickCount: 3 }); await hh[2].type('Zqx Ben'); await hh[3].click({ clickCount: 3 }); await hh[3].type('3'); await sleep(100);
+    let r = await p.evaluate(() => ({ x: [...document.querySelectorAll('#hh .sk-x')].map(e => e.getAttribute('aria-label')), give: [...document.querySelectorAll('#assign button, .ss-assign button')].map(e => e.textContent) }));
+    ck(w + ' D14 editor: × aria-labels quote the typed household', r.x.includes(M_fill(COPY.removeHousehold, '“Zqx Ana”')) && r.x.includes(M_fill(COPY.removeHousehold, '“Zqx Ben”')), r);
+    let a = await typedAudit(p, ['Zqx rice', 'Zqx Ana', 'Zqx Ben']); ck(w + ' D14 editor with leftover (Give to buttons): typedAudit (screen, aria, describedby, live, options, toast) finds nothing unquoted', a.ok && r.give.some(t => t.includes('“Zqx Ana”')), { a, give: r.give });
+    await p.click('#add'); await sleep(80); hh = await p.$$('#hh input'); await hh[4].click({ clickCount: 3 }); await hh[4].type('Zqx Cy with a very long name x'); await hh[5].click({ clickCount: 3 }); await hh[5].type('abc'); await hh[1].click({ clickCount: 3 }); await hh[1].type('4.5'); await p.keyboard.press('Tab'); await sleep(150);
+    const msgs = await p.evaluate(() => [...document.querySelectorAll('#hh-msg li')].map(e => e.textContent));
+    a = await typedAudit(p, ['Zqx rice', 'Zqx Ana', 'Zqx Ben', 'Zqx Cy with a very long name x']);
+    ck(w + ' D14 editor validation messages name the household quoted ("“Zqx Ana”: …")', msgs.length >= 2 && msgs.some(m => m.startsWith('“Zqx Ana”: ')) && msgs.some(m => m.startsWith('“Zqx Cy with a very long name x”: ')) && a.ok, { msgs, a });
+    ck(w + ' D14 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
