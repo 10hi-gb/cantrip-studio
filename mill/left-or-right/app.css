@@ -43,7 +43,10 @@ textarea{width:100%;font:400 16px/1.4 var(--ui);padding:12px;border:3px solid va
 .lr-preview{display:none}
 /* board (S2): full-bleed but in normal flow, so nothing is cut off on short or narrow screens */
 .lr-board{position:relative;inset:auto;min-height:100vh;min-height:100dvh}
-.lr-board .qstrip .q,.lr-chosen .q{overflow-wrap:anywhere}
+.lr-board .qstrip .q{overflow-wrap:anywhere}
+/* Creative pass @d0ca704: the chosen-screen question takes the chosen answer's measure (the content width), so short
+   questions stay on one line in the centred flex column; it breaks only at word boundaries */
+.lr-chosen .q{width:100%;max-width:100%;overflow-wrap:break-word;word-break:normal}
 .lr-board .halves{min-height:300px;outline:none}
 .half{min-width:0;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .half .arrow{display:block}

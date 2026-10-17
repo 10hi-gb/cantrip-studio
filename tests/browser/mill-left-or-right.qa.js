@@ -389,6 +389,28 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
       }
       ck(`sweep ${w}: no page errors`, !c.errs.length, c.errs); await c.b.close();
     }
+    // Creative pass @d0ca704: the chosen-screen question has the chosen answer's measure; short ones stay on one line, long
+    // ones wrap only at spaces (greedy word wrap of the same words in the same font predicts the rendered line count), no sideways scroll
+    for (const w of [320, 360, 390, 1280]) {
+      const c = await classic(), p = c.p; await p.setViewport({ width: w, height: VH[w] || 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
+      const LQ = 'Which of these would you rather do on a slow, rainy Sunday afternoon at home?';
+      await fillQ(p, 0, 'Who reads?', "Grandmother's", 'Tacos'); await fillQ(p, 1, LQ, 'Bake bread', 'Board games'); await press(p, '#go'); await sleep(300);
+      const cq = () => p.evaluate(() => { const q = document.getElementById('c-q'), a = document.getElementById('c-a'), vt = q.querySelector('.lr-vt'), vis = q.querySelector('.lr-vis'), rs = Array.from(vt.getClientRects()), cs = getComputedStyle(q), vcs = getComputedStyle(vis);
+        const qr = q.getBoundingClientRect(), ar = a.getBoundingClientRect(), s3 = document.getElementById('s3'), s3cs = getComputedStyle(s3), content = s3.clientWidth - parseFloat(s3cs.paddingLeft) - parseFloat(s3cs.paddingRight);
+        const tops = [...new Set(rs.map(r => Math.round(r.top)))], inner = vt.getAttribute('data-v'), qo = q.querySelector('.lr-qo').getBoundingClientRect().width, qc = q.querySelector('.lr-qc').getBoundingClientRect().width;
+        const pw = document.createElement('span'), pr = document.createElement('span'); pw.className = 'lr-probe-w'; pr.className = 'lr-probe'; pw.appendChild(pr); q.appendChild(pw); const W = t => { pr.textContent = t; return pr.getBoundingClientRect().width; };
+        const avail = q.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), words = inner.split(' '); let lines = 1, cur = qo + W(words[0]);
+        for (let i = 1; i < words.length; i++) { const nx = W(' ' + words[i]) + (i === words.length - 1 ? qc : 0); if (cur + nx > avail + 0.5) { lines++; cur = W(words[i]) + (i === words.length - 1 ? qc : 0); } else cur += nx; }
+        const longest = Math.max(...words.map(W)); pw.remove();
+        return { lines: tops.length, greedy: lines, qw: Math.round(qr.width * 10) / 10, aw: Math.round(ar.width * 10) / 10, content: Math.round(content * 10) / 10, longestFits: longest <= avail, ow: vcs.overflowWrap + '/' + cs.overflowWrap, wb: vcs.wordBreak, hy: cs.hyphens, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, hangO: q.classList.contains('lr-hang') && parseFloat(getComputedStyle(q.querySelector('.lr-qo')).marginInlineStart) < 0, maxR: Math.max(...rs.map(r => r.right)), qRight: qr.right + parseFloat(s3cs.paddingRight) }; });
+      await p.keyboard.press('Enter'); await sleep(650); const A = await cq(), f = await fits(p);
+      ck(`chosen question ${w} (classic scrollbars): “Who reads?” on one line; its box = the chosen answer's measure (${A.qw} vs ${A.aw}, content ${A.content}); hanging quotes kept; break-word only`,
+        A.lines === 1 && Math.abs(A.qw - A.aw) <= 1 && Math.abs(A.qw - A.content) <= 1 && A.hangO && /break-word/.test(A.ow) && !/anywhere/.test(A.ow) && A.wb === 'normal' && A.hy !== 'auto' && !f.bad.length && A.sw <= A.cw, { A, f: f.bad });
+      await press(p, '#c-next'); await sleep(300); await p.keyboard.press('Enter'); await sleep(650); const B = await cq(), f2 = await fits(p);
+      ck(`chosen question ${w}: a long question wraps only at spaces (${B.lines} lines = greedy word wrap ${B.greedy}; every word fits the measure), same measure as the answer, no horizontal scroll`,
+        B.lines >= 2 && B.lines === B.greedy && B.longestFits && Math.abs(B.qw - B.aw) <= 1 && B.sw <= B.cw && !f2.bad.length, { B, f: f2.bad });
+      ck(`chosen question ${w}: no page errors`, !c.errs.length, c.errs); await c.b.close();
+    }
     // (a): the size QA measured is the size that renders: classic and overlay scrollbars give the same plan at QA's viewports
     for (const [w, h] of [[320, 760], [390, 844]]) {
       const run = async (cl) => { const c = cl ? await classic() : await session(H, IP), p = c.p; await p.setViewport({ width: w, height: h }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await setVal(p, '#from', 'Maya'); await fillQ(p, 0, 'Who reads?', "Grandmother's", 'Tacos'); await press(p, '#go'); await sleep(300);

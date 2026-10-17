@@ -51,7 +51,13 @@ async function pixels(p, b, pts) { const sc = await p.evaluate(() => [scrollX, s
   const out = await q.evaluate(async (png, pts, dpr) => { const im = new Image(); im.src = 'data:image/png;base64,' + png; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
     return pts.map(([X, Y]) => [...x.getImageData(Math.round(X * dpr), Math.round(Y * dpr), 1, 1).data].slice(0, 3)); }, png, pts, dpr); await q.close(); return out; }
 const near = (c, t, d = 14) => c.every((v, i) => Math.abs(v - t[i]) <= d);
-const RED = [200, 54, 31];
+const RED = [174, 47, 27]; // --fh-over #AE2F1B (QA H6/H7: same hue as --red #C8361F, darker)
+const lum = c => { const v = c.map(x => x / 255).map(x => x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4)); return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]; };
+const cr = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+const rgb = s => s.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+// Check mode; who[i] is the helper name for task i ('' = bench)
+async function checkAll(p, who) { await p.evaluate(who => { const m = document.getElementById('m-check'); m.checked = true; m.dispatchEvent(new Event('change', { bubbles: true }));
+  [...document.querySelectorAll('#check-rows select')].forEach((s, i) => { const o = [...s.options].find(o => o.textContent === '“' + who[i] + '”'); s.value = o ? o.value : ''; s.dispatchEvent(new Event('change', { bubbles: true })); }); }, who); }
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info: ok ? undefined : info });
   for (const w of W) {
@@ -251,23 +257,23 @@ const RED = [200, 54, 31];
         dee: [g(ds).left, g(ds).right, g(ds).top, g(ds).bottom], rolled: rolled && getComputedStyle(rolled).display !== 'none' ? [g(rolled).left, g(rolled).right, g(rolled).top, g(rolled).bottom] : null,
         stamps: a.map(x => x.querySelector('.stampline').textContent), sheetStamp: document.getElementById('sheet-stamp').textContent }; });
     ck(w + ' C2 over: Ben "80 of 60 min · Over by 20 min · “Ben” has 60 min" (loadLine · overBy, over part red), aria-label the same; Dee "15 of 0 min · Over by 15 min · “Dee” has 0 min"; no separate over tag (said once)',
-      t.benLoad === '80 of 60 min · Over by 20 min · “Ben” has 60 min' && t.benOver === C.tallySep + 'Over by 20 min · “Ben” has 60 min' && t.benOverC === 'rgb(200, 54, 31)' && t.benLabel === '“Ben”: ' + t.benLoad && t.deeLoad === '15 of 0 min · Over by 15 min · “Dee” has 0 min' && t.anaLoad === '80 of 120 min · 40 min spare' && !t.overtags, t);
+      t.benLoad === '80 of 60 min · Over by 20 min · “Ben” has 60 min' && t.benOver === C.tallySep + 'Over by 20 min · “Ben” has 60 min' && t.benOverC === 'rgb(174, 47, 27)' && t.benLabel === '“Ben”: ' + t.benLoad && t.deeLoad === '15 of 0 min · Over by 15 min · “Dee” has 0 min' && t.anaLoad === '80 of 120 min · 40 min spare' && !t.overtags, t);
     ck(w + ' C1 over-tip classes: Ben only "Clean and oil tools" over, all of it (--p 100%); Dee\'s 15-min stick over, all of it; no translucent overlay element past the roll',
       t.bens.join(',') === 'stick ,stick ,stick over all 100%' && t.deeCls === 'stick over all' && !t.overzones, t);
-    ck(w + ' C1 over-tip colour: the over part is solid --fh-over (#C8361F), one flat colour (no grain layer), chalk text; sticks that fit stay pine',
-      t.overSt.bg === 'rgb(200, 54, 31)' && t.overSt.img === 'none' && t.deeSt.bg === 'rgb(200, 54, 31)' && t.deeSt.img === 'none' && t.overSt.color === 'rgb(244, 239, 227)' && t.fitSt.img !== 'none' && t.fitSt.bg !== 'rgb(200, 54, 31)', t);
+    ck(w + ' C1 over-tip colour: the over part is solid --fh-over (#AE2F1B), one flat colour (no grain layer), chalk text; sticks that fit stay pine',
+      t.overSt.bg === 'rgb(174, 47, 27)' && t.overSt.img === 'none' && t.deeSt.bg === 'rgb(174, 47, 27)' && t.deeSt.img === 'none' && t.overSt.color === 'rgb(244, 239, 227)' && t.fitSt.img !== 'none' && t.fitSt.bg !== 'rgb(174, 47, 27)', t);
     if (w > 640) {
       ck(w + ' C1 tip geometry: Ben\'s red starts at the roll end (60/80 of the track; ±4px) and the fitting sticks end there; Dee\'s stick sits right of the rolled-up roll, not over it',
         Math.abs(t.overL - t.rollR) <= 4 && t.fitR <= t.rollR + 1 && t.rolled && t.dee[0] >= t.rolled[1] - 1, t);
       const pts = [[t.overL + 4, (t.overT + t.overB) / 2 + 12], [(t.overL + t.overR) / 2, t.overB - 4], [t.overR - 16, t.overT + 8], [t.dee[0] + 4, t.dee[3] - 4], [(t.dee[0] + t.dee[1]) / 2, t.dee[3] - 4], [t.dee[1] - 16, t.dee[2] + 8],
         [t.rollR - 3, t.overB - 2], [(t.rolled[0] + t.rolled[1]) / 2 - 12, (t.rolled[2] + t.rolled[3]) / 2], [t.rolled[0] + 6, (t.rolled[2] + t.rolled[3]) / 2]];
       const px = await pixels(p, s.b, pts);
-      ck(w + ' C1 pixels: Ben\'s over part and Dee\'s whole stick paint flat #C8361F at left/middle/right; the roll edge and the rolled-up roll stay canvas (never tinted)',
+      ck(w + ' C1 pixels: Ben\'s over part and Dee\'s whole stick paint flat #AE2F1B at left/middle/right; the roll edge and the rolled-up roll stay canvas (never tinted)',
         px.slice(0, 6).every(c => near(c, RED)) && px.slice(6).every(c => c[0] < 120 && Math.abs(c[0] - c[2]) < 30), px);
     } else {
       const pts = [[t.overL + 6, t.overB - 3], [(t.overL + t.overR) / 2, t.overB - 3], [t.dee[0] + 6, t.dee[3] - 3], [t.dee[1] - 30, t.dee[3] - 3]];
       const px = await pixels(p, s.b, pts);
-      ck(w + ' C1 phone: a stick whose minutes are all past the cap is flat #C8361F end to end (Ben "Clean and oil tools", Dee "Fix gate latch")', px.every(c => near(c, RED)), px);
+      ck(w + ' C1 phone: a stick whose minutes are all past the cap is flat #AE2F1B end to end (Ben "Clean and oil tools", Dee "Fix gate latch")', px.every(c => near(c, RED)), px);
     }
     ck(w + ' C6 Check-mode footer: stampCheck under every card (5/5) and on the sheet; never the Suggest stamp', t.stamps.length === 5 && t.stamps.every(x => x === C.stampCheck) && t.sheetStamp === C.stampCheck, t.stamps);
     await p.evaluate(() => { window.__clip = []; document.querySelectorAll('#rolls article .hhead button').forEach(b => b.click()); document.getElementById('b-bench').click(); }); await sleep(150);
@@ -317,6 +323,65 @@ const RED = [200, 54, 31];
     ck(w + ' C5 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME));
     await s.b.close();
   }
+
+  // ---------- QA local-08b466c/2a02a48 H5: short sticks keep a readable name box (no letter-per-line) and big overruns stay inside the card; Suggest + Check, tiny and huge minutes
+  { const TINY = [['Wab3', 5], ['Sweep the path', 5], ['Greenhouse-Greenhouse10', 120], ['rake rake rake', 480], ['Weed', 15], ['Wabcdefghijklmnopqrstuvwxyzabcdefghijkl3', 1], ['Fix gate latch', 1]];
+    const SETS = [['suggest tiny+huge', TINY, [['Ana', 480], ['Ben', 480], ['Cy', 480]], null], ['check, Ana 10 has everything', TINY, [['Ana', 10], ['Ben', 480]], TINY.map(() => 'Ana')],
+      ['check, Dee 0 has everything (480 each)', [['Haul yard bags to curb', 480], ['Turn compost bed A', 480], ['Weed', 1], ['Sweep the path', 1]], [['Dee', 0], ['Ana', 480]], ['Dee', 'Dee', 'Dee', 'Dee']],
+      ['suggest, all 1-minute tasks', Array.from({ length: 12 }, (_, i) => ['Task number ' + (i + 1), 1]), [['Ana', 480], ['Ben', 1]], null]];
+    for (const w of [1280, 1440, 1024, 641, 390, 320]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+      await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await p.evaluate(() => document.fonts.ready); const bad = [];
+      for (const [nm, tasks, helpers, who] of SETS) { await fill(p, 'Sweep', tasks, helpers);
+        if (who) await checkAll(p, who); else await p.evaluate(() => { const m = document.getElementById('m-suggest'); m.checked = true; m.dispatchEvent(new Event('change', { bubbles: true })); });
+        await split(p); await sleep(100);
+        const r = await p.evaluate(() => { const out = [], g = e => e.getBoundingClientRect(), cx = document.createElement('canvas').getContext('2d');
+          const sticks = [...document.querySelectorAll('#rolls .stick, #plank .stick')]; if (!sticks.length) out.push('no sticks');
+          for (const st of sticks) { const t = st.querySelector('.t'), tn = t.querySelector('.mill-typed').firstChild, nm = tn.textContent, box = g(t), sr = g(st), card = g(st.closest('.helper, .bench')), tr = g(st.closest('.track, .plank'));
+            if (box.width < 30) out.push('"' + nm + '" name box ' + Math.round(box.width) + 'px');
+            if (sr.left < card.left - .5 || sr.right > card.right + .5 || sr.left < tr.left - .5 || sr.right > tr.right + .5) out.push('"' + nm + '" stick past its card/track (' + Math.round(sr.left) + '–' + Math.round(sr.right) + ' vs card ' + Math.round(card.left) + '–' + Math.round(card.right) + ')');
+            const rg = document.createRange(); rg.selectNodeContents(st); for (const x of rg.getClientRects()) if (x.width && (x.right > tr.right + .5 || x.left < tr.left - .5 || x.bottom > tr.bottom + .5 || x.right > innerWidth)) { out.push('"' + nm + '" text clipped/off-screen'); break; }
+            cx.font = getComputedStyle(tn.parentElement).font; let i = 0;
+            for (const wd of nm.split(/(?<=[\s-])/)) { const r2 = document.createRange(); r2.setStart(tn, i); r2.setEnd(tn, i + wd.trimEnd().length); i += wd.length;
+              if (new Set([...r2.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top))).size > 1 && cx.measureText(wd.trimEnd()).width < box.width - 1) out.push('word "' + wd + '" broken though it fits (' + Math.round(box.width) + 'px)'); }
+            const m = st.querySelector('.m'), mr = document.createRange(); mr.selectNodeContents(m); if (new Set([...mr.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top))).size !== 1) out.push('minutes "' + m.textContent + '" broken'); }
+          if (document.documentElement.scrollWidth > document.documentElement.clientWidth) out.push('sideways scroll');
+          return out; });
+        if (r.length) bad.push(nm + ': ' + r.slice(0, 4).join('; ')); }
+      ck(w + ' QA H5: tiny (1–5 min) and huge (480 min) sticks in Suggest and Check (big overruns, 0-minute helper): every name box ≥30px, words break only at spaces/hyphens unless one word is wider than its box, minutes never break, every stick and its text inside its card and track, no sideways scroll', !bad.length, bad);
+      if (w > 640) { // where the minutes allow it, the sticks stay to scale: Ben 30+30+20 of 60 ends 20 min past the roll end
+        await fill(p, CTITLE, TS, HS); await checkS4(p); await split(p); await sleep(100);
+        const g = await p.evaluate(() => { const ben = document.querySelectorAll('#rolls article')[1], tr = ben.querySelector('.track').getBoundingClientRect(), roll = ben.querySelector('.roll').getBoundingClientRect(), st = [...ben.querySelectorAll('.stick')].map(x => x.getBoundingClientRect());
+          return { rows: new Set(st.map(x => Math.round(x.top))).size, end: st[st.length - 1].right - tr.left, rollEnd: roll.right - tr.left, track: tr.width }; });
+        ck(w + ' QA H5: readable sticks stay to scale on one row (Ben 80 of 60: roll ends at 60/80 of the track, sticks end at the track end ±4px)', g.rows === 1 && Math.abs(g.rollEnd - g.track * 60 / 80) <= 4 && Math.abs(g.end - g.track) <= 4, g); }
+      ck(w + ' QA H5 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); } }
+
+  // ---------- QA H6 (non-text contrast ≥3:1, measured on the rendered page), H7 (over text ≥4.5:1 on the page), H8 (phones show rolledUp under Dee's header, no empty track)
+  for (const w of [320, 390, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await p.evaluate(() => document.fonts.ready);
+    await fill(p, 'Saturday', [['Rake the paths', 50], ['Weed beds', 30], ['Haul bags', 20], ['Sweep', 40]], [['Ana', 60], ['Ben', 120], ['Cy', 10], ['Dee', 0]]); await checkAll(p, ['Ana', 'Ana', 'Ben', 'Cy']); await split(p); await sleep(150);
+    const t = await p.evaluate(() => { const a = document.querySelector('#rolls article'), g = e => e.getBoundingClientRect(), ov = a.querySelector('.stick.over:not(.all)'), r = g(ov), pc = parseFloat(ov.style.getPropertyValue('--p')) / 100;
+      const me = a.querySelector('.meter'), mo = me.querySelector('.ovr'), mc = me.querySelector('.cap'), ld = a.querySelector('.load .over'), lr = ld.getClientRects()[0];
+      // the tip's left edge: on phones the theme paints a fixed 4.2em tip, wider screens paint --p of the stick
+      const tipX = getComputedStyle(ov).backgroundImage.includes('4.2em') || innerWidth <= 640 ? r.right - 4.2 * parseFloat(getComputedStyle(ov).fontSize) : r.right - r.width * pc;
+      return { tipX, top: r.top, bot: r.bottom, meter: getComputedStyle(me).display !== 'none' ? { o: g(mo), c: g(mc), bl: getComputedStyle(mo).borderLeftWidth + ' ' + getComputedStyle(mo).borderLeftColor, bg: getComputedStyle(mo).backgroundColor } : null,
+        txt: getComputedStyle(ld).color, fs: getComputedStyle(ld).fontSize, fw: getComputedStyle(ld).fontWeight, lr: { l: lr.left, t: lr.top, b: lr.bottom, r: lr.right }, card: (b => ({ left: b.left, right: b.right, top: b.top }))(g(a)) }; });
+    // H6 stick tip: red against the wood just left of the tip, from the top to the bottom of the stick (the lightest and the darkest wood)
+    const ys = [0.12, 0.3, 0.5, 0.7, 0.88].map(f => t.top + 4 + (t.bot - t.top - 8) * f), pts = ys.flatMap(y => [[t.tipX - 3, y], [t.tipX + 3, y]]);
+    const px = await pixels(p, s.b, pts), pairs = ys.map((y, i) => ({ y: Math.round(y), wood: px[2 * i], red: px[2 * i + 1], cr: +cr(px[2 * i], px[2 * i + 1]).toFixed(2) }));
+    ck(w + ' QA H6: the over tip is ≥3:1 against the wood next to it at every height of the stick (sampled top to bottom on the page)', pairs.every(q => near(q.red, RED, 6) && q.cr >= 3), pairs);
+    if (t.meter) { const y = (t.meter.o.top + t.meter.o.bottom) / 2, mp = await pixels(p, s.b, [[t.meter.c.right - 3, t.meter.c.top + 1], [t.meter.o.left + 1, y], [t.meter.o.left + 6, y], [t.meter.o.right + 3, y]]);
+      const m = { canvas: mp[0], edge: mp[1], red: mp[2], page: mp[3], bl: t.meter.bl, bg: t.meter.bg, redEdge: +cr(mp[2], mp[1]).toFixed(2), edgeCanvas: +cr(mp[1], mp[0]).toFixed(2), redPage: +cr(mp[2], mp[3]).toFixed(2) };
+      ck(w + ' QA H6: capacity bar: the red never touches the dark frame (2px chalk edge); red/edge, edge/frame and red/page all ≥3:1', t.meter.bl === '2px rgb(244, 239, 227)' && near(m.red, RED, 6) && m.redEdge >= 3 && m.edgeCanvas >= 3 && m.redPage >= 3, m); }
+    // H7: the over text colour against the page pixels behind it (sampled just outside the text line inside the card)
+    const bgp = await pixels(p, s.b, [[t.lr.l + 2, t.lr.t - 1], [t.card.right - 4, t.lr.b - 2], [t.card.left + 3, t.card.top + 3]]), tc = rgb(t.txt), h7 = { color: t.txt, fs: t.fs, fw: t.fw, bg: bgp, cr: bgp.map(b => +cr(tc, b).toFixed(2)) };
+    ck(w + ' QA H7: "Over by … has … min" (' + t.fs + ' bold) is ≥4.5:1 against the page behind it, same hue as --red', t.txt === 'rgb(174, 47, 27)' && h7.cr.every(c => c >= 4.5), h7);
+    // H8
+    const d = await p.evaluate(() => { const a = [...document.querySelectorAll('#rolls article')][3], g = e => e.getBoundingClientRect(), z = a.querySelector('.zeronote'), hh = g(a.querySelector('.hhead')), sl = g(a.querySelector('.stampline'));
+      const zv = z && z.checkVisibility({ checkVisibilityCSS: true }) ? g(z) : null, me = a.querySelector('.meter');
+      return { cls: a.className, label: z ? z.textContent : null, zv: zv && { t: zv.top, b: zv.bottom, l: zv.left, r: zv.right }, hhB: hh.bottom, slT: sl.top, card: g(a).right, meter: getComputedStyle(me).display, head: a.querySelector('.load').textContent, aria: a.getAttribute('aria-label') }; });
+    if (w <= 640) ck(w + ' QA H8: phone: Dee (0 minutes, no tasks) shows rolledUp "' + C.rolledUp + '" right under the header; no empty track or meter (≤14px from header to label, label to stamp line)', d.label === C.rolledUp && d.zv && d.zv.t >= d.hhB - .5 && d.zv.t - d.hhB <= 14 && d.slT - d.zv.b <= 14 && d.zv.r <= d.card && d.meter === 'none' && d.head === C.zeroHead && d.aria === '“Dee”: ' + C.zeroHead, d);
+    else ck(w + ' QA H8: desktop: Dee\'s roll label still on the rolled-up roll', d.label === C.rolledUp && d.zv && d.zv.t > d.hhB, d);
+    ck(w + ' QA H6–H8 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
 
   // ---------- QA H3: the WHOLE URL is capped at 2,000 on send and receive (shared MILLVIEW.linkFor), tested under a long path (/mill/ + slashes + five-hands/)
   { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: 390, height: 900 }); await p.evaluateOnNewDocument(clipStub);
