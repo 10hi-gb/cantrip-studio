@@ -318,16 +318,22 @@ window.MILL_HUB = {
     "Suggest uses a simple rule, not the best possible split. A task that fits nobody whole stays on the bench; nothing is split or dropped. Check only adds up your own split.",
     "Proposal only: every card, the copied text and the sheet say “Nobody has agreed to this yet.”",
     "The optional link holds only task names, minutes and helper names. Anyone with the link can read it.",
-    "QA all-9 NOT TESTED: the address-bar strip at f893087 was informational only; Five Hands has no strip commit yet."
+    "QA local-11d8017 NOT TESTED: real devices, Safari/Firefox and any engine other than Chrome 155 headless; screen readers (only ax-tree text was checked) and real clipboard permission prompts; physical printing (only the Chrome PDF for Letter, and A4 only for the suggest/check PDFs); widths other than those listed, high-contrast or forced-colors mode, and browser zoom above 100%; the 12.45 and 16.14 ring pairs as separate figures; production; experience and design calls (Creative); whether H16 is present at d68094a."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview d68094ade9c8d49edd528b278dcf2583711c78c0: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 247/247 at 320/360/390/641/1024/1280/1440 (incl. Creative check 5f127ab items 1–6; QA local-8206084 H1–H3; QA local-08b466c/2a02a48 H5 tiny and huge sticks in Suggest and Check, H6 tip and capacity-bar contrast and H7 over-text contrast sampled on the rendered page, H8 rolled-up label on phones). Not QA.",
-   "status": "NOT READY (QA open: H9–H14; all-9 recheck at f893087: wrap + contrast PASS; address bar pre-strip)",
+   "status": "NOT READY (H9–H13 fixed; open H14 (holds only under reduced motion), H15 High, H16 Low, H17 Low; all-9 recheck W-8, W-9 PASS at 11d8017)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
+    "sha": "11d8017894af21f7658b4ba751c3ab585d276219",
+    "report": "qa/five-hands/local-11d8017/QA-local-11d8017.md",
+    "note": "H9–H13 fixed; open H14 (holds only under reduced motion), H15 High, H16 Low, H17 Low"
+   },
+   "qaPrevious": {
+    "verdict": "NOT READY",
+    "label": "LOCALHOST-PREVIEW",
     "sha": "d68094ade9c8d49edd528b278dcf2583711c78c0",
-    "report": "qa/five-hands/local-d68094a/QA-local-d68094a.md (H13–H14 per a later QA message, not yet in this file)",
-    "note": "open: H9 (Med), H10 (Med), H11 (Low), H12 (Low) per report; H13 (Low) error text on --red 4.24–4.36:1, H14 (Med) drop the 104px minimum so bars stay proportional, labels beside/outside the bar, per a later QA message, not yet in report file; QA all-9 @f893087 (five-hands tree 3fdebec, unchanged at c07008e, qa/all9/local-f893087/QA-all9-f893087.md): A wrap PASS 6/6; B contrast PASS 0 of 382; C address bar 0/30 (pre-strip, informational). Verdict for this pass: wrap + contrast PASS; address bar pre-strip"
+    "report": "qa/five-hands/local-d68094a/QA-local-d68094a.md (H13–H14 per a later QA message, not yet in this file)"
    }
   }
  ]
