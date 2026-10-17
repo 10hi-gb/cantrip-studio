@@ -97,12 +97,12 @@ window.MILL_HUB = {
     "tree": "f83c650c08b683a712f9d700e4ff76e66f756316",
     "result": "unit tests 11 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
    "qaLocal": {
-    "verdict": "NOT READY",
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "71ba7692fdcd5402e1e964dcf6c04ae4eb9499a3",
-    "report": "qa/one-small-ask/local-71ba769/QA-local-71ba769.md"
+    "sha": "7add2de13797af5b9bc68ffd8b94f258b241d945",
+    "report": "qa/one-small-ask/local-7add2de/QA-local-7add2de.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -181,8 +181,15 @@ window.MILL_HUB = {
     "Currency is picked from $, € or £; there is no conversion. Refunds and negative amounts aren't supported.",
     "A received link is a snapshot of what the sender entered; nobody has agreed to anything by opening it."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview 456c5c4eb788b90c89539ddafb98c62651c71af1: unit 17 (incl. 5000-case settlement property test); browser 183/183 at 320/390/1280. Not QA.",
-   "status": "No QA verdict, NOT READY"
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview 7cf462f82d14e9ff2ab6f5c5d689e2c2ca1d2f3e: unit 21 (incl. 5000-case settlement property test); browser 260/260 at 320/390/1280/1440. Not QA.",
+   "status": "NOT READY (retest pending at 7cf462f)",
+   "qaLocal": {
+    "verdict": "NOT READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "a69519680ab47bbe976516247f3bd3de984ce0f4",
+    "report": "qa/even-up/local-a695196/QA-local-a695196.md",
+    "note": "retest pending at 7cf462f"
+   }
   },
   {
    "id": "P018",

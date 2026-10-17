@@ -4,7 +4,7 @@
 // build-info commit == sha), then the same pages over file:// (does the piece boot?).
 const puppeteer = require('puppeteer-core'), fs = require('fs'), path = require('path');
 const [DIR, BASE, SHA] = process.argv.slice(2);
-const PIECES = ['before-you-go', 'one-less-trip', 'one-small-ask', 'split-the-sack', 'the-same-hour', 'even-up'].filter(p => fs.existsSync(path.join(DIR, 'mill', p, 'index.html')));
+const PIECES = ['before-you-go', 'one-less-trip', 'one-small-ask', 'split-the-sack', 'the-same-hour', 'even-up', 'left-or-right'].filter(p => fs.existsSync(path.join(DIR, 'mill', p, 'index.html')));
 (async () => {
   const b = await puppeteer.launch({ executablePath: '/usr/bin/google-chrome', headless: 'new', args: ['--no-sandbox'] });
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
