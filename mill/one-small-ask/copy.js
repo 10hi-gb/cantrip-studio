@@ -61,6 +61,7 @@ const COPY = {
   "replyPrivacy": "Your reply goes in a new link, with the original ask. Nothing is uploaded. Anyone with the link can read it, and it may stay in browser history.",
   "receiverIntro": "Small ask from: {from}",
   "receiverIntroAnon": "Small ask (no name given)",
+  "receiverTypedNote": "Names and the favor are as typed by the sender. Not checked.",
   "replyHeading": "Your answer",
   "replyYes": "Yes",
   "replyPart": "Part of it",

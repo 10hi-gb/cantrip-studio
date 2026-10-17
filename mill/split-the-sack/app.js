@@ -159,7 +159,7 @@
     ['share', 'copytext', 'print'].forEach(function (id) { $(id).disabled = !ready; });
     $('notready').textContent = ready ? '' : feeNoTaker ? C.errorFeeNoBasis : (blocked === 'over' && res && res.status === 'over' ? M.fill(C.overAllocationBlock, { qty: S.fmtQty(res.shortage), unit: u }) : blocked === 'count' ? C.tooFewHouseholds : blocked === 'duplicate' ? C.duplicateHousehold : feeNoTaker ? C.errorFeeNoBasis : C.notReady);
     if (mode !== 'own') { ['share', 'copytext', 'print'].forEach(function (id) { $(id).disabled = true; }); }
-    lockEditor(); var txt = ready ? proposal(res) : ''; $('text').value = txt; $('printout').textContent = ready ? M.fill(C.proposalPolicy, { feeBasisLine: C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'], residualNote: C.residualNote }) + '\n' + C.proposalSnapshot + '\n' + C.noPaymentNote : '';
+    lockEditor(); var txt = ready ? proposal(res) : ''; $('text').value = txt; $('printout').textContent = ready ? M.fill(C.shareTextTyped, { item: M.strip(st.n) }) + '\n' + C.textNamesTyped + '\n\n' + M.fill(C.proposalPolicy, { feeBasisLine: C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'], residualNote: C.residualNote }) + '\n' + C.proposalSnapshot + '\n' + C.noPaymentNote : '';
   }
   // D9: the leftover-cents sentence names each row's actual extra cents. Writer's "one each" form is used only when every listed row got exactly 1.
   var textNames = false;
@@ -170,8 +170,7 @@
     return M.plural(C.residualLineMixed, n, { names: parts.map(function (p) { return M.plural(C.residualShare, p[1], { name: p[0] }); }).join(', ') });
   }
   function proposal(res) {
-    var u = unit(), out = [M.fill(C.shareTextTyped, { item: M.strip(st.n) }), C.packageQtyLabel + ': ' + S.fmtQty(res.pkgQty) + ' ' + u + ' · ' + C.priceLabel + ': ' + money(res.price) + ' · ' + C.feeLabel + ': ' + money(res.fee), ''];
-    out.push(C.textNamesTyped, '');
+    var u = unit(), out = [M.fill(C.shareTextTyped, { item: M.strip(st.n) }), C.textNamesTyped, C.packageQtyLabel + ': ' + S.fmtQty(res.pkgQty) + ' ' + u + ' · ' + C.priceLabel + ': ' + money(res.price) + ' · ' + C.feeLabel + ': ' + money(res.fee), ''];
     res.rows.forEach(function (r, i) { out.push(typedName(i) + ': ' + S.fmtQty(r.qty) + ' ' + u + ' · ' + C.colItem + ' ' + money(r.goods) + ' + ' + C.colFee + ' ' + money(r.fee) + ' = ' + C.colPays + ' ' + money(r.total)); });
     out.push(C.unallocatedRow + ': ' + M.fill(C.unallocatedLine, { qty: S.fmtQty(res.unallocated.qty), unit: u, cost: money(res.unallocated.total) }));
     out.push(C.rowTotal + ': ' + S.fmtQty(res.pkgQty) + ' ' + u + ' · ' + money(res.total), '');
