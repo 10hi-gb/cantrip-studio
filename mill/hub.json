@@ -109,7 +109,8 @@
     "No comment mentions a counteroffer.",
     "Replies travel only by a link the recipient chooses to send back. It never tells the asker anything by itself.",
     "QA local-798352d NOT TESTED: print media (the theme has print overrides that were not exercised); physical phones, Firefox, Safari/WebKit, forced-colours, zoom, real screen readers; focus-ring contrast.",
-    "QA wp-sweep-798352d NOT TESTED: DPR 2/3, print, forced-colors, and hover/focus-visible/active colours (the .15s choice transition was measured after settle); native date/time picker popups (OS-drawn); plain flat-colour text (not re-measured, as ruled). \"Yes\" pressed has no sub-line, so it is not affected."
+    "History (superseded by QA local-84b14d6): QA wp-sweep-798352d NOT TESTED: DPR 2/3, print, forced-colors, and hover/focus-visible/active colours (the .15s choice transition was measured after settle); native date/time picker popups (OS-drawn); plain flat-colour text (not re-measured, as ruled). \"Yes\" pressed has no sub-line, so it is not affected.",
+    "QA local-84b14d6 NOT TESTED: widths other than 320/390/1280, DPR other than 1; pressed+hover without focus as an isolated mode (hover ran after focus; the amber fill is flat and .osa-choice has no :hover rule); touch :active (press-and-hold) and the 0.15s transition mid-frame; forced-colors, dark mode, print; the full functional/a11y suite (targeted retest only)."
    ],
    "engineer": {
     "pin": "83a2ebcd",
@@ -117,19 +118,19 @@
     "tree": "f83c650c08b683a712f9d700e4ff76e66f756316",
     "result": "unit tests 11 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY (open W-9a Low (pressed-choice sub-line 3.22:1 on amber); deployed pin FAIL)",
+   "status": "READY ON LOCALHOST-PREVIEW (W-9a fixed; deployed pin FAIL)",
    "qaLocal": {
+    "verdict": "READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "84b14d687060c96601e69e586fa7d16f9e5f95a9",
+    "report": "qa/one-small-ask/local-84b14d6/QA-local-84b14d6.md",
+    "note": "W-9a fixed"
+   },
+   "qaPrevious": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "798352db0e2f5937bda6305bb49fef7206c2b909",
-    "report": "qa/one-small-ask/wp-sweep-798352d/WP-SWEEP-798352d.md",
-    "note": "open W-9a Low (pressed-choice sub-line 3.22:1 on amber)"
-   },
-   "qaPrevious": {
-    "verdict": "READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "798352db0e2f5937bda6305bb49fef7206c2b909",
-    "report": "qa/one-small-ask/local-798352d/QA-local-798352d.md (pressed-choice state not exercised) (earlier: qa/all9/local-f893087/QA-all9-f893087.md (one-small-ask tree f780c94, unchanged at c07008e) (earlier: qa/one-small-ask/local-eade562/QA-local-eade562.md: eade562ddc783558ad2068f927f7aa576e60dd50 READY): f893087c7ac397638e17c9aaa084374809f02130 NOT READY)"
+    "report": "qa/one-small-ask/wp-sweep-798352d/WP-SWEEP-798352d.md (W-9a) (earlier: qa/one-small-ask/local-798352d/QA-local-798352d.md (pressed-choice state not exercised) (earlier: qa/all9/local-f893087/QA-all9-f893087.md (one-small-ask tree f780c94, unchanged at c07008e) (earlier: qa/one-small-ask/local-eade562/QA-local-eade562.md: eade562ddc783558ad2068f927f7aa576e60dd50 READY): f893087c7ac397638e17c9aaa084374809f02130 NOT READY): 798352db0e2f5937bda6305bb49fef7206c2b909 READY)"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -194,22 +195,23 @@
     "Nothing is sent or booked. A proposal is a suggestion worked out from what the sender typed; nobody has replied to it.",
     "QA all-9 NOT TESTED: the zone-ID check (D) ran in Chrome only.",
     "QA local-231ce2c NOT TESTED: real screen readers (VoiceOver, TalkBack, NVDA, JAWS; accessible names checked only via Chrome's AX tree); Firefox and Safari/WebKit rendering of `content: … / \"\"` (the plain \"\\200B\" fallback was not exercised); the text-contrast scan (not re-run; the change adds no visible text or colour); physical phones, zoom, print.",
-    "QA wp-sweep-231ce2c NOT TESTED: DPR 2/3, print, forced-colors, hover/focus colours, and the tsh-stitch animation frames (measured after settle); other aria-invalid fields with a placeholder (only #pn-1 has one; #t \"Coffee\" has no error state); zones beyond the 4 measured; native picker popups; plain flat-colour text (not re-measured, as ruled)."
+    "History (superseded by QA local-a7d04f0): QA wp-sweep-231ce2c NOT TESTED: DPR 2/3, print, forced-colors, hover/focus colours, and the tsh-stitch animation frames (measured after settle); other aria-invalid fields with a placeholder (only #pn-1 has one; #t \"Coffee\" has no error state); zones beyond the 4 measured; native picker popups; plain flat-colour text (not re-measured, as ruled).",
+    "QA local-a7d04f0 NOT TESTED: widths other than 320/390/1280, DPR other than 1; placeholders of people 2+ (only person 1's name has a placeholder by design); receiver-view inputs (the \"Add my times to a copy\" flow) beyond the whole sweep; the title field on the error tint (it cannot take the error state while empty); forced-colors, dark mode, print; the full functional/a11y suite (targeted retest only)."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 715aa3a: unit 19 incl. DST; browser 116/116 at 320/390/1280. Not QA.",
-   "status": "NOT READY (open W-9b Low (empty-name error placeholder 3.99 on error-pink))",
+   "status": "READY ON LOCALHOST-PREVIEW (W-9b fixed)",
    "qaLocal": {
+    "verdict": "READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "a7d04f03e1ec087e51aa93fc1fecd0083a411b08",
+    "report": "qa/the-same-hour/local-a7d04f0/QA-local-a7d04f0.md",
+    "note": "W-9b fixed"
+   },
+   "qaPrevious": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "231ce2c0ea4d997b8a9269cf9bb492a349f80da3",
-    "report": "qa/the-same-hour/wp-sweep-231ce2c/WP-SWEEP-231ce2c.md",
-    "note": "open W-9b Low (empty-name error placeholder 3.99 on error-pink)"
-   },
-   "qaPrevious": {
-    "verdict": "READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "231ce2c0ea4d997b8a9269cf9bb492a349f80da3",
-    "report": "qa/the-same-hour/local-231ce2c/QA-local-231ce2c.md (empty-name error state not exercised) (earlier: qa/all9/local-f893087/QA-all9-f893087.md (the-same-hour tree c6ae8fd = hardening afb31b8, unchanged at c07008e) (earlier: qa/the-same-hour/local-8886943/QA-local-8886943.md: 88869436943a40e949ac4445487912cc14bec828 READY): f893087c7ac397638e17c9aaa084374809f02130 NOT READY)"
+    "report": "qa/the-same-hour/wp-sweep-231ce2c/WP-SWEEP-231ce2c.md (W-9b) (earlier: qa/the-same-hour/local-231ce2c/QA-local-231ce2c.md (empty-name error state not exercised) (earlier: qa/all9/local-f893087/QA-all9-f893087.md (the-same-hour tree c6ae8fd = hardening afb31b8, unchanged at c07008e) (earlier: qa/the-same-hour/local-8886943/QA-local-8886943.md: 88869436943a40e949ac4445487912cc14bec828 READY): f893087c7ac397638e17c9aaa084374809f02130 NOT READY): 231ce2c0ea4d997b8a9269cf9bb492a349f80da3 READY)"
    }
   },
   {
@@ -229,22 +231,24 @@
     "A received link is a snapshot of what the sender entered; nobody has agreed to anything by opening it.",
     "QA NOT TESTED (Even Up): the f893087 query strip was informational only (pre-strip); cap at 1280 with the 2,100-char pad query (ran at 390); origins with other port lengths (only a 4-digit port); pages at the cap opened from other apps (e.g. a messenger URL rewriter).",
     "QA local-bfca3c8 NOT TESTED: the eu-notags state (≤360px with more than 4 people, tags visually hidden by design); physical phones, Firefox, Safari/WebKit, forced-colours/high contrast, zoom 200/400%, real screen readers; focus-ring contrast.",
-    "QA wp-sweep-bfca3c8 NOT TESTED: widths other than 320/390/1280; the ≤360px eu-notags state with more than 4 people (tag hidden by design); print, forced-colours and dark-mode media; hover and focus states of the token buttons; the toast and the transient copy/share feedback text; flat-colour text (proven earlier, not re-measured)."
+    "History (superseded by QA local-4b7660a): QA wp-sweep-bfca3c8 NOT TESTED: widths other than 320/390/1280; the ≤360px eu-notags state with more than 4 people (tag hidden by design); print, forced-colours and dark-mode media; hover and focus states of the token buttons; the toast and the transient copy/share feedback text; flat-colour text (proven earlier, not re-measured).",
+    "QA local-4b7660a NOT TESTED: widths other than 320/390/1280, DPR other than 1 (at DPR 2 the dot renders differently; not measured); hover/focus states of muted elements (the home link and unpressed chips); the ≤360px eu-notags state with more than 4 people, the toast, and transient copy/share feedback; forced-colors, dark mode, print; the full functional/a11y suite (targeted retest only).",
+    "Known boundary: muted text clears 4.5 by only 0.025 (4.525 at dot centre); measured at 1x density only"
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 6f5f5435f607b901a8fae6cd674e704af77f1324: unit 21 (incl. 5000-case settlement property test); browser 312/312 at 320/360/390/700–999/1280/1440. Not QA.",
-   "status": "NOT READY (W-5 fixed; open W-9m Low (muted text on dots, darkest pixel 4.26))",
+   "status": "READY ON LOCALHOST-PREVIEW (W-9m fixed)",
    "qaLocal": {
+    "verdict": "READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "4b7660af4a2e52af36c8a876d6ba147ba86432a2",
+    "report": "qa/even-up/local-4b7660a/QA-local-4b7660a.md",
+    "note": "W-9m fixed"
+   },
+   "qaPrevious": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "bfca3c8e61fa2fa3718e3ea5d07a31c4696bdbd8",
-    "report": "qa/even-up/wp-sweep-bfca3c8/WP-SWEEP-bfca3c8.md",
-    "note": "W-5 fixed; open W-9m Low (muted text on dots, darkest pixel 4.26)"
-   },
-   "qaPrevious": {
-    "verdict": "READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "bfca3c8e61fa2fa3718e3ea5d07a31c4696bdbd8",
-    "report": "qa/even-up/local-bfca3c8/QA-local-bfca3c8.md (median-background rule only) (earlier: qa/even-up/local-649874e/QA-local-649874e.md (even-up tree 4039c6ef0371e5a4673fdb6e02654329c0baaac0 = 649874e; also qa/all9/local-f893087/QA-all9-f893087.md) (earlier: qa/even-up/local-6f5f543/QA-local-6f5f543.md (also READY at 5ad5c277f48e52f1864513b3bfca3782b25fe79f): 6f5f5435f607b901a8fae6cd674e704af77f1324 READY): c07008e8b39e95cd698ab55812e5e6ceecbc61dc NOT READY)"
+    "report": "qa/even-up/wp-sweep-bfca3c8/WP-SWEEP-bfca3c8.md (W-9m) (earlier: qa/even-up/local-bfca3c8/QA-local-bfca3c8.md (median-background rule only) (earlier: qa/even-up/local-649874e/QA-local-649874e.md (even-up tree 4039c6ef0371e5a4673fdb6e02654329c0baaac0 = 649874e; also qa/all9/local-f893087/QA-all9-f893087.md) (earlier: qa/even-up/local-6f5f543/QA-local-6f5f543.md (also READY at 5ad5c277f48e52f1864513b3bfca3782b25fe79f): 6f5f5435f607b901a8fae6cd674e704af77f1324 READY): c07008e8b39e95cd698ab55812e5e6ceecbc61dc NOT READY): bfca3c8e61fa2fa3718e3ea5d07a31c4696bdbd8 READY)"
    }
   },
   {
@@ -305,22 +309,24 @@
     "History (superseded by QA local-b6a90aa): QA local-ced37c4 NOT TESTED: Firefox, Safari/WebKit, physical phones, real touch input and real screen readers (AT via the Chrome AX tree only); real Windows High Contrast and forced colours (not rerun), dark mode, zoom at 200% and 400%; real printers and the browser print dialog, print at sizes other than Letter and A4; sheet widths other than 320, 390, 560, 561 and 1280, and the stacked sheet with 15–28 days on screen; the 2,000-character cap at a long origin path; anything outside Checks 1–4 (full text-contrast scan, timezone/DST, copy text).",
     "QA worst-pixel sweep PASS @ced37c4 (no defects): qa/care-rota/wp-sweep-ced37c4/WP-SWEEP-ced37c4.md",
     "History (superseded by QA local-ae9d265): QA local-b6a90aa NOT TESTED: Firefox, Safari/WebKit, physical phones, real touch, and real screen readers (NVDA, JAWS, VoiceOver, TalkBack; AT via Chrome's accessibility tree only); overlay (zero-width) scrollbars (all widths with Chrome's 15px classic scrollbar); forced colours, dark mode, and zoom at 200% and 400%; browser text-size or minimum-font-size settings (they change the rem-based column widths); real printers and the print dialog (Chrome printToPDF only), and print of the reading table (not in print scope); C14, C15 and the 2,000-char cap (not rerun; carried forward, bytes unchanged); other pieces changed in ced37c4..b6a90aa (Five Hands, Split the Sack, hub); Engineer's tests/browser/mill-care-rota.qa.js (not run); non-Latin, RTL and emoji names in the reading table.",
-    "QA local-ae9d265 NOT TESTED: Firefox, Safari/WebKit, physical phones, real touch, real screen readers; overlay scrollbars, forced colours, dark mode, 200%/400% zoom, browser minimum-font-size; the full C17 mid-word/badge suite beyond overflow, and W-7/AX/print/C13/C14/C15/C16/share/qstrip (paths untouched by this commit's care-rota CSS; not re-run); Engineer's tests/browser/mill-care-rota.qa.js; other pieces changed on the branch between b6a90aa and ae9d265."
+    "History (superseded by QA local-c3f8571): QA local-ae9d265 NOT TESTED: Firefox, Safari/WebKit, physical phones, real touch, real screen readers; overlay scrollbars, forced colours, dark mode, 200%/400% zoom, browser minimum-font-size; the full C17 mid-word/badge suite beyond overflow, and W-7/AX/print/C13/C14/C15/C16/share/qstrip (paths untouched by this commit's care-rota CSS; not re-run); Engineer's tests/browser/mill-care-rota.qa.js; other pieces changed on the branch between b6a90aa and ae9d265.",
+    "QA local-c3f8571 NOT TESTED: Firefox, Safari/WebKit, physical phones, real touch, real screen readers; forced colours, dark mode, 200%/400% zoom, browser minimum-font-size; the full suite beyond these three checks (W-7/AX/print/C13–C16/share/qstrip); Engineer's tests/browser/mill-care-rota.qa.js (not run as evidence).",
+    "Known boundary: very long single names (e.g. Bartholomew, 40-char) break mid-word at narrow widths, as ruled"
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 83edf87d032af47d88508f7eed08a8e1a528a9a2: cr unit 24/24; care-rota browser 216/216 at 305–1440. Not QA.",
-   "status": "NOT READY (C17 fixed; C18 partly fixed (“groceries splits 561–569px))",
+   "status": "READY ON LOCALHOST-PREVIEW (C18 fixed)",
    "qaLocal": {
-    "verdict": "NOT READY",
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "ae9d2656ce1c2e5f4d32fd7306f68b6f154a61a1",
-    "report": "qa/care-rota/local-ae9d265/QA-local-ae9d265.md",
-    "note": "C17 fixed; C18 partly fixed (“groceries splits 561–569px)"
+    "sha": "c3f8571325543da10896bd32c2b379c21754be38",
+    "report": "qa/care-rota/local-c3f8571/QA-local-c3f8571.md",
+    "note": "C18 fixed"
    },
    "qaPrevious": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "b6a90aa2bdc1de1e6c81ec5c176e47e7d472b68a",
-    "report": "qa/care-rota/local-b6a90aa/VERDICT-P017-local-b6a90aa.md (earlier: qa/care-rota/local-ced37c4/QA-local-ced37c4.md (earlier: qa/care-rota/local-3539188/QA-local-3539188.md — C17 later found present at this SHA (also qa/care-rota/local-64ea179/QA-local-64ea179.md: 64ea1799741988c047941a8fa5a0c37cfc138152 also NOT READY; also qa/care-rota/local-83edf87/QA-local-83edf87.md: 83edf87d032af47d88508f7eed08a8e1a528a9a2 also NOT READY): 3539188eb0ef9b6d97bf9d99c79326f9bf85e791 READY): ced37c460c21508ad3f96fef905c13c022dac060 NOT READY)"
+    "sha": "ae9d2656ce1c2e5f4d32fd7306f68b6f154a61a1",
+    "report": "qa/care-rota/local-ae9d265/QA-local-ae9d265.md (C18 partial: C17 fixed; C18 partly fixed (“groceries splits 561–569px)) (earlier: qa/care-rota/local-b6a90aa/VERDICT-P017-local-b6a90aa.md (C18 failing) (earlier: qa/care-rota/local-ced37c4/QA-local-ced37c4.md (earlier: qa/care-rota/local-3539188/QA-local-3539188.md — C17 later found present at this SHA (also qa/care-rota/local-64ea179/QA-local-64ea179.md: 64ea1799741988c047941a8fa5a0c37cfc138152 also NOT READY; also qa/care-rota/local-83edf87/QA-local-83edf87.md: 83edf87d032af47d88508f7eed08a8e1a528a9a2 also NOT READY): 3539188eb0ef9b6d97bf9d99c79326f9bf85e791 READY): ced37c460c21508ad3f96fef905c13c022dac060 NOT READY): b6a90aa2bdc1de1e6c81ec5c176e47e7d472b68a NOT READY)"
    }
   },
   {
