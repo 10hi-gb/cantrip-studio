@@ -120,9 +120,9 @@ const P = (w, a, base = 44.8) => F.plan(w, Object.assign(fake(a), { sizes: F.siz
 const letters = x => (x.match(/\p{L}/gu) || []).length;
 t('fit: unbroken whenever it fits at any size down to 24px (no break above the floor)', () => {
   const r = P("Grandmother's", 220, 60); assert.equal(r.broken, false); assert.ok(r.size >= 24); assert.deepEqual(r.lines, ["Grandmother's"]); });
-t('fit: Grandmother\'s too wide even at 24px -> dictionary break Grand- / mother\'s at the largest size where both lines fit', () => {
-  const r = P("Grandmother's", 136); assert.equal(r.broken, true); assert.deepEqual(r.lines, ['Grand-', "mother's"]); assert.deepEqual(r.kinds, ['d']); assert.equal(r.level, 1); assert.ok(r.size > 24, r.size);
-  const w = n => n * 0.6 * r.size; assert.ok(w(8) + 0.32 * r.size <= 136 - 1); }); // mother's + closing mark fits the line
+t('fit: Grandmother\'s too wide even at 24px -> dictionary break Grand- / mother\'s when it is within 10% of the largest 2-piece size (L13 ruling)', () => {
+  const r = P("Grandmother's", 130); assert.equal(r.broken, true); assert.deepEqual(r.lines, ['Grand-', "mother's"]); assert.deepEqual(r.kinds, ['d']); assert.equal(r.level, 1); assert.ok(r.size > 24, r.size);
+  const w = n => n * 0.6 * r.size; assert.ok(w(8) + 0.32 * r.size <= 130 - 1); }); // mother's + closing mark fits the line
 t('fit: no dictionary break -> fallback letter points, >= 4 letters in every piece, visible hyphens; greedy at the largest size', () => {
   assert.deepEqual(F.hyphenate('nooooooooooooooooooo'), []);
   let r = P('Nooooooooooooooooooo', 171, 54.6); assert.ok(r.lines.length >= 2, JSON.stringify(r)); assert.ok(r.kinds.every(k => k === 'f'));
@@ -203,4 +203,17 @@ t('fit: Japanese breaks between characters with no Latin hyphen; no line starts 
   for (const [w, a] of [['今日は映画を見に行きましょう', 136], ['今日は映画を見に行きましょう', 90], ['チョコレートケーキ', 100], ['「映画」を見に行こう', 100], ['ありがとう、ございます。', 110]]) { const r = P(w, a, 44.8);
     assert.ok(r.lines.length > 1, w + ' ' + JSON.stringify(r.lines)); assert.equal(r.lines.join(''), w, w); assert.ok(!r.lines.some(l => /[-\u2010\u00AD]/.test(l)), w + ' ' + JSON.stringify(r.lines));
     assert.ok(r.kinds.every(k => k === 'c'), w + ' ' + JSON.stringify(r.kinds)); assert.ok(!r.lines.slice(1).some(l => /^[ぁぃぅぇぉっゃゅょァィゥェォッャュョーヽヾゝゞ々、。，．」』）】〉》！？]/.test(l)), w + ' ' + JSON.stringify(r.lines)); assert.ok(!r.lines.slice(0, -1).some(l => /[「『（【〈《]$/.test(l)), w); } });
+t('fit L13 (PM ruling on QA local-2a8c67b): within a piece count the size is never more than 10% under the largest that fits; a letter split wins when the dictionary break would be smaller than that', () => {
+  const r = P("Grandmother's", 136); assert.deepEqual(r.lines, ['Grandm-', "other's"]); assert.equal(r.size, 28.8);
+  const a = P('Abcdefghijklmnopqrstuvwxyzabcd', 300, 60), big = F.sizes(60, 24).find(x => { const g = F.greedy(F.parse('Abcdefghijklmnopqrstuvwxyzabcd'), fitsFn(fake(300), x), 2); return g && g.lines.length <= a.lines.length; });
+  assert.ok(a.size >= 0.9 * big, a.size + ' vs ' + big);
+  for (const wd of ['Nooooooooooooooooooooooooooooo', 'Abcdefghijklmnopqrstuvwxyzabcd', 'Superextraordinarily', 'Bartholomew-Smythe', 'Jean-Baptiste-Alexandre', 'Pneumonoultramicroscopic', "Grandmother's"]) for (const av of [100, 120, 130, 159, 171, 220, 300]) {
+    const r = P(wd, av, 60), PP = F.parse(wd); if (r.overflow) continue; let top = 0; for (const x of F.sizes(60, 24)) { if ([0, 1, 2, 3].some(L => { const g = F.greedy(PP, fitsFn(fake(av), x), L); return g && g.lines.length <= r.lines.length; })) { top = x; break; } }
+    assert.ok(r.size >= 0.9 * top - 0.001, wd + '@' + av + ' ' + r.size + ' vs ' + top); } });
+t('fit L11 (QA local-2a8c67b): a Latin letter run never breaks without a hyphen; own hyphens first; an added break leaves 4+ letters each side', () => {
+  for (const wd of ['Bartholomew-Smythe', 'Jean-Baptiste-Alexandre', 'Nooooooooooooooooooooooooooooo', 'Mary-Kate', 'X-ray-Abcdefghijkl']) for (const av of [80, 100, 120, 130, 159, 171, 220]) { const r = P(wd, av, 60); if (r.overflow) continue;
+    assert.equal(r.lines.join('').replace(/-/g, ''), wd.replace(/-/g, ''), wd);
+    r.lines.slice(0, -1).forEach((l, i) => { assert.ok(l.endsWith('-'), wd + '@' + av + ' ' + JSON.stringify(r.lines)); if (r.kinds[i] !== 'h') { assert.ok(letters(l.split('-').slice(-2)[0]) >= 4 && letters(r.lines[i + 1].split('-')[0]) >= 4, wd + '@' + av + ' ' + JSON.stringify(r.lines)); } });
+    assert.ok(!r.kinds.includes('g'), wd + ' ' + JSON.stringify(r)); }
+  assert.ok(F.parse('Bartholomew').segs[0].t[2].length === 0); });
 console.log('lr unit: ' + n + ' passed');
