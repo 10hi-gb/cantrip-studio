@@ -116,4 +116,11 @@ t('property: 5000 random events — shares add up per expense, cents conserved, 
     const again = E.compute(JSON.parse(JSON.stringify(st))); assert.deepEqual(again.transfers, c.transfers, 'deterministic');
     if (k % 50 === 0) { const f = E.encode(st, 0); if (f) { const d = E.decode(f); assert.ok(d.ok); assert.deepEqual(E.compute(d.data).transfers.map(x => x.c), c.transfers.map(x => x.c)); } }
   } });
+t('Writer finals (N11): every COPY key the app uses is in Writer copy.js; no copy-extra.js fallback remains', () => {
+  const fs = require('fs'), dir = __dirname + '/../../mill/even-up/'; const app = fs.readFileSync(dir + 'app.js', 'utf8') + fs.readFileSync(dir + 'eu.js', 'utf8');
+  const used = [...new Set([...app.matchAll(/\bC\.([A-Za-z]\w*)/g)].map(m => m[1]))]; assert.deepEqual(used.filter(k => !(k in C)), []);
+  assert.ok(!fs.existsSync(dir + 'copy-extra.js')); assert.ok(!/copy-extra/.test(fs.readFileSync(dir + 'index.html', 'utf8')));
+  assert.equal(C.saveExpense, 'Update expense'); assert.equal(C.copyTakenNote, "This is your copy now. Changes here don't reach the sender.");
+  assert.equal(C.limitsNote, 'Names up to {name} characters, the event {event}, what for {what}. Amounts up to {amount} each, weights up to {weight}. Links up to {url} characters.');
+  assert.ok(/^Names, expenses and amounts are as the sender entered them/.test(C.receiverNote)); assert.ok(!('receiverTypedNote' in C)); });
 console.log('PASS ' + n + ' tests');

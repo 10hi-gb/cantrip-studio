@@ -38,10 +38,11 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     await p.goto(BASE, { waitUntil: 'load' }); await sleep(250);
     let t = await p.evaluate(() => ({ rods: document.querySelectorAll('#rods li').length, empty: document.getElementById('empty').textContent, copyHidden: document.getElementById('b-copy').hidden, tape: document.getElementById('tape').hidden, h1: getComputedStyle(document.querySelector('h1')).fontFamily, body: getComputedStyle(document.body).fontFamily }));
     ck(w + ' empty: two rods, empty-state copy, no tape, copy hidden', t.rods === 2 && t.empty === C.emptyState && t.copyHidden && t.tape, t);
+    ck(w + ' Writer finals: limitsNote filled exactly (cap 2,000), no copy-extra.js loaded', (await p.$eval('#limits', e => e.textContent)) === 'Names up to 24 characters, the event 60, what for 40. Amounts up to 100,000.00 each, weights up to 1000. Links up to 2,000 characters.' && !(await p.$('script[src="copy-extra.js"]')) && !s.reqs.some(r => r.includes('copy-extra')), await p.$eval('#limits', e => e.textContent));
     ck(w + ' distinct from Split the Sack: Young Serif + Lexend (not Barlow / Inter Tight), counting frame + tape', /Young Serif/.test(t.h1) && /Lexend/.test(t.body) && !/Barlow|Inter Tight/.test(t.h1 + t.body) && !!(await p.$('.eu-frame')) && !(await p.$('.ss-lcd, .ss-sack')), t);
     // add expense before people are valid -> people errors shown, focus on event
     await addX(p, 'Firewood', '30', null, 'e', { 1: 1, 2: 1 }); t = await p.evaluate(() => ({ f: document.activeElement.id, ev: document.getElementById('e-ev').textContent, p1: document.getElementById('pe-1').textContent, n: document.querySelectorAll('#xs .eu-x').length, inv: document.getElementById('ev').getAttribute('aria-invalid') }));
-    ck(w + ' expense refused until event + names are valid; errors shown; focus lands on the event', t.f === 'ev' && t.ev === 'Name the event.' && t.p1 === C.personEmpty && t.n === 0 && t.inv === 'true', t);
+    ck(w + ' expense refused until event + names are valid; errors shown; focus lands on the event', t.f === 'ev' && t.ev === C.eventEmpty && t.p1 === C.personEmpty && t.n === 0 && t.inv === 'true', t);
     await fill(p); t = await view(p);
     ck(w + ' brief test: Ade pays 30 for Ade/Ben/Cy -> Ben pays Ade 10, Cy pays Ade 10; every balance zero after', t.transfers.join('|') === '“Ben” pays “Ade” $10.00|“Cy” pays “Ade” $10.00' && t.check === '✓ ' + C.settleNote && t.tokens.join('|') === '“Ade” owed $20.00|“Ben” owes $10.00|“Cy” owes $10.00' && t.nums.join() === '1,2' && t.links === 2, t);
     ck(w + ' tape: per-expense audit with shares = total ✓, net column sums to $0.00 ✓', t.tape[0].includes('#1 “Firewood”') && t.tape[0].includes('“Ade” paid $30.00 for “Firewood”, split between “Ade”, “Ben”, “Cy”.') && /Shares\s+\$30\.00 ✓/.test(t.tape[0]) && /Sum\s+\$0\.00 ✓/.test(t.net) && t.net.includes(C.balanceCheck), t);
@@ -80,7 +81,7 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     await mouseAt(p, '#fix-l a'); r = await p.evaluate(() => ({ f: document.activeElement.id, hash: location.hash }));
     ck(w + ' in-page error link (real pointer click) lands focus on the expense; hash unchanged', r.f === xid && !r.hash, r);
     await press(p, '#xed-' + xid.slice(2)); r = await p.evaluate(() => ({ f: document.activeElement.id, what: document.getElementById('f-what').value, add: document.getElementById('f-add').textContent }));
-    ck(w + ' Edit loads the expense into the form', r.f === 'f-what' && r.what === 'Canoe hire' && r.add === 'Save expense', r);
+    ck(w + ' Edit loads the expense into the form', r.f === 'f-what' && r.what === 'Canoe hire' && r.add === C.saveExpense, r);
     await p.select('#f-payer', '1'); await press(p, '#f-add'); t = await view(p); ck(w + ' fixed by picking a payer: alert gone, copy enabled', !t.fix && !t.copyDis && t.tape.length === 2, t);
     // copy failure -> selectable text
     await p.evaluate(() => { window.__clipFail = true; }); await press(p, '#b-copy'); await sleep(120);
@@ -101,7 +102,7 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     const ra = await recipientAccess(p, { facts: ['“Ade”', '“Ben”', '“Cy”', '$10.00', '$20.00', '“Cabin weekend”', C.receiverNote], tabTo: ['#home', '#own-copy', '#b-copy', '#b-reset'], click: '#own-copy' });
     ck(w + ' recipientAccess: no inert, no aria-hidden facts, facts in the a11y tree, Tab reaches links/buttons, real click works', ra.ok, ra);
     r = await p.evaluate(() => ({ hash: location.hash, people: document.getElementById('people').hidden, banner: document.getElementById('banner-t').textContent, ev: document.getElementById('ev').value }));
-    ck(w + ' Start my own from this: editable copy, fragment cleared, copyTakenNote', !r.hash && !r.people && r.banner === "This is your copy now. The sender isn't notified." && r.ev === 'Cabin weekend', r);
+    ck(w + ' Start my own from this: editable copy, fragment cleared, copyTakenNote', !r.hash && !r.people && r.banner === C.copyTakenNote && r.ev === 'Cabin weekend', r);
     // reset from a recipient view clears the fragment
     await p.goto('about:blank'); await p.goto(link, { waitUntil: 'load' }); await sleep(250); await press(p, '#b-reset'); await sleep(150);
     r = await p.evaluate(() => ({ hash: location.hash, people: document.getElementById('people').hidden, rods: document.querySelectorAll('#rods li').length, tape: document.getElementById('tape').hidden }));

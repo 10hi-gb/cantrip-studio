@@ -91,7 +91,7 @@ const COPY = {
   "shareCancel": "Not sent. Everything's still here.",
   "privacy": "Nothing is uploaded or saved. A link carries the names and amounts, so anyone holding it can read them, and it may stay in browser history.",
   "receiverIntro": "Evening up: {event}",
-  "receiverNote": "Amounts as entered when the link was made. Nobody has agreed to anything by opening it.",
+  "receiverNote": "Names, expenses and amounts are as the sender entered them when the link was made. Nobody has agreed to anything by opening it.",
   "receiverPrimary": "Start my own from this",
   "emptyState": "Add who was there, then what each person paid.",
   "reset": "Clear",
@@ -130,5 +130,16 @@ const COPY = {
   "printFooter": "A proposal. No money was moved.",
   "numberedLegend": "Numbered lines match the payments listed below.",
   "previewSettled": "Preview settled",
-  "previewBack": "Back to balances"
+  "previewBack": "Back to balances",
+  "eventEmpty": "Name the event.",
+  "expenseEmpty": "Say what it was for.",
+  "weightTooBig": "Weights go up to {max}.",
+  "editExpense": "Edit",
+  "editExpenseAria": "Edit {expense}",
+  "saveExpense": "Update expense",
+  "cancelEdit": "Cancel",
+  "linkLabel": "Link",
+  "linkRoom": "Link length: {n} of {max} characters.",
+  "limitsNote": "Names up to {name} characters, the event {event}, what for {what}. Amounts up to {amount} each, weights up to {weight}. Links up to {url} characters.",
+  "copyTakenNote": "This is your copy now. Changes here don't reach the sender."
 };
