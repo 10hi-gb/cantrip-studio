@@ -73,3 +73,6 @@
 .tsh-freeh{text-transform:none;letter-spacing:0;font-size:13px;color:var(--tsh-ink)}
 .tsh-need{grid-template-columns:minmax(0,.8fr) minmax(0,1.5fr)}
 .tsh-need select{padding:7px 4px}
+/* QA all9 W-1: zone-ID break opportunity after '/' and '_' (replaces <wbr>, which put a space in Chrome's accessible name). A zero-width space as
+   generated content with an EMPTY alternative text: it wraps on screen, adds nothing to text, selection, copy or the accessible name. */
+.tsh-zb::after{content:"\200B";content:"\200B" / ""}

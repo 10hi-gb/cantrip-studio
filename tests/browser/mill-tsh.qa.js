@@ -284,7 +284,7 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     // Every on-screen place the zone ID appears: zone line, proposal line, proposal zone, table caption
     const SITES = ['#zone span', '#prop-h', '#prop-z', 'caption'];
     const probe = await p.evaluate((SITES, ZID) => SITES.map(sel => { const e = document.querySelector(sel); if (!e) return { sel, missing: true };
-      const tc = e.textContent, wb = [...e.querySelectorAll('wbr')].map(w => (w.previousSibling && w.previousSibling.textContent || '').slice(-1));
+      const tc = e.textContent, wb = [...e.querySelectorAll('wbr, .tsh-zb')].map(w => (w.previousSibling && w.previousSibling.textContent || '').slice(-1));
       const r = document.createRange(); r.selectNodeContents(e); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r); const sel2 = sl.toString(); sl.removeAllRanges();
       return { sel, has: tc.includes(ZID), tc, inner: e.innerText.replace(/\n/g, ' '), selText: sel2, wbrAfter: wb, label: e.getAttribute('aria-label') || '' }; }), SITES, ZID);
     // 320 wrap: (a) as rendered; (b) squeezed to its widest part, so it MUST break inside it. Each part between '/' and '_' stays on one line.
@@ -304,11 +304,29 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     await p.click('#own-copy'); await sleep(200); await stubClip(p, true); await p.click('#b-copy'); await sleep(150); const clip = await p.evaluate(() => window.__clip || '');
     await stubClip(p, true); await p.click('#b-share'); await sleep(200); const link = await p.evaluate(() => document.getElementById('link').value);
     const ax = JSON.stringify(await p.accessibility.snapshot({ interestingOnly: false }) || {});
-    ck('hardening 05:52: zone ID shown with a break opportunity after "/" and "_" in the zone line, proposal line, proposal zone and table caption (an empty <wbr>; text unchanged)', probe.every(x => !x.missing && x.has && x.wbrAfter.includes('/') && x.wbrAfter.includes('_') && x.tc.includes(ZID) && !BAD.test(x.tc)), probe);
+    ck('hardening 05:52: zone ID shown with a break opportunity after "/" and "_" in the zone line, proposal line, proposal zone and table caption (a zero-width break, .tsh-zb, since W-1; text unchanged)', probe.every(x => !x.missing && x.has && x.wbrAfter.includes('/') && x.wbrAfter.includes('_') && x.tc.includes(ZID) && !BAD.test(x.tc)), probe);
     ck('hardening 05:52: no inserted character in text, rendered text, a selection copy or aria-labels of those places', probe.every(x => !BAD.test(x.tc + x.inner + x.selText + x.label) && x.selText.replace(/\s+/g, ' ').includes(ZID)), probe.map(x => ({ sel: x.sel, selText: x.selText })));
     ck('hardening 05:52: copied text and the link carry the zone ID with no inserted character', clip.includes(ZID) && !BAD.test(clip) && /^https?:\/\/[^?\s]*#h1\./.test(link) && !BAD.test(link) && !/%E2%80%8B|%C2%AD|%E2%81%A0/i.test(link), { clip: clip.slice(0, 300), link: link.slice(0, 120) });
     ck('hardening 05:52: accessible names (full tree) contain no inserted character and keep "' + ZID + '" whole', !BAD.test(ax) && ax.includes(ZID), ax.length);
     ck('hardening 05:52: 320 wrap: "America/Los_Angeles" never breaks mid-word; squeezed below its width it breaks only after "/" or "_"; no sideways scroll', wrap.every(x => !x.missing && x.asIs && x.asIs.ok && x.squeezed && x.squeezed.ok && x.squeezed.breaks.length >= 1 && x.sw <= 320), wrap);
     ck('hardening 05:52: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA all9 W-1: Chrome's COMPUTED accessible name (CDP Accessibility.getFullAXTree, not page.accessibility.snapshot) of every zone-bearing node has the
+  // zone ID exactly, with no space or other character inserted at the '/' and '_' break points: proposal heading + region (received view) and the
+  // fix-list link + error box (own view, 01:30 on Sun 1 Nov happens twice). Visible break at '/' and '_' kept (checked above).
+  { const s = await session(H, IP), { p } = s; await p.setViewport({ width: 320, height: 900 }); const ZID = 'America/Los_Angeles', ZW = /[\u200B\u200C\u200D\u2060\u00AD\uFEFF]/;
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const f = (() => { const st = T.blank('2026-10-26'); st.z = ZID; st.t = 'Zone probe'; st.p = [{ id: 1, n: 'Ana', iv: [{ id: 11, d: 6, s: '04:00', e: '06:00' }] }, { id: 2, n: 'Bo', iv: [{ id: 21, d: 6, s: '04:00', e: '07:00' }] }]; st.next = 3; return T.encode(st); })();
+    await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(500); const cdp = await p.target().createCDPSession();
+    const names = async () => { const { nodes } = await cdp.send('Accessibility.getFullAXTree'); return nodes.filter(n => n.name && /Angeles|Los_/.test(n.name.value) && n.role.value !== 'option' && !/StaticText|InlineTextBox/.test(n.role.value)).map(n => ({ role: n.role.value, name: n.name.value })); };
+    const exact = l => l.every(n => n.name.includes(ZID) && !/America\/\s|Los_\s|\s_|\s\//.test(n.name) && !ZW.test(n.name));
+    const recv = await names();
+    ck('QA all9 W-1: received view, computed accessible names (CDP getFullAXTree) of the proposal heading and region carry "' + ZID + '" exactly, no inserted space', recv.some(n => n.role === 'heading') && recv.some(n => n.role === 'region') && exact(recv), recv);
+    await p.click('#own-copy'); await sleep(300);
+    await p.evaluate(() => { const e = document.querySelector('#vs-2'); e.value = '01:30'; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); }); await p.click('#find'); await sleep(500);
+    const own = await names();
+    ck('QA all9 W-1: own view, 01:30 repeated on Sun 1 Nov: the fix-list link\'s computed accessible name reads "… in ' + ZID + '. …" exactly, no inserted space', own.some(n => n.role === 'link' && /happens twice/.test(n.name)) && exact(own), own);
+    const vis = await p.evaluate(() => [...document.querySelectorAll('.tsh-zb')].length);
+    ck('QA all9 W-1: the break points are still there on screen (' + vis + ' zero-width breaks after "/" and "_")', vis >= 2, vis);
+    ck('QA all9 W-1: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })();

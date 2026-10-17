@@ -17,10 +17,12 @@
   function durText() { var n = +String(st.n).trim(); return M.plural(C.durationLine[st.u === 'hr' ? 'hr' : 'min'], n); }
   function color(i) { return 'var(--tsh-a' + (i + 1) + ')'; }
   // QA D3: every sender-typed name goes through the shared quote helper (screen, aria, title, copy text); the fallback label is ours, unquoted.
-  // Hardening (PM 05:52): a displayed zone ID gets a break opportunity after '/' and '_' (an empty <wbr> element) so "America/Los_Angeles" wraps at the
-  // slash at 320, never mid-word. Display only: <wbr> adds no character to textContent/innerText, a copied selection, an accessible name, the link or copy text.
+  // Hardening (PM 05:52): a displayed zone ID gets a break opportunity after '/' and '_' so "America/Los_Angeles" wraps at the slash at 320, never
+  // mid-word. QA all9 W-1: not <wbr> (Chrome puts a space in the accessible name at each one). An empty <span class="tsh-zb"> whose ::after is a
+  // zero-width space with an empty alternative (content:"\200B" / "", app.css): a break opportunity on screen, and nothing in textContent/innerText,
+  // a copied selection, the accessible name, the link or copy text.
   function zoneText(node, s) { node.textContent = ''; var z = String(st.z || ''), parts = z ? String(s).split(z) : [String(s)];
-    parts.forEach(function (p, i) { if (i) z.split(/([\/_])/).forEach(function (x) { if (x) node.appendChild(document.createTextNode(x)); if (x === '/' || x === '_') node.appendChild(document.createElement('wbr')); }); if (p) node.appendChild(document.createTextNode(p)); }); return node; }
+    parts.forEach(function (p, i) { if (i) z.split(/([\/_])/).forEach(function (x) { if (x) node.appendChild(document.createTextNode(x)); if (x === '/' || x === '_') node.appendChild(el('span', 'tsh-zb')); }); if (p) node.appendChild(document.createTextNode(p)); }); return node; }
   function qn(n, i) { n = M.strip(n || ''); return n ? V.quote(n) : C.personLabel + ' ' + (i + 1); }
   function nm(i) { return qn(res.people[i].name, i); }
   function pidName(pid) { for (var k = 0; k < st.p.length; k++) if (st.p[k].id === pid) return qn(st.p[k].n, k); return C.personLabel; }
