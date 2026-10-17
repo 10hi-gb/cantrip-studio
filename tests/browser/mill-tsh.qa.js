@@ -275,5 +275,40 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     const r = await clickIf('#b-reset'); await sleep(250); await at('reset', r, '');
     ck('PM 04:57 query-strip (' + QN + '): ' + steps.map(x => x.step).join(' -> ') + ': every step happened; location.search empty, no marker in location.href, location.hash as expected after each', steps.length >= 5 && steps.every(x => x.did && x.search === '' && !x.mark && x.hashOk), steps.map(x => Object.assign({}, x, { hash: x.hash.slice(0, 60), exp: x.exp && x.exp.slice(0, 60) })));
     ck('PM 04:57 query-strip (' + QN + '): no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // Hardening (PM 05:52): displayed zone IDs break only after '/' or '_' (an empty <wbr>, display only). At 320: "America/Los_Angeles" never breaks
+  // mid-word, and when squeezed it breaks at the slash or underscore. Copied text, the link, selections and accessible names contain no inserted character.
+  { const s = await session(H, IP), { p } = s; await p.setViewport({ width: 320, height: 900 }); const ZID = 'America/Los_Angeles', BAD = /[\u200B\u200C\u200D\u2060\u00AD\uFEFF]/;
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const f = await p.evaluate(Z => TSH.encode({ w: '2026-10-19', z: Z, n: '60', u: 'min', t: 'Dinner', p: [{ id: 1, n: 'Rae', iv: [{ id: 2, d: 0, s: '18:00', e: '20:00' }] }, { id: 3, n: 'Sol', iv: [{ id: 4, d: 0, s: '19:00', e: '21:00' }] }], next: 5 }), ZID);
+    await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(350); await p.click('#astext'); await sleep(200); // table view, so its caption is on screen
+    // Every on-screen place the zone ID appears: zone line, proposal line, proposal zone, table caption
+    const SITES = ['#zone span', '#prop-h', '#prop-z', 'caption'];
+    const probe = await p.evaluate((SITES, ZID) => SITES.map(sel => { const e = document.querySelector(sel); if (!e) return { sel, missing: true };
+      const tc = e.textContent, wb = [...e.querySelectorAll('wbr')].map(w => (w.previousSibling && w.previousSibling.textContent || '').slice(-1));
+      const r = document.createRange(); r.selectNodeContents(e); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r); const sel2 = sl.toString(); sl.removeAllRanges();
+      return { sel, has: tc.includes(ZID), tc, inner: e.innerText.replace(/\n/g, ' '), selText: sel2, wbrAfter: wb, label: e.getAttribute('aria-label') || '' }; }), SITES, ZID);
+    // 320 wrap: (a) as rendered; (b) squeezed to its widest part, so it MUST break inside it. Each part between '/' and '_' stays on one line.
+    const wrap = await p.evaluate((SITES, ZID) => SITES.map(sel => { const e = document.querySelector(sel); if (!e) return { sel, missing: true };
+      const lines = () => { const tn = [], w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) tn.push(n); let txt = '', map = []; tn.forEach(t => { for (let i = 0; i < t.data.length; i++) { map.push([t, i]); txt += t.data[i]; } });
+        const at = txt.indexOf(ZID); if (at < 0) return null; const tops = []; for (let k = 0; k < ZID.length; k++) { const [t, i] = map[at + k], r = document.createRange(); r.setStart(t, i); r.setEnd(t, i + 1); const b = [...r.getClientRects()].filter(x => x.width > 0)[0]; tops.push(b ? Math.round(b.top) : null); }
+        const breaks = []; for (let k = 1; k < ZID.length; k++) if (tops[k] !== null && tops[k - 1] !== null && tops[k] > tops[k - 1] + 2) breaks.push(k);
+        return { breaks, after: breaks.map(k => ZID[k - 1]), ok: breaks.every(k => ZID[k - 1] === '/' || ZID[k - 1] === '_') }; };
+      const asIs = lines(), old = e.style.cssText;
+      // squeeze: as wide as the widest of "(America/", "Los_", "Angeles)" as rendered, glued punctuation included (+2px), so the whole ID can't fit on one line but each part can
+      const seg = (() => { const tn = [], w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) tn.push(n); const map = []; let txt = ''; tn.forEach(t => { for (let i = 0; i < t.data.length; i++) { map.push([t, i]); txt += t.data[i]; } }); const at = txt.indexOf(ZID); let a0 = at, a1 = at + ZID.length; while (a0 > 0 && !/\s/.test(txt[a0 - 1])) a0--; while (a1 < txt.length && !/\s/.test(txt[a1])) a1++; // whole glued word, e.g. "(America/Los_Angeles)"
+        let mx = 0, st0 = a0;
+        for (let k = a0 + 1; k <= a1; k++) if (k === a1 || (k > at && k <= at + ZID.length && /[\/_]/.test(txt[k - 1]))) { let wsum = 0; for (let j = st0; j < k; j++) { const [t, i] = map[j], r = document.createRange(); r.setStart(t, i); r.setEnd(t, i + 1); wsum += r.getBoundingClientRect().width; } mx = Math.max(mx, wsum); st0 = k; } return mx; })();
+      e.style.setProperty('display', 'block'); e.style.setProperty('width', Math.ceil(seg + 2) + 'px'); const squeezed = lines(); e.style.cssText = old;
+      return { sel, asIs, squeezed, sw: document.documentElement.scrollWidth }; }), SITES, ZID);
+    // copied text, the link and accessible names
+    await p.click('#own-copy'); await sleep(200); await stubClip(p, true); await p.click('#b-copy'); await sleep(150); const clip = await p.evaluate(() => window.__clip || '');
+    await stubClip(p, true); await p.click('#b-share'); await sleep(200); const link = await p.evaluate(() => document.getElementById('link').value);
+    const ax = JSON.stringify(await p.accessibility.snapshot({ interestingOnly: false }) || {});
+    ck('hardening 05:52: zone ID shown with a break opportunity after "/" and "_" in the zone line, proposal line, proposal zone and table caption (an empty <wbr>; text unchanged)', probe.every(x => !x.missing && x.has && x.wbrAfter.includes('/') && x.wbrAfter.includes('_') && x.tc.includes(ZID) && !BAD.test(x.tc)), probe);
+    ck('hardening 05:52: no inserted character in text, rendered text, a selection copy or aria-labels of those places', probe.every(x => !BAD.test(x.tc + x.inner + x.selText + x.label) && x.selText.replace(/\s+/g, ' ').includes(ZID)), probe.map(x => ({ sel: x.sel, selText: x.selText })));
+    ck('hardening 05:52: copied text and the link carry the zone ID with no inserted character', clip.includes(ZID) && !BAD.test(clip) && /^https?:\/\/[^?\s]*#h1\./.test(link) && !BAD.test(link) && !/%E2%80%8B|%C2%AD|%E2%81%A0/i.test(link), { clip: clip.slice(0, 300), link: link.slice(0, 120) });
+    ck('hardening 05:52: accessible names (full tree) contain no inserted character and keep "' + ZID + '" whole', !BAD.test(ax) && ax.includes(ZID), ax.length);
+    ck('hardening 05:52: 320 wrap: "America/Los_Angeles" never breaks mid-word; squeezed below its width it breaks only after "/" or "_"; no sideways scroll', wrap.every(x => !x.missing && x.asIs && x.asIs.ok && x.squeezed && x.squeezed.ok && x.squeezed.breaks.length >= 1 && x.sw <= 320), wrap);
+    ck('hardening 05:52: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })();

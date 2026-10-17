@@ -17,6 +17,10 @@
   function durText() { var n = +String(st.n).trim(); return M.plural(C.durationLine[st.u === 'hr' ? 'hr' : 'min'], n); }
   function color(i) { return 'var(--tsh-a' + (i + 1) + ')'; }
   // QA D3: every sender-typed name goes through the shared quote helper (screen, aria, title, copy text); the fallback label is ours, unquoted.
+  // Hardening (PM 05:52): a displayed zone ID gets a break opportunity after '/' and '_' (an empty <wbr> element) so "America/Los_Angeles" wraps at the
+  // slash at 320, never mid-word. Display only: <wbr> adds no character to textContent/innerText, a copied selection, an accessible name, the link or copy text.
+  function zoneText(node, s) { node.textContent = ''; var z = String(st.z || ''), parts = z ? String(s).split(z) : [String(s)];
+    parts.forEach(function (p, i) { if (i) z.split(/([\/_])/).forEach(function (x) { if (x) node.appendChild(document.createTextNode(x)); if (x === '/' || x === '_') node.appendChild(document.createElement('wbr')); }); if (p) node.appendChild(document.createTextNode(p)); }); return node; }
   function qn(n, i) { n = M.strip(n || ''); return n ? V.quote(n) : C.personLabel + ' ' + (i + 1); }
   function nm(i) { return qn(res.people[i].name, i); }
   function pidName(pid) { for (var k = 0; k < st.p.length; k++) if (st.p[k].id === pid) return qn(st.p[k].n, k); return C.personLabel; }
@@ -75,10 +79,10 @@
   function paintErrors() {
     document.querySelectorAll('.tsh-form [aria-invalid]').forEach(function (x) { x.removeAttribute('aria-invalid'); });
     document.querySelectorAll('.tsh-form .tsh-err').forEach(function (x) { if (x.id !== 'e-p') x.textContent = ''; });
-    var seen = {}, vis = res.errors.filter(function (e) { return showAll || touched[fieldId(e.f)]; }); vis.forEach(function (e) { var i = $(fieldId(e.f)), b = $(errBox(e.f)); if (i) i.setAttribute('aria-invalid', 'true'); if (b && !seen[b.id]) { b.textContent = errText(e); seen[b.id] = 1; } });
+    var seen = {}, vis = res.errors.filter(function (e) { return showAll || touched[fieldId(e.f)]; }); vis.forEach(function (e) { var i = $(fieldId(e.f)), b = $(errBox(e.f)); if (i) i.setAttribute('aria-invalid', 'true'); if (b && !seen[b.id]) { zoneText(b, errText(e)); seen[b.id] = 1; } });
     var show = res.state === 'fix' && (showAll || vis.length > 0), fx = $('fix'), ul = $('fix-l'); fx.hidden = !show; ul.textContent = '';
     if (show) { var n = res.errors.length + (res.tooMany ? 1 : 0); $('fix-t').textContent = M.plural(C.entriesNeedFixing, n);
-      res.errors.forEach(function (e) { var li = el('li'), a = el('a', null, (e.pid ? pidName(e.pid) + ': ' : '') + errText(e)); a.href = '#' + fieldId(e.f); a.addEventListener('click', function (ev) { ev.preventDefault(); goTo(fieldId(e.f)); }); li.appendChild(a); ul.appendChild(li); });
+      res.errors.forEach(function (e) { var li = el('li'), a = zoneText(el('a'), (e.pid ? pidName(e.pid) + ': ' : '') + errText(e)); a.href = '#' + fieldId(e.f); a.addEventListener('click', function (ev) { ev.preventDefault(); goTo(fieldId(e.f)); }); li.appendChild(a); ul.appendChild(li); });
       if (res.tooMany) ul.appendChild(el('li', null, C.tooManyPeople)); }
   }
 
@@ -94,7 +98,7 @@
     var z = $('zone'); z.textContent = '';
     if (!T.validZone(st.z)) { z.appendChild(el('span', null, C.zoneNotSet)); return; }
     var ds = T.days(st), ref = ds ? T.resolve(ds[0], 720, st.z) : null, info = T.zoneInfo(ref && ref.ok ? ref.t : Date.now(), st.z);
-    var b = el('span'); b.appendChild(document.createTextNode(M.fill(C.zoneLine, info))); z.appendChild(b);
+    var b = zoneText(el('span'), M.fill(C.zoneLine, info)); z.appendChild(b);
     if (ds) z.appendChild(el('span', null, M.fill(C.weekLine, { date: DFY.fmt(ds[0]) })));
     (res.changes || []).forEach(function (c) { z.appendChild(el('span', 'tsh-dst', M.fill(C.dstChangeLine, { date: DFY.fmt(ds[c.day]), from: c.from, to: c.to }))); });
   }
@@ -143,7 +147,7 @@
   function fitSeams() { document.querySelectorAll('#days .tsh-seam').forEach(function (s) { s.classList.remove('is-tight'); if (s.textContent && s.scrollWidth > s.clientWidth + 1) s.classList.add('is-tight'); }); }
   function drawTable() {
     var t = $('tbl'); t.textContent = ''; var ds = res.days;
-    var cap = el('caption', null, M.fill(C.tableCaption, { zone: st.z, date: DFY.fmt(ds[0]) })); t.appendChild(cap);
+    var cap = zoneText(el('caption'), M.fill(C.tableCaption, { zone: st.z, date: DFY.fmt(ds[0]) })); t.appendChild(cap);
     var th = el('thead'), tr = el('tr'); [C.dayLabel].concat(res.people.map(function (p, i) { return nm(i); })).concat([C.legendAll]).forEach(function (h) { var c = el('th', null, h); c.scope = 'col'; tr.appendChild(c); }); th.appendChild(tr); t.appendChild(th);
     var tb = el('tbody');
     res.dayRes.forEach(function (d) {
@@ -185,9 +189,9 @@
         var b = btn('tsh-btn', C.pickOption, function () { selA = x.a; refresh(); var nb = $('pick-' + i); if (nb) nb.focus(); }); b.id = 'pick-' + i; b.setAttribute('aria-pressed', String(x.a === selA)); b.setAttribute('aria-label', C.pickOption + ': ' + M.fill(C.optionLine, s)); li.appendChild(b); ol.appendChild(li); });
       var sh = $('shorts'); sh.textContent = ''; res.short.forEach(function (x) { sh.appendChild(el('li', null, M.fill(C.tooShortLine, { day: slot(x).day, start: slot(x).start, end: slot(x).end, length: lenText(x.len) }))); });
       var s = slot(o), info = T.zoneInfo(o.a, st.z);
-      $('prop-l').textContent = C.proposalHeading; $('prop-h').textContent = M.fill(C.proposalLine, { day: s.date, start: s.start, end: s.end, zone: st.z });
+      $('prop-l').textContent = C.proposalHeading; zoneText($('prop-h'), M.fill(C.proposalLine, { day: s.date, start: s.start, end: s.end, zone: st.z }));
       var ttl = M.strip(st.t); $('prop-title').hidden = !ttl; $('prop-title').textContent = ttl ? V.quote(ttl) : '';
-      $('prop-z').textContent = M.fill(C.proposalZone, info); $('prop-dst').textContent = spanChange(o); $('prop-dst').hidden = !spanChange(o); $('prop-n').textContent = lenText(o.len) + ' · ' + M.fill(C.proposalNames, { names: names() });
+      zoneText($('prop-z'), M.fill(C.proposalZone, info)); $('prop-dst').textContent = spanChange(o); $('prop-dst').hidden = !spanChange(o); $('prop-n').textContent = lenText(o.len) + ' · ' + M.fill(C.proposalNames, { names: names() });
       $('prop-s').textContent = C.proposalSnapshot;
       var px = $('prop-x'); px.textContent = ''; res.maybe.slice(0, 5).forEach(function (x) { var d = res.dayRes[x.day]; px.appendChild(el('p', 'tsh-fine', M.fill(C.proposalExcluded, { day: slot(x).day, start: slot(x).start, end: slot(x).end, name: d.unknown.map(nm).join(', '), dayName: DL.format(d.date) }))); });
       if (res.touches) px.appendChild(el('p', 'tsh-fine', C.touchNote));
