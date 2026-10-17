@@ -123,9 +123,9 @@ t('fit: unbroken whenever it fits at any size down to 24px (no break above the f
 t('fit: Grandmother\'s too wide even at 24px -> dictionary break Grand- / mother\'s at the largest size where both lines fit', () => {
   const r = P("Grandmother's", 136); assert.equal(r.broken, true); assert.deepEqual(r.lines, ['Grand-', "mother's"]); assert.deepEqual(r.kinds, ['d']); assert.equal(r.level, 1); assert.ok(r.size > 24, r.size);
   const w = n => n * 0.6 * r.size; assert.ok(w(8) + 0.32 * r.size <= 136 - 1); }); // mother's + closing mark fits the line
-t('fit: no dictionary break -> fallback letter point, >= 4 letters on each side, visible hyphens; fewest lines first', () => {
+t('fit: no dictionary break -> fallback letter points, >= 4 letters in every piece, visible hyphens; greedy at the largest size', () => {
   assert.deepEqual(F.hyphenate('nooooooooooooooooooo'), []);
-  let r = P('Nooooooooooooooooooo', 171, 54.6); assert.equal(r.lines.length, 2, JSON.stringify(r)); assert.deepEqual(r.kinds, ['f']);
+  let r = P('Nooooooooooooooooooo', 171, 54.6); assert.ok(r.lines.length >= 2, JSON.stringify(r)); assert.ok(r.kinds.every(k => k === 'f'));
   r.lines.forEach((l, i, a) => { assert.ok(letters(l) >= 4); if (i < a.length - 1) assert.ok(l.endsWith('-')); });
   r = P('Nooooooooooooooooooo', 136); assert.ok(r.lines.length >= 2); r.lines.forEach(l => assert.ok(letters(l) >= 4));
   const sg = F.parse('Abcdefgh').segs[0]; assert.deepEqual(sg.t[1].map(b => b.pos), [4]); }); // 4 | 4 only
@@ -139,6 +139,29 @@ t('fit: the closing mark never sits alone — counted on the last line; the last
     assert.ok(F.graphemes(last).length >= 1 && /\p{L}/u.test(last)); const m = o.measure(last, r.lines.length === 1, true); assert.ok((m.w + m.marks) * r.size / 100 <= avail - 1, word); } });
 t('fit: multi-word answers keep spaces as the only breaks when every word fits; marks counted on the first and last word', () => {
   const r = P('Watch a movie at home', 136); assert.equal(r.broken, false); assert.deepEqual(r.lines, ['Watch', 'a', 'movie', 'at', 'home']); });
+// QA local-d0ca704 L5: greedy first-fit (never balanced), compared with an independent greedy reference
+const Pz = (w, a, size) => F.plan(w, Object.assign(fake(a), { sizes: [size] }));
+function refGreedy(text, o, size) { // reference: words first-fit; a word too wide alone goes to its own hyphen pieces, first-fit
+  const r = size / 100, fits = (s, f, l) => { const m = o.measure(s, f, l); return (m.w + m.marks) * r <= o.avail - 1 && (m.w + m.hang) * r <= o.full - 1; };
+  const words = text.split(' '), out = []; let cur = null, first = true;
+  const put = (piece, joiner, isLast) => { const cand = cur === null ? piece : cur + joiner + piece; if (fits(cand, first, isLast)) { cur = cand; return true; } return false; };
+  words.forEach((w, wi) => { const lastW = wi === words.length - 1; if (put(w, ' ', lastW)) return;
+    if (fits(w, false, lastW) || fits(w, cur === null && first, lastW)) { out.push(cur); first = false; cur = w; return; }
+    const ps = w.split(/(?<=-)(?=.)/); ps.forEach((pc, pi) => { const isL = lastW && pi === ps.length - 1; if (put(pc, pi === 0 ? ' ' : '', isL)) return; if (cur !== null) { out.push(cur); first = false; } cur = pc; }); });
+  out.push(cur); return out; }
+t('fit L5: "Watch a movie at home" draws greedily as Watch a / movie at / home (not Watch / a movie / at home)', () => {
+  for (const [a, size] of [[136, 26.8], [154, 28.4], [171, 32.6], [300, 44.8]]) { const o = fake(a), r = Pz('Watch a movie at home', a, size);
+    assert.deepEqual(r.lines, refGreedy('Watch a movie at home', o, size), a + '@' + size); }
+  assert.deepEqual(Pz('Watch a movie at home', 136, 26.8).lines, ['Watch a', 'movie at', 'home']); });
+t('fit L5: "Twenty-two-year-old cat" takes a hyphen break only when the word cannot fit its line; space break wins (year-old / cat)', () => {
+  for (const [a, size] of [[136, 26.8], [136, 24], [154, 30.4], [171, 34.6], [300, 44.8]]) { const o = fake(a), r = Pz('Twenty-two-year-old cat', a, size);
+    assert.deepEqual(r.lines, refGreedy('Twenty-two-year-old cat', o, size), a + '@' + size + ' ' + JSON.stringify(r.lines)); }
+  const r = Pz('Twenty-two-year-old cat', 136, 26.8); assert.deepEqual(r.lines, ['Twenty-', 'two-', 'year-old', 'cat']); });
+t('fit L5: the size is the largest at which the greedy layout fits, then greedy at that size', () => {
+  for (const [w, a] of [['Watch a movie at home', 300], ['Mother-in-law visit', 136], ['Pizza night at the lake house', 171]]) { const o = Object.assign(fake(a), { sizes: F.sizes(44.8, 24) }), r = F.plan(w, o);
+    assert.deepEqual(r.lines, refGreedy(w, o, r.size)); const up = o.sizes[o.sizes.indexOf(r.size) - 1]; if (up) { const g = F.greedy(F.parse(w), (s, f, l) => { const m = o.measure(s, f, l); return (m.w + m.marks) * up / 100 <= a - 1 && (m.w + m.hang) * up / 100 <= o.full - 1; }, 0); assert.equal(g, null, w + ' fits greedily at ' + up); } } });
+t('fit L5: inner pieces keep 4+ letters (no "ol-"), breaks fill greedily at the latest point that fits', () => {
+  for (const w of ['Bartholomew-Smythe', 'Abcdefghijklmnopqrstuvwxyzabcd', 'Nooooooooooooooooooo', 'Supercalifragilistic-ok yes']) { const r = P(w, 136); r.kinds.forEach((k, i) => { if (k === 'd' || k === 'f') assert.ok(letters(r.lines[i]) >= 4 && letters(r.lines[i + 1]) >= 4, w + ' ' + JSON.stringify(r.lines)); }); } });
 // QA local-372ce92 L1: spaces, then the answer's own hyphens (none added), and only a segment that can't fit alone is split
 t('fit L1: Mother-in-law visit breaks at the existing hyphens and the space only; no added hyphen; nothing under 4 letters split off', () => {
   const r = P('Mother-in-law visit', 136); assert.deepEqual(r.lines, ['Mother-', 'in-law', 'visit']); assert.deepEqual(r.kinds, ['h', 's']); assert.equal(r.broken, false); });

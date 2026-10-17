@@ -53,12 +53,16 @@ textarea{width:100%;font:400 16px/1.4 var(--ui);padding:12px;border:3px solid va
 .half .lr-ans{display:block;width:100%;max-width:100%}
 /* fit.js controls every line of the tile answers and the chosen answer (QA local-372ce92 L1): drawn as planned, no CSS
    hyphenation and no browser wrapping there */
-.half .lr-ans,.lr-chosen .ans{overflow-wrap:normal;word-break:normal;-webkit-hyphens:manual;hyphens:manual}
-.half .lr-ans .lr-vis,.lr-chosen .ans .lr-vis{white-space:pre}
+.half .lr-ans,.lr-chosen .ans,.lr-pv .lr-pva{overflow-wrap:normal;word-break:normal;-webkit-hyphens:manual;hyphens:manual;text-wrap:wrap}
+.half .lr-ans .lr-vis,.lr-chosen .ans .lr-vis,.lr-pv .lr-pva .lr-vis{white-space:pre}
+.lr-pv .lr-pva{display:block;width:100%;max-width:100%}
 .lr-ans .mill-typed,.lr-chosen .ans .mill-typed{overflow-wrap:normal;word-break:normal}
 /* quote marks on typed values (Creative r2): 0.8em, same weight, tile ink at 70% (contrast checked >= 3:1 in tests) */
-/* 70% of the text colour as a real colour (QA local-372ce92 (b): opacity left the computed colour at 100%) */
-.lr-qm{font-size:.8em;color:color-mix(in srgb,currentColor 70%,transparent)}
+/* quote marks as a real colour (QA local-372ce92 (b)). QA local-d0ca704 L7: a mark (0.8em) is "large" text only at
+   24px+, or 18.66px+ bold; there 70% keeps 3:1+ (lowest 4.29:1 on marigold). Everywhere else (From line, recipient intro,
+   chosen-screen question, the board question below 23.3px) 90% keeps 4.5:1+ (lowest 4.74:1, muted on oat). */
+.lr-qm{font-size:.8em;color:color-mix(in srgb,currentColor var(--qa,90%),transparent)}
+.half .lr-ans,.lr-chosen .ans,.lr-pv .lr-pva{--qa:70%}
 .lr-hang .lr-qo{margin-inline-start:calc(var(--qo,0) * -1em)} /* the opening mark hangs into the padding by its own width */
 .lr-hang .lr-qc{margin-inline-end:calc(var(--qc,0) * -1em)}
 /* the visible copy of a styled typed value is generated content with empty alt text (not read twice, not in the name);
@@ -68,8 +72,15 @@ textarea{width:100%;font:400 16px/1.4 var(--ui);padding:12px;border:3px solid va
 .lr-probe{white-space:nowrap;-webkit-hyphens:manual;hyphens:manual}
 .lr-nb{display:inline-block;max-width:100%;overflow-wrap:anywhere;text-indent:0}
 .half .sym{display:block;margin-bottom:.1em}
-.half:focus-visible{outline:var(--focus-w) solid var(--ink);outline-offset:calc(-1 * var(--focus-w))}
+/* QA local-d0ca704 L8: every ring is 3:1+ against every colour next to it. Tiles: the ring sits 2px inside the tile edge,
+   so only the tile's own colour touches it (ink on marigold 8.0:1, stitch on spruce 7.47:1), never the other tile or the
+   oat strips; the switch highlight likewise. Chosen screen on spruce: two bands, ink inside (17.33:1 on the white button,
+   16.26:1 with stitch) and stitch outside (7.47:1 on spruce), no gap. */
+.half:focus-visible{outline:var(--focus-w) solid var(--ink);outline-offset:calc(-1 * var(--focus-w) - 2px)}
 .half.r:focus-visible{outline-color:var(--stitch)}
+.half.l.scan{box-shadow:inset 0 0 0 2px var(--marigold),inset 0 0 0 calc(var(--focus-w) + 6px) var(--ink)}
+.half.r.scan{box-shadow:inset 0 0 0 2px var(--spruce),inset 0 0 0 calc(var(--focus-w) + 6px) var(--stitch)}
+.chosen.r :focus-visible{outline:calc(var(--focus-w) / 2) solid var(--ink);outline-offset:0;box-shadow:0 0 0 var(--focus-w) var(--stitch)}
 .lr-ring{position:absolute;top:22px;left:50%;width:64px;height:64px;margin-left:-32px;border-radius:50%;opacity:0;
   background:conic-gradient(currentColor calc(var(--p,0) * 360deg),rgba(0,0,0,.12) 0);
   -webkit-mask:radial-gradient(circle,transparent 52%,#000 54%);mask:radial-gradient(circle,transparent 52%,#000 54%)}
