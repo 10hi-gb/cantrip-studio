@@ -61,6 +61,7 @@
    "status": "NOT READY — verification pending at b225af5 (cap fix bb0c643 + query-strip)",
    "pendingAt": "b225af5b4bd505a737e46a9f78374d6d77bd5b28",
    "qaPrevious": {
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "774b68d4a03a7d5c0fa0e64fd4a2f0de40497f06",
     "report": "qa/before-you-go/local-774b68d/QA-local-774b68d.md"
@@ -95,6 +96,7 @@
    "status": "NOT READY — verification pending at eade562 (cap fix b1346d0 + query-strip)",
    "pendingAt": "eade562ddc783558ad2068f927f7aa576e60dd50",
    "qaPrevious": {
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "7add2de13797af5b9bc68ffd8b94f258b241d945",
     "report": "qa/one-small-ask/local-7add2de/QA-local-7add2de.md"
@@ -127,6 +129,7 @@
    "status": "NOT READY — verification pending at 6169c34 (cap fix dce1907 + query-strip)",
    "pendingAt": "6169c34f07ac2c8b51e4066d3acc76e5fee1a3f9",
    "qaPrevious": {
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "bc74052a02d8603a4ec1feeaff647920ea150886",
     "report": "qa/one-less-trip/local-bc74052/QA-local-bc74052.md"
@@ -155,6 +158,7 @@
    "status": "NOT READY — verification pending at 8886943 (cap fix 2dd0f6b + query-strip)",
    "pendingAt": "88869436943a40e949ac4445487912cc14bec828",
    "qaPrevious": {
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "14df77a1622593f85adf2d50ba8a0369390c37c6",
     "report": "qa/the-same-hour/local-14df77a/QA-local-14df77a.md"
@@ -203,14 +207,15 @@
     "A link carries the questions and the choosing method, never the answers; anyone with the link can read them."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview f8dfb9c562cb1b71b563b18365a143b022f56dda: unit 31/31; browser 391/391 at 320/390/1280 plus a classic-scrollbar sweep at 320/360/390/700/1280/1440 (synthetic keys and mouse only). Not QA, and not a switch or dwell check.",
-   "status": "NOT READY (retest pending at f8dfb9c)",
+   "status": "NOT READY (QA open: L5, L6, L7; fix L5–L8 awaiting independent retest at f66fb8e)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "372ce9243c28fc845dfbed36f586af1c69a4299b",
-    "report": "qa/left-or-right/local-372ce92/QA-local-372ce92.md",
-    "note": "retest pending at f8dfb9c"
-   }
+    "sha": "d0ca7043912e6d1a17660e80de478f5193656286",
+    "report": "qa/left-or-right/local-d0ca704/QA-local-d0ca704.md (also qa/left-or-right/local-f8dfb9c/QA-local-f8dfb9c.md: f8dfb9c562cb1b71b563b18365a143b022f56dda also NOT READY)",
+    "note": "open: L5 (Low), L6 (Low), L7 (quote-contrast finding for PM)"
+   },
+   "pendingAt": "f66fb8e70ba60af04aa9e1dd0ad3ac4f8db7301c"
   },
   {
    "id": "P017",
@@ -231,13 +236,13 @@
     "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview cde64e3b02ca689ee7442fa3bc5bf48434c79c1c: unit 24/24 (every proto r1d assert, QA C3/C4/C7/C10, PM C9 as narrowed 04:38, regression names, codec agreement, 6,000-case reference sweep; QA 400 reference cases 400/400); browser 189/189 at 305/320/390/1280/1440. Not QA.",
-   "status": "NOT READY (retest pending at cde64e3)",
+   "status": "NOT READY (QA open: C11, C12, C13)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "f879af10f3db6b338e9d7065bac698d8fabda3a2",
-    "report": "qa/care-rota/local-f879af1/QA-local-f879af1.md",
-    "note": "retest pending at cde64e3"
+    "sha": "cde64e3b02ca689ee7442fa3bc5bf48434c79c1c",
+    "report": "qa/care-rota/local-cde64e3/QA-local-cde64e3.md",
+    "note": "open: C11 (Med), C12 (Low), C13 (Low)"
    }
   },
   {
@@ -259,13 +264,13 @@
     "The optional link holds only task names, minutes and helper names. Anyone with the link can read it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview d68094ade9c8d49edd528b278dcf2583711c78c0: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 247/247 at 320/360/390/641/1024/1280/1440 (incl. Creative check 5f127ab items 1–6; QA local-8206084 H1–H3; QA local-08b466c/2a02a48 H5 tiny and huge sticks in Suggest and Check, H6 tip and capacity-bar contrast and H7 over-text contrast sampled on the rendered page, H8 rolled-up label on phones). Not QA.",
-   "status": "NOT READY (retest pending at d68094a)",
+   "status": "NOT READY (QA open: H9, H10, H11, H12)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "2a02a48833cf021b432a8be7983ac97d416489bf",
-    "report": "qa/five-hands/local-2a02a48/QA-local-2a02a48.md (also qa/five-hands/local-08b466c/QA-local-08b466c.md)",
-    "note": "retest pending at d68094a"
+    "sha": "d68094ade9c8d49edd528b278dcf2583711c78c0",
+    "report": "qa/five-hands/local-d68094a/QA-local-d68094a.md",
+    "note": "open: H9 (Med), H10 (Med), H11 (Low), H12 (Low)"
    }
   }
  ]
