@@ -5,6 +5,9 @@
 // make a link + share cancel, recipient read-only (recipientAccess), typedAudit incl. the PM Q1 spoof case on every
 // screen + copied text, malformed links, reset, no storage / no network, the 2,000-char URL cap, keyboard reach, 320 fit
 // (30-char answers, long single word), required line + limit banner on every screen, banned-claim grep, print, reduced motion.
+// QA local-372ce92: L1 line-piece sweep 320/360/390/700/1280/1440 + L2 whole-URL cap 1,999/2,000/2,001 + (a) sizes in a
+// Chrome with classic scrollbars (QA's setup) run once, after the per-width loop; L3 preview emoji runs, L4 guard bar,
+// (b) rendered quote contrast (screenshot pixels) and the Andika quote glyphs per width.
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
 const { typedAudit, recipientAccess, sameTabBadLink, mouseAt, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const fs = require('fs');
@@ -34,29 +37,72 @@ async function axAll(p) { const snap = await p.accessibility.snapshot({ interest
 async function axText(p, sel) { const h = await p.$(sel); const snap = await p.accessibility.snapshot({ root: h, interestingOnly: false }); const out = [];
   (function walk(n) { if (!n) return; if (n.role === 'StaticText' || n.role === 'text') { out.push(n.name || ''); return; } (n.children || []).forEach(walk); })(snap); return out.join('').replace(/\s+/g, ' ').trim(); }
 async function axName(p, sel) { const h = await p.$(sel); const snap = await p.accessibility.snapshot({ root: h, interestingOnly: false }); return snap ? snap.name : null; }
-// long-word state of one half / the chosen answer (Creative r2): size, the drawn lines (generated content, empty alt text),
-// how many lines the browser actually rendered for them, whether the closing mark shares a line with letters, and the
-// mark styling. The clean text (screen-reader + copy source) is box.textContent.
+// long-word state of one half / the chosen answer (Creative r2 + QA local-372ce92 L1): rendered size, the drawn lines
+// (generated content, empty alt text, white-space:pre), the line pieces the browser actually rendered (one client rect per
+// line, each as wide as its piece measured alone), the kind of every break (s space, h the answer's own hyphen, a added),
+// and for every added break whether its segment could have fitted alone (it must not). The clean text is .lr-sr.
 const lw = (p, id) => p.evaluate(id => { const a = document.getElementById(id), cs = getComputedStyle(a), vis = a.querySelector('.lr-vis'), dt = vis.querySelector('.lr-vt');
-  const qc = vis.querySelector('.lr-qc'), qo = vis.querySelector('.lr-qo'), qcr = qc.getBoundingClientRect(), rs = dt.getClientRects(), lastTop = rs[rs.length - 1].top;
+  const qc = vis.querySelector('.lr-qc'), qo = vis.querySelector('.lr-qo'), qcr = qc.getBoundingClientRect(), rs = Array.from(dt.getClientRects()), lastTop = rs[rs.length - 1].top;
   const segs = s => Array.from(new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s), x => x.segment);
-  const text = a.querySelector('.lr-sr').textContent, inner = text.slice(1, -1), drawn = dt.getAttribute('data-v'), broken = vis.classList.contains('lr-brk'), lines = drawn.split('\n');
-  const cut = (l, i) => i < lines.length - 1 && l.endsWith('-') && /\p{L}/u.test(l.slice(-2, -1)) ? l.slice(0, -1) : l;
-  const bounds = new Set([0]); let k = 0; segs(inner).forEach(g => { k += g.length; bounds.add(k); }); let pos = 0, gsafe = true; lines.slice(0, -1).forEach((l, i) => { pos += cut(l, i).length; if (!bounds.has(pos)) gsafe = false; });
-  const qs = getComputedStyle(qo), vcs = getComputedStyle(vis);
-  return { fs: parseFloat(cs.fontSize), broken, drawn, lines, rendered: rs.length, joinedOk: lines.map(cut).join('') === inner, gsafe, closeWithLetters: qcr.top - lastTop < parseFloat(cs.fontSize) * 0.6,
+  const text = a.querySelector('.lr-sr').textContent, inner = text.slice(1, -1), drawn = dt.getAttribute('data-v'), broken = a.classList.contains('lr-shy'), lines = drawn.split('\n');
+  const fs = parseFloat(cs.fontSize), pw = document.createElement('span'), pr = document.createElement('span'); pw.className = 'lr-probe-w'; pr.className = 'lr-probe'; pr.style.fontSize = fs + 'px'; pw.appendChild(pr); a.appendChild(pw);
+  const W = t => { pr.textContent = t; return pr.getBoundingClientRect().width; }, mo = qo.getBoundingClientRect().width, mc = qcr.width, cw = a.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  // rebuild the text from the pieces: each break is a space, the answer's own hyphen, or an added hyphen
+  let pos = 0, joinedOk = true; const kinds = [], cuts = [];
+  lines.forEach((l, i) => { if (inner.startsWith(l, pos)) { pos += l.length; if (i < lines.length - 1) { if (inner[pos] === ' ') { pos++; kinds.push('s'); } else kinds.push('h'); } }
+    else if (l.endsWith('-') && inner.startsWith(l.slice(0, -1), pos) && i < lines.length - 1) { pos += l.length - 1; kinds.push('a'); } else joinedOk = false; cuts.push(pos); });
+  joinedOk = joinedOk && pos === inner.length;
+  const bounds = new Set([0]); let k = 0; segs(inner).forEach(g => { k += g.length; bounds.add(k); }); const gsafe = cuts.every(c => bounds.has(c));
+  // segments: runs between spaces and the answer's own hyphens; an added break must sit in one that doesn't fit alone
+  const segAt = c => { let s0 = c, e0 = c; while (s0 > 0 && inner[s0 - 1] !== ' ' && !(inner[s0 - 1] === '-' && s0 - 1 > 0)) s0--; while (e0 < inner.length && inner[e0] !== ' ' && inner[e0] !== '-') e0++; if (inner[e0] === '-') e0++; return [s0, e0]; };
+  const added = kinds.map((x, i) => x === 'a' ? (() => { const c = cuts[i], [s0, e0] = segAt(c), sg = inner.slice(s0, e0), w = W(sg) + (s0 === 0 ? mo : 0) + (e0 === inner.length ? mc : 0), L = t => (t.match(/\p{L}/gu) || []).length;
+    return { seg: sg, w: Math.round(w * 10) / 10, cw: Math.round(cw * 10) / 10, fitsAlone: w <= cw - 1, left: L(inner.slice(s0, c)), right: L(inner.slice(c, e0)), emoji: !/\p{L}/u.test(inner[c - 1] || '') || !/\p{L}/u.test(inner[c] || '') }; })() : null).filter(Boolean);
+  const pieceW = lines.map(l => Math.round(W(l) * 10) / 10), rectW = rs.map(r => Math.round(r.width * 10) / 10);
+  const piecesMatch = rs.length === lines.length && rectW.every((w, i) => Math.abs(w - pieceW[i]) <= 1.5) && rs.every((r, i) => i === 0 || r.top > rs[i - 1].top + fs * 0.5);
+  pw.remove(); const qs = getComputedStyle(qo), vcs = getComputedStyle(vis), al = c => { const m = c.match(/\/\s*([\d.]+)\)|rgba\([^)]*,\s*([\d.]+)\)/); return m ? +(m[1] || m[2]) : 1; };
+  return { fs, broken, drawn, lines, kinds, added, rendered: rs.length, pieceW, rectW, piecesMatch, joinedOk, gsafe, closeWithLetters: qcr.top - lastTop < fs * 0.6,
     text, srHidden: !!a.querySelector('.lr-sr .mill-typed'), afterAlt: getComputedStyle(dt, '::before').content.includes('/') && getComputedStyle(qc, '::before').content.includes('/'),
-    qmFs: parseFloat(qs.fontSize) / parseFloat(vcs.fontSize), qmOp: +qs.opacity, qmW: qs.fontWeight === vcs.fontWeight,
+    ws: getComputedStyle(vis).whiteSpace, hy: cs.hyphens || cs.webkitHyphens,
+    qmFs: parseFloat(qs.fontSize) / parseFloat(vcs.fontSize), qmOp: +qs.opacity, qmA: al(qs.color), qmW: qs.fontWeight === vcs.fontWeight,
     hangO: Math.abs(parseFloat(qs.marginInlineStart || qs.marginLeft) + qo.getBoundingClientRect().width) < 1.5, hangC: Math.abs(parseFloat(getComputedStyle(qc).marginInlineEnd || getComputedStyle(qc).marginRight) + qcr.width) < 1.5 }; }, id);
-const lwOk = x => x.joinedOk && x.gsafe && x.closeWithLetters && x.srHidden && x.afterAlt && (!x.broken || x.rendered === x.lines.length) && x.fs >= 24;
+// every added break: its segment can't fit alone, ≥ 4 letters each side (letters), never an added hyphen beside the answer's own
+const addOk = x => x.added.every(b => !b.fitsAlone && (b.emoji || (b.left >= 4 && b.right >= 4))) && !x.lines.some(l => /-{2}$/.test(l));
+const lwOk = x => x.joinedOk && x.gsafe && x.closeWithLetters && x.srHidden && x.afterAlt && x.piecesMatch && x.ws === 'pre' && x.hy !== 'auto' && addOk(x) && x.fs >= 24;
 // every visible quote mark: contrast of the mark (its colour at its opacity over the first opaque background) vs that background
-const qContrast = p => p.evaluate(() => { const rgb = c => c.match(/[\d.]+/g).map(Number), lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+const qContrast = p => p.evaluate(() => { const rgb = c => { const v = c.match(/[\d.]+/g).map(Number); return /^color\(srgb/.test(c) ? [v[0] * 255, v[1] * 255, v[2] * 255, v[3]] : v; }, lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
   const out = []; document.querySelectorAll('.lr-qm').forEach(q => { if (!q.getClientRects().length || q.closest('.lr-sr') || !q.getBoundingClientRect().width) return; let a = 1, e = q; while (e) { a *= +getComputedStyle(e).opacity; e = e.parentElement; }
     let bgE = q.parentElement; while (bgE && (getComputedStyle(bgE).backgroundColor === 'rgba(0, 0, 0, 0)' || getComputedStyle(bgE).backgroundColor === 'transparent')) bgE = bgE.parentElement;
     const fg = rgb(getComputedStyle(q).color), bg = rgb(getComputedStyle(bgE || document.body).backgroundColor), fa = (fg[3] == null ? 1 : fg[3]) * a, mix = [0, 1, 2].map(i => fg[i] * fa + bg[i] * (1 - fa));
     const L1 = lum(mix), L2 = lum(bg); out.push({ at: (q.closest('[id]') || {}).id, ratio: Math.round(((Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05)) * 100) / 100, a: Math.round(a * 100) / 100 }); }); return out; });
 const qOk = r => r.length && r.every(x => x.ratio >= 3);
 const qMin = r => r.reduce((m, x) => (!m || x.ratio < m.ratio ? x : m), null);
+// rendered pixels (QA local-372ce92 (b) / L4): decode a puppeteer PNG (8-bit RGB/RGBA, not interlaced) and take, inside a
+// box, the background (the most common colour) and the ink (the pixel most unlike it); contrast is from those pixels
+function png(b0) { const zlib = require('zlib'), buf = Buffer.from(b0); let o = 8, w = 0, h = 0, ct = 0; const id = [];
+  while (o < buf.length) { const n = buf.readUInt32BE(o), ty = buf.toString('ascii', o + 4, o + 8), d = buf.slice(o + 8, o + 8 + n); if (ty === 'IHDR') { w = d.readUInt32BE(0); h = d.readUInt32BE(4); ct = d[9]; } else if (ty === 'IDAT') id.push(d); else if (ty === 'IEND') break; o += 12 + n; }
+  const bpp = ct === 6 ? 4 : 3, raw = zlib.inflateSync(Buffer.concat(id)), st = w * bpp, px = Buffer.alloc(h * st);
+  for (let y = 0; y < h; y++) { const f = raw[y * (st + 1)], ln = raw.slice(y * (st + 1) + 1, (y + 1) * (st + 1)), cur = px.slice(y * st, (y + 1) * st), up = y ? px.slice((y - 1) * st, y * st) : Buffer.alloc(st);
+    for (let x = 0; x < st; x++) { const a = x >= bpp ? cur[x - bpp] : 0, b = up[x], c = x >= bpp ? up[x - bpp] : 0, v = ln[x]; let r;
+      if (f === 0) r = v; else if (f === 1) r = v + a; else if (f === 2) r = v + b; else if (f === 3) r = v + ((a + b) >> 1); else { const pp = a + b - c, pa = Math.abs(pp - a), pb = Math.abs(pp - b), pc = Math.abs(pp - c); r = v + (pa <= pb && pa <= pc ? a : pb <= pc ? b : c); } cur[x] = r & 255; } }
+  return { w, h, at: (x, y) => [px[y * st + x * bpp], px[y * st + x * bpp + 1], px[y * st + x * bpp + 2]] }; }
+const lumC = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+const ratioC = (a, b) => { const x = lumC(a), y = lumC(b); return Math.round(((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)) * 100) / 100; };
+async function inkPx(p, sel, pad = 0) { const r = await p.$eval(sel, (e, pad) => { const b = e.getBoundingClientRect(); return { x: Math.max(0, b.left - pad), y: Math.max(0, b.top - pad), width: b.width + 2 * pad, height: b.height + 2 * pad }; }, pad);
+  const im = png(await p.screenshot({ clip: r, captureBeyondViewport: false })), cnt = new Map(); for (let y = 0; y < im.h; y++) for (let x = 0; x < im.w; x++) { const k = im.at(x, y).join(','); cnt.set(k, (cnt.get(k) || 0) + 1); }
+  const bg = [...cnt.entries()].sort((a, b) => b[1] - a[1])[0][0].split(',').map(Number); let ink = bg, best = 1;
+  for (let y = 0; y < im.h; y++) for (let x = 0; x < im.w; x++) { const c = im.at(x, y), rr = ratioC(c, bg); if (rr > best) { best = rr; ink = c; } } return { bg, ink, ratio: best }; }
+// the rendered contrast of every visible styled quote mark in a region: the mark's ink pixels against the pixels around it
+async function qPix(p, scope) { const ids = await p.evaluate(sc => { let n = 0; return Array.from(document.querySelectorAll(sc + ' .lr-qm')).filter(q => q.getClientRects().length && q.getBoundingClientRect().width && !q.closest('.lr-sr')).map(q => { q.setAttribute('data-qpx', ++n); return n; }); }, scope);
+  const out = []; for (const n of ids) { const r = await inkPx(p, `[data-qpx="${n}"]`, 0); out.push(Object.assign({ at: await p.$eval(`[data-qpx="${n}"]`, e => e.closest('[id]').id) }, r)); } await p.evaluate(() => document.querySelectorAll('[data-qpx]').forEach(e => e.removeAttribute('data-qpx'))); return out; }
+// which font draws the styled curly quotes in the display font: the mark's rendered width against the same mark in Andika and in Shantell Sans
+const quoteFace = (p, id) => p.evaluate(id => { const q = document.querySelector('#' + id + ' .lr-vis .lr-qo'), cs = getComputedStyle(q), w = q.getBoundingClientRect().width;
+  const m = fam => { const e = document.createElement('span'); e.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font-family:${fam};font-size:${cs.fontSize};font-weight:${cs.fontWeight}`; e.textContent = '\u201C'; document.body.appendChild(e); const x = e.getBoundingClientRect().width; e.remove(); return x; };
+  const fam = cs.fontFamily, fonts = Array.from(document.fonts).filter(f => /LR Quotes/.test(f.family)).map(f => f.family + ' ' + f.weight + ' ' + f.unicodeRange + ' ' + f.status);
+  return { w: Math.round(w * 100) / 100, andika: Math.round(m('Andika') * 100) / 100, shantell: Math.round(m('"Shantell Sans"') * 100) / 100, fam, fonts, check: document.fonts.check(`${cs.fontWeight} ${cs.fontSize} "LR Quotes"`, '\u201C') }; }, id);
+// line pieces of a plain text element (the setup preview), from the rendered position of every grapheme
+const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(sel), out = []; let line = '', top = null; const tw = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); let t;
+  while ((t = tw.nextNode())) for (const g of new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(t.data)) { const r = document.createRange(); r.setStart(t, g.index); r.setEnd(t, g.index + g.segment.length); const rt = r.getClientRects()[0]; if (!rt) continue; const y = Math.round(rt.top); if (top !== null && y > top + 4) { out.push(line); line = ''; } top = top === null || y > top + 4 ? y : top; line += g.segment; }
+  out.push(line); return { pieces: out.map(x => x.trim()), w: e.clientWidth }; }, sel);
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
   for (const w of W) {
@@ -239,6 +285,12 @@ const qMin = r => r.reduce((m, x) => (!m || x.ratio < m.ratio ? x : m), null);
     await press(p, '#reset'); for (let i = 0; i < 6; i++) await fillQ(p, i, '\u6C34'.repeat(80), '\u6C34'.repeat(30), '\u6C34'.repeat(30));
     await press(p, '#mk'); await sleep(100); t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, box: document.getElementById('linkbox').hidden, hash: location.hash, q: document.getElementById('q-5').value.length }));
     ck(w + ' URL cap: over 2,000 -> no link (tooLongLink), questions still on the page, address bar untouched', t.toast === C.tooLongLink && t.box && !t.hash && t.q === 80, t);
+    // L3: the setup preview keeps an emoji run whole wherever it fits, and never splits inside an emoji
+    await press(p, '#reset'); await fillQ(p, 0, 'Pizza \u{1F355}\u{1F355}\u{1F355} night?', 'Pizza \u{1F355}\u{1F355}\u{1F355} party time', '\u{1F355}'.repeat(14)); await sleep(100);
+    const pvl = await pieces(p, '#pv-l'), pvr = await pieces(p, '#pv-r'), pvq = await pieces(p, '#pv-q'), RUN = '\u{1F355}\u{1F355}\u{1F355}', pvt = await p.evaluate(() => [document.getElementById('pv-l').textContent, document.getElementById('pv-r').textContent]);
+    const segsOf = x => Array.from(new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(x), y => y.segment);
+    ck(w + ' L3 preview: ' + (w < 1000 ? 'hidden below 1000px (nothing to split)' : '“🍕🍕🍕” stays one piece (left answer, question); a run wider than the box breaks only between emoji; text unchanged'),
+      w < 1000 ? !pvl.w && !(await p.evaluate(() => document.getElementById('preview').getClientRects().length)) : pvl.pieces.some(x => x.includes(RUN)) && pvq.pieces.some(x => x.includes(RUN)) && pvr.pieces.every(x => segsOf(x).every(g => g === '\u{1F355}' || g === '\u201C' || g === '\u201D')) && pvr.pieces.join('').replace(/[\u201C\u201D]/g, '') === '\u{1F355}'.repeat(14) && pvt[0] === '\u201CPizza ' + RUN + ' party time\u201D', { pvl, pvq, pvr, pvt });
     await press(p, '#reset'); await fillQ(p, 0, 'W'.repeat(80), "Grandmother's", 'Watch a movie at home'); await fillQ(p, 1, 'Two?', 'Abcdefghijklmnopqrstuvwxyzabcd', 'x y');
     f = await fits(p); ck(w + ' editor fits (80-char question, 30-char answers)', !f.bad.length && f.sw <= f.w, f);
     await press(p, '#go'); await sleep(250); f = await fits(p); let L1 = await lw(p, 'h-l-a'), R1 = await lw(p, 'h-r-a');
@@ -246,25 +298,46 @@ const qMin = r => r.reduce((m, x) => (!m || x.ratio < m.ratio ? x : m), null);
     // Creative r2 long words: Grand-/mother's (dictionary break) at ≥ 24px at 320/390, unbroken at 1280; both halves one size
     ck(w + ' long word “Grandmother\'s”: ' + (w === 1280 ? 'unbroken (fits at its size)' : '“Grand-” / “mother\'s”” at ≥ 24px (dictionary break, two lines rendered)') + '; both halves the same size',
       L1.fs === R1.fs && lwOk(L1) && lwOk(R1) && (w === 1280 ? !L1.broken && L1.fs > 24 : L1.broken && L1.drawn === "Grand-\nmother's" && L1.rendered === 2), { L1, R1 });
-    ck(w + ' long word: the closing mark never sits alone on a line; breaks only between graphemes; marks 0.8em, same weight, 70%, hanging by their own width',
-      L1.closeWithLetters && R1.closeWithLetters && L1.gsafe && L1.qmFs > 0.79 && L1.qmFs < 0.81 && L1.qmOp === 0.7 && L1.qmW && L1.hangO && L1.hangC && R1.hangO && R1.hangC, { L1, R1 });
+    ck(w + ' long word: the closing mark never sits alone on a line; breaks only between graphemes; marks 0.8em, same weight, 70% as the computed colour (alpha .7, opacity 1), hanging by their own width',
+      L1.closeWithLetters && R1.closeWithLetters && L1.gsafe && L1.qmFs > 0.79 && L1.qmFs < 0.81 && L1.qmOp === 1 && Math.abs(L1.qmA - 0.7) < 0.01 && L1.qmW && L1.hangO && L1.hangC && R1.hangO && R1.hangC, { L1, R1 });
     const nm = await axName(p, '#h-l'), ax1 = await axAll(p), axq = await axText(p, '#h-l-a');
     ck(w + ' long word: accessible name "LEFT: “Grandmother\'s”" (quotes, no hyphen, no soft hyphen); clean quoted text in the a11y tree; no soft hyphen anywhere', nm === 'LEFT: “Grandmother\'s”' && axq === '“Grandmother\'s”' && !ax1.some(x => x.includes('\u00AD') || /Grand-/.test(x)), { nm, axq });
-    let qc = await qContrast(p); ck(w + ' quote marks: contrast ≥ 3:1 against their background on the board (tiles, From line, question); lowest ' + (qMin(qc) || {}).ratio, qOk(qc), qc);
+    let qc = await qContrast(p); ck(w + ' quote marks: contrast ≥ 3:1 against their background on the board (tiles, From line, question), from the computed colours; lowest ' + (qMin(qc) || {}).ratio, qOk(qc), qc);
+    let qp = await qPix(p, '#s2'); ck(w + ' quote marks: RENDERED contrast ≥ 3:1 on the board (screenshot pixels: mark ink vs the pixels around it), every mark lighter than full-ink text; lowest ' + (qMin(qp) || {}).ratio, qp.length >= 6 && qOk(qp), qp);
+    let qf = await quoteFace(p, 'b-q'); ck(w + ' Creative r3: the question\'s curly quotes are drawn in Andika (LR Quotes face, U+201C/U+201D only, loaded; mark width = Andika’s, ≠ Shantell’s)', qf.check && /LR Quotes/.test(qf.fam.split(',')[0]) && Math.abs(qf.w - qf.andika) < 0.3 && Math.abs(qf.w - qf.shantell) > 0.5 && qf.fonts.some(f => /U\+201C, U\+201D|U\+201C-201D/i.test(f) && /loaded/.test(f)), qf);
     // refit on resize / orientation change: narrow -> wide -> narrow gives the same result as a fresh render
     const w2 = w === 1280 ? 390 : 1280; await p.setViewport({ width: w2, height: 900 }); await sleep(250); const Lw = await lw(p, 'h-l-a'); await p.setViewport({ width: w, height: 900 }); await p.evaluate(() => window.dispatchEvent(new Event('orientationchange'))); await sleep(250); const Lb = await lw(p, 'h-l-a');
     ck(w + ' long word: the fit re-runs on resize/orientation change (' + w + '→' + w2 + '→' + w + ')', Lw.fs !== L1.fs && Lb.fs === L1.fs && Lb.drawn === L1.drawn && lwOk(Lw) && lwOk(Lb), { L1, Lw, Lb });
-    // the guard after a pick: fill + text dimmed to 45% over the felt for 500ms, then full; the element stays opaque so the focus ring is full strength
-    const guardState = () => p.evaluate(() => { const b = document.getElementById('c-next'), g = document.getElementById('c-again'), cs = getComputedStyle(b); let op = 1, e = b; while (e) { op *= +getComputedStyle(e).opacity; e = e.parentElement; }
-      return { g: document.getElementById('s3').classList.contains('lr-guard'), focus: document.activeElement === b && b.matches(':focus-visible'), op, filter: cs.filter, ow: cs.outlineWidth, os: cs.outlineStyle, oc: cs.outlineColor, bg: cs.backgroundColor, fg: cs.color, ghost: getComputedStyle(g).color, tr: cs.transitionDuration }; });
-    await p.keyboard.press('Enter'); await sleep(40); let g1 = await guardState(); await sleep(700); let g2 = await guardState();
-    ck(w + ' post-pick guard visible: Next/Ask again dimmed for 500ms, then full', g1.g && !g2.g && g1.bg !== g2.bg && g1.ghost !== g2.ghost, { g1, g2 });
-    ck(w + ' post-pick guard: the focus ring stays full strength during the dim (opacity 1 up the tree, no filter, same solid outline width + colour as after)', g1.focus && g1.op === 1 && g1.filter === 'none' && g1.os === 'solid' && parseFloat(g1.ow) >= 8 && g1.ow === g2.ow && g1.oc === g2.oc && g2.focus, { g1, g2 });
+    // L4, Creative option (b): during the 500ms guard the buttons look exactly as after (fill, label, border, focus ring);
+    // a 3px bar in the label colour at full opacity sweeps along the inside bottom edge (linear), aria-disabled + cursor:progress
+    const guardState = () => p.evaluate(() => { const b = document.getElementById('c-next'), cs = getComputedStyle(b), bar = getComputedStyle(b, '::after'), btns = Array.from(document.querySelectorAll('#s3 .btn')).filter(x => !x.hidden);
+      const m = bar.transform.match(/matrix\(([^,]+)/), lum = c => { const v = c.match(/[\d.]+/g).map(Number), f = x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(v[0]) + 0.7152 * f(v[1]) + 0.0722 * f(v[2]); };
+      const ratio = (a, c) => { const x = lum(a), y = lum(c); return Math.round(((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)) * 100) / 100; };
+      return { g: document.getElementById('s3').classList.contains('lr-guard'), focus: document.activeElement === b && b.matches(':focus-visible'), ow: cs.outlineWidth, os: cs.outlineStyle, oc: cs.outlineColor, oo: cs.outlineOffset,
+        bg: cs.backgroundColor, fg: cs.color, bd: cs.borderColor + ' ' + cs.borderWidth, op: +cs.opacity, filter: cs.filter, ghost: btns.filter(x => x !== b).map(x => getComputedStyle(x).color + '|' + getComputedStyle(x).backgroundColor + '|' + getComputedStyle(x).borderColor + '|' + getComputedStyle(x).opacity).join(';'),
+        contrast: ratio(cs.color, cs.backgroundColor), aria: btns.map(x => x.getAttribute('aria-disabled')), cursor: btns.map(x => getComputedStyle(x).cursor),
+        bar: { content: bar.content, h: bar.height, bottom: bar.bottom, left: bar.left, right: bar.right, pos: bar.position, bgc: bar.backgroundColor, op: bar.opacity, anim: bar.animationName, dur: bar.animationDuration, ease: bar.animationTimingFunction, sx: m ? +(+m[1]).toFixed(3) : (bar.transform === 'none' ? 1 : null) } }; });
+    await p.keyboard.press('Enter'); const t0 = Date.now(), gs = []; for (const at of [60, 160, 260, 360, 440]) { await sleep(Math.max(0, at - (Date.now() - t0))); gs.push(Object.assign({ at: Date.now() - t0 }, await guardState())); }
+    const px1 = await inkPx(p, '#c-next'); await sleep(Math.max(0, 750 - (Date.now() - t0))); let g2 = await guardState(); const px2 = await inkPx(p, '#c-next');
+    const during = gs.filter(g => g.g);
+    ck(w + ' L4 guard: fill, label, border, opacity unchanged at every sampled point (' + during.map(g => g.at + 'ms').join(', ') + '); main label contrast ' + g2.contrast + ':1 throughout (≥ 4.5)',
+      during.length >= 4 && during.every(g => g.bg === g2.bg && g.fg === g2.fg && g.bd === g2.bd && g.op === 1 && g.filter === 'none' && g.ghost === g2.ghost && g.contrast === g2.contrast) && g2.contrast >= 4.5, { gs, g2 });
+    ck(w + ' L4 guard: rendered label contrast (screenshot pixels) during the guard equals after: ' + px1.ratio + ' vs ' + px2.ratio, Math.abs(px1.ratio - px2.ratio) < 0.05 && px1.ratio >= 4.5, { px1, px2 });
+    ck(w + ' L4 guard: every button aria-disabled="true" with cursor:progress during, gone (no attribute, pointer) after', during.every(g => g.aria.length >= 3 && g.aria.every(a => a === 'true') && g.cursor.every(c => c === 'progress')) && g2.aria.every(a => a === null) && g2.cursor.every(c => c === 'pointer'), { gs: gs.map(g => [g.at, g.aria, g.cursor]), g2: [g2.aria, g2.cursor] });
+    ck(w + ' L4 guard bar: 3px, inside bottom edge, label colour at full opacity, sweeps left→right over 500ms linear (scaleX rising), then gone',
+      during.every(g => g.bar.h === '3px' && g.bar.bottom === '0px' && g.bar.left === '0px' && g.bar.right === '0px' && g.bar.pos === 'absolute' && g.bar.bgc === g.fg && +g.bar.op === 1 && g.bar.anim === 'lr-sweep' && g.bar.dur === '0.5s' && g.bar.ease === 'linear')
+        && during.every((g, i) => i === 0 || g.bar.sx > during[i - 1].bar.sx) && during[0].bar.sx < 0.3 && during[during.length - 1].bar.sx > 0.7 && g2.bar.content === 'none', { bars: gs.map(g => [g.at, g.bar.sx, g.bar.h, g.bar.bgc]), after: g2.bar });
+    ck(w + ' L4 guard: focus ring unchanged (same solid outline width, colour, offset during and after)', during.every(g => g.focus && g.os === 'solid' && parseFloat(g.ow) >= 8 && g.ow === g2.ow && g.oc === g2.oc && g.oo === g2.oo) && g2.focus, { gs: gs.map(g => [g.ow, g.oc]), g2: [g2.ow, g2.oc] });
+    // presses during the guard do nothing (keyboard + click), then work
+    await press(p, '#c-again'); await sleep(150); await p.keyboard.press('Enter'); await sleep(80); const sc0 = await p.evaluate(() => document.getElementById('c-a').textContent);
+    await p.keyboard.press('Enter'); await sleep(40); await p.evaluate(() => document.getElementById('c-again').click()); await sleep(40); const ig = { scr: await scr(p), a: await p.evaluate(() => document.getElementById('c-a').textContent), aria: await p.evaluate(() => document.getElementById('c-next').getAttribute('aria-disabled')) };
+    ck(w + ' L4 guard: Enter on Next and a click on Ask again during the 500ms are ignored (still on the chosen screen)', ig.scr === 's3' && ig.a === sc0 && ig.aria === 'true', ig); await sleep(600);
     f = await fits(p); const CG = await lw(p, 'c-a'); ck(w + ' chosen “Grandmother\'s” fits; marks styled + hanging; closing mark with letters', !f.bad.length && f.sw <= f.w && lwOk(CG) && CG.hangO && CG.hangC, { f, CG });
     qc = await qContrast(p); ck(w + ' quote marks: contrast ≥ 3:1 on the chosen screen; lowest ' + (qMin(qc) || {}).ratio, qOk(qc), qc);
-    await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]); await press(p, '#c-again'); await sleep(150); await p.keyboard.press('Enter'); await sleep(30);
-    g1 = await guardState(); await sleep(700); g2 = await guardState(); await p.emulateMediaFeatures([]);
-    ck(w + ' reduced motion: the guard still shows (instant change), ring full strength, then full', g1.g && g1.tr === '0s' && g1.bg !== g2.bg && g1.op === 1 && g1.oc === g2.oc && !g2.g, { g1, g2 });
+    await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]); await press(p, '#c-again'); await sleep(150); await p.keyboard.press('Enter');
+    const r0 = Date.now(), rg = []; for (const at of [60, 250, 440]) { await sleep(Math.max(0, at - (Date.now() - r0))); rg.push(await guardState()); } await sleep(Math.max(0, 750 - (Date.now() - r0))); g2 = await guardState(); await p.emulateMediaFeatures([]);
+    ck(w + ' L4 reduced motion: no sweep — the bar is a static full-width 3px line in the label colour for the 500ms, then gone; aria-disabled during; fill/label/ring unchanged',
+      rg.every(g => g.g && g.bar.anim === 'none' && g.bar.sx === 1 && g.bar.h === '3px' && g.bar.bgc === g.fg && g.aria.every(a => a === 'true') && g.bg === g2.bg && g.fg === g2.fg && g.oc === g2.oc) && !g2.g && g2.bar.content === 'none' && g2.aria.every(a => a === null), { rg: rg.map(g => [g.bar, g.aria]), g2: g2.bar });
     await press(p, '#c-next'); await sleep(250); f = await fits(p); ck(w + ' board with a 30-letter single word fits', !f.bad.length && f.sw <= f.w, f);
     L1 = await lw(p, 'h-l-a'); R1 = await lw(p, 'h-r-a'); ck(w + ' 30-letter word: same size both halves, grapheme-safe, closing mark with letters', L1.fs === R1.fs && lwOk(L1) && lwOk(R1), { L1, R1 });
     // a 20-character word with no dictionary break: fallback, ≥ 4 letters each side of every break, visible hyphens
@@ -291,6 +364,47 @@ const qMin = r => r.reduce((m, x) => (!m || x.ratio < m.ratio ? x : m), null);
     await setMode(p, 'tap'); await press(p, '#go'); await sleep(100); miss = await tabReach(p, ['h-l', 'h-r', 'b-back'], 8); ck(w + ' keyboard: board Tab order reaches left, right, then Back (no trap)', !miss.length, miss);
     await press(p, '#b-back'); await sleep(100); ck(w + ' Back to the questions returns to the editor with focus on Show it big', (await p.evaluate(() => document.activeElement.id)) === 'go' && (await scr(p)) === 's1', null);
     await s.b.close();
+  }
+  // ---------- QA local-372ce92, once: Chrome WITH classic scrollbars (QA's setup; puppeteer hides them by default)
+  if (!process.env.MILL_SKIP_SWEEP) {
+    const puppeteer = require('puppeteer-core');
+    const classic = async () => { const b = await puppeteer.launch({ executablePath: '/usr/bin/google-chrome', headless: 'new', ignoreDefaultArgs: ['--hide-scrollbars'], args: ['--no-sandbox', `--host-resolver-rules=MAP ${H.split(':')[0]} ${IP}`] });
+      const p = await b.newPage(); const errs = []; p.on('pageerror', e => errs.push(String(e))); p.on('console', m => { if (m.type() === 'error' && !/Cross-Origin-Opener-Policy/.test(m.text())) errs.push('console: ' + m.text()); }); p.on('dialog', d => d.accept().catch(() => {})); p.setDefaultTimeout(15000); return { b, p, errs }; };
+    // L1 sweep: hyphenated, multi-word and long-word answers; the rendered line pieces from layout on the board and the chosen screen
+    const SW = [['Which visit?', 'Mother-in-law visit', 'Bartholomew-Smythe'], ['Who reads?', "Grandmother's", 'Watch a movie at home'], ['Stop?', 'Nooooooooooooooooooo', 'Jean-Luc Picard-Smith'], ['Long?', 'Abcdefghijklmnopqrstuvwxyzabcd', 'Pizza \u{1F355}\u{1F355}\u{1F355} party'], ['Up?', 'Well-being', 'x-ray']];
+    const VH = { 320: 760, 360: 760, 390: 844 }, sizes = {};
+    for (const w of [320, 360, 390, 700, 1280, 1440]) {
+      const c = await classic(), p = c.p; await p.setViewport({ width: w, height: VH[w] || 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
+      if (w >= 1000) { await fillQ(p, 0, 'Pizza \u{1F355}\u{1F355}\u{1F355} night?', 'Pizza \u{1F355}\u{1F355}\u{1F355} party time', 'Tacos \u{1F32E}\u{1F32E} please'); await sleep(100); const a = await pieces(p, '#pv-l'), b = await pieces(p, '#pv-q'), c2 = await pieces(p, '#pv-r');
+        ck(`L3 sweep ${w} (classic scrollbars): preview keeps “🍕🍕🍕” and “🌮🌮” whole (${a.pieces.join(' / ')} | ${c2.pieces.join(' / ')})`, a.pieces.some(x => x.includes('\u{1F355}\u{1F355}\u{1F355}')) && b.pieces.some(x => x.includes('\u{1F355}\u{1F355}\u{1F355}')) && c2.pieces.some(x => x.includes('\u{1F32E}\u{1F32E}')), { a, b, c2 }); }
+      for (let i = 0; i < SW.length; i++) await fillQ(p, i, ...SW[i]); await press(p, '#go'); await sleep(300); const got = [];
+      for (let i = 0; i < SW.length; i++) {
+        const L = await lw(p, 'h-l-a'), R = await lw(p, 'h-r-a'), f = await fits(p); await p.keyboard.press('Enter'); await sleep(650); const CA = await lw(p, 'c-a'), f3 = await fits(p);
+        got.push({ q: i, L: [L.fs, L.lines.join('/'), L.kinds.join('')], R: [R.fs, R.lines.join('/'), R.kinds.join('')], C: [CA.fs, CA.lines.join('/')] });
+        ck(`sweep ${w}×${VH[w] || 900} (classic scrollbars) “${SW[i][1]}” | “${SW[i][2]}”: rendered pieces = planned (${L.lines.join('/')} | ${R.lines.join('/')} @ ${L.fs}px); added breaks only in segments that can't fit alone, ≥ 4 letters a side; both halves one size; board + chosen fit`,
+          lwOk(L) && lwOk(R) && lwOk(CA) && L.fs === R.fs && !f.bad.length && f.sw <= f.w && !f3.bad.length && f3.sw <= f3.w, { L, R, CA: { fs: CA.fs, lines: CA.lines, added: CA.added, piecesMatch: CA.piecesMatch, rectW: CA.rectW, pieceW: CA.pieceW }, f: f.bad, f3: f3.bad });
+        if (i === 0) { const mo = R.lines.concat(L.lines); ck(`sweep ${w}: “Mother-in-law visit” breaks only at its own hyphens / the space (no added hyphen, no 1–3-letter piece split off)`, !L.added.length && L.kinds.every(k => k !== 'a') && L.lines.every(l => (l.match(/\p{L}/gu) || []).length >= 2) && !mo.some(l => /^(r|er|her)-/.test(l)), { L: L.lines, kinds: L.kinds }); }
+        if (i === 1) sizes[w] = L.fs;
+        if (i < SW.length - 1) { await press(p, '#c-next'); await sleep(300); }
+      }
+      ck(`sweep ${w}: no page errors`, !c.errs.length, c.errs); await c.b.close();
+    }
+    // (a): the size QA measured is the size that renders: classic and overlay scrollbars give the same plan at QA's viewports
+    for (const [w, h] of [[320, 760], [390, 844]]) {
+      const run = async (cl) => { const c = cl ? await classic() : await session(H, IP), p = c.p; await p.setViewport({ width: w, height: h }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await setVal(p, '#from', 'Maya'); await fillQ(p, 0, 'Who reads?', "Grandmother's", 'Tacos'); await press(p, '#go'); await sleep(300);
+        const L = await lw(p, 'h-l-a'), R = await lw(p, 'h-r-a'), cw = await p.evaluate(() => [document.documentElement.clientWidth, document.getElementById('h-l-a').clientWidth]); await c.b.close(); return { fs: L.fs, rfs: R.fs, lines: L.lines, cw, ok: lwOk(L) && lwOk(R) }; };
+      const A = await run(true), B = await run(false);
+      ck(`(a) ${w}×${h}: “Grandmother's” | “Tacos” render at ${A.fs}px with classic scrollbars and ${B.fs}px without (same plan, same box width ${A.cw[1]}px; was 24.7/30.5 vs 26.8/32.6 at 372ce92)`, A.fs === B.fs && A.rfs === A.fs && A.ok && B.ok && A.lines.join('/') === "Grand-/mother's" && A.cw[1] === B.cw[1], { A, B });
+    }
+    // L2: the 2,000-char cap on the WHOLE received URL (shared MILLVIEW.linkFor): 1,999 and 2,000 open, 2,001 is refused
+    { const c = await classic(), p = c.p; await p.setViewport({ width: 390, height: 844 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+      const frag = await p.evaluate(() => MILL.pack('l', 1, { f: 'Maya', m: 0, k: 0, s: 0, e: 20, d: 15, q: Array.from({ length: 6 }, (_, i) => ['Q' + i + ' ' + 'w'.repeat(76), 'Left ' + i, 'Right ' + i, '', '']) }));
+      const origin = `${SCHEME}://${H}`, baseLen = (origin + '/mill/left-or-right/#' + frag).length, res = [];
+      for (const n of [1999, 2000, 2001]) { const k = n - baseLen, url = origin + '/mill/' + '/'.repeat(k) + 'left-or-right/#' + frag; await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(300);
+        res.push(Object.assign({ n, k, fragLen: frag.length }, await p.evaluate(() => ({ len: location.href.length, recv: !document.getElementById('recv').hidden, items: document.querySelectorAll('#recv-list li').length, banner: !document.getElementById('banner').hidden ? document.getElementById('banner-t').textContent : null })))); }
+      ck('L2 whole-URL cap on received links: 1,999 and 2,000 open (6 questions), 2,001 refused with the bad-link message (long path, fragment ' + frag.length + ')',
+        res[0].len === 1999 && res[1].len === 2000 && res[2].len === 2001 && res[0].recv && res[0].items === 6 && res[1].recv && res[1].items === 6 && !res[2].recv && res[2].banner === C.badLink && !res[0].banner && !res[1].banner, res);
+      ck('L2: no page errors', !c.errs.length, c.errs); await c.b.close(); }
   }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

@@ -48,17 +48,22 @@ textarea{width:100%;font:400 16px/1.4 var(--ui);padding:12px;border:3px solid va
 .half{min-width:0;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .half .arrow{display:block}
 .half .lr-ans{display:block;width:100%;max-width:100%}
-.half .lr-ans,.lr-chosen .ans{overflow-wrap:normal;word-break:normal;-webkit-hyphens:auto;hyphens:auto}
+/* fit.js controls every line of the tile answers and the chosen answer (QA local-372ce92 L1): drawn as planned, no CSS
+   hyphenation and no browser wrapping there */
+.half .lr-ans,.lr-chosen .ans{overflow-wrap:normal;word-break:normal;-webkit-hyphens:manual;hyphens:manual}
+.half .lr-ans .lr-vis,.lr-chosen .ans .lr-vis{white-space:pre}
 .lr-ans .mill-typed,.lr-chosen .ans .mill-typed{overflow-wrap:normal;word-break:normal}
 /* quote marks on typed values (Creative r2): 0.8em, same weight, tile ink at 70% (contrast checked >= 3:1 in tests) */
-.lr-qm{font-size:.8em;opacity:.7}
+/* 70% of the text colour as a real colour (QA local-372ce92 (b): opacity left the computed colour at 100%) */
+.lr-qm{font-size:.8em;color:color-mix(in srgb,currentColor 70%,transparent)}
 .lr-hang .lr-qo{margin-inline-start:calc(var(--qo,0) * -1em)} /* the opening mark hangs into the padding by its own width */
 .lr-hang .lr-qc{margin-inline-end:calc(var(--qc,0) * -1em)}
 /* the visible copy of a styled typed value is generated content with empty alt text (not read twice, not in the name);
    the whole “…” text is in the visually hidden .lr-sr beside it. A broken answer (fit.js) draws its lines with newlines. */
 .lr-vis .lr-vt::before,.lr-vis .lr-qm::before{content:attr(data-v);content:attr(data-v) / ""}
-.lr-vis.lr-brk{white-space:pre-line;-webkit-hyphens:manual;hyphens:manual}
-.lr-probe{position:absolute;left:0;top:0;visibility:hidden;white-space:nowrap}
+.lr-probe-w{position:absolute;left:0;top:0;width:0;height:0;overflow:hidden;visibility:hidden}
+.lr-probe{white-space:nowrap;-webkit-hyphens:manual;hyphens:manual}
+.lr-nb{display:inline-block;max-width:100%;overflow-wrap:anywhere;text-indent:0}
 .half .sym{display:block;margin-bottom:.1em}
 .half:focus-visible{outline:var(--focus-w) solid var(--ink);outline-offset:calc(-1 * var(--focus-w))}
 .half.r:focus-visible{outline-color:var(--stitch)}
@@ -76,12 +81,14 @@ textarea{width:100%;font:400 16px/1.4 var(--ui);padding:12px;border:3px solid va
 .chosen.r .btn-main{background:#fff;color:var(--spruce);box-shadow:none}
 .lr-chosen .row .btn{max-width:100%}
 .lr-chosen .btn{transition:background-color .15s,color .15s}
-/* the 500ms post-pick guard, visible: fill and text at 45% over the felt (what opacity .45 would show), but the element
-   itself stays opaque so the focus ring keeps full strength. Reduced motion (theme.css) makes the change instant. */
-.chosen.l.lr-guard .btn-main{background:color-mix(in srgb,var(--ink) 45%,var(--marigold));color:var(--marigold)}
-.chosen.l.lr-guard .btn-ghost{color:color-mix(in srgb,var(--marigold-ink) 45%,var(--marigold))}
-.chosen.r.lr-guard .btn-main{background:color-mix(in srgb,#fff 45%,var(--spruce));color:var(--spruce)}
-.chosen.r.lr-guard .btn-ghost{color:color-mix(in srgb,var(--spruce-ink) 45%,var(--spruce))}
+/* the 500ms post-pick guard (QA local-372ce92 L4, Creative option (b)): fill, label, border and focus ring stay exactly
+   as they are; a 3px bar in the label colour at full opacity along the inside bottom edge sweeps left to right over 500ms
+   (linear), then goes with the class. Reduced motion (theme.css: animation:none) leaves it as a static full line. */
+.lr-chosen .btn{position:relative;overflow:hidden}
+.lr-guard .btn{cursor:progress}
+.lr-guard .btn::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:currentColor;transform-origin:0 50%;animation:lr-sweep .5s linear both;pointer-events:none}
+@keyframes lr-sweep{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.lr-guard .btn::after{animation:none!important;transform:none}} /* '*' in theme.css doesn't reach ::after */
 .lr-done{font:700 20px/1.3 var(--ui);margin:16px 0 0}
 .lr-chosen .lr-box{width:100%;max-width:36em;text-align:left}
 .lr-chosen .lr-box label{color:inherit}

@@ -1,6 +1,10 @@
 /* Left or Right (P018): Cantrip map row 33. Felt board. Self-hosted OFL fonts only. */
 @font-face{font-family:"Andika";src:url(fonts/andika-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Andika";src:url(fonts/andika-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+/* Creative r3: the curly quotes U+201C/U+201D only, drawn in Andika wherever the rounded display font is used (its own
+   curly quotes look almost straight); first in --hand, so no DOM change */
+@font-face{font-family:"LR Quotes";src:url(fonts/andika-latin-400-normal.woff2) format("woff2");font-weight:100 600;font-display:swap;unicode-range:U+201C,U+201D}
+@font-face{font-family:"LR Quotes";src:url(fonts/andika-latin-700-normal.woff2) format("woff2");font-weight:700 900;font-display:swap;unicode-range:U+201C,U+201D}
 @font-face{font-family:"Shantell Sans";src:url(fonts/shantell-sans-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
 @font-face{font-family:"Shantell Sans";src:url(fonts/shantell-sans-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
 :root{
@@ -15,7 +19,7 @@
   --muted:#5E5446;
   --focus-w:8px;
   --ui:"Andika",system-ui,sans-serif;
-  --hand:"Shantell Sans","Andika",sans-serif;
+  --hand:"LR Quotes","Shantell Sans","Andika",sans-serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}

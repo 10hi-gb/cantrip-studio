@@ -1,74 +1,72 @@
 'use strict';
-// Left or Right: long-word fit (Creative r2, 2026-10-17). Pure: no DOM; widths come from an injected measure().
-// Rule: a tile's answer keeps its normal size if it fits; otherwise it shrinks in 2px steps; it stays unbroken at any size
-// down to the 24px floor if it can; only when a word can't fit even at 24px does it break, and then:
-//   tier 0  dictionary breaks (Liang patterns, hyph-en.js; mins 2 left / 3 right; e.g. Grand-mother's),
-//   tier 1  no dictionary break: between two letters with at least 4 letters on each side (names, made-up words),
-//   tier 2  last resort (e.g. a run of emoji): any grapheme boundary.
-// Among the allowed breaks it takes the fewest lines (two if at all possible), then the largest size (normal down to 24px)
-// where every line fits, then the most even lines (smallest widest line, then the smallest spread). Breaks are only ever between graphemes
-// (never inside an emoji), and the quotes are outside the tokens, so the closing quote always stays with the last letters.
-// The browser can't tell us its own hyphenation points (and headless Linux has no dictionary), so this is the deterministic
-// stand-in; lang="en" + hyphens:auto stay on the clean text for real devices.
+// Left or Right: answer layout for the board tiles and the chosen screen (Creative r2 + QA local-372ce92 L1). Pure: no DOM;
+// widths come from an injected measure(). fit.js decides every line; the page draws exactly these lines (white-space:pre,
+// no CSS hyphenation), so what is planned is what is rendered.
+// Wrap rule (PM): break at spaces first, then at the hyphens already in the text (no hyphen added; 2+ letters each side). Only a segment (the run
+// between those breaks) that can't fit on a line by itself may be broken inside, and then: tier 1 dictionary points (Liang
+// patterns, hyph-en.js), tier 2 any letter point, both with at least 4 letters on each side and a visible added hyphen,
+// tier 3 grapheme boundaries (a run of emoji that can't fit; never inside an emoji, no hyphen). A segment that fits is never
+// split. The closing quote is counted on the last line and always stays with the last grapheme.
+// Order: natural breaks only (spaces + existing hyphens) at the largest size from the normal size down to the 24px floor;
+// only if that fails at 24px, inner breaks: fewest lines, then the largest size, then the most even lines.
 (function (root, factory) { var m = factory(root.LR_HYPH || (typeof require === 'function' ? require('./hyph-en.js') : null)); if (typeof module === 'object' && module.exports) module.exports = m; else root.LRFIT = m; })(this, function (HY) {
-  var PAT = null, EXC = null, MAXP = 0;
+  var PAT = null, EXC = null, MAXP = 0, MINF = 4;
   function load() { if (PAT) return; PAT = Object.create(null); EXC = Object.create(null);
     HY.patterns.split(' ').forEach(function (p) { var ch = p.replace(/\d/g, ''); PAT[ch] = p.split(/[.a-z]/).map(function (d) { return +d || 0; }); if (ch.length > MAXP) MAXP = ch.length; });
     HY.exceptions.split(' ').forEach(function (x) { var pos = [], k = 0; for (var i = 0; i < x.length; i++) { if (x[i] === '-') pos.push(k); else k++; } EXC[x.replace(/-/g, '')] = pos; }); }
-  // Liang: break positions (counts of letters before the break) in a lowercase a-z word
+  // Liang: break positions (letters before the break) in an a-z word, with the patterns' own minimums (2 left, 3 right)
   function hyphenate(word) { load(); var w = word.toLowerCase(); if (!/^[a-z]+$/.test(w)) return []; if (EXC[w]) return EXC[w].filter(ok);
     var work = '.' + w + '.', pts = new Array(work.length + 1).fill(0);
     for (var i = 0; i < work.length; i++) for (var j = i + 1; j <= Math.min(work.length, i + MAXP); j++) { var p = PAT[work.slice(i, j)]; if (p) for (var k = 0; k < p.length; k++) if (p[k] > pts[i + k]) pts[i + k] = p[k]; }
     var out = []; for (var b = 1; b < w.length; b++) if (pts[b + 1] % 2 && ok(b)) out.push(b); return out;
     function ok(b) { return b >= HY.left && w.length - b >= HY.right; } }
   function graphemes(s) { if (typeof Intl === 'object' && Intl.Segmenter) return Array.from(new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s), function (x) { return x.segment; }); return Array.from(s); }
-  var LETTER = /^\p{L}\p{M}*$/u, ASCII = /^[A-Za-z]$/;
-  // one space-separated token -> graphemes + candidate breaks {at (grapheme index), hy (draw a hyphen), tier}
-  function token(text, first, last) {
-    var gs = graphemes(text), n = gs.length, br = [], seen = {}, i, pre = [0];
-    for (i = 0; i < n; i++) pre.push(pre[i] + (LETTER.test(gs[i]) ? 1 : 0));
-    for (i = 0; i < n;) { if (!ASCII.test(gs[i])) { i++; continue; } var a = i; while (i < n && ASCII.test(gs[i])) i++;
-      hyphenate(gs.slice(a, i).join('')).forEach(function (b) { seen[a + b] = 1; br.push({ at: a + b, hy: true, tier: 0 }); }); }
-    for (i = 1; i < n; i++) if (!seen[i] && LETTER.test(gs[i - 1]) && LETTER.test(gs[i]) && pre[i] >= 4 && pre[n] - pre[i] >= 4) { seen[i] = 1; br.push({ at: i, hy: true, tier: 1 }); }
-    for (i = 1; i < n; i++) if (!seen[i]) br.push({ at: i, hy: LETTER.test(gs[i - 1]) && LETTER.test(gs[i]), tier: 2 });
-    br.sort(function (x, y) { return x.at - y.at; });
-    var tiers = []; br.forEach(function (b) { if (tiers.indexOf(b.tier) < 0) tiers.push(b.tier); }); tiers.sort();
-    return { text: text, gs: gs, br: br, tiers: tiers, first: first, last: last };
+  var LETTER = /^\p{L}\p{M}*$/u, ASCII = /^[A-Za-z]$/, HYPH = /^[-\u2010]$/;
+  // the text as graphemes, its natural breaks and its segments (each with its inner break points by tier)
+  function parse(inner) {
+    var G = graphemes(inner.replace(/ +/g, ' ').trim()), n = G.length, nat = [], segs = [], a = 0, i;
+    // letters next to a hyphen, up to the next space or hyphen: a break at the answer's own hyphen keeps 2+ letters each side (no "x-" / "ray")
+    function lets(s, e, dir) { var c = 0, k; if (dir > 0) { for (k = s; k < e && G[k] !== ' ' && !HYPH.test(G[k]); k++) if (LETTER.test(G[k])) c++; } else { for (k = e - 1; k >= s && !HYPH.test(G[k]); k--) if (LETTER.test(G[k])) c++; } return c; }
+    function seg(s, e) { if (e <= s) return; var x = { s: s, e: e, t: [[], [], []] }, pre = [0], k;
+      for (k = s; k < e; k++) pre.push(pre[k - s] + (LETTER.test(G[k]) ? 1 : 0)); var L = pre[e - s], lt = function (p) { return pre[p - s]; };
+      var four = function (p) { return lt(p) >= MINF && L - lt(p) >= MINF && LETTER.test(G[p - 1]) && LETTER.test(G[p]); }, seen = {};
+      for (k = s; k < e;) { if (!ASCII.test(G[k])) { k++; continue; } var r = k; while (k < e && ASCII.test(G[k])) k++;
+        hyphenate(G.slice(r, k).join('')).forEach(function (b) { var p = r + b; if (four(p)) { seen[p] = 1; x.t[0].push({ pos: p, skip: 0, hy: true, kind: 'd' }); } }); }
+      for (k = s + 1; k < e; k++) if (!seen[k] && four(k)) { seen[k] = 1; x.t[1].push({ pos: k, skip: 0, hy: true, kind: 'f' }); }
+      for (k = s + 1; k < e; k++) if (!seen[k]) x.t[2].push({ pos: k, skip: 0, hy: LETTER.test(G[k - 1]) && LETTER.test(G[k]) && lt(k) >= MINF && L - lt(k) >= MINF, kind: 'g' });
+      segs.push(x); }
+    for (i = 0; i < n; i++) {
+      if (G[i] === ' ') { seg(a, i); nat.push({ pos: i, skip: 1, hy: false, kind: 's' }); a = i + 1; }
+      else if (HYPH.test(G[i]) && i > a && i + 1 < n && G[i + 1] !== ' ' && lets(a, i, -1) >= 2 && lets(i + 1, n, 1) >= 2) { seg(a, i + 1); nat.push({ pos: i + 1, skip: 0, hy: false, kind: 'h' }); a = i + 1; } }
+    seg(a, n); return { G: G, n: n, nat: nat, segs: segs };
   }
-  function tokens(inner) { var parts = inner.split(' ').filter(function (x) { return x !== ''; }); return parts.map(function (p, i) { return token(p, i === 0, i === parts.length - 1); }); }
-  // pieces of one token at one size; fits(str, first, last) and width(str, first, last) are supplied by the caller
-  function split(tk, tierMax, fits, width, K) {
-    if (fits(tk.text, tk.first, tk.last)) return [tk.text];
-    var cand = tk.br.filter(function (b) { return b.tier <= tierMax; }), n = tk.gs.length, best = null;
-    function piece(a, b, hy) { return tk.gs.slice(a, b).join('') + (hy ? '-' : ''); }
-    for (var k = 2; k <= Math.min(cand.length + 1, K || 8) && !best; k++) (function rec(start, from, left, acc, mx, mn) {
-      if (left === 1) { var s = piece(start, n, false), f = tk.first && start === 0; if (!fits(s, f, tk.last)) return; var w = width(s, f, tk.last), M = Math.max(mx, w), m = Math.min(mn, w);
-        if (!best || M < best.M - 0.01 || (Math.abs(M - best.M) <= 0.01 && M - m < best.M - best.m)) best = { M: M, m: m, p: acc.concat([s]) }; return; }
-      for (var c = from; c < cand.length; c++) { var b = cand[c], s2 = piece(start, b.at, b.hy), f2 = tk.first && start === 0; if (!fits(s2, f2, false)) continue; var w2 = width(s2, f2, false);
-        if (best && w2 > best.M + 0.01) continue; rec(b.at, c + 1, left - 1, acc.concat([s2]), Math.max(mx, w2), Math.min(mn, w2)); }
-    })(0, 0, k, [], 0, Infinity);
-    return best ? best.p : null;
+  // fewest lines (<= K), then the smallest widest line, then the smallest spread, over the allowed breaks
+  function layout(P, cands, fits, width, K) {
+    var C = [{ pos: 0, skip: 0, hy: false, kind: 'start' }].concat(cands.slice().sort(function (x, y) { return x.pos - y.pos; })).concat([{ pos: P.n, skip: 0, hy: false, kind: 'end' }]), m = C.length;
+    function text(i, j) { return P.G.slice(C[i].pos + C[i].skip, C[j].pos).join('') + (C[j].hy ? '-' : ''); }
+    var best = []; for (var i = 0; i < m; i++) best.push([]); best[0][0] = { M: 0, mn: Infinity, prev: -1 };
+    for (var k = 1; k <= K; k++) for (var j = 1; j < m; j++) for (var i2 = 0; i2 < j; i2++) { var b = best[i2][k - 1]; if (!b) continue; var s = text(i2, j); if (!s) continue; var f = i2 === 0, l = j === m - 1;
+      if (!fits(s, f, l)) continue; var w = width(s, f, l), M = Math.max(b.M, w), mn = Math.min(b.mn, w), cur = best[j][k];
+      if (!cur || M < cur.M - 0.01 || (Math.abs(M - cur.M) <= 0.01 && M - mn < cur.M - cur.mn - 0.01)) best[j][k] = { M: M, mn: mn, prev: i2 }; }
+    for (var k2 = 1; k2 <= K; k2++) if (best[m - 1][k2]) { var lines = [], kinds = [], j2 = m - 1, kk = k2; while (j2 > 0) { var pr = best[j2][kk].prev; lines.unshift(text(pr, j2)); if (j2 < m - 1) kinds.unshift(C[j2].kind); j2 = pr; kk--; } return { lines: lines, kinds: kinds }; }
+    return null;
   }
-  // level -1: everything unbroken; level L: each token uses its L-th tier (or its last)
-  function at(toks, level, fits, width, K) { var out = [];
-    for (var i = 0; i < toks.length; i++) { var tk = toks[i], p;
-      if (level < 0) { if (!fits(tk.text, tk.first, tk.last)) return null; p = [tk.text]; }
-      else { if (!tk.tiers.length) { if (!fits(tk.text, tk.first, tk.last)) return null; p = [tk.text]; } else p = split(tk, tk.tiers[Math.min(level, tk.tiers.length - 1)], fits, width, K); }
-      if (!p) return null; out.push(p); }
-    return out; }
-  // o: { sizes: [desc px], measure(str, first, last) -> {w, marks, hang} at o.R px, R, avail (px, or fn(size)), full, ok(size, plan)? }
-  // The line must fit the content box with its marks counted (browsers keep a mark with its word and don't trust the hang
-  // margin when breaking), and with the marks hung it must stay inside the tile padding.
+  // allowed breaks at one size and level (0 natural only; 1 + dictionary; 2 + letter fallback; 3 + graphemes), inner
+  // breaks only inside segments that don't fit by themselves
+  function cands(P, level, fits) { var out = P.nat.slice(); if (!level) return out;
+    P.segs.forEach(function (x) { var s = P.G.slice(x.s, x.e).join(''); if (fits(s, x.s === 0, x.e === P.n)) return; for (var t = 0; t < level; t++) out = out.concat(x.t[t]); }); return out; }
+  // o: { sizes: [desc px], measure(str, first, last) -> {w, marks, hang} at o.R px, R, avail (px or fn(size)), full, ok(size, lines)? }
+  // A line must fit the content box with its marks counted, and with the marks hung it must stay inside the tile padding.
   function plan(inner, o) {
-    var toks = tokens(inner), cache = {};
+    var P = parse(inner), cache = {}, ok = o.ok || function () { return true; }, i, K, L;
     function mz(s, f, l) { var key = (f ? 1 : 0) + (l ? 2 : 0) + s; return cache[key] || (cache[key] = o.measure(s, f, l)); }
     function mk(size) { var r = size / o.R, av = typeof o.avail === 'function' ? o.avail(size) : o.avail; return { fits: function (s, f, l) { var m = mz(s, f, l); return (m.w + (m.marks || 0)) * r <= av - 1 && (m.w + m.hang) * r <= o.full - 1; }, width: function (s, f, l) { return mz(s, f, l).w * r; } }; }
-    var ok = o.ok || function () { return true; }, levels = [-1, 0, 1, 2];
-    // unbroken at the largest size; else per tier level: fewest lines per word first (K), then the largest size
-    for (var L = 0; L < levels.length; L++) for (var K = levels[L] < 0 ? 1 : 2; K <= (levels[L] < 0 ? 1 : 8); K++) for (var i = 0; i < o.sizes.length; i++) {
-      var f = mk(o.sizes[i]), p = at(toks, levels[L], f.fits, f.width, K); if (p && ok(o.sizes[i], p)) return { size: o.sizes[i], level: levels[L], lines: p, broken: p.some(function (x) { return x.length > 1; }) }; }
-    var last = o.sizes[o.sizes.length - 1]; return { size: last, level: 3, lines: toks.map(function (t) { return [t.text]; }), broken: false, overflow: true };
+    function done(size, res, level) { return { size: size, lines: res.lines, kinds: res.kinds, level: level, broken: res.kinds.some(function (k) { return k === 'd' || k === 'f' || k === 'g'; }) }; }
+    var maxK = P.nat.length + 1 + 12;
+    for (i = 0; i < o.sizes.length; i++) { var f0 = mk(o.sizes[i]), r0 = layout(P, cands(P, 0, f0.fits), f0.fits, f0.width, maxK); if (r0 && ok(o.sizes[i], r0.lines)) return done(o.sizes[i], r0, 0); }
+    for (L = 1; L <= 3; L++) for (K = 1; K <= maxK; K++) for (i = 0; i < o.sizes.length; i++) { var f = mk(o.sizes[i]), r = layout(P, cands(P, L, f.fits), f.fits, f.width, K); if (r && ok(o.sizes[i], r.lines)) return done(o.sizes[i], r, L); }
+    var last = o.sizes[o.sizes.length - 1]; return { size: last, lines: [P.G.join('')], kinds: [], level: 4, broken: false, overflow: true };
   }
   function sizes(base, floor) { var out = [], s = base; while (s > floor + 0.01) { out.push(Math.round(s * 100) / 100); s -= 2; } out.push(floor); return out; }
-  return { hyphenate: hyphenate, graphemes: graphemes, token: token, tokens: tokens, split: split, plan: plan, sizes: sizes };
+  return { hyphenate: hyphenate, graphemes: graphemes, parse: parse, layout: layout, plan: plan, sizes: sizes, MINF: MINF };
 });

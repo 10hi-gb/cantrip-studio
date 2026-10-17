@@ -76,9 +76,17 @@
     if (es.length) { var f = $(fid(es[0])); V.land(f); return false; } return true;
   }
   function edited(i) { if (i >= 0) answers[i] = null; $('linkbox').hidden = true; preview(); renderAnswers(); }
+  // QA local-372ce92 L3: Chrome may break between any two emoji, so a word holding emoji (🍕🍕🍕, 🍕🍕🍕!) goes in an inline
+  // block no wider than the line: it moves whole to the next line when it fits there, and only a run wider than the whole
+  // line breaks, between emoji (never inside one). The text itself is unchanged for copy and the accessibility tree.
+  var EMO = /\p{Extended_Pictographic}/u;
+  function keepEmoji(n) { var w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT), ts = [], t; while ((t = w.nextNode())) ts.push(t);
+    ts.forEach(function (t) { if (!EMO.test(t.data)) return; var f = document.createDocumentFragment();
+      t.data.split(/(\s+)/).forEach(function (x) { if (!x) return; if (EMO.test(x)) { var b = el('span', 'lr-nb'); b.textContent = x; f.appendChild(b); } else f.appendChild(document.createTextNode(x)); });
+      t.parentNode.replaceChild(f, t); }); return n; }
   function preview() {
     var x = st.qs[edRow] || st.qs[0];
-    function set(id, v) { var e = $(id); e.textContent = ''; if (L.clean(v)) e.appendChild(typed(v)); }
+    function set(id, v) { var e = $(id); e.textContent = ''; if (L.clean(v)) e.appendChild(keepEmoji(typed(v))); }
     set('pv-q', x.q); set('pv-l', x.l); set('pv-r', x.r); $('pv-la').textContent = '\u25C0 ' + C.leftSide; $('pv-ra').textContent = C.rightSide + ' \u25B6';
   }
 
@@ -108,18 +116,22 @@
     if (st.key === 'any') return C.hint.switchAny;
     return M.fill(C.hint.switch, { key: C.switchKeys[st.key] });
   }
-  // ---------- long answers (Creative r2, 2026-10-17; plan in fit.js): normal size if it fits, else 2px steps; unbroken down
-  // to the 24px floor if possible; else the fewest, most even lines at the largest size, breaking at a dictionary point
-  // (Grand-mother's), else at the most even letter point with 4+ letters each side, never inside an emoji, never leaving the
-  // closing quote alone. Both halves share one size. A broken answer is drawn as CSS generated content with empty alt
-  // text; the clean text stays in the DOM (visually hidden), so names, the accessibility tree and copies are untouched.
+  // ---------- long answers (Creative r2 + QA local-372ce92 L1; plan in fit.js): spaces and the answer's own hyphens first,
+  // largest size from normal down to the 24px floor; only a segment that can't fit alone is broken inside (dictionary point,
+  // else 4+4 letters, else between emoji), fewest lines then largest size. fit.js decides every line and the page draws
+  // exactly those lines (white-space:pre, no CSS hyphenation). Both halves share one size. The visible copy is CSS
+  // generated content with empty alt text; the clean text stays in the DOM (visually hidden), so names, the accessibility
+  // tree and copies are untouched.
   var FLOOR = 24, TALL_FLOOR = 30, R = 100, qCache = {};
   function hOver(t) { return t.scrollHeight > t.clientHeight + 1; }
   function px(e, k) { return parseFloat(getComputedStyle(e)[k]) || 0; }
-  function probe(box, fs) { var p = el('span', 'lr-probe'); p.style.fontSize = fs + 'px'; box.appendChild(p); return p; }
+  // QA local-372ce92 (a): the probe sits in a zero-size, clipped wrapper, so measuring never widens the page (a 100px nowrap
+  // probe in the box used to overflow it and bring in classic scrollbars mid-plan, shrinking the width being planned)
+  function probe(box, fs) { var w = el('span', 'lr-probe-w'), p = el('span', 'lr-probe'); p.style.fontSize = fs + 'px'; w.appendChild(p); box.appendChild(w); return p; }
+  function unprobe(p) { var w = p.parentNode; w.parentNode.removeChild(w); }
   function quoteEm(box) { // width of each mark as a fraction of the mark's own size, per font (for the hang margins)
     var cs = getComputedStyle(box), key = cs.fontFamily + '|' + cs.fontWeight + '|' + cs.fontStyle;
-    if (!qCache[key]) { var pr = probe(box, R); pr.textContent = '\u201C'; var o = pr.offsetWidth; pr.textContent = '\u201D'; var c = pr.offsetWidth; box.removeChild(pr); qCache[key] = { o: o / R, c: c / R }; }
+    if (!qCache[key]) { var pr = probe(box, R); pr.textContent = '\u201C'; var o = pr.offsetWidth; pr.textContent = '\u201D'; var c = pr.offsetWidth; unprobe(pr); qCache[key] = { o: o / R, c: c / R }; }
     return qCache[key]; }
   function tileOf(box) { return box.closest('.half,.chosen,.qstrip') || box.parentElement; }
   function extra(q, size, pad) { return { s: Math.max(0, Math.ceil(q.o * 0.8 * size - pad + 1)), e: Math.max(0, Math.ceil(q.c * 0.8 * size - pad + 1)) }; } // the part of a hung mark the tile padding can't hold
@@ -127,22 +139,27 @@
     box.style.paddingInlineStart = box.style.paddingInlineEnd = ''; var x = extra(q, size || px(box, 'fontSize'), Math.min(px(t, 'paddingLeft'), px(t, 'paddingRight'))); // a full-width line still hangs inside the tile
     box.style.paddingInlineStart = x.s + 'px'; box.style.paddingInlineEnd = x.e + 'px'; }
   function innerOf(box) { var t = box.querySelector('.lr-sr').textContent; return t.length >= 2 && t[0] === '\u201C' && t[t.length - 1] === '\u201D' ? t.slice(1, -1) : t; }
-  function unbreak(box) { var vt = box.querySelector('.lr-vt'); vt.setAttribute('data-v', innerOf(box)); box.querySelector('.lr-vis').classList.remove('lr-brk'); }
+  function lines(box, ls) { box.querySelector('.lr-vt').setAttribute('data-v', ls.join('\n')); }
   function planFor(box, tile, sizes) { // measure at R px once per string; widths scale with the size
-    unbreak(box); box.style.fontSize = ''; box.style.paddingInlineStart = box.style.paddingInlineEnd = ''; hang(box, 0); var q = quoteEm(box), pr = probe(box, R), cw = box.clientWidth, padIn = px(tile, 'paddingLeft') + px(tile, 'paddingRight'), padMin = Math.min(px(tile, 'paddingLeft'), px(tile, 'paddingRight'));
+    lines(box, ['']); box.style.fontSize = ''; box.style.paddingInlineStart = box.style.paddingInlineEnd = ''; hang(box, 0); var q = quoteEm(box), cw = box.clientWidth, pr = probe(box, R), padIn = px(tile, 'paddingLeft') + px(tile, 'paddingRight'), padMin = Math.min(px(tile, 'paddingLeft'), px(tile, 'paddingRight'));
     var o = { R: R, avail: function (size) { var x = extra(q, size, padMin); return cw - x.s - x.e; }, sizes: sizes || LRFIT.sizes(px(box, 'fontSize'), FLOOR),
       measure: function (s, f, l) { pr.textContent = s; return { w: pr.offsetWidth, marks: (f ? q.o * 0.8 * R : 0) + (l ? q.c * 0.8 * R : 0), hang: 2 * Math.max(f ? q.o * 0.8 * R : 0, l ? q.c * 0.8 * R : 0) }; } };
     o.full = cw + padIn - 4; // hanging marks may use the tile padding, never the tile edge
-    o.ok = function (size, lines) { if (!tile.classList.contains('half') || size <= TALL_FLOOR) return true; box.style.fontSize = size + 'px'; var t = hOver(tile); box.style.fontSize = ''; return !t; };
-    var r = LRFIT.plan(innerOf(box), o); box.removeChild(pr); return r; }
-  function draw(box, r) { // apply the size and the drawn lines (newlines between the pieces of a broken word)
-    box.style.fontSize = r.size + 'px'; hang(box, r.size); box.querySelector('.lr-vt').setAttribute('data-v', r.lines.map(function (p) { return p.join('\n'); }).join(' '));
-    box.querySelector('.lr-vis').classList.toggle('lr-brk', r.broken); box.classList.toggle('lr-shy', r.broken); }
-  function fitBoard() { if ($('s2').hidden) return; hang($('b-q'));
-    var a = $('h-l-a'), b = $('h-r-a'), ra = planFor(a, $('h-l')), rb = planFor(b, $('h-r')), m = Math.min(ra.size, rb.size); // one size for both halves, so neither looks favoured
-    draw(a, ra.size === m ? ra : planFor(a, $('h-l'), [m])); draw(b, rb.size === m ? rb : planFor(b, $('h-r'), [m])); }
-  function fitChosen() { if ($('s3').hidden) return; hang($('c-q')); var a = $('c-a'); draw(a, planFor(a, $('s3'))); }
-  function refit() { fitBoard(); fitChosen(); }
+    o.ok = function (size, ls) { if (!tile.classList.contains('half') || size <= TALL_FLOOR) return true; box.style.fontSize = size + 'px'; lines(box, ls); var t = hOver(tile); box.style.fontSize = ''; lines(box, ['']); return !t; };
+    var r = LRFIT.plan(innerOf(box), o); unprobe(pr); return r; }
+  function draw(box, r) { // apply the size and exactly the planned lines
+    box.style.fontSize = r.size + 'px'; hang(box, r.size); lines(box, r.lines); box.classList.toggle('lr-shy', r.broken); }
+  // QA local-372ce92 (a): the answers are blanked before anything is measured, so the unplanned text can't make the page
+  // scroll (with classic scrollbars that took 15px off the width being planned: 24.7px where 26.8px fits at 320x760); if
+  // the page width still changes once drawn, plan again once at the new width
+  function blank(box) { lines(box, ['']); box.style.fontSize = ''; }
+  function fitBoard(again) { if ($('s2').hidden) return; hang($('b-q'));
+    var a = $('h-l-a'), b = $('h-r-a'), vw = (blank(a), blank(b), document.documentElement.clientWidth), ra = planFor(a, $('h-l')), rb = planFor(b, $('h-r')), m = Math.min(ra.size, rb.size); // one size for both halves, so neither looks favoured
+    draw(a, ra.size === m ? ra : planFor(a, $('h-l'), [m])); draw(b, rb.size === m ? rb : planFor(b, $('h-r'), [m]));
+    if (!again && document.documentElement.clientWidth !== vw) fitBoard(true); }
+  function fitChosen(again) { if ($('s3').hidden) return; hang($('c-q')); var a = $('c-a'), vw = (blank(a), document.documentElement.clientWidth); draw(a, planFor(a, $('s3')));
+    if (!again && document.documentElement.clientWidth !== vw) fitChosen(true); }
+  function refit() { fitBoard(false); fitChosen(false); }
   function setHi() { ['l', 'r'].forEach(function (s) { $('h-' + s).classList.toggle('scan', st.mode === 'switch' && bd && bd.hi === s); }); }
   function stopBoard() { clearInterval(scanT); clearTimeout(dueT); cancelAnimationFrame(raf); scanT = dueT = raf = 0; ringOff(); }
   function ringOff() { cancelAnimationFrame(raf); raf = 0; ['l', 'r'].forEach(function (s) { var h = $('h-' + s); h.classList.remove('holding'); h.style.removeProperty('--p'); }); }
@@ -176,9 +193,16 @@
     $('c-next').hidden = last; $('c-done').hidden = !last; $('c-done').textContent = C.done; $('c-fb').hidden = true;
     $('live').textContent = M.fill(C.chosenAria, { answer: qt(L.answerOf(x, side)), side: L.sideWord(C, side) });
     screen(3); fitChosen(); renderAnswers();
-    armed = false; s3.classList.add('lr-guard'); clearTimeout(armT); armT = setTimeout(function () { armed = true; s3.classList.remove('lr-guard'); }, 500); // the press that picked can't also press a button here; the buttons show it (reduced opacity) for those 500ms
+    guard(s3); // the press that picked can't also press a button here
     (last ? $('c-send') : $('c-next')).focus({ preventScroll: true });
   }
+  // QA local-372ce92 L4, Creative option (b): for 500ms the buttons look exactly as they are (fill, label, border, focus
+  // ring); a 3px bar in the label colour sweeps along the inside bottom edge of each (static under reduced motion), the
+  // buttons are aria-disabled with cursor:progress, and presses do nothing. Then the bar and aria-disabled go.
+  function guardBtns(s3) { return Array.prototype.slice.call(s3.querySelectorAll('.btn')); }
+  function guard(s3) { armed = false; clearTimeout(armT); s3.classList.remove('lr-guard'); void s3.offsetWidth; s3.classList.add('lr-guard');
+    guardBtns(s3).forEach(function (b) { b.setAttribute('aria-disabled', 'true'); });
+    armT = setTimeout(function () { armed = true; s3.classList.remove('lr-guard'); guardBtns(s3).forEach(function (b) { b.removeAttribute('aria-disabled'); }); }, 500); }
   function sideOf(t) { var h = t && t.closest && t.closest('.half'); return h ? (h.id === 'h-l' ? 'l' : 'r') : null; }
   function boardKeys() {
     document.addEventListener('keydown', function (ev) {
@@ -222,7 +246,8 @@
   function load(hash) {
     stopBoard(); V.clearInputs(document); V.clearErrors(document, '.lr-err'); $('live').textContent = ''; $('banner').hidden = true; $('linkbox').hidden = true;
     recv = false; st = L.blank(); edRow = 0;
-    if (hash) { var d = L.decode(hash); if (d.ok) { st = d.data; recv = true; } else { $('banner-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; $('banner').hidden = false; } }
+    // QA local-372ce92 L2: the 2,000 cap is on the whole received URL (shared MILLVIEW.linkFor), not the fragment alone
+    if (hash) { var d = V.linkFor(String(hash).replace(/^#/, '')) ? L.decode(hash) : { ok: false, why: 'tooLong' }; if (d.ok) { st = d.data; recv = true; } else { $('banner-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; $('banner').hidden = false; } }
     answers = st.qs.map(function () { return null; });
     $('edit').hidden = recv; $('recv').hidden = !recv; $('preview').hidden = recv; V.readOnly($('edit'), recv);
     if (recv) renderRecv(); else { $('from').value = st.from; renderRows(); renderMode(); }
@@ -268,7 +293,10 @@
       else copyText(t, 'c-fb', 'c-fbt'); });
     boardKeys();
     window.addEventListener('resize', refit); window.addEventListener('orientationchange', refit);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(refit);
+    // QA local-372ce92 (a): the tile faces load on first use, after the first plan; any face that finishes loading clears
+    // the cached mark widths and re-plans (fonts.ready alone had already resolved, so the board kept fallback-font widths)
+    if (document.fonts) { document.fonts.addEventListener('loadingdone', function () { qCache = {}; refit(); }); if (document.fonts.ready) document.fonts.ready.then(function () { qCache = {}; refit(); });
+      ['700 1em Andika', '400 1em Andika', '500 1em "Shantell Sans"', '700 1em "Shantell Sans"', '700 1em "LR Quotes"', '500 1em "LR Quotes"'].forEach(function (f) { document.fonts.load(f, f.indexOf('Quotes') > 0 ? '\u201C\u201D' : 'a').catch(function () {}); }); }
     V.route(load);
   }
   try { wire(); } catch (e) { document.body.textContent = C.error; throw e; }
