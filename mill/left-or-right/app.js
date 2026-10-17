@@ -78,7 +78,8 @@
       var d = (inp.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean); d.unshift('e-' + id); inp.setAttribute('aria-describedby', d.join(' ')); });
     if (es.length) { var f = $(fid(es[0])); V.land(f); return false; } return true;
   }
-  function edited(i) { if (i >= 0) answers[i] = null; $('linkbox').hidden = true; preview(); renderAnswers(); }
+  // QA local-f66fb8e L10: an edit (or Make a link) in the editor writes the path only, also after a bad link (#garbage)
+  function edited(i) { if (!recv) clearHash(); if (i >= 0) answers[i] = null; $('linkbox').hidden = true; preview(); renderAnswers(); }
   // QA local-372ce92 L3: Chrome may break between any two emoji, so a word holding emoji (🍕🍕🍕, 🍕🍕🍕!) goes in an inline
   // block no wider than the line: it moves whole to the next line when it fits there, and only a run wider than the whole
   // line breaks, between emoji (never inside one). The text itself is unchanged for copy and the accessibility tree.
@@ -250,7 +251,7 @@
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { toast(C.copied); }, function () { toast(C.copyFail); fallback(boxId, taId, text); });
     else { toast(C.copyFail); fallback(boxId, taId, text); }
   }
-  function makeLink() {
+  function makeLink() { if (!recv) clearHash();
     if (!showErrors()) return null; var f = L.rawFragment(st); if (!f) return null; var u = V.linkFor(f);
     if (!u) { $('linkbox').hidden = true; toast(C.tooLongLink); return null; }
     $('linkbox').hidden = false; $('link').value = u; $('link').focus(); $('link').select(); return u;
