@@ -448,6 +448,34 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
         if (i < CASES.length - 1) { await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(650); await press(p, '#c-next'); await sleep(300); } }
       ck(`L5/L6 ${w}: no page errors`, !c.errs.length, c.errs); } catch (e) { ck(`L5/L6 ${w}: the checks ran to the end`, false, String(e && e.stack || e).slice(0, 400)); } await c.b.close();
     }
+    // Creative r5 (after f66fb8e): a single word takes the fewest pieces at any size >= 24px, then the largest size for that
+    // count. Oracle: the fewest letter-point pieces (4+ letters each, hyphen added, marks counted and hung as the page does)
+    // at the 24px floor, by first-fit at 24px; the drawn count must equal it, and the drawn size must not fit fewer pieces.
+    const minPieces = (p, id, tileSel) => p.evaluate((id, tileSel) => { const a = document.getElementById(id), tile = tileSel ? document.querySelector(tileSel) : (a.closest('.half') || a.parentElement), ts = getComputedStyle(tile);
+      const word = a.querySelector('.lr-sr').textContent.slice(1, -1), cw = a.clientWidth, pad = Math.min(parseFloat(ts.paddingLeft), parseFloat(ts.paddingRight)), full = cw + parseFloat(ts.paddingLeft) + parseFloat(ts.paddingRight) - 4;
+      const pw = document.createElement('span'), pr = document.createElement('span'); pw.className = 'lr-probe-w'; pr.className = 'lr-probe'; pr.style.fontSize = '100px'; pw.appendChild(pr); a.appendChild(pw);
+      const W = t => { pr.textContent = t; return pr.offsetWidth; }, qo = W('\u201C') / 100, qc = W('\u201D') / 100;
+      const count = s => { const av = cw - Math.max(0, Math.ceil(qo * 0.8 * s - pad + 1)) - Math.max(0, Math.ceil(qc * 0.8 * s - pad + 1)), r = s / 100;
+        const fits = (t, f, l) => { const mo = f ? qo * 80 : 0, mc = l ? qc * 80 : 0; return (W(t) + mo + mc) * r <= av - 1 && (W(t) + 2 * Math.max(mo, mc)) * r <= full - 1; };
+        let i = 0, k = 0; const n = word.length; while (i < n) { k++; if (fits(word.slice(i), i === 0, true)) return k; let j = -1; for (let e = n - 4; e >= i + 4; e--) if (fits(word.slice(i, e) + '-', i === 0, false)) { j = e; break; } if (j < 0) return Infinity; i = j; } return k; };
+      const drawn = a.querySelector('.lr-vt').getAttribute('data-v').split('\n'), fs = parseFloat(getComputedStyle(a).fontSize), out = { word, drawn, fs, at24: count(24), atDrawn: count(fs) }; pw.remove(); return out; }, id, tileSel);
+    const NOOO = 'N' + 'o'.repeat(29), r5 = {};
+    for (const w of [320, 360, 390, 700, 1280, 1440]) {
+      const c = await classic(), p = c.p; try { await p.setViewport({ width: w, height: VH[w] || 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
+      await fillQ(p, 0, 'Shall we go?', NOOO, 'Yes'); await fillQ(p, 1, 'Which one?', 'Superextraordinarily', 'Grandmother'); await sleep(150);
+      if (w >= 1000) { const v = await minPieces(p, 'pv-l'), L = await lw(p, 'pv-l');
+        ck(`r5 preview ${w}: “${NOOO}” in the fewest pieces possible at >= 24px (${v.drawn.length} at ${v.fs}px; oracle ${v.at24} at 24px); rendered = plan`, lwOk(L) && v.drawn.length === v.at24 && v.fs >= 24 && v.drawn.join('').replace(/-/g, '') === NOOO, v); }
+      await press(p, '#go'); await sleep(300);
+      const v = await minPieces(p, 'h-l-a'), L = await lw(p, 'h-l-a'), R = await lw(p, 'h-r-a'); r5[w] = v.drawn.length + ' pieces @ ' + v.fs + 'px';
+      ck(`r5 board ${w}: “${NOOO}” in the fewest pieces possible at >= 24px (${v.drawn.length} at ${v.fs}px: ${v.drawn.join(' / ')}; oracle ${v.at24} at 24px), every piece 4+ letters, “Yes” at the same size; rendered = plan`, lwOk(L) && lwOk(R) && v.drawn.length === v.at24 && v.fs >= 24 && L.fs === R.fs && v.drawn.every(x => (x.match(/\p{L}/gu) || []).length >= 4) && v.drawn.join('').replace(/-/g, '') === NOOO, { v, R: R.lines });
+      if (w === 390) ck(`r5 board 390: the 30-letter word lands in 2-3 pieces (${v.drawn.length})`, v.drawn.length >= 2 && v.drawn.length <= 3, v);
+      await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(650); const cv = await minPieces(p, 'c-a', '#s3'), A = await lw(p, 'c-a');
+      ck(`r5 chosen ${w}: “${NOOO}” in the fewest pieces possible at >= 24px (${cv.drawn.length} at ${cv.fs}px; oracle ${cv.at24}); rendered = plan`, lwOk(A) && cv.drawn.length === cv.at24 && cv.fs >= 24, cv);
+      await press(p, '#c-next'); await sleep(300); const S = await lw(p, 'h-l-a'), G = await lw(p, 'h-r-a'), sv = await minPieces(p, 'h-l-a');
+      ck(`r5 board ${w}: “Superextraordinarily” fewest pieces too (${S.lines.join(' / ')} @ ${S.fs}px, oracle ${sv.at24}); “Grandmother” unbroken when it fits at the shared size (${G.lines.join(' / ')})`, lwOk(S) && lwOk(G) && S.lines.length <= sv.at24, { S: S.lines, G: G.lines, sv });
+      ck(`r5 ${w}: no page errors`, !c.errs.length, c.errs); } catch (e) { ck(`r5 ${w}: the checks ran to the end`, false, String(e && e.stack || e).slice(0, 400)); } await c.b.close();
+    }
+    ck('r5: Nooo… piece counts by width (info) ' + JSON.stringify(r5), true, r5);
     // QA local-d0ca704 L7: every quote-mark location, both sides; 4.5:1 normal size, 3:1 large (the mark's own size)
     for (const w of [320, 390, 1280]) {
       const c = await classic(), p = c.p; try { await p.setViewport({ width: w, height: VH[w] || 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
