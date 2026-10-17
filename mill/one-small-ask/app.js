@@ -32,6 +32,10 @@
   function typed(tpl, key, value) { var f = document.createDocumentFragment(), parts = String(tpl).split('{' + key + '}'); f.appendChild(document.createTextNode(parts[0])); f.appendChild(V.typed(value, 'osa-typed')); if (parts[1]) f.appendChild(document.createTextNode(parts[1])); return f; }
   function quoted(value) { var w = el('span', 'osa-quoted'); w.appendChild(el('span', 'osa-qlabel', C.receiverAskLabel)); w.appendChild(document.createTextNode(' ')); w.appendChild(el('span', 'osa-qtext', M.fill(C.quoteWrap, { text: value }))); return w; }
   function page(title, lede) { var tt = $('title'); tt.textContent = ''; if (typeof title === 'string') tt.textContent = title; else tt.appendChild(title); $('lede').textContent = lede || ''; $('lede').hidden = !lede; $('delta').hidden = true; $('delta').textContent = ''; $('delta').removeAttribute('aria-label'); $('link').value = ''; setText(''); $('note').hidden = true; $('linkbox').hidden = true; $('x').textContent = ''; $('x').setAttribute('aria-label', C.exchangeAria); rowN = 0; }
+  // QA local-652d0e0 N3: action and where are typed text: quoted in every place they show (screen, strikethrough, aria, delta)
+  function isTyped(k, v) { return (k === 'action' || k === 'where') && !!v && v !== '\u2014'; }
+  function tv(k, v) { return isTyped(k, v) ? V.quote(v) : (v || '\u2014'); }
+  function typedNode(k, v) { return isTyped(k, v) ? V.typed(v, 'osa-typed') : txt(v || '\u2014'); }
   function noteLine(t) { $('note').textContent = t; $('note').hidden = !t; }
   // ---------- copy / share ----------
   function selectText(node) { node.focus(); if (node.select) node.select(); else { var r = document.createRange(); r.selectNodeContents(node); var s = getSelection(); s.removeAllRanges(); s.addRange(r); } }
@@ -145,7 +149,7 @@
     document.querySelectorAll('.osa-term[data-key]').forEach(function (r) {
       var k = r.getAttribute('data-key'), ch = ps.diff ? !!ps.diff[k] : r.classList.contains('is-changed'), a = r.querySelector('.ask'), n = r.querySelector('.ans'), v = r.getAttribute('data-val');
       r.className = 'osa-term is-' + (ch ? 'changed' : 'same'); r.querySelector('.seam').textContent = ch ? '→' : '=';
-      a.textContent = ''; a.appendChild(ch ? el('s', null, v) : txt(v));
+      a.textContent = ''; if (ch) { var sv = el('s'); sv.appendChild(typedNode(k, v)); a.appendChild(sv); } else a.appendChild(isTyped(k, v) ? quoted(v) : txt(v));
       if (ch) { a.setAttribute('data-lbl', C.askedLabel); n.setAttribute('data-lbl', C.changedLabel); } else { a.removeAttribute('data-lbl'); n.removeAttribute('data-lbl'); }
       var sr = n.querySelector('.osa-vh'); if (sr) sr.textContent = ch ? C.changedLabel : C.unchangedLabel;
     });
@@ -173,8 +177,8 @@
   function readReply() {
     mode = 'reply'; var r = reply, a = A.termValues(C, r.a), p = r.p ? A.termValues(C, r.p) : null, d = r.p ? A.diff(r.a, r.p) : null;
     var intro = { y: r.a.o ? typed(C.replyIntroYes, 'to', r.a.o) : C.replyIntroYesAnon, p: r.a.o ? typed(C.replyIntroPart, 'to', r.a.o) : C.replyIntroPartAnon, n: r.a.o ? typed(C.replyIntroNo, 'to', r.a.o) : C.replyIntroNoAnon }[r.v];
-    page(intro, '');
-    if (r.v === 'p') { var dl = $('delta'), was = [], now = []; A.TERMS.forEach(function (t) { if (d[t[0]]) { was.push(a[t[0]] || '—'); now.push(p[t[0]] || '—'); } }); dl.textContent = ''; dl.appendChild(el('span', 'a', was.join(' · '))); var to = el('span', 'to', '→'); to.setAttribute('aria-hidden', 'true'); dl.appendChild(to); dl.appendChild(el('span', 'b', now.join(' · '))); dl.setAttribute('aria-label', C.deltaAria); dl.hidden = false; }
+    page(intro, C.receiverTypedNote); // N3: shown once on reply views too
+    if (r.v === 'p') { var dl = $('delta'), was = [], now = []; A.TERMS.forEach(function (t) { if (d[t[0]]) { was.push(tv(t[0], a[t[0]])); now.push(tv(t[0], p[t[0]])); } }); dl.textContent = ''; dl.appendChild(el('span', 'a', was.join(' · '))); var to = el('span', 'to', '→'); to.setAttribute('aria-hidden', 'true'); dl.appendChild(to); dl.appendChild(el('span', 'b', now.join(' · '))); dl.setAttribute('aria-label', C.deltaAria); dl.hidden = false; }
     var x = $('x'); x.appendChild(el('span', 'osa-seamline')).setAttribute('aria-hidden', 'true');
     var vp = el('span', 'osa-verdict is-' + { y: 'yes', p: 'part', n: 'no' }[r.v], { y: C.replyYes, p: C.replyPart, n: C.replyNo }[r.v]);
     x.appendChild(heads(head('ask', initial(r.a.f), C.originalLabel, r.a.f ? V.quote(r.a.f) : ''), head('ans', initial(r.a.o), C.offerLabel, r.a.o ? V.quote(r.a.o) : '', vp)));
@@ -184,9 +188,9 @@
       var q = (k === 'action' || k === 'where') && a[k], orig = function () { return q ? quoted(a[k]) : txt(a[k] || '—'); };
       if (r.v === 'n') { x.appendChild(term('same', label, orig(), '·', el('span', 'none', k === 'action' ? C.replyNo : '—'))); return; }
       if (r.v === 'y' || !d[k]) { x.appendChild(term('same', label, orig(), '=', txt(M.fill(C.sameLine, { value: q ? M.fill(C.quoteWrap, { text: a[k] }) : (a[k] || '—') })), C.unchangedLabel)); return; }
-      var sw = el('s'); if (q) sw.appendChild(quoted(a[k])); else sw.textContent = a[k] || '—'; x.appendChild(term('changed', label, sw, '→', txt(p[k] || '—'), M.fill(C.diffAria, { term: C[t[1]], was: a[k] || '—', now: p[k] || '—' })));
+      var sw = el('s'); if (q) sw.appendChild(quoted(a[k])); else sw.textContent = a[k] || '—'; x.appendChild(term('changed', label, sw, '→', typedNode(k, p[k]), M.fill(C.diffAria, { term: C[t[1]], was: tv(k, a[k]), now: tv(k, p[k]) })));
     });
-    if (r.n) x.appendChild(term('same', C.noteLabel, el('span', 'none', '—'), '·', txt(r.n)));
+    if (r.n) x.appendChild(term('same', C.noteLabel, el('span', 'none', '—'), '·', V.typed(r.n, 'osa-typed')));
     x.appendChild(foot([btns([btn(C.askAgainChanged, 'osa-btn--ask', function () { var src = r.p || r.a; draft = { w: src.w, e: String(src.e), u: src.u, d: src.d, s: src.s, t: src.t, h: src.h, f: r.a.f, o: r.a.o }; leave(); }, 'b-again'), btn(C.askSomeoneElse, '', function () { draft = { w: r.a.w, e: String(r.a.e), u: r.a.u, d: r.a.d, s: r.a.s, t: r.a.t, h: r.a.h, f: r.a.f, o: '' }; leave(); }, 'b-else'), btn(C.copyAsText, '', function () { copy(lastText, $('text')); }, 'b-text'), btn(C.printLabel, '', function () { window.print(); }, 'b-print')])], []));
     noteLine([C.replyReceivedNote, C.noBookingNote, r.v === 'n' ? C.noReasonReceived : ''].filter(Boolean).join(' '));
     setText(A.textReply(C, r));
@@ -195,6 +199,10 @@
   function reset() { if (!confirm(C.resetConfirm)) return; history.replaceState(null, '', location.pathname + location.search); $('link').value = ''; $('linkbox').hidden = true; draft = blankDraft(); touched = {}; $('banner').hidden = true; compose(); toast(C.resetDone); $('f-w').focus(); }
   // Shared MILLVIEW.route: every load and every hashchange (valid, bad, old or empty) rebuilds the tab from the fragment alone.
   function route(h) {
+    var ae = document.activeElement; if (ae && ae !== document.body && ae.blur) ae.blur(); // N3: blur first (its validation runs now)...
+    routeTo(h); touched = {}; V.clearErrors(document, '.osa-err'); // ...then clear errors after the rebuild
+  }
+  function routeTo(h) {
     choice = null; offer = null; note = ''; touched = {}; ask = null; reply = null; $('banner').hidden = true; V.clearErrors(document, '.osa-err'); $('link').value = ''; $('linkbox').hidden = true;
     if (!h) { draft = blankDraft(); return compose(); }
     var d = A.decode(h);

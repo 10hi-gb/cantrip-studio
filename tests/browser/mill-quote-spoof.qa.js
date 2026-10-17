@@ -13,6 +13,7 @@ const CASES = [
     known: ['TSH D3 (queued: names and title unquoted in 187 of 189 places)', h => true] },
   { slug: 'split-the-sack', make: (SP, G) => SACKLINK.encode({ n: SP, u: 'lb', c: '$', q: '25', i: '0.5', p: '31.47', f: '2.99', b: 'p', x: -1, h: [[G, '8'], ['Unit 2B', '7.5'], ['Bao', '6']] }), prep: async p => { await p.select('#pick', '0'); await sleep(100); } },
   { slug: 'one-small-ask', make: (SP, G) => ASK.encodeAsk({ w: SP, e: 10, u: 'min', d: 'Sat', s: '09:00', t: '10:00', h: '', f: G, o: 'Bo' }) },
+  { slug: 'one-small-ask', tag: ' (Part of it, F-A1)', make: (SP, G) => ASK.encodeAsk({ w: SP, e: 10, u: 'min', d: 'Sat', s: '09:00', t: '10:00', h: G, f: 'Ana', o: 'Bo' }), prep: async p => { await p.click('#c-p'); await sleep(120); } },
 ];
 const outputs = async (p, clip) => { const o = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('textarea[readonly], output')].map((e, i) => ['out@' + (e.id || i), e.value || e.textContent]))); clip.forEach((c, i) => { o['clipboard#' + i] = c; }); return o; };
 const copyAll = async p => { for (const sel of ['#b-text', '#b-copy', '#copytext']) { const ok = await p.evaluate(s => { const e = document.querySelector(s); return !!(e && e.tagName === 'BUTTON' && !e.disabled && e.getClientRects().length); }, sel); if (ok) { await p.click(sel); await sleep(120); } } };
@@ -23,7 +24,7 @@ const copyAll = async p => { for (const sel of ['#b-text', '#b-copy', '#copytext
     await p.evaluateOnNewDocument(() => { window.__clip = []; Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: t => { window.__clip.push(String(t)); return Promise.resolve(); } } }); });
     await p.goto(M(c.slug), { waitUntil: 'load' }); await sleep(150); const f = await p.evaluate(c.make, SP, G);
     await p.goto('about:blank'); await p.goto(M(c.slug) + '#' + f, { waitUntil: 'load' }); await sleep(300); if (c.prep) await c.prep(p);
-    const name = w + ' ' + c.slug;
+    const name = w + ' ' + c.slug + (c.tag || '');
     const link = await p.evaluate(() => { const h = location.hash.slice(1), m = /^([a-z])(\d+)\./.exec(h); const u = MILL.unpack(h, m[1], +m[2], 1e6); return u.ok ? JSON.stringify(u.data) : null; });
     ck(name + ': the link keeps the typed marks exactly (display-only neutralising)', link && link.includes(SP) && link.includes(G), link && link.slice(0, 200));
     await copyAll(p); let clip = await p.evaluate(() => window.__clip.slice());

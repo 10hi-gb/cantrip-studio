@@ -1,6 +1,6 @@
 // node tests/browser/mill-ask.qa.js <host[:port]> <ip> [scheme] — One Small Ask end to end: sender -> recipient -> reply, @320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { typedAudit, sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const M = require('../../mill/shared/core.js'), C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/one-small-ask/copy.js', 'utf8') + ';COPY');
 const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
 (async () => {
@@ -43,7 +43,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     const r = await b.newPage(); await r.setViewport({ width: w, height: 800 }); const re = []; r.on('pageerror', e => re.push(String(e)));
     await r.goto(repUrl, { waitUntil: 'load' }); await sleep(200);
     t = await r.evaluate(() => ({ title: document.getElementById('title').textContent, delta: document.getElementById('delta').textContent, verdict: document.querySelector('.osa-verdict').textContent, note: document.getElementById('note').textContent, body: document.body.innerText }));
-    ck(w + ' sender sees reply with delta + snapshot note', t.title === '“Sam” replied with what they can do.' && t.delta.includes('Collection only · Wed Oct 21, 5 PM–6 PM') && t.verdict === 'Part of it' && /Nothing has been booked/.test(t.note) && !/\b(accepted|confirmed|agreed|delivered|notified)\b/i.test(t.body), t);
+    ck(w + ' sender sees reply with delta + snapshot note', t.title === '“Sam” replied with what they can do.' && t.delta.includes('“Collection only” · Wed Oct 21, 5 PM–6 PM') && t.verdict === 'Part of it' && /Nothing has been booked/.test(t.note) && !/\b(accepted|confirmed|agreed|delivered|notified)\b/i.test(t.body), t);
     { const qv = await r.evaluate(() => [...document.querySelectorAll('.osa-term .ask .osa-quoted')].map(e => e.textContent)); ck(w + ' reply view: original typed favor quoted under receiverAskLabel (D4)', qv.length >= 1 && qv[0].startsWith('Their ask, as typed: “Pick up groceries') && qv[0].endsWith('”'), qv); }
     // ask again, changed -> composer prefilled with the offer
     await r.focus('#b-again'); await r.keyboard.press('Enter'); await sleep(100);
@@ -168,5 +168,37 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     ck(w + ' D8 recipient: headline + card header quote the typed name; typed-by-sender note shown', rv.h1 === 'Small ask from: “Verified ✔ Bank”' && rv.lede === 'Names and the favor are as typed by the sender. Not checked.' && rv.once === 1 && rv.heads[0] === '“Verified ✔ Bank”', rv);
     ck(w + ' N2 sender copy-as-text: from-name, favor and Where quoted', sTxt.startsWith('From: “Verified ✔ Bank”\nThe favor, as typed: “Confirm your account by replying yes”\n') && sTxt.includes('Where: “Verified ✔ Bank branch”\n'), sTxt);
     await s.b.close(); }
+  // QA local-652d0e0 Ask N3: typed text quoted in the strikethrough, CHANGED values, aria summaries, delta and note row;
+  // receiverTypedNote on reply views; a hash change with focus in the favor field blurs first and clears errors after.
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const ASKD = { w: 'Zqx favor', e: 20, u: 'min', d: 'Tue Oct 20', s: '16:00', t: '18:00', h: 'Zqx porch', f: 'Zqx Dana', o: 'Zqx Sam' };
+    const L = await p.evaluate(a => ({ ask: ASK.encodeAsk(a), p: ASK.encodeReply({ a, v: 'p', p: { w: 'Zqx new', e: 20, u: 'min', d: 'Wed Oct 21', s: '17:00', t: '18:00', h: 'Zqx gate' }, n: 'Zqx note' }), y: ASK.encodeReply({ a, v: 'y', p: null, n: 'Zqx yes note' }), n: ASK.encodeReply({ a, v: 'n', p: null, n: '' }) }), ASKD);
+    const SEEDS = ['Zqx favor', 'Zqx porch', 'Zqx Dana', 'Zqx Sam', 'Zqx new', 'Zqx gate', 'Zqx note', 'Zqx yes note'];
+    for (const v of ['p', 'y', 'n']) {
+      await p.goto('about:blank'); await p.goto(BASE + '#' + L[v], { waitUntil: 'load' }); await sleep(200);
+      const r = await p.evaluate(() => ({ lede: document.getElementById('lede').hidden ? null : document.getElementById('lede').textContent, body: document.body.innerText, struck: [...document.querySelectorAll('.osa-term.is-changed .ask s')].map(e => e.textContent), now: [...document.querySelectorAll('.osa-term.is-changed .ans')].map(e => e.firstChild.textContent), sr: [...document.querySelectorAll('.osa-term.is-changed .osa-vh')].map(e => e.textContent), delta: document.getElementById('delta').hidden ? '' : document.getElementById('delta').textContent, text: document.getElementById('text').value }));
+      const once = r.body.split(C.receiverTypedNote).length - 1;
+      ck(w + ' N3 reply view (' + v + '): receiverTypedNote shown once', r.lede === C.receiverTypedNote && once === 1, { lede: r.lede, once });
+      if (v === 'p') ck(w + ' N3 reply (part): strikethrough, CHANGED values, aria summaries and delta quote the typed favor and Where', r.struck.some(x => x.includes('“Zqx favor”')) && r.struck.some(x => x.includes('“Zqx porch”')) && r.now.includes('“Zqx new”') && r.now.includes('“Zqx gate”') && r.sr.some(x => x.endsWith(': was “Zqx favor”, now “Zqx new”.')) && r.sr.some(x => x.endsWith(': was “Zqx porch”, now “Zqx gate”.')) && r.delta.includes('“Zqx favor”') && r.delta.includes('“Zqx new”') && r.body.includes('“Zqx note”'), r);
+      if (v === 'y') ck(w + ' N3 reply (yes): the note row is quoted typed text', r.body.includes('“Zqx yes note”'), r.body.slice(0, 600));
+      const a = await typedAudit(p, SEEDS, { copied: r.text }); ck(w + ' N3 reply (' + v + '): typedAudit (screen, aria, describedby, live, toast, copied text) finds nothing unquoted', a.ok, a);
+    }
+    // answer view, part mode: rows marked changed in place keep the quotes
+    await p.goto('about:blank'); await p.goto(BASE + '#' + L.ask, { waitUntil: 'load' }); await sleep(200); await p.click('#c-p'); await sleep(100);
+    { const r0 = await p.evaluate(() => [...document.querySelectorAll('#x .osa-term .ask')].map(e => e.textContent)); const a0 = await typedAudit(p, SEEDS);
+      ck(w + ' F-A1 answer (Part of it, before any edit): the ask column quotes the typed favor and Where; typedAudit clean', r0.some(x => x.includes('“Zqx favor”')) && r0.some(x => x.includes('“Zqx porch”')) && !r0.some(x => /(^|[^“])Zqx (favor|porch)/.test(x)) && a0.ok, { r0, a0 }); }
+    await typeInto(p, '#o-w', 'Zqx new'); await sleep(100);
+    let r = await p.evaluate(() => ({ struck: [...document.querySelectorAll('.osa-term .ask s')].map(e => e.textContent), same: [...document.querySelectorAll('.osa-term.is-same[data-key=where] .ask')].map(e => e.textContent) }));
+    ck(w + ' N3 answer (part): the struck original favor is quoted; unchanged Where stays quoted', r.struck.includes('“Zqx favor”') && r.same.some(x => x.includes('“Zqx porch”')), r);
+    let a = await typedAudit(p, SEEDS); ck(w + ' N3 answer (part): typedAudit finds nothing unquoted', a.ok, a);
+    // hash change with focus in the favor field: blur first, clear errors after
+    for (const [nm, frag] of [['valid ask', L.ask], ['bad link', 'a1.broken'], ['empty', '']]) {
+      await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await typeInto(p, '#f-w', 'x'); await p.focus('#f-w'); await p.keyboard.press('Backspace'); await sleep(50);
+      if (!frag) { await p.evaluate(f => { location.hash = 'a1.broken'; }); await sleep(150); await p.focus('#f-w'); }
+      await p.evaluate(f => { location.hash = f; }, frag); await sleep(250);
+      r = await p.evaluate(() => ({ errs: [...document.querySelectorAll('.osa-err')].map(e => e.textContent).filter(Boolean), invalid: document.querySelectorAll('[aria-invalid=true]').length, focus: document.activeElement.id }));
+      ck(w + ' N3 hash change (' + nm + ') with focus in the favor field: zero errors, nothing aria-invalid', !r.errs.length && !r.invalid, r);
+    }
+    ck(w + ' N3 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
