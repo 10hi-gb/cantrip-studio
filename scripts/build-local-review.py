@@ -70,14 +70,15 @@ def main():
                 if not pol: continue
                 s = open(path, encoding='utf-8').read()
                 if 'http-equiv="Content-Security-Policy"' in s: continue
-                tag = '<meta http-equiv="Content-Security-Policy" content="%s">' % html.escape(meta_csp(pol), quote=True)
+                tag = '<meta http-equiv="Content-Security-Policy" content="%s">' % html.escape(meta_csp(pol), quote=False).replace('"', '&quot;')
                 s2, k = re.subn(r'(<meta charset="?[^">]+"?\s*/?>)', r'\1\n' + tag.replace('\\', '\\\\'), s, count=1, flags=re.I)
                 if not k: s2, k = re.subn(r'(<head[^>]*>)', r'\1\n' + tag, s, count=1, flags=re.I)
                 if k: open(path, 'w', encoding='utf-8').write(s2); n += 1
         tpl = open(os.path.join(wt, 'scripts', 'local-review-README.md'), encoding='utf-8').read()
         readme = tpl.replace('{SHA}', sha).replace('{BUILT}', datetime.datetime.now().astimezone().strftime('%Y-%m-%d %H:%M %Z')).replace('{CSP_PAGES}', str(n)).replace('{PIECES}', ', '.join(shipped))
         readme = readme.replace('{STATUS}', qa_status(shipped))
-        fr = os.environ.get('FILE_RESULTS')
+        fr = os.environ.get('FILE_RESULTS') or os.path.join(wt, 'scripts', 'local-review-file-results.md')
+        fr = fr if os.path.exists(fr) else None
         readme = readme.replace('{FILE_RESULTS}', open(fr, encoding='utf-8').read().strip() if fr else 'Not tested for this build. Use the local server.')
         open(os.path.join(stage, 'README.md'), 'w', encoding='utf-8').write(readme)
         if os.path.exists(out): os.remove(out)
