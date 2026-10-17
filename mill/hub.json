@@ -61,7 +61,9 @@
    ],
    "limits": [
     "No comment mentions calling ahead.",
-    "Questions come from a fixed generic checklist. It knows nothing about any real place."
+    "Questions come from a fixed generic checklist. It knows nothing about any real place.",
+    "QA worst-pixel sweep PASS @b225af5 (no new defects): qa/before-you-go/wp-sweep-b225af5/WP-SWEEP-b225af5.md",
+    "QA wp-sweep-b225af5 NOT TESTED: character-limit error messages (#pickup-e, #own-e, #by-e; over-length input not driven; they sit on the flat page background, outside this sweep's scope); DPR 2/3, print (the print sheet replaces hatch with white), forced-colors, and hover/focus colours; native picker popups; plain flat-colour text (not re-measured, as ruled)."
    ],
    "engineer": {
     "pin": "83a2ebcd",
@@ -187,22 +189,23 @@
     "Times the clocks skip or repeat on a daylight-saving change are refused, never moved or guessed. Lengths are real elapsed time across a change.",
     "Nothing is sent or booked. A proposal is a suggestion worked out from what the sender typed; nobody has replied to it.",
     "QA all-9 NOT TESTED: the zone-ID check (D) ran in Chrome only.",
-    "QA local-231ce2c NOT TESTED: real screen readers (VoiceOver, TalkBack, NVDA, JAWS; accessible names checked only via Chrome's AX tree); Firefox and Safari/WebKit rendering of `content: … / \"\"` (the plain \"\\200B\" fallback was not exercised); the text-contrast scan (not re-run; the change adds no visible text or colour); physical phones, zoom, print."
+    "QA local-231ce2c NOT TESTED: real screen readers (VoiceOver, TalkBack, NVDA, JAWS; accessible names checked only via Chrome's AX tree); Firefox and Safari/WebKit rendering of `content: … / \"\"` (the plain \"\\200B\" fallback was not exercised); the text-contrast scan (not re-run; the change adds no visible text or colour); physical phones, zoom, print.",
+    "QA wp-sweep-231ce2c NOT TESTED: DPR 2/3, print, forced-colors, hover/focus colours, and the tsh-stitch animation frames (measured after settle); other aria-invalid fields with a placeholder (only #pn-1 has one; #t \"Coffee\" has no error state); zones beyond the 4 measured; native picker popups; plain flat-colour text (not re-measured, as ruled)."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 715aa3a: unit 19 incl. DST; browser 116/116 at 320/390/1280. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW (W-1 fixed)",
+   "status": "NOT READY (open W-9b Low (empty-name error placeholder 3.99 on error-pink))",
    "qaLocal": {
+    "verdict": "NOT READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "231ce2c0ea4d997b8a9269cf9bb492a349f80da3",
+    "report": "qa/the-same-hour/wp-sweep-231ce2c/WP-SWEEP-231ce2c.md",
+    "note": "open W-9b Low (empty-name error placeholder 3.99 on error-pink)"
+   },
+   "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "231ce2c0ea4d997b8a9269cf9bb492a349f80da3",
-    "report": "qa/the-same-hour/local-231ce2c/QA-local-231ce2c.md",
-    "note": "W-1 fixed"
-   },
-   "qaPrevious": {
-    "verdict": "NOT READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "f893087c7ac397638e17c9aaa084374809f02130",
-    "report": "qa/all9/local-f893087/QA-all9-f893087.md (the-same-hour tree c6ae8fd = hardening afb31b8, unchanged at c07008e) (earlier: qa/the-same-hour/local-8886943/QA-local-8886943.md: 88869436943a40e949ac4445487912cc14bec828 READY)"
+    "report": "qa/the-same-hour/local-231ce2c/QA-local-231ce2c.md (empty-name error state not exercised) (earlier: qa/all9/local-f893087/QA-all9-f893087.md (the-same-hour tree c6ae8fd = hardening afb31b8, unchanged at c07008e) (earlier: qa/the-same-hour/local-8886943/QA-local-8886943.md: 88869436943a40e949ac4445487912cc14bec828 READY): f893087c7ac397638e17c9aaa084374809f02130 NOT READY)"
    }
   },
   {
