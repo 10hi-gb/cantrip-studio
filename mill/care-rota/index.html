@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Care Rota · Cantrip Studio</title>
+<meta name="description" content="A small tool from Cantrip Studio.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="app.css">
+<script src="copy.js" defer></script>
+<script src="copy-extra.js" defer></script>
+<script src="../shared/core.js" defer></script>
+<script src="../shared/view.js" defer></script>
+<script src="cr.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="cr">
+<div class="wrap">
+ <div class="top noprint"><a href="../" id="home" class="studio"></a></div>
+ <div class="cr-banner noprint" id="recv" role="status" hidden><p id="recv-intro"></p><p id="recv-note" class="privacy"></p><button type="button" class="btn btn-ghost" id="own" data-ro-keep></button></div>
+ <div class="cr-banner cr-banner--err noprint" id="bad" role="alert" hidden><p id="bad-t"></p></div>
+ <section id="s1" class="on noprint">
+  <h1 id="title"></h1>
+  <p class="lede" id="lede"></p>
+  <div class="cr-err" id="errs" role="alert" hidden><ul id="errs-l"></ul></div>
+  <form id="form" class="cols" novalidate>
+   <div class="panel">
+    <h2 id="days-h"></h2>
+    <label for="f-for" id="f-for-l"></label><input type="text" id="f-for" autocomplete="off"><p class="cr-fe" id="e-for" hidden></p>
+    <label for="f-org" id="f-org-l"></label><input type="text" id="f-org" autocomplete="off"><p class="cr-fe" id="e-org" hidden></p>
+    <div class="needrow"><div><label for="f-first" id="f-first-l"></label><input type="date" id="f-first"></div><div><label for="f-last" id="f-last-l"></label><input type="date" id="f-last"></div></div>
+    <p class="cr-fe" id="e-first" hidden></p><p class="cr-fe" id="e-last" hidden></p>
+    <fieldset class="cr-needs" id="needs"><legend id="needs-l"></legend></fieldset>
+    <p class="cr-fe" id="e-needs" hidden></p>
+    <label for="f-note-all" id="f-note-all-l"></label><textarea id="f-note-all" rows="2"></textarea><p class="cr-fe" id="e-note-all" hidden></p>
+    <p class="privacy" id="notes-hint"></p>
+   </div>
+   <div class="panel">
+    <h2><label for="f-plan" id="f-plan-l" class="cr-h2label"></label></h2>
+    <p class="privacy" id="plan-hint"></p>
+    <textarea class="plan" id="f-plan" rows="14" spellcheck="false" aria-describedby="plan-hint"></textarea><p class="cr-fe" id="e-plan" hidden></p>
+    <div class="btnrow"><button type="submit" class="btn btn-main" id="b-check"></button><button type="button" class="btn btn-ghost" id="b-reset"></button></div>
+    <p class="privacy" id="empty-state"></p>
+   </div>
+  </form>
+ </section>
+ <section id="s2" class="noprint" tabindex="-1" aria-labelledby="s2-h">
+  <h2 class="cr-sh" id="s2-h"></h2>
+  <div class="selvedge" id="tally" role="status"></div>
+  <p class="cr-clear" id="all-clear" hidden></p>
+  <div class="cols rev cr-check">
+   <div>
+    <div id="quilts"></div>
+    <div class="legend dark" id="legend"></div>
+    <p class="stamp" id="stamp-2"></p>
+    <div class="btnrow"><button type="button" class="btn btn-ghost" id="b-open"></button><button type="button" class="btn btn-main" id="b-edit"></button></div>
+   </div>
+   <div>
+    <div id="tags"></div>
+    <div class="pocket" id="pocket" hidden><h4 id="pocket-h"></h4><ul id="pocket-l"></ul></div>
+    <div class="cr-per" id="per"><h3 id="per-h"></h3><ul id="per-l"></ul></div>
+   </div>
+  </div>
+ </section>
+ <section id="s3" class="noprint" aria-labelledby="s3-h">
+  <h2 class="cr-sh" id="s3-h"></h2>
+  <p class="lede" id="s3-note"></p>
+  <div class="hcards" id="cards"></div>
+ </section>
+ <section id="s4" class="printme" aria-labelledby="sheet-h">
+  <div class="sheet" id="sheet">
+   <h2 id="sheet-h"></h2>
+   <p class="lede" id="sheet-range"></p>
+   <table id="sheet-t"><tbody></tbody></table>
+   <span class="stamp" id="stamp-4"></span>
+   <p class="privacy" id="sheet-note"></p>
+  </div>
+  <div class="btnrow noprint cr-center"><button type="button" class="btn btn-main" id="b-print"></button></div>
+  <div class="panel noprint cr-share" id="share">
+   <h3 id="share-h"></h3>
+   <p id="link-warn"></p>
+   <p class="privacy" id="link-holds"></p>
+   <div class="btnrow"><button type="button" class="btn btn-ghost" id="b-link"></button></div>
+   <p class="cr-fe" id="link-long" hidden></p>
+   <div id="link-box" hidden><label for="link" id="link-l"></label><input type="text" id="link" readonly></div>
+  </div>
+ </section>
+ <section id="s5" class="noprint" aria-labelledby="s5-h">
+  <h2 class="cr-sh" id="s5-h"></h2>
+  <p class="lede" id="s5-note"></p>
+  <div class="panel"><table class="readas" id="readas"><thead><tr></tr></thead><tbody></tbody></table>
+  <p class="privacy" id="s5-rules"></p></div>
+ </section>
+ <div class="panel noprint" id="fb" hidden><p id="fb-why"></p><label for="fb-t" id="fb-l"></label><textarea id="fb-t" readonly rows="6"></textarea></div>
+ <p class="privacy noprint" id="privacy"></p>
+ <div class="cr-toast noprint" id="toast" role="status" aria-live="polite" hidden></div>
+</div>
+</body>
+</html>
