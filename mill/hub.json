@@ -251,8 +251,15 @@
     "Proposal only: every card, the copied text and the sheet say “Nobody has agreed to this yet.”",
     "The optional link holds only task names, minutes and helper names. Anyone with the link can read it."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview 5f127aba58e8a4a2fc5c06b7c20cb1d20cdab4bc: unit 16 (every proto r1d assert, check() validates, conservation); browser 143/143 at 320/390/1280. Not QA.",
-   "status": "No QA verdict, NOT READY"
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview b04403afa24cc4c7e4f6d933cb651205834337e4: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 218/218 at 320/360/390/1280 (incl. Creative check 5f127ab items 1–6: over-tip geometry, colour and pixels, minutes line, header, bench on screen and in print, entry at 320/360; QA local-8206084 H1 print after Start over / bad link, H2 1–40-char minutes sweep, H3 whole-URL 1999/2000/2001 on a long path). Not QA.",
+   "status": "NOT READY (retest pending at b04403a)",
+   "qaLocal": {
+    "verdict": "NOT READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "82060845657e7ed189289872640031414e33ca50",
+    "report": "qa/five-hands/local-8206084/QA-local-8206084.md",
+    "note": "retest pending at b04403a"
+   }
   }
  ]
 }
