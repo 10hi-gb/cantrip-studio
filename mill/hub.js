@@ -20,9 +20,9 @@
     var dl = el('dl');
     field(dl, 'Status', p.status).className = 'hub-status';
     if (p.qaLocal) { var q = p.qaLocal; field(dl, 'Latest QA (local)', q.verdict + ' · ' + q.label + ' ' + q.sha + ' · report ' + q.report).className = 'hub-qa'; }
-    // Joshua 04:56: a piece whose fix awaits an independent retest shows that SHA, and its earlier QA pass only as history (no verdict word)
+    // Joshua 04:56: a piece whose fix awaits an independent retest shows that SHA; its earlier QA result is history
     if (p.pendingAt) field(dl, 'Awaiting independent retest at', p.pendingAt).className = 'hub-qa';
-    if (p.qaPrevious) { var v = p.qaPrevious; field(dl, 'Previous QA pass', (v.verdict ? v.verdict + ' · ' : '') + v.label + ' ' + v.sha + ' · report ' + v.report + ' (history; superseded until the retest)').className = 'hub-qa'; }
+    if (p.qaPrevious) { var v = p.qaPrevious; field(dl, 'Previous QA', (v.verdict ? v.verdict + ' · ' : '') + v.label + ' ' + v.sha + ' · report ' + v.report + (p.pendingAt ? ' (history; superseded until the retest)' : ' (history)')).className = 'hub-qa'; } // PM 06:12: heading 'Previous QA' (the verdict word says READY / NOT READY); 'superseded until the retest' only while a retest is pending
     if (p.qaDeployed) { var g = p.qaDeployed; field(dl, 'Deployed pin QA', 'Pin ' + g.pin + ' ' + g.verdict + ' · commit ' + g.commit).className = 'hub-qa'; }
     if (built) {
       var src = el('ul'); if (p.sources && p.sources.length) p.sources.forEach(function (u) { var l = el('li'), x = el('a', null, u.replace(/^https:\/\/www\.reddit\.com\/r\/ClaudeAI\/comments\/1x2srd4\/[^/]*\/?/, 'r/ClaudeAI 1x2srd4 › ')); x.href = u; x.rel = 'noreferrer noopener'; l.appendChild(x); src.appendChild(l); }); else src.appendChild(el('li', null, 'No direct comment in the source thread.'));
