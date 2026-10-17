@@ -32,6 +32,26 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
   return bad.slice(0, 10); }); }
 (async () => {
   const rows = []; const ck = (name, ok, info) => rows.push({ name, ok: !!ok, info });
+  // ---- rendered-pixel contrast (QA all9 method): text colour x opacity chain composited over the background as rendered with every glyph made
+  // transparent (gradients, textures, shadows included). Sampled in the glyph band of each line box (middle 60% of its height, 1px in from each
+  // side, so line-box padding and pill corners the glyphs never touch are left out). Returns the median-background ratio and the worst-pixel ratio.
+  const rgbOf = s => s.match(/[\d.]+/g).slice(0, 4).map(Number), lumA = c => { const f = v => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+  const crA = (a, b) => { const x = lumA(a), y = lumA(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+  async function renderedContrast(s, p, sel) {
+    const vw = p.viewport(), H = await p.evaluate(() => document.documentElement.scrollHeight); await p.setViewport({ width: vw.width, height: Math.min(H, 8000) }); await p.evaluate(() => scrollTo(0, 0)); await sleep(200);
+    const items = await p.evaluate(sel => [...document.querySelectorAll(sel)].filter(e => e.getClientRects().length && getComputedStyle(e).visibility === 'visible' && e.textContent.trim()).map(e => { const rg = document.createRange(); rg.selectNodeContents(e);
+      const rects = [...rg.getClientRects()].filter(x => x.width > 1 && x.height > 1).map(x => ({ x: x.left, y: x.top, w: x.width, h: x.height })); let a = 1; for (let x = e; x; x = x.parentElement) a *= parseFloat(getComputedStyle(x).opacity);
+      return { txt: e.textContent.trim().slice(0, 40), rects, color: getComputedStyle(e).color, a, size: getComputedStyle(e).fontSize }; }), sel);
+    await p.evaluate(() => { window.__rc = []; document.querySelectorAll('*').forEach(e => { window.__rc.push([e, e.style.getPropertyValue('color'), e.style.getPropertyPriority('color'), e.style.getPropertyValue('text-shadow'), e.style.getPropertyPriority('text-shadow')]); e.style.setProperty('color', 'transparent', 'important'); e.style.setProperty('text-shadow', 'none', 'important'); }); });
+    await sleep(150); const png = await p.screenshot({ encoding: 'base64' });
+    await p.evaluate(() => { window.__rc.forEach(([e, c, cp, t, tp]) => { if (c) e.style.setProperty('color', c, cp); else e.style.removeProperty('color'); if (t) e.style.setProperty('text-shadow', t, tp); else e.style.removeProperty('text-shadow'); }); delete window.__rc; });
+    const dp = await s.b.newPage(); const px = await dp.evaluate(async (b64, items) => { const im = new Image(); im.src = 'data:image/png;base64,' + b64; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d'); g.drawImage(im, 0, 0);
+      return items.map(it => { const out = []; it.rects.forEach(r => { const x0 = Math.max(0, Math.round(r.x + 1)), y0 = Math.max(0, Math.round(r.y + r.h * .2)), w = Math.max(1, Math.min(c.width - x0, Math.round(r.w - 2))), h = Math.max(1, Math.min(c.height - y0, Math.round(r.h * .6))); const d = g.getImageData(x0, y0, w, h).data; for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]); }); return out; }); }, png, items);
+    await dp.close(); await p.setViewport(vw); await sleep(150);
+    return items.map((it, k) => { const bg = px[k]; if (!bg.length) return Object.assign(it, { med: null, worst: null }); const L = bg.map(lumA), ord = L.map((v, i) => i).sort((a, b) => L[a] - L[b]), med = bg[ord[ord.length >> 1]];
+      const c = rgbOf(it.color), al = (c[3] === undefined ? 1 : c[3]) * it.a, comp = b => [0, 1, 2].map(i => c[i] * al + b[i] * (1 - al)), r = b => crA(comp(b), b);
+      const worst = Math.min(...[...new Set(ord.map(i => bg[i].join()))].map(sv => r(sv.split(',').map(Number))));
+      return { txt: it.txt, size: it.size, color: it.color, a: +it.a.toFixed(3), med: med.join(','), ratioMed: +r(med).toFixed(2), ratioWorst: +worst.toFixed(2), n: bg.length }; }); }
   for (const w of W) {
     // ---------- sender flow
     let s = await session(H, IP); let { p } = s; await p.setViewport({ width: w, height: 900 }); await p.evaluateOnNewDocument(clipStub());
@@ -411,5 +431,12 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     await putQ(''); await p.evaluate(() => document.getElementById('b-reset').click()); await sleep(300); l = await loc(); steps.push(['Clear (reset) -> path only', okL(l, ''), l]);
     for (const [nm, ok, info] of steps) ck('PM 04:57 query strip: ' + nm + '; location.search is "" and the marker is not in location.href', ok, info);
     ck('PM 04:57 query strip: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // ---------- QA all9 W-5: token text (figure and the 10px Owes / Gets back tag) >= 4.5:1 on rendered pixels, worst pixel under the text, at 320/390/1280
+  for (const w of [320, 390, 1280]) { const s = await session(H, IP), { p } = s; await p.setViewport({ width: w, height: 900 }); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]); await p.goto(BASE, { waitUntil: 'load' });
+    await openFrag(p, { e: 'Cabin weekend', c: 0, p: ['Ade', 'Ben', 'Cy', 'Dee'], x: [['Firewood', 3000, 0, 0, [0, 1, 2, 3]], ['Food', 1000, 3, 0, [0, 1, 2, 3]]] }, true);
+    const r = await renderedContrast(s, p, '#rods .eu-token small, #rods .eu-token .eu-fig'), tags = r.filter(x => /^(owes|gets back|even)$/i.test(x.txt)), owes = tags.filter(x => /^owes$/i.test(x.txt));
+    const op = await p.$$eval('#rods .eu-token small', es => es.map(e => getComputedStyle(e).opacity));
+    ck(w + ` QA all9 W-5: token figures and tags >= 4.5:1 against the worst rendered pixel (Owes tag ${owes.map(x => x.ratioWorst).join('/')}:1), tags at full opacity`, owes.length > 0 && tags.length >= 3 && r.every(x => x.ratioWorst >= 4.5) && op.every(o => o === '1'), r.map(x => x.txt + ' ' + x.size + ' ' + x.color + ' a' + x.a + ' med ' + x.ratioMed + ' worst ' + x.ratioWorst));
+    ck(w + ' QA all9 W-5 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
