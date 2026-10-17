@@ -9,6 +9,8 @@
 // patterns, hyph-en.js), tier 2 any letter point, both with 4+ letters each side (and in every piece) and an added hyphen, tier 3 grapheme
 // boundaries (emoji runs, digits, symbols: never between two letters (QA local-2a8c67b L11), never inside an emoji, no hyphen). Size: the largest size, normal down to the 24px floor, at
 // which the greedy layout fits with no inner break; only if none, the largest size with tier 1, then tier 2, then tier 3.
+// Multi-word with an inner break (QA local-ad96660 L16): fewest pieces first, keeping whole every segment that fits a line by
+// itself at the floor, then the largest size (binary search to 0.25px), then the lowest tier within 10%; see plan().
 // Single word (Creative r5, after f66fb8e): an answer with no space takes the FEWEST pieces before the larger size: 1 piece
 // (unbroken) at the largest size that fits, else 2 pieces at the largest size, else 3, and so on. Within one piece count the
 // size comes first (PM ruling on QA local-2a8c67b L13; Creative 08:25 for L14): take the TRUE largest size at which any tier
@@ -60,7 +62,7 @@
     seg(a, n); return { G: G, n: n, nat: nat, segs: segs };
   }
   // greedy first-fit at one size; level 0 natural breaks only, 1 + dictionary, 2 + letter fallback, 3 + graphemes
-  function greedy(P, fits, level) {
+  function greedy(P, fits, level, keep) {
     var G = P.G, n = P.n, lines = [], kinds = [], ls = -1, le = -1, i, k;
     function txt(a, b, hy) { return G.slice(a, b).join('') + (hy ? '-' : ''); }
     function fit(a, b, hy) { return fits(txt(a, b, hy), a === 0, b === n && !hy); }
@@ -77,7 +79,7 @@
       for (var c = 0; c + 1 < cuts.length; c++) { var ps = cuts[c], pe = cuts[c + 1];
         if (ls >= 0 && fit(ls, pe)) { le = pe; continue; }
         if (fit(ps, pe)) { if (ls >= 0) close(ps); ls = ps; le = pe; continue; }
-        if (!level) return null;
+        if (!level || (keep && keep[ps])) return null; // keep: QA local-ad96660 L16, a segment that fits whole at the floor is never broken inside
         // a hyphen segment that can't fit a line by itself: break inside, greedily at the latest allowed point that fits
         var sg = null; P.segs.forEach(function (x) { if (x.s === ps) sg = x; }); if (!sg) return null;
         var pts = []; for (k = 0; k < level; k++) pts = pts.concat(sg.t[k]); pts.sort(function (x, y) { return x.pos - y.pos; });
@@ -111,7 +113,24 @@
       for (var k = 1; k <= most; k++) { var cand = [], top = -1; for (L = 0; L <= 3; L++) { cand[L] = best(L, k); if (cand[L] && cand[L].size > top) top = cand[L].size; }
         if (top < 0) continue;
         for (L = 0; L <= 3; L++) if (cand[L] && cand[L].size >= NEAR * top - 0.001) return done(cand[L].size, cand[L].res, L); } }
-    for (L = 0; L <= 3; L++) for (i = 0; i < o.sizes.length; i++) { var r = at(L, i); if (r) return done(o.sizes[i], r, L); }
+    var old = null; for (L = 0; L <= 3 && !old; L++) for (i = 0; i < o.sizes.length; i++) { var r = at(L, i); if (r) { old = done(o.sizes[i], r, L); break; } }
+    // QA local-ad96660 L16 (PM, Creative L13 order), multi-word only: fewest pieces first (a piece is a word, or a part of one
+    // where a line ends without a space), then the largest size, then the lowest tier within 10%. A segment that fits a line
+    // by itself at the floor is kept whole (no "choco- / late" when "chocolate" fits at 27.62px). The greedy layout above is
+    // kept, byte for byte, whenever no layout with fewer pieces fits at the floor.
+    if (old && P.G.indexOf(' ') >= 0 && old.level) {
+      var pcs = function (res) { return res.kinds.filter(function (k) { return k !== 's'; }).length; }, fl = fitsAt(o.sizes[o.sizes.length - 1]), keep = {}, mk = {};
+      P.segs.forEach(function (x) { if (fl(P.G.slice(x.s, x.e).join(''), x.s === 0, x.e === P.n)) keep[x.s] = 1; });
+      var atK = function (L, i) { var key = L + ':' + i; if (!(key in mk)) { var r = greedy(P, fitsAt(o.sizes[i]), L, keep); mk[key] = r && ok(o.sizes[i], r.lines) ? r : null; } return mk[key]; };
+      var least = pcs(old); for (L = 1; L <= 3; L++) for (i = 0; i < o.sizes.length; i++) { var rk = atK(L, i); if (rk && pcs(rk) < least) least = pcs(rk); }
+      if (least < pcs(old)) {
+        var bestM = function (L, kp) { var get = kp ? atK : at; for (var g = 0; g < o.sizes.length; g++) { var r0 = get(L, g); if (r0 && pcs(r0) <= least) break; } if (g === o.sizes.length) return null;
+          var lo = o.sizes[g], res = get(L, g), hi = g ? o.sizes[g - 1] : lo;
+          while (hi - lo > STEP) { var mid = (lo + hi) / 2, rm = greedy(P, fitsAt(mid), L, kp ? keep : null); if (rm && pcs(rm) <= least && ok(mid, rm.lines)) { lo = mid; res = rm; } else hi = mid; }
+          return { size: Math.floor(lo * 100) / 100, res: res }; };
+        var cm = [], tm = -1; for (L = 1; L <= 3; L++) { var u = bestM(L, false), v = bestM(L, true); cm[L] = !u ? v : !v ? u : v.size >= u.size ? v : u; if (cm[L] && cm[L].size > tm) tm = cm[L].size; }
+        for (L = 1; L <= 3; L++) if (cm[L] && cm[L].size >= NEAR * tm - 0.001) return done(cm[L].size, cm[L].res, L); } }
+    if (old) return old;
     var last = o.sizes[o.sizes.length - 1]; return { size: last, lines: [P.G.join('')], kinds: [], level: 4, broken: false, overflow: true };
   }
   function sizes(base, floor) { var out = [], s = base; while (s > floor + 0.01) { out.push(Math.round(s * 100) / 100); s -= 2; } out.push(floor); return out; }
