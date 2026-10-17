@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Five Hands · Cantrip Studio</title>
+<meta name="description" content="A small tool from Cantrip Studio.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="app.css">
+<script src="copy.js" defer></script>
+<script src="copy-extra.js" defer></script>
+<script src="../shared/core.js" defer></script>
+<script src="../shared/view.js" defer></script>
+<script src="fh.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="fh">
+<div class="wrap">
+ <div class="top noprint"><a href="../" id="home" class="studio"></a></div>
+ <div class="fh-banner noprint" id="recv" role="status" hidden><p id="recv-intro"></p><button type="button" class="btn" id="own" data-ro-keep></button></div>
+ <div class="fh-banner fh-banner--err noprint" id="bad" role="alert" hidden><p id="bad-t"></p></div>
+ <header class="noprint" id="head">
+  <div class="sign"><h1 id="title"></h1></div>
+  <p class="lede" id="lede"></p>
+  <div class="scope" id="scope"></div>
+ </header>
+ <section id="s1" class="on noprint" aria-labelledby="title">
+  <form id="form" novalidate>
+   <div class="panel fh-session">
+    <label class="l" for="f-title" id="f-title-l"></label><input type="text" id="f-title" autocomplete="off"><p class="errmsg" id="e-title" hidden></p>
+    <p class="hint" id="empty-state"></p>
+   </div>
+   <div class="cols">
+    <div class="panel">
+     <h2 class="fh-ph" id="tasks-h"></h2>
+     <div class="row fh-row fh-heads" aria-hidden="true"><span class="l" id="th-task"></span><span class="l" id="th-min"></span><span></span></div>
+     <div id="tasks"></div>
+     <p class="count" id="tasks-max" hidden></p>
+     <button type="button" class="btn" id="add-task"></button>
+    </div>
+    <div class="panel">
+     <h2 class="fh-ph" id="helpers-h"></h2>
+     <div class="row fh-row fh-heads" aria-hidden="true"><span class="l" id="th-helper"></span><span class="l" id="th-hmin"></span><span></span></div>
+     <div id="helpers"></div>
+     <p class="hint fh-zero" id="zero-hint"></p>
+     <p class="count" id="helpers-max" hidden></p>
+     <button type="button" class="btn" id="add-helper"></button>
+    </div>
+   </div>
+   <fieldset class="fh-modefs"><legend id="mode-l"></legend>
+    <div class="modes"><label><input type="radio" name="mode" value="suggest" id="m-suggest" checked><span id="m-suggest-l"></span></label><label><input type="radio" name="mode" value="check" id="m-check"><span id="m-check-l"></span></label></div>
+   </fieldset>
+   <div class="panel fh-check" id="check" hidden><h2 class="fh-ph" id="check-h"></h2><div id="check-rows"></div></div>
+   <div class="fh-btnrow"><button type="submit" class="btn main" id="b-split"></button><button type="button" class="btn" id="b-reset"></button></div>
+   <p class="privacy" id="privacy"></p>
+  </form>
+ </section>
+ <section id="s2" class="noprint" tabindex="-1" aria-labelledby="s2-h">
+  <h2 id="s2-h"></h2>
+  <p class="fh-change" id="change" hidden></p>
+  <div class="tally" id="tally" role="status"></div>
+  <p class="warn" id="cons-fail" role="alert" hidden></p>
+  <div id="result">
+   <div class="rule" id="rule"><strong id="rule-h"></strong> <span id="rule-t"></span></div>
+   <p class="fh-over" id="over" hidden></p>
+   <div class="rolls" id="rolls"></div>
+   <div class="bench" id="bench" aria-labelledby="bench-h"><h3 id="bench-h"></h3><div class="plank" id="plank"></div><p class="fh-explain" id="bench-explain" hidden></p><div class="fh-btnrow"><button type="button" class="btn" id="b-bench"></button></div></div>
+   <div class="fh-preview" id="preview" hidden><h3 id="preview-h"></h3><div class="copied" id="preview-t"></div></div>
+   <div class="fh-btnrow"><button type="button" class="btn main" id="b-print"></button><button type="button" class="btn" id="b-change"></button></div>
+  </div>
+ </section>
+ <section id="s5" class="printme" aria-labelledby="sheet-h">
+  <div class="sheet" id="sheet">
+   <h2 id="sheet-h"></h2>
+   <table id="sheet-t"><thead><tr><th id="sc-helper"></th><th id="sc-tasks"></th><th id="sc-min"></th></tr></thead><tbody></tbody></table>
+   <p class="stamp" id="sheet-stamp"></p>
+   <p class="privacy" id="sheet-rule"></p>
+   <p class="privacy" id="sheet-note"></p>
+  </div>
+  <div class="linkbox noprint" id="share">
+   <h3 id="share-h"></h3>
+   <p class="warn" id="link-warn"></p>
+   <p class="privacy" id="link-holds"></p>
+   <button type="button" class="btn" id="b-link"></button>
+   <p class="errmsg" id="link-long" hidden></p>
+   <div id="link-box" hidden><label class="l" for="link" id="link-l"></label><input type="text" id="link" readonly></div>
+  </div>
+ </section>
+ <div class="panel noprint" id="fb" hidden><p id="fb-why"></p><label class="l" for="fb-t" id="fb-l"></label><textarea id="fb-t" readonly rows="7"></textarea></div>
+ <div class="fh-toast noprint" id="toast" role="status" aria-live="polite" hidden></div>
+</div>
+</body>
+</html>

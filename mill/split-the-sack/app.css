@@ -10,7 +10,7 @@
 .ss-x{width:46px;height:46px;border-radius:8px;border:2px solid var(--ss-ink);background:#fff;font:700 20px var(--ss-sans);color:var(--ss-ink);cursor:pointer}
 .ss-x:disabled{opacity:.35;cursor:not-allowed}
 .ss-x:focus-visible{outline:3px solid var(--ss-penny);outline-offset:2px}
-.ss-wants{display:flex;align-items:center;gap:6px}.ss-wants input{flex:1 1 auto;min-width:0}.ss-wants .u{font:600 14px var(--ss-sans);color:var(--ss-mute);flex:none;max-width:45%;overflow-wrap:anywhere} /* D10: quoted unit never clipped */
+.ss-wants{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}.ss-wants input{flex:1 1 4.5em;min-width:4em}.ss-wants .u{font:600 14px var(--ss-sans);color:var(--ss-mute);flex:0 1 auto;min-width:0;max-width:100%;overflow-wrap:break-word;word-break:normal} /* D10 / D10-r1: quoted unit never clipped; it drops under the input rather than breaking */
 .ss-errs{margin:0;padding-left:1.1rem}.ss-errs:empty{display:none}
 .ss-assign{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}.ss-assign p{margin:0;width:100%;font:600 13px var(--ss-sans)}
 .ss-assign .ss-btn{min-height:44px;padding:8px 12px;font-size:14px}
@@ -46,7 +46,7 @@
 /* QA 83a2ebcd D1b: money and quantity values never break mid-number; lines wrap between label and value instead. */
 .ss-lcd .v{white-space:normal;overflow-wrap:normal;word-break:keep-all}
 .ss-lcd .v .num{white-space:nowrap}
-.ss-lcd .v .unit{overflow-wrap:anywhere;word-break:normal}
+.ss-lcd .v .unit{overflow-wrap:break-word;word-break:normal} /* D10-r1: break-word, never anywhere */
 .ss-alloc .qty,.ss-alloc .m,.ss-alloc .tot,.ss-sum span{overflow-wrap:normal;word-break:keep-all}
 .ss-alloc .tot .p,.ss-alloc .m .fw{white-space:normal}
 @media (max-width:360px){.ss-lcd .v{font-size:17px}}
@@ -61,3 +61,32 @@ body.is-recv .ss-alloc .who{text-transform:none;letter-spacing:0}
 @media (max-width:360px){.ss-lcd .v.is-long{font-size:13px;letter-spacing:0}}
 
 .ss-alloc .qty .qu{white-space:nowrap;display:inline-block} /* D10: the quoted unit is one unbroken token */
+
+/* QA local-a254042 D10-r1 / D10-r2 (PM wrap rule): a quoted unit breaks at spaces, then hyphens, and mid-word only when a single word
+   can't fit its box at all (overflow-wrap:break-word, never anywhere/break-all). Where a unit would wrap, the row reflows (app.js fitUnits). */
+.ss-lcd .v .unit,.ss-stepper output .unit,.ss-wants .u,.ss-name .ss-step{overflow-wrap:break-word;word-break:normal;hyphens:manual}
+.ss-lcd{grid-template-columns:minmax(min-content,1fr) minmax(0,1fr) minmax(0,1fr)}
+.ss-lcd .v .unit{white-space:normal}
+@media (max-width:560px){
+  .ss-lcd{grid-template-columns:auto minmax(0,1fr)}
+  /* LCD: the package size value (number + quoted unit) gets its own full-width line under its label */
+  .ss-lcd.is-wideq .k:nth-child(1){grid-row:1;grid-column:1/-1}.ss-lcd.is-wideq .v:nth-child(4){grid-row:2;grid-column:1/-1}
+  .ss-lcd.is-wideq .k:nth-child(2){grid-row:3;grid-column:1}.ss-lcd.is-wideq .v:nth-child(5){grid-row:3;grid-column:2}
+  .ss-lcd.is-wideq .k:nth-child(3){grid-row:4;grid-column:1}.ss-lcd.is-wideq .v:nth-child(6){grid-row:4;grid-column:2}
+}
+/* household rows: name above wants, × beside both, so the wants cell (input + quoted unit) gets the row's width */
+.ss-hh.is-wideu .ss-hrow{grid-template-columns:minmax(0,1fr) 46px}
+.ss-hh.is-wideu .ss-hrow .ss-field:nth-child(1){grid-column:1;grid-row:1}.ss-hh.is-wideu .ss-hrow .ss-field:nth-child(2){grid-column:1;grid-row:2}
+.ss-hh.is-wideu .ss-hrow .ss-x{grid-column:2;grid-row:1/3;align-self:center}
+/* Change my amount: the stepper never sets the page width; with a long unit the amount takes its own line above − and + */
+.ss-recv,.ss-recv>*,#changebox{min-width:0;max-width:100%}
+.ss-stepper{flex-wrap:wrap;max-width:100%}
+.ss-stepper button{flex:none}
+.ss-stepper output{flex:1 1 0;min-width:0;overflow-wrap:break-word;line-height:1.1}
+.ss-stepper output .num{white-space:nowrap}
+.ss-stepper.is-wide{display:grid;grid-template-columns:52px 52px minmax(0,1fr);column-gap:10px;row-gap:8px}
+.ss-stepper.is-wide output{grid-column:1/-1;grid-row:1;text-align:left}
+.ss-stepper.is-wide #down{grid-column:1;grid-row:2}.ss-stepper.is-wide #up{grid-column:2;grid-row:2}
+.ss-err{overflow-wrap:break-word}
+.ss-stepper.is-wide output .unit{font-size:clamp(18px,6.5vw,30px)}
+.ss-hrow>.ss-field,.ss-wants{min-width:0}

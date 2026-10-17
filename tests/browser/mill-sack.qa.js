@@ -127,7 +127,8 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     ck('390 equal with nobody taking: errorFeeNoBasis, export blocked', t.status === COPYV2.errorFeeNoBasis && (await p.$eval('#share', e => e.disabled)), t);
     await p.focus('#bp'); await p.keyboard.press('Enter'); await sleep(50); t = await rowsOf(); ck('390 proportional with nobody taking: fee sits on Unclaimed', t.tots.join() === '$0.00,$0.00,$11.00', t);
     await typeInto(p, '#u', 'u'.repeat(17)); await typeInto(p, '#c', 'ABCDE'); await sleep(50);
-    { const body = await p.evaluate(() => document.body.innerText); ck('390 unit/currency limits use Writer copy with {max} (16 / 3)', body.includes('Unit: 16 characters max. 1 over.') && body.includes('Currency: 3 characters max. 2 over.'), body.match(/(Unit|Currency):[^\n]*/g)); }
+    // D10-r2: the unit input itself stops at 16 (maxlength + validation), so typing 17 leaves 16 and no unit error; currency keeps its Writer limit message
+    { const body = await p.evaluate(() => document.body.innerText), uv = await p.$eval('#u', e => e.value); ck('390 unit capped at 16 in the input (no over-limit unit reachable); currency limit uses Writer copy with {max} (3)', uv === 'u'.repeat(16) && !/Unit: 16 characters max/.test(body) && body.includes('Currency: 3 characters max. 2 over.'), { uv, msgs: body.match(/(Unit|Currency):[^\n]*/g) }); }
     ck('390 fee-mode checks no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   // ---- QA recheck 83a2ebcd: D7 read-only recipient / no stray recipient panel for the sender, D8 nobasis message, D9 residual sentence vs math, D1b unbroken money
   const RICE = { n: 'Rice', u: 'lb', c: '$', q: '25', i: '0.5', p: '31.47', f: '2.99', b: 'p', x: -1, h: [['Ana', '8'], ['Unit 2B', '7.5'], ['Bao & Linh', '6']] };
@@ -236,5 +237,70 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(250); await p.select('#pick', '0'); await sleep(120);
     { const a = await all([US]); ck(w + ' D10 + Q1: spoof unit shown as \u201C"bags"\u201D everywhere, link keeps the marks', a.ok && f.length > 0, a.hits); }
     ck(w + ' D10 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA local-a254042 D10-r1 / D10-r2 (PM wrap rule): a quoted unit breaks at spaces, then hyphens, and mid-word only if one word can't fit
+  // its box at all. Max-length units (16 = UNIT_MAX) in the sender LCD, household Wants rows, recipient LCD and Change my amount at every width:
+  // line boxes measured per character (Range.getClientRects); no page overflow; −/+, error and footer inside the viewport; unit input capped at 16.
+  {
+    const SCAN = (units) => { const out = []; const vis = e => e && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden';
+      const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
+      while ((n = tw.nextNode())) { if (!vis(n.parentElement) || n.parentElement.closest('textarea,option,select,script,style,.ss-print-only')) continue;
+        for (const u of units) { const tok = '\u201C' + u + '\u201D'; let at = n.data.indexOf(tok); if (at < 0) continue;
+          const ch = []; for (let i = at; i < at + tok.length; i++) { const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + 1); const rs = [...r.getClientRects()].filter(x => x.width > 0); if (rs.length) ch.push({ i, top: Math.round(rs[0].top) }); }
+          const br = []; for (let k = 1; k < ch.length; k++) if (ch[k].top > ch[k - 1].top + 2) { const gap = n.data.slice(ch[k - 1].i, ch[k].i); br.push(/\s/.test(gap) ? 'space' : /[-\u2010]/.test(n.data[ch[k - 1].i]) ? 'hyphen' : 'mid'); }
+          out.push({ where: (n.parentElement.id || n.parentElement.className || n.parentElement.tagName) + '', u, breaks: br }); } }
+      return out; };
+    const SW = 'abcdefghijklmnop', MW = 'family size bags', HY = 'extra-large-bags';
+    const fit = p => p.evaluate(() => { const vw = document.documentElement.clientWidth, R = e => e ? e.getBoundingClientRect() : null, inV = r => !!r && r.width > 0 && r.left >= -1 && r.right <= vw + 1;
+      const foot = document.querySelector('#recv > .ss-fine:last-of-type'), rg = document.createRange(); if (foot) rg.selectNodeContents(foot);
+      const err = document.getElementById('change-err'), er = document.createRange(); er.selectNodeContents(err);
+      return { sw: document.documentElement.scrollWidth, vw, up: inV(R(document.getElementById('up'))), down: inV(R(document.getElementById('down'))), err: err.textContent, errIn: [...er.getClientRects()].every(inV), footIn: foot ? [...rg.getClientRects()].every(inV) : null, footText: foot ? foot.textContent.slice(-20) : '' }; });
+    const setForm = (p, st) => p.evaluate(st => { const set = (e, v) => { e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }, g = id => document.getElementById(id);
+      set(g('item'), st.n); set(g('q'), st.q); set(g('u'), st.u); set(g('inc'), st.i); set(g('p'), st.p); set(g('f'), st.f); while (document.querySelectorAll('.ss-hn').length < st.h.length) g('add').click();
+      const hn = document.querySelectorAll('.ss-hn'), rq = document.querySelectorAll('.sk-rq'); st.h.forEach((h, i) => { set(hn[i], h[0]); set(rq[i], h[1]); }); }, st);
+    for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 800 });
+      for (const u of [SW, MW, HY]) { const tag = u === SW ? '16-char single word' : u === MW ? '16-char multi-word' : '16-char hyphenated';
+        const st = { n: 'Rice', u, c: '$', q: '10', i: '1', p: '20.00', f: '1.00', b: 'p', x: -1, h: [['Ana', '3'], ['Bo', '3'], ['Cy', '2']] };
+        await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(120); await setForm(p, st); await sleep(150);
+        const okBreaks = x => x.breaks.every(b => b !== 'mid') && (x.u !== SW || !x.breaks.length);
+        let sc = await p.evaluate(SCAN, [u]); let pick = k => sc.filter(x => x.where === k);
+        const lcd = pick('unit'), wants = pick('u sk-unit');
+        ck(w + ' D10-r1 sender LCD (' + tag + '): unit ' + (u === SW ? 'stays whole on one line' : 'breaks only at spaces/hyphens, never mid-word'), lcd.length === 1 && lcd.every(okBreaks), lcd);
+        ck(w + ' D10-r1 sender household Wants rows (' + tag + '): ' + (u === SW ? 'unit stays whole' : 'no mid-word break'), wants.length === 3 && wants.every(okBreaks), wants);
+        ck(w + ' D10-r1 sender (' + tag + '): every displayed quoted unit (LCD, rows, step line, status, table) has no mid-word break' + (u === SW ? ', single word never broken' : ''), sc.length >= 6 && sc.every(okBreaks), sc.filter(x => !okBreaks(x)));
+        const wr = await p.evaluate(() => { const li = document.querySelector('.ss-hrow'), u = li.querySelector('.u'), x = li.querySelector('.ss-x'), r = document.createRange(); r.selectNodeContents(u); const ur = [...r.getClientRects()], xr = x.getBoundingClientRect(), lr = li.getBoundingClientRect(); return { inside: ur.every(t => t.left >= lr.left && t.right <= lr.right), clearX: ur.every(t => t.right <= xr.left || t.left >= xr.right || t.bottom <= xr.top || t.top >= xr.bottom) }; });
+        ck(w + ' D10-r1 sender Wants row (' + tag + '): unit inside the row and clear of the × button', wr.inside && wr.clearX, wr);
+        let f0 = await fit(p); ck(w + ' D10-r2 sender (' + tag + '): document scrollWidth <= viewport', f0.sw <= f0.vw, f0);
+        const link = await p.evaluate(st => SACKLINK.encode(st), st);
+        await p.goto('about:blank'); await p.goto(BASE + '#' + link, { waitUntil: 'load' }); await sleep(150);
+        sc = await p.evaluate(SCAN, [u]); pick = k => sc.filter(x => x.where === k);
+        ck(w + ' D10-r1 recipient LCD (' + tag + '): ' + (u === SW ? 'unit stays whole' : 'no mid-word break'), pick('unit').length === 1 && pick('unit').every(okBreaks), pick('unit'));
+        ck(w + ' D10-r1 recipient view (' + tag + '): no displayed quoted unit breaks mid-word', sc.length >= 4 && sc.every(okBreaks), sc.filter(x => !okBreaks(x)));
+        f0 = await fit(p); ck(w + ' D10-r2 recipient view (' + tag + '): document scrollWidth <= viewport', f0.sw <= f0.vw, f0);
+        await p.select('#pick', '1'); await sleep(60); await p.click('#change'); await sleep(80); for (let k = 0; k < 3; k++) { await p.click('#up'); await sleep(60); }
+        sc = await p.evaluate(SCAN, [u]); pick = k => sc.filter(x => x.where === k);
+        const amt = await p.$eval('#amt', e => e.textContent);
+        ck(w + ' D10-r1 Change my amount (' + tag + '): amount "6 \u201C…\u201D" ' + (u === SW ? 'keeps the unit whole' : 'never breaks mid-word') + ', label and error too', amt === '6 \u201C' + u + '\u201D' && pick('unit').length >= 2 && sc.every(okBreaks), { amt, sc });
+        f0 = await fit(p);
+        ck(w + ' D10-r2 Change my amount (' + tag + '): scrollWidth <= viewport; −, +, over-package error and footer inside the viewport', f0.sw <= f0.vw && f0.up && f0.down && /over the package/.test(f0.err) && f0.errIn && f0.footIn === true, f0);
+        await p.click('#cancel'); await sleep(60);
+      }
+      // PM: a hyphenated unit breaks at the hyphen before any mid-word break (same CSS as the LCD unit, in a box too narrow for the whole token)
+      { await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(100);
+        const hy = await p.evaluate((HY, SW) => { const lcd = document.querySelector('.ss-lcd'), mk = (t, wpx) => { const v = document.createElement('span'); v.className = 'v'; v.style.cssText = 'grid-column:1/-1;width:' + wpx + 'px'; const u = document.createElement('span'); u.className = 'unit'; u.textContent = t; v.appendChild(u); lcd.appendChild(v); return { v, u }; };
+          const lines = (u, t) => { const n = u.firstChild, ch = []; for (let i = 0; i < t.length; i++) { const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + 1); const rs = [...r.getClientRects()].filter(x => x.width > 0); if (rs.length) ch.push({ i, top: Math.round(rs[0].top) }); } const br = []; for (let k = 1; k < ch.length; k++) if (ch[k].top > ch[k - 1].top + 2) br.push(/[-]/.test(t[ch[k - 1].i]) ? 'hyphen' : /\s/.test(t.slice(ch[k - 1].i, ch[k].i)) ? 'space' : 'mid'); return br; };
+          const a = mk('\u201C' + HY + '\u201D', 90), b = mk('\u201C' + SW + '\u201D', 60), cs = getComputedStyle(a.u);
+          const out = { hy: lines(a.u, a.u.textContent), sw: lines(b.u, b.u.textContent), wrap: cs.overflowWrap, wb: cs.wordBreak, swInside: b.u.getBoundingClientRect().right <= b.v.getBoundingClientRect().right + 1 }; a.v.remove(); b.v.remove(); return out; }, HY, SW);
+        ck(w + ' D10-r1 PM rule: overflow-wrap break-word (not anywhere/break-all); hyphenated unit in a narrow box breaks at its hyphens, no mid-word; a word that cannot fit at all breaks rather than overflow', hy.wrap === 'break-word' && hy.wb === 'normal' && hy.hy.length >= 1 && hy.hy.every(b => b === 'hyphen') && hy.sw.includes('mid') && hy.swInside, hy); }
+      // D10-r2: the unit input takes at most 16 characters: maxlength, typing, paste (insertText), script-set value; no "over" error reachable
+      { await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(100);
+        await typeInto(p, '#u', 'abcdefghijklmnopq'); const typed = await p.$eval('#u', e => e.value);
+        await p.$eval('#u', e => { e.focus(); e.select(); }); await p.evaluate(() => document.execCommand('insertText', false, 'abcdefghijklmnopqrstuvwxyz012345')); await sleep(50); const pasted = await p.$eval('#u', e => e.value);
+        await p.evaluate(() => { const e = document.getElementById('u'); e.removeAttribute('maxlength'); e.value = 'large family size bags of grains'; e.dispatchEvent(new Event('input', { bubbles: true })); }); await sleep(50);
+        const forced = await p.evaluate(() => ({ v: document.getElementById('u').value, body: document.body.innerText }));
+        await p.reload({ waitUntil: 'load' }); await sleep(100); const ml = await p.$eval('#u', e => e.maxLength);
+        const f1 = await fit(p);
+        ck(w + ' D10-r2 unit input rejects more than 16 characters (maxlength 16; typed 17 -> 16; pasted 32 -> 16; script-set 32 without maxlength -> 16 by validation); no "Unit: 16 characters max" error; no overflow', ml === 16 && typed === 'abcdefghijklmnop' && pasted === 'abcdefghijklmnop' && forced.v === 'large family siz' && !/Unit: 16 characters max/.test(forced.body) && forced.body.includes('\u201Clarge family siz\u201D') && f1.sw <= f1.vw, { ml, typed, pasted, forced: forced.v }); }
+      ck(w + ' D10-r1/r2 no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

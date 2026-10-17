@@ -116,6 +116,19 @@
   }
   // Recipient view is read-only in the DOM via the shared helper (controls disabled, never inert); household inputs are not rendered at all.
   function lockEditor() { if (mode === 'own') return; $('hh').textContent = ''; V.readOnly($('editor'), true); }
+  // QA local-a254042 D10-r1/D10-r2 (PM wrap rule): a quoted unit breaks at spaces, then hyphens, and mid-word only if one word can't fit
+  // its box at all (CSS overflow-wrap:break-word). Where a unit would wrap, the row reflows instead: the LCD package value takes its own
+  // full-width line, the household rows stack (name above wants) and the Change my amount figure sits above its −/+ buttons.
+  function lineCount(e) { var t = e && e.firstChild; if (!t || !e.getClientRects().length) return 0; var r = document.createRange(); r.selectNodeContents(e); var tops = {}; [].forEach.call(r.getClientRects(), function (x) { if (x.width > 0) tops[Math.round(x.top)] = 1; }); return Object.keys(tops).length; }
+  function spills(e) { var cell = e.closest('.v, output, .ss-field') || e.parentNode, r = document.createRange(); r.selectNodeContents(e); var c = cell.getBoundingClientRect(); return [].some.call(r.getClientRects(), function (x) { return x.width > 0 && (x.right > c.right + 1 || x.left < c.left - 1); }); }
+  function fitOne(box, cls, unitEl) { box.classList.remove(cls); if (unitEl && (lineCount(unitEl) > 1 || spills(unitEl))) box.classList.add(cls); }
+  function fitUnits() {
+    fitOne(document.querySelector('.ss-lcd'), 'is-wideq', $('lcd-q').querySelector('.unit'));
+    fitOne($('hh'), 'is-wideu', $('hh').querySelector('.ss-wants .u'));
+    fitOne(document.querySelector('.ss-stepper'), 'is-wide', $('amt').querySelector('.unit'));
+  }
+  var fitT; window.addEventListener('resize', function () { cancelAnimationFrame(fitT); fitT = requestAnimationFrame(fitUnits); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitUnits(); });
   function render() {
     var fe = fieldErrors(); list('item-msg', fe.item); list('hh-msg', fe.hh);
     var rows = $('rows'), as = $('assign'), u = unit(); rows.textContent = ''; as.textContent = '';
@@ -168,6 +181,7 @@
     $('notready').textContent = ready ? '' : feeNoTaker ? C.errorFeeNoBasis : (blocked === 'over' && res && res.status === 'over' ? M.fill(C.overAllocationBlock, { qty: S.fmtQty(res.shortage), unit: u }) : blocked === 'count' ? C.tooFewHouseholds : blocked === 'duplicate' ? C.duplicateHousehold : feeNoTaker ? C.errorFeeNoBasis : C.notReady);
     if (mode !== 'own') { ['share', 'copytext', 'print'].forEach(function (id) { $(id).disabled = true; }); }
     lockEditor(); var txt = ready ? proposal(res) : ''; $('text').value = txt; $('printout').textContent = ready ? M.fill(C.shareTextTyped, { item: M.strip(st.n) }) + '\n' + C.textNamesTyped + '\n\n' + M.fill(C.proposalPolicy, { feeBasisLine: C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'], residualNote: C.residualNote }) + '\n' + C.proposalSnapshot + '\n' + C.noPaymentNote : '';
+    fitUnits();
   }
   // D9: the leftover-cents sentence names each row's actual extra cents. Writer's "one each" form is used only when every listed row got exactly 1.
   var textNames = false;
@@ -200,7 +214,7 @@
     var sel = $('pick'), v = pick; sel.textContent = ''; var o0 = el('option', null, '—'); o0.value = ''; sel.appendChild(o0);
     st.h.forEach(function (_, i) { var o = el('option', null, typedName(i)); o.value = String(i); sel.appendChild(o); }); sel.value = v >= 0 ? String(v) : '';
     $('change').disabled = pick < 0; var inc = S.parseQty(st.i);
-    if (pick >= 0) { $('amt-l').textContent = M.fill(C.answerAmountLabel, { increment: S.fmtQty(inc), unit: unit() }); $('down').setAttribute('aria-label', M.fill(C.stepDownAria, { name: qName(pick) })); $('up').setAttribute('aria-label', M.fill(C.stepUpAria, { name: qName(pick) })); $('amt').textContent = S.fmtQty(S.parseQty(String(st.h[pick][1]).trim() || '0')) + ' ' + unit(); }
+    if (pick >= 0) { $('amt-l').textContent = M.fill(C.answerAmountLabel, { increment: S.fmtQty(inc), unit: unit() }); $('down').setAttribute('aria-label', M.fill(C.stepDownAria, { name: qName(pick) })); $('up').setAttribute('aria-label', M.fill(C.stepUpAria, { name: qName(pick) })); var am = $('amt'), au = unit(); am.textContent = ''; am.appendChild(el('span', 'num', S.fmtQty(S.parseQty(String(st.h[pick][1]).trim() || '0')))); if (au) { am.appendChild(document.createTextNode(' ')); am.appendChild(el('span', 'unit', au)); } }
     var res = result(), oc = $('owncost'); oc.textContent = '';
     if (pick >= 0 && res && res.complete) { var r = res.rows[pick]; oc.textContent = r.fee ? M.fill(C.receiverOwnCost, { qty: S.fmtQty(r.qty), unit: unit(), item: money(r.goods), fee: money(r.fee), total: money(r.total) }) : M.fill(C.receiverOwnCostNoFee, { qty: S.fmtQty(r.qty), unit: unit(), total: money(r.total) }); }
     var ok = !!(res && res.complete); $('makelink').disabled = mode === 'change' && (!ok || !wasOf(pick));
@@ -243,6 +257,9 @@
     else { st = blank(); setMode('own'); banner(d.why === 'oldVersion' ? C.oldVersion : C.badLink); }
   }
   function bind() {
+    // D10-r2: the unit input holds at most UNIT_MAX (16) characters: maxlength in the HTML, and here for anything maxlength lets through
+    // (pasted or dropped text, autofill, script-set values), clipped by characters (code points) before the state sees it.
+    $('u').addEventListener('input', function (e) { var v = e.target.value; if (M.len(v) > L.UNIT_MAX) e.target.value = Array.from(v).slice(0, L.UNIT_MAX).join(''); });
     [['item', 'n'], ['q', 'q'], ['inc', 'i'], ['p', 'p'], ['f', 'f'], ['c', 'c'], ['u', 'u']].forEach(function (p) { $(p[0]).addEventListener('input', function (e) { if (mode !== 'own') { e.target.value = st[p[1]]; return; } st[p[1]] = e.target.value; edited(); }); });
     $('bp').addEventListener('click', function () { if (mode !== 'own') return; st.b = 'p'; basisButtons(); edited(); });
     $('be').addEventListener('click', function () { if (mode !== 'own') return; st.b = 'e'; basisButtons(); edited(); });
