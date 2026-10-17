@@ -176,14 +176,48 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     { const t = await p.evaluate(() => { const pre = (location.origin + location.pathname + '#').length, n = 2000 - pre; return { pre, fit: !!MILLVIEW.linkFor('x'.repeat(n)), over: MILLVIEW.linkFor('x'.repeat(n + 1)) }; });
       ck(w + ' D7: MILLVIEW.linkFor allows exactly 2,000 characters in total and refuses 2,001', t.fit && t.over === null, t); }
     { // a state whose fragment is under LIM.frag but whose full URL here is over 2,000 -> refused with the fallback text
-      const pre = await p.evaluate(() => (location.origin + location.pathname + '#').length); let st = null;
-      for (let k = 1; k <= 126 && !st; k++) for (let tl = 0; tl <= 40 && !st; tl++) { const people = []; for (let i = 0; i < 6; i++) people.push(['Person ' + i, []]);
+      // (PM 03:48 receive cap: a received link over 2,000 in total no longer opens, so the over-cap state is reached the way a sender would: open it with an
+      //  empty title while the whole URL is still under 2,000, take a copy, then type a 40-character title, which pushes it over.)
+      const pre = await p.evaluate(() => (location.origin + location.pathname + '#').length); let st = null, st0 = null;
+      for (let k = 1; k <= 126 && !st; k++) { const people = []; for (let i = 0; i < 6; i++) people.push(['Person ' + i, []]);
         for (let j = 0; j < k; j++) people[j % 6][1].push([Math.floor(j / 6) % 7, String(Math.floor(j / 42) * 3 + 8).padStart(2, '0') + ':00', String(Math.floor(j / 42) * 3 + 9).padStart(2, '0') + ':00']);
-        const c = mk(people, { t: 'T'.repeat(tl) }), f = T.encode(c); if (f && f.length + pre > 2000 && f.length <= T.LIM.frag) st = c; }
-      if (st) { await go(st); await p.click('#b-share'); await sleep(150); const t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, link: document.getElementById('linkbox').hidden ? '' : document.getElementById('link').value, fb: !document.getElementById('fbwrap').hidden }));
+        const c0 = mk(people, { t: '' }), f0 = T.encode(c0), c = JSON.parse(JSON.stringify(c0)); c.t = 'T'.repeat(40); const f = T.encode(c);
+        if (f && f0 && f.length + pre > 2000 && f.length <= T.LIM.frag && f0.length + pre <= 2000) { st = c; st0 = c0; } }
+      if (!st) ck(w + ' D7: test state (under 2,000 without a title, over with a 40-character title) found', false, null);
+      if (st) { await go(st0); await p.click('#own-copy'); await sleep(100); await typeInto(p, '#t', 'T'.repeat(40)); await sleep(100); await p.click('#b-share'); await sleep(150); const t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, link: document.getElementById('linkbox').hidden ? '' : document.getElementById('link').value, fb: !document.getElementById('fbwrap').hidden }));
         ck(w + ' D7: a state over 2,000 characters in total (fragment under its own limit) is refused: tooLongLink + fallback text, no link', t.toast === C.tooLongLink && !t.link && t.fb, t); }
       else ck(w + ' D7: could build an over-cap state', false, pre); }
     ck(w + ' D1–D7/KS-1r: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
   }
+  // PM 03:48 (audit 04:00): the WHOLE received URL is capped at 2,000 with the shared MILLVIEW.linkFor before decode (as in Sack, Even Up, Care Rota).
+  // Normal path /mill/the-same-hour/ under a long *.localhost origin (Chrome resolves *.localhost to this server; hostnames up to 253) and a long path (throwaway
+  // server, nested dirs + symlink to this tree): 1999 and 2000 open; 2001 and 2040 show this piece's bad-link message and nothing received.
+  { const fsx = require('fs'), osx = require('os'), pathx = require('path'), { spawn } = require('child_process'), REPO = pathx.resolve(__dirname, '../..');
+    const X = require('../../mill/the-same-hour/tsh.js'), CX = require('vm').runInNewContext(fsx.readFileSync(__dirname + '/../../mill/the-same-hour/copy.js', 'utf8') + ';COPY');
+    const MARK = 'Zqxd7', em = '\u{1F600}', E = (k, ch) => ch.repeat(k);
+    const pickF = (gen, lo, hi) => { for (let k = 0; k < 400; k++) { const f = gen(k); if (f && f.length >= lo && f.length <= hi) return f; } return null; };
+    const BIG = pickF(k => { const pp = []; for (let j = 0; j < 6; j++) { const iv = []; for (let d = 0; d < Math.min(k, 21); d++) iv.push({ id: 100 + j * 30 + d, d: d % 7, s: String(8 + (d >> 3) * 4).padStart(2, '0') + ':00', e: String(9 + (d >> 3) * 4).padStart(2, '0') + ':00' }); pp.push({ id: j + 1, n: 'P' + j + E(20, em), iv }); } return X.encode({ w: '2026-10-19', z: 'America/New_York', n: '60', u: 'min', t: MARK + ' dinner', p: pp, next: 400 }); }, 1760, 1960), SMALL = X.encode({ w: '2026-10-19', z: 'America/New_York', n: '60', u: 'min', t: MARK + ' dinner', p: [{ id: 1, n: 'Rae', iv: [{ id: 2, d: 0, s: '18:00', e: '20:00' }] }, { id: 3, n: 'Sol', iv: [{ id: 4, d: 0, s: '19:00', e: '21:00' }] }], next: 5 });
+    const s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 });
+    const openAt = async url => { await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(300);
+      return p.evaluate((MARK, bad) => { const t = document.body.innerText; return { len: location.href.length, opened: t.includes(MARK) && !t.includes(bad), bad: t.includes(bad) && !t.includes(MARK) }; }, MARK, CX.badLink); };
+    const port = H.includes(':') ? ':' + H.split(':').pop() : '', PATH = '/mill/the-same-hour/', fixed = (SCHEME + '://').length + port.length + PATH.length + 1 + BIG.length;
+    const hostOf = n => { const labels = []; let left = n - 10; while (left > 0) { const k = Math.min(63, left > 63 ? left - 1 : left); labels.push('a'.repeat(k)); left -= k + 1; } const h = labels.join('.') + '.localhost'; if (h.length !== n) throw new Error('host ' + h.length + ' != ' + n); return h; };
+    const normal = {}, maxN = fixed + 253;
+    for (const want of [1999, 2000, 2001, 2040]) { const total = Math.min(want, maxN); const r = await openAt(SCHEME + '://' + hostOf(total - fixed) + port + PATH + '#' + BIG); r.want = want; normal[want] = r; }
+    const root = fsx.mkdtempSync(osx.tmpdir() + '/d7-the-same-hour-'); const srv = spawn('python3', ['-u', '-m', 'http.server', '0', '--bind', '127.0.0.1', '--directory', root], { stdio: ['ignore', 'pipe', 'pipe'] }); const long = {};
+    try { const lport = await new Promise((res, rej) => { let b = ''; const f = d => { b += d; const m = /port (\d+)/.exec(b); if (m) res(+m[1]); }; srv.stdout.on('data', f); srv.stderr.on('data', f); setTimeout(() => rej(new Error('no port')), 8000); });
+      const ORIGIN = 'http://127.0.0.1:' + lport; let tag = 0;
+      const pathOf = total => { let left = total - 1 - PATH.length; const segs = []; tag++;
+        while (left > 0) { let k = left > 200 ? (left === 201 ? 199 : 200) : left; left -= k; if (left) left -= 1; segs.push(segs.length ? 'a'.repeat(k) : ('t' + tag + '_' + 'a'.repeat(k)).slice(0, k)); }
+        let dir = root; segs.slice(0, -1).forEach(x => { dir = pathx.join(dir, x); fsx.mkdirSync(dir, { recursive: true }); }); fsx.symlinkSync(REPO, pathx.join(dir, segs[segs.length - 1]));
+        const P = '/' + segs.join('/') + PATH; if (P.length !== total) throw new Error('path ' + P.length + ' != ' + total); return P; };
+      for (const total of [1999, 2000, 2001, 2040]) long[total] = await openAt(ORIGIN + pathOf(total - ORIGIN.length - 1 - SMALL.length) + '#' + SMALL);
+    } finally { srv.kill(); }
+    const over = Object.values(normal).filter(r => r.len > 2000);
+    ck('whole-URL receive cap, normal path (fragment ' + BIG.length + ', long origin): 1999 and 2000 open; over 2,000 (2001, ' + (maxN >= 2040 ? '2040' : maxN + ' = longest reachable with a 253-char host') + ') -> bad-link message, nothing received',
+      normal[1999].len === 1999 && normal[1999].opened && normal[2000].len === 2000 && normal[2000].opened && normal[2001].len === 2001 && over.length >= 2 && over.every(r => r.bad && !r.opened) && (maxN >= 2040 ? normal[2040].len === 2040 : normal[2040].len === maxN), normal);
+    ck('whole-URL receive cap, long path (fragment ' + SMALL.length + '): 1999 and 2000 open; 2001 and 2040 -> bad-link message, nothing received',
+      [1999, 2000].every(t => long[t].len === t && long[t].opened) && [2001, 2040].every(t => long[t].len === t && long[t].bad && !long[t].opened), long);
+    ck('whole-URL receive cap: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })();
