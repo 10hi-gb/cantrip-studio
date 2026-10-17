@@ -68,6 +68,7 @@ function unquotedIn(str, seed) {
   while (i >= 0) { const before = str[i - 1], after = str[i + seed.length]; if (!(before === '\u201C' && after === '\u201D')) out.push(str.slice(Math.max(0, i - 30), i + seed.length + 30)); i = str.indexOf(seed, i + 1); }
   return out;
 }
+const QMARKS = /[\u201C\u201D\u201E\u201F\u00AB\u00BB]/g;
 async function typedAudit(p, seeds, extra = {}) {
   const got = await p.evaluate(() => {
     const vis = e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return cs.display !== 'none' && cs.visibility !== 'hidden' && (r.width > 0 || r.height > 0); };
@@ -81,6 +82,13 @@ async function typedAudit(p, seeds, extra = {}) {
     return { visible: document.body.innerText, attrs, opts, toast: t && vis(t) ? t.textContent : '', title: document.title };
   });
   const hits = [];
+  const all = [['visible', got.visible], ['toast', got.toast], ['document.title', got.title], ...got.attrs, ...got.opts, ...Object.entries(extra).map(([w, v]) => [w, String(v || '')])];
+  // PM Q1 (anti-spoof): a seed carrying “ ” „ ‟ « » must never be shown with those marks (they would close the frame);
+  // it must appear as its display form (marks -> ") inside “…”.
+  seeds = seeds.flatMap(seed => { const shown = String(seed).replace(QMARKS, '"'); if (shown === seed) return [seed];
+    all.forEach(([w, v]) => { if (v.includes(seed)) hits.push({ where: w, seed, ctx: 'raw quote marks shown (spoofable): ' + v.slice(Math.max(0, v.indexOf(seed) - 30), v.indexOf(seed) + seed.length + 30) }); });
+    if (!all.some(([, v]) => v.includes('\u201C' + shown + '\u201D'))) hits.push({ where: 'anywhere', seed, ctx: 'display form not found: \u201C' + shown + '\u201D' });
+    return [shown]; });
   for (const seed of seeds) {
     unquotedIn(got.visible, seed).forEach(ctx => hits.push({ where: 'visible', seed, ctx }));
     unquotedIn(got.toast, seed).forEach(ctx => hits.push({ where: 'toast', seed, ctx }));
@@ -88,7 +96,7 @@ async function typedAudit(p, seeds, extra = {}) {
     got.attrs.concat(got.opts).forEach(([w, v]) => unquotedIn(v, seed).forEach(ctx => hits.push({ where: w, seed, ctx })));
     Object.entries(extra).forEach(([w, v]) => unquotedIn(String(v || ''), seed).forEach(ctx => hits.push({ where: w, seed, ctx })));
   }
-  return { ok: !hits.length, hits: hits.slice(0, 20), n: hits.length };
+  return { ok: !hits.length, hits: hits.slice(0, 20), n: hits.length, all: hits };
 }
 
 // Recipient accessibility (QA BYG N1 / TSH KS-1, Joshua 23:57): read-only must never mean inert or aria-hidden.

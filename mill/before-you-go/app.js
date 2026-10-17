@@ -18,7 +18,7 @@
   function edited() { clearHash(); $('linkbox').hidden = true; $('link').value = ''; }
   function quoted(v) { return window.MILLVIEW.quote(v); } // shared typed-text rule (mill/shared/view.js)
   // label + separate value node (D4: typed text is never part of a product sentence)
-  function typedInto(node, tpl, key, value) { node.textContent = ''; var parts = String(tpl).split('{' + key + '}'); node.appendChild(document.createTextNode(parts[0])); var q = /[“"]$/.test(parts[0]); node.appendChild(q ? el('span', 'byg-typed mill-typed', value) : V.typed(value, 'byg-typed')); if (parts[1]) node.appendChild(document.createTextNode(parts[1])); }
+  function typedInto(node, tpl, key, value) { node.textContent = ''; var parts = String(tpl).split('{' + key + '}'); node.appendChild(document.createTextNode(parts[0])); var q = /[“"]$/.test(parts[0]); node.appendChild(q ? el('span', 'byg-typed mill-typed', M.unquote(value)) : V.typed(value, 'byg-typed')); if (parts[1]) node.appendChild(document.createTextNode(parts[1])); }
   function whenPair(prefix, labelText) { // date (required for a value) + optional time
     var w = el('div', 'byg-when'), d = el('input', 'byg-in'), t = el('input', 'byg-in'), dl = el('label', null, C.whenDateLabel), tl = el('label', null, C.whenTimeLabel);
     d.type = 'date'; t.type = 'time'; d.id = prefix + '-d'; t.id = prefix + '-t'; dl.htmlFor = d.id; tl.htmlFor = t.id; d.setAttribute('aria-label', labelText + ' · ' + C.whenDateLabel); t.setAttribute('aria-label', labelText + ' · ' + C.whenTimeLabel);

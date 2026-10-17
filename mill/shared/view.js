@@ -44,7 +44,7 @@
   // 3. Sender framing: text someone else typed is shown quoted, in body type, never inside a product sentence and
   //    never styled as a product heading. typed('Ana') -> <span class="mill-typed">“Ana”</span> (text node only).
   //    quote('Ana') -> '“Ana”' is the same rule for plain-text places (copied text, <option> labels, aria text).
-  function quote(text) { return root.MILL && root.MILL.quote ? root.MILL.quote(text) : '\u201C' + text + '\u201D'; }
+  function quote(text) { return root.MILL.quote(text); } // one rule (core.js): typed “ ” „ ‟ « » shown as " inside the frame
   function typed(text, cls, tag) { var e = document.createElement(tag || 'span'); e.className = 'mill-typed' + (cls ? ' ' + cls : ''); e.textContent = quote(text); return e; }
   // 4. Bad-link / reset hygiene: no validation state survives a route. Clears aria-invalid + aria-describedby links to
   //    error boxes, empties every error element matched by sel, and hides those marked data-err-hide.
