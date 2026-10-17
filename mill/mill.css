@@ -8,6 +8,3 @@
 dl{margin:0;font-size:.88rem}dt{font-weight:700;margin-top:.5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}dd{margin:0;overflow-wrap:anywhere}dd ul{margin:0;padding-left:1.1rem}
 a{color:#1d1d1b}a:focus-visible{outline:3px solid #e0a000;outline-offset:2px}
 .hub-qa{font-weight:700;color:#8a5a00}.hub-qa.is-pass{color:#1f6b3a}
-.hub-status{font-weight:800;color:#8a1f00}.hub-row.is-queued{background:#faf8f3;border-style:dashed}
-.hub-row h2{flex-wrap:wrap}.hub-row h2 > a,.hub-row h2 > span:first-child{min-width:0;overflow-wrap:anywhere}
-@media (max-width:420px){.hub{padding:1rem .6rem 2.5rem}.hub-row{padding:.7rem .6rem}dd{word-break:break-word}}

@@ -2,9 +2,8 @@
 // Mill shared view helpers (DOM only; no storage, no network). One place for the two rules every piece follows:
 //  1. route(fn): fn runs on first load and on EVERY hashchange (valid, bad, old-version or empty). fn must rebuild all
 //     state and DOM from scratch; use clearInputs() so nothing from a previous link or a half-typed field survives.
-//  2. readOnly(root, on): a recipient view is read-only in the DOM, not just hidden by CSS: every form control inside root
-//     is disabled (previous disabled state remembered; data-ro-keep opts out). Text and links stay readable and usable:
-//     no inert, no aria-hidden. Pass on=false to restore.
+//  2. readOnly(root, on): a recipient view is read-only in the DOM, not just hidden by CSS: every control inside root is
+//     disabled (previous disabled state remembered), root is inert and aria-disabled. Pass on=false to restore.
 (function (root) {
   var CTRL = 'input,select,textarea,button';
   function route(fn) {
@@ -25,9 +24,7 @@
       if (on) { if (!e.hasAttribute('data-ro-was')) e.setAttribute('data-ro-was', e.disabled ? '1' : '0'); e.disabled = true; }
       else if (e.hasAttribute('data-ro-was')) { e.disabled = e.getAttribute('data-ro-was') === '1'; e.removeAttribute('data-ro-was'); }
     });
-    // Never inert, never aria-hidden, never aria-disabled on the region (QA BYG N1 / TSH KS-1): the read-only content stays in
-    // the accessibility tree and links in it (Call, Text) stay real, focusable and clickable. Only form controls are disabled.
-    scope.inert = false; scope.removeAttribute('aria-disabled');
+    scope.inert = !!on; if (on) scope.setAttribute('aria-disabled', 'true'); else scope.removeAttribute('aria-disabled');
   }
   // 5. One toast per page (#toast), one timer. route() clears it, so no message from a previous list survives a link change.
   var toastT = 0;

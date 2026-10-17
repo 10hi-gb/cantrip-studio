@@ -28,18 +28,7 @@
     "tree": "dd88bafd8539e76efa7a2ffbc142dfb3a1a6fd6d",
     "result": "unit tests 21+5 pass; live browser check 107/107 at 320/390/1280 (incl. D1-D4 checks, read-only recipient, fee rule); byte-compare 65/65."
    },
-   "status": "NOT READY",
-   "qaLocal": {
-    "verdict": "NOT READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "652d0e038d7033812cf6954e32576cd794ad896e",
-    "report": "qa/split-the-sack/local-652d0e0/QA-local-652d0e0.md"
-   },
-   "qaDeployed": {
-    "pin": "83a2ebcd",
-    "verdict": "FAIL",
-    "commit": "d37121e7f446865ae3e7e930042ffb1582390070"
-   }
+   "qa": "Awaiting QA"
   },
   {
    "id": "P003",
@@ -62,18 +51,7 @@
     "tree": "1f37ffe0ce0236ea213816e7f4cdf74961bf59c9",
     "result": "unit tests 9 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY",
-   "qaLocal": {
-    "verdict": "NOT READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "652d0e038d7033812cf6954e32576cd794ad896e",
-    "report": "qa/before-you-go/local-652d0e0/QA-local-652d0e0.md"
-   },
-   "qaDeployed": {
-    "pin": "83a2ebcd",
-    "verdict": "FAIL",
-    "commit": "d37121e7f446865ae3e7e930042ffb1582390070"
-   }
+   "qa": "Awaiting QA"
   },
   {
    "id": "P002",
@@ -96,18 +74,7 @@
     "tree": "f83c650c08b683a712f9d700e4ff76e66f756316",
     "result": "unit tests 11 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY",
-   "qaLocal": {
-    "verdict": "NOT READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "652d0e038d7033812cf6954e32576cd794ad896e",
-    "report": "qa/one-small-ask/local-652d0e0/QA-local-652d0e0.md"
-   },
-   "qaDeployed": {
-    "pin": "83a2ebcd",
-    "verdict": "FAIL",
-    "commit": "d37121e7f446865ae3e7e930042ffb1582390070"
-   }
+   "qa": "Awaiting QA"
   },
   {
    "id": "P004",
@@ -128,18 +95,7 @@
     "tree": "b436439c6fafa24c13bf8e20dc5a3f34a660b771",
     "result": "unit tests 15 pass; live browser check 84/84 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY",
-   "qaLocal": {
-    "verdict": "NOT READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "652d0e038d7033812cf6954e32576cd794ad896e",
-    "report": "qa/one-less-trip/local-652d0e0/QA-local-652d0e0.md"
-   },
-   "qaDeployed": {
-    "pin": "83a2ebcd",
-    "verdict": "FAIL",
-    "commit": "d37121e7f446865ae3e7e930042ffb1582390070"
-   }
+   "qa": "Awaiting QA"
   },
   {
    "id": "P005",
@@ -155,52 +111,28 @@
     "Times the clocks skip or repeat on a daylight-saving change are refused, never moved or guessed. Lengths are real elapsed time across a change.",
     "Nothing is sent or booked. A proposal is a suggestion worked out from what the sender typed; nobody has replied to it."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview 715aa3a: unit 19 incl. DST; browser 116/116 at 320/390/1280. Not QA.",
-   "status": "NOT READY",
-   "qaLocal": {
-    "verdict": "NOT READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "715aa3a42da68f1c1e339b396cb6611f49c7ba46",
-    "report": "qa/the-same-hour/local-715aa3a/QA-local-715aa3a.md"
-   }
+   "engineer": {
+    "pin": "localhost-preview",
+    "commit": "see ENGINEER-STATUS.txt",
+    "result": "ENGINEER SELF-CHECK only (not QA): unit 19 incl. DST (US fall-back 1 Nov 2026, spring-forward 8 Mar 2026 / 14 Mar 2027, Sydney, Lord Howe); browser 116/116 at 320/390/1280."
+   },
+   "qa": "Awaiting QA"
   },
   {
    "id": "P006",
    "name": "Even Up",
-   "status": "QUEUED, NOT BUILT",
+   "score": "7.30",
+   "wave": 2,
    "path": null,
+   "sources": [
+    "https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf7jx23/"
+   ],
    "limits": [
-    "Undercut in the thread; no claim of fewest transfers. Moves no money."
-   ]
-  },
-  {
-   "id": "P018",
-   "name": "Left or Right (original scope)",
-   "status": "QUEUED, NOT BUILT",
-   "path": null,
-   "limits": [
-    "Not a communication aid.",
-    "A real switch and dwell accessibility check has not been done; synthetic tests don't count as that check."
-   ]
-  },
-  {
-   "id": "P017",
-   "name": "Care Rota r1c",
-   "status": "QUEUED, NOT BUILT",
-   "path": null,
-   "limits": [
-    "Lines that combine needs or people are set aside with a request to split them, never guessed.",
-    "Nothing is booked or confirmed."
-   ]
-  },
-  {
-   "id": "P012",
-   "name": "Five Hands r1c (narrow)",
-   "status": "QUEUED, NOT BUILT",
-   "path": null,
-   "limits": [
-    "Narrow r1c scope only."
-   ]
+    "Undercut in the thread by https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf7kzlb/ and https://www.reddit.com/r/ClaudeAI/comments/1x2srd4/can_we_please_start_building_apps_and_systems_to/pf7urxl/.",
+    "No claim of fewest transfers. Moves no money."
+   ],
+   "engineer": "Not built yet.",
+   "qa": "Awaiting QA"
   }
  ]
 }

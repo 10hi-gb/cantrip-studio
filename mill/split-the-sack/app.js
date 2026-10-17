@@ -107,7 +107,7 @@
     var r = S.compute(inp); if (!r.ok && r.error === 'assign') { inp.assignTo = -1; r = S.compute(inp); }
     return r.ok ? r : null;
   }
-  // Recipient view is read-only in the DOM via the shared helper (controls disabled, never inert); household inputs are not rendered at all.
+  // Recipient view is read-only in the DOM via the shared helper (disabled + inert); household inputs are not rendered at all.
   function lockEditor() { if (mode === 'own') return; $('hh').textContent = ''; V.readOnly($('editor'), true); }
   function render() {
     var fe = fieldErrors(); list('item-msg', fe.item); list('hh-msg', fe.hh);
@@ -185,7 +185,7 @@
     $('editor').hidden = m !== 'own'; $('recv').hidden = m === 'own'; $('changebox').hidden = m !== 'change'; $('change').hidden = m === 'change';
     $('from').hidden = m === 'own'; $('from').textContent = C.senderTextLabel; $('caption').hidden = m === 'own'; $('caption').textContent = C.senderNamesCaption;
     if (m !== 'change') { $('rlinkbox').hidden = true; $('rlink').value = ''; }
-    V.readOnly($('editor'), m !== 'own'); // #recv is hidden (not inert) in own mode, line above
+    V.readOnly($('editor'), m !== 'own'); $('recv').inert = m === 'own';
     if (m === 'own') { orig = null; pick = -1; $('pick').textContent = ''; $('owncost').textContent = ''; $('change-err').textContent = ''; $('amt').textContent = ''; $('amt-l').textContent = ''; } else recvPanel(); render();
   }
   function recvPanel() {

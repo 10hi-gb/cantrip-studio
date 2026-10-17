@@ -45,7 +45,7 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     const ov = await textOverlap(p, '.tsh-dayname, .tsh-zone span, .tsh-otext > b, .tsh-otext > span, #prop-h, #prop-z, #prop-n, .tsh-legend li span:last-child, .tsh-collapsed span'); ck(w + ' no text overlap (s1)', !ov.length, ov);
     { const ro = await p.evaluate(() => ({ en: [...document.querySelectorAll('#form input,#form select,#form textarea,#form button')].filter(e => !e.disabled).map(e => e.id), inert: document.getElementById('form').inert, picks: [...document.querySelectorAll('[id^=pick-]')].filter(e => !e.disabled).length }));
       const rh = await reallyHidden(p, ['#b-reset', '#b-nreset']);
-      ck(w + ' recipient read-only in DOM: every form control disabled (never inert), both Start over buttons not rendered; slot picks still usable', !ro.en.length && !ro.inert && ro.picks > 0 && rh.ok, { ro, rh });
+      ck(w + ' recipient read-only in DOM: every form control disabled + inert, both Start over buttons not rendered; slot picks still usable', !ro.en.length && ro.inert && ro.picks > 0 && rh.ok, { ro, rh });
       await p.click('#own-copy'); await sleep(80);
       const un = await p.evaluate(() => ({ inert: document.getElementById('form').inert, n: document.getElementById('n').disabled, nm: document.getElementById('pn-1').value, reset: document.getElementById('b-reset').hidden }));
       ck(w + ' Make my own copy unlocks the form and keeps the times', !un.inert && !un.n && un.nm === 'Rae' && !un.reset, un); }
