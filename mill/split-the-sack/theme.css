@@ -55,7 +55,7 @@
 .ss-alloc.is-unalloc .who{color:var(--ss-unalloc)}
 .ss-alloc.is-unalloc .ss-bin .b{fill:none;stroke:var(--ss-unalloc);stroke-width:2;stroke-dasharray:4 3}
 .ss-alloc.is-unalloc.is-zero{background:var(--ss-paper);border-color:var(--ss-mute)}.ss-alloc.is-unalloc.is-zero .who{color:var(--ss-ink)} /* Creative 07:25: nothing unclaimed is not a warning: white card, neutral dashed edge (mute on white 6.9:1), ink label */
-.ss-alloc.is-unalloc.is-zero .ss-bin{opacity:.6} /* QA all9 W-4: only the bin fades when nothing is unclaimed; the row's text stays full strength (was the whole row at .6: 2.2:1) */
+.ss-alloc.is-unalloc.is-zero .ss-bin .b{stroke:var(--ss-mute)}.ss-alloc.is-unalloc.is-zero .ss-bin{opacity:.6} /* QA all9 W-4: only the bin fades when nothing is unclaimed; the row's text stays full strength (was the whole row at .6: 2.2:1) */
 .ss-alloc.is-you{border-width:3px;box-shadow:0 0 0 3px var(--ss-lcd)}
 .ss-alloc.is-changed .qty::after{content:attr(data-was);display:block;font:600 11px var(--ss-sans);color:var(--ss-unalloc);text-decoration:line-through}
 .ss-alloc.is-short{border:2px solid var(--ss-short);background:var(--ss-short-bg)}
