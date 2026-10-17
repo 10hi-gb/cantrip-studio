@@ -181,7 +181,7 @@ window.MILL_HUB = {
     "Currency is picked from $, € or £; there is no conversion. Refunds and negative amounts aren't supported.",
     "A received link is a snapshot of what the sender entered; nobody has agreed to anything by opening it."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview 7cf462f82d14e9ff2ab6f5c5d689e2c2ca1d2f3e: unit 21 (incl. 5000-case settlement property test); browser 260/260 at 320/390/1280/1440. Not QA.",
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview 9daa483d238948ce9cc8c192f963fa9f5b599a60: unit 21 (incl. 5000-case settlement property test); browser 288/288 at 320/390/700–999/1280/1440. Not QA.",
    "status": "NOT READY",
    "qaLocal": {
     "verdict": "NOT READY",
