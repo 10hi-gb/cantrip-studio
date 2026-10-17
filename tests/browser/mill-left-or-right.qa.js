@@ -566,6 +566,23 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
       for (const q of rg.getClientRects()) if (q.width > 0.5) { inter(q, 'text “' + t.data.trim().slice(0, 24) + '”'); } }
     for (const c of document.querySelectorAll('input,select,textarea,button,a[href],[tabindex]:not([tabindex="-1"])')) { if (c === e || c.contains(e) || e.contains(c) || !vis(c)) continue; const q = c.getBoundingClientRect(); if (q.width < 2 || q.height < 2) continue; inter(q, 'control #' + (c.id || c.tagName)); }
     return { ext: Math.round(ext * 10) / 10, hits: [...new Set(hits)] }; };
+  // QA local-2304261 L15: clearance, not just overlap. From the ring's outer edge to every neighbouring box: other controls
+  // (with their own box-shadow, e.g. the red error ring), visible text line boxes, and bordered boxes (outside them, or the
+  // inside of a bordered box that holds the control). PM spacing rule: at least 3px clear (ring reach + 3px from the control).
+  const ringClear = () => { const e = document.activeElement; if (!e || e === document.body) return null; const cs = getComputedStyle(e);
+    const shadow = c => (c.boxShadow || '').split(/,(?![^(]*\))/).filter(x => !/inset/.test(x) && x.trim() !== 'none').map(x => { const n = (x.replace(/rgba?\([^)]*\)|#[0-9a-f]+/gi, '').match(/-?[\d.]+px/g) || []).map(parseFloat); return n.length >= 4 ? n[3] : 0; });
+    const ow = cs.outlineStyle !== 'none' ? parseFloat(cs.outlineWidth) + parseFloat(cs.outlineOffset) : 0, ext = Math.max(ow, 0, ...shadow(cs)), r = e.getBoundingClientRect(), R = { l: r.left - ext, t: r.top - ext, r: r.right + ext, b: r.bottom + ext };
+    if (ext <= 0) return { ext, min: null, near: [] };
+    const vis = n => { for (let x = n; x && x !== document.documentElement; x = x.parentElement) { const c = getComputedStyle(x); if (c.position === 'fixed' || c.display === 'none' || c.visibility === 'hidden' || c.clipPath !== 'none' || (c.clip && c.clip !== 'auto') || parseFloat(c.opacity) === 0) return false; } return true; };
+    let best = 1e9; const near = [], gap = (q, what) => { const dx = Math.max(q.left - R.r, R.l - q.right), dy = Math.max(q.top - R.b, R.t - q.bottom), d = dx > 0 && dy > 0 ? Math.hypot(dx, dy) : Math.max(dx, dy); if (d < best) best = d; if (d < 3 - 0.01) near.push({ what, d: Math.round(d * 100) / 100 }); };
+    const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let t;
+    while ((t = tw.nextNode())) { if (!t.data.trim() || e.contains(t) || !vis(t.parentElement)) continue; const pr = t.parentElement.getBoundingClientRect(); if (pr.width < 2 || pr.height < 2) continue; const rg = document.createRange(); rg.selectNodeContents(t); for (const q of rg.getClientRects()) if (q.width > 0.5) gap(q, 'text “' + t.data.trim().slice(0, 22) + '”'); }
+    for (const c of document.querySelectorAll('body *')) { if (c === e || e.contains(c) || !vis(c)) continue; const cc = getComputedStyle(c), q = c.getBoundingClientRect(); if (q.width < 2 || q.height < 2) continue;
+      const ctl = c.matches('input,select,textarea,button,a[href],[tabindex]:not([tabindex="-1"])'), bw = ['Top', 'Right', 'Bottom', 'Left'].map(sd => cc['border' + sd + 'Style'] !== 'none' && !/rgba\(\d+, \d+, \d+, 0\)/.test(cc['border' + sd + 'Color']) ? parseFloat(cc['border' + sd + 'Width']) : 0);
+      const sp = Math.max(0, ...shadow(cc)), name = (ctl ? 'control #' : 'border ') + (c.id || c.className || c.tagName);
+      if (c.contains(e)) { if (bw.some(Boolean)) { const ins = [bw[0] ? R.t - (q.top + bw[0]) : 99, bw[1] ? (q.right - bw[1]) - R.r : 99, bw[2] ? (q.bottom - bw[2]) - R.b : 99, bw[3] ? R.l - (q.left + bw[3]) : 99], d = Math.min(...ins); if (d < best) best = d; if (d < 3 - 0.01) near.push({ what: 'inside ' + name, d: Math.round(d * 100) / 100 }); } continue; }
+      if (ctl || bw.some(Boolean) || sp) gap({ left: q.left - sp, top: q.top - sp, right: q.right + sp, bottom: q.bottom + sp }, name); }
+    return { ext: Math.round(ext * 10) / 10, min: Math.round(best * 100) / 100, near }; };
   async function ringAt(p, info) { const m = info.fw + 16, x = Math.max(0, Math.floor(info.x - m)), y = Math.max(0, Math.floor(info.y - m)), clip = { x: x + info.sx, y: y + info.sy, width: Math.min(info.vw, Math.ceil(info.x + info.w + m)) - x, height: Math.min(info.vh, Math.ceil(info.y + info.h + m)) - y };
     if (clip.width < 4 || clip.height < 4) return { skip: 'off screen' };
     const B = png(await p.screenshot({ clip })); await p.evaluate(() => document.activeElement && document.activeElement.blur()); await sleep(260); const A = png(await p.screenshot({ clip }));
@@ -625,10 +642,10 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
   }
   // QA local-2a8c67b L11 + L13 (PM ruling): single Latin words. L11: every line but the last ends in a hyphen (the answer's own
   // or an added one); an added break leaves 4+ letters each side inside its hyphen part, and only a part that can't fit a line
-  // by itself at 24px is broken inside. L13: the drawn count is the fewest at >= 24px and the size is never more than 10%
+  // by itself at the drawn size is broken inside (QA local-2304261: the brute-force rule, size first). L13: the drawn count is the fewest at >= 24px and the size is never more than 10%
   // under the largest size that count fits at (oracle: own-hyphen-aware first-fit with 4+-letter added breaks, page metrics,
   // the size grid from the tile's normal size down to 24px). abc30 on the 390 chosen screen comes out at about 36px.
-  { const puppeteer = require('puppeteer-core'), WORDS = ['N' + 'o'.repeat(29), 'Abcdefghijklmnopqrstuvwxyzabcd', "Grandmother's", 'Bartholomew-Smythe', 'Jean-Baptiste-Alexandre', 'Pneumonoultramicroscopic', 'Superextraordinarily'];
+  if (!process.env.MILL_SKIP_L11) { const puppeteer = require('puppeteer-core'), WORDS = ['N' + 'o'.repeat(29), 'Abcdefghijklmnopqrstuvwxyzabcd', "Grandmother's", 'Bartholomew-Smythe', 'Jean-Baptiste-Alexandre', 'Pneumonoultramicroscopic', 'Pneumonoultramicroscopicsi', 'Superextraordinarily', "O'Shaughnessy-Montgomery"];
     const oracle = (p, id, tileSel) => p.evaluate((id, tileSel) => { const a = document.getElementById(id), tile = tileSel ? document.querySelector(tileSel) : (a.closest('.half') || a.parentElement), ts = getComputedStyle(tile);
       const word = a.querySelector('.lr-sr').textContent.slice(1, -1), drawn = a.querySelector('.lr-vt').getAttribute('data-v').split('\n'), fs = parseFloat(getComputedStyle(a).fontSize);
       const keep = [a.style.fontSize, a.style.paddingInlineStart, a.style.paddingInlineEnd]; a.style.fontSize = ''; a.style.paddingInlineStart = a.style.paddingInlineEnd = ''; const base = parseFloat(getComputedStyle(a).fontSize), cw = a.clientWidth; [a.style.fontSize, a.style.paddingInlineStart, a.style.paddingInlineEnd] = keep;
@@ -649,20 +666,34 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
       const f24 = fitsAt(24); let at = 0; const brk = [];
       drawn.forEach((l, i) => { const own = word.slice(at, at + l.length) === l; const body = own ? l : l.slice(0, -1); brk.push({ line: l, own, added: !own && i < drawn.length - 1 && l.endsWith('-'), endsHy: l.endsWith('-'), pos: at + body.length }); at += body.length; });
       const l11 = { allHy: drawn.slice(0, -1).every(l => l.endsWith('-')), rebuilt: at === word.length, added: brk.filter(b => b.added).map(b => { const part = parts.find(([ps, pe]) => b.pos > ps && b.pos < pe) || [0, 0];
-        return { at: b.pos, left: lets(word.slice(part[0], b.pos)), right: lets(word.slice(b.pos, part[1])), partFits24: f24(word.slice(part[0], part[1]), part[0] === 0, part[1] === word.length) }; }) };
-      pw.remove(); return { word, drawn, fs, base, fewest, top: top(drawn.length), l11 }; }, id, tileSel);
-    const okL11 = v => v.l11.allHy && v.l11.rebuilt && v.l11.added.every(x => x.left >= 4 && x.right >= 4 && !x.partFits24);
-    const sizes = []; for (const [w, mode] of [[320, 'classic'], [390, 'classic'], [320, 'overlay'], [390, 'overlay'], [1000, 'overlay'], [1280, 'overlay']]) {
+        return { at: b.pos, left: lets(word.slice(part[0], b.pos)), right: lets(word.slice(b.pos, part[1])), partFits24: f24(word.slice(part[0], part[1]), part[0] === 0, part[1] === word.length), partFitsDrawn: fitsAt(fs)(word.slice(part[0], part[1]), part[0] === 0, part[1] === word.length) }; }) };
+      // QA local-2304261 L14 (Creative 08:25): brute force over every legal split (exact DP over break positions: after an own
+      // hyphen, no hyphen added; mid-letter with an added '-' and 4+ letters to the neighbouring break / own hyphen / word end on
+      // each side), then the largest size (binary search to 0.01px, capped at the normal size) at which the fewest pieces fit
+      const G = Array.from(word), n = G.length, ownAt = new Set(); parts.slice(1).forEach(([ps]) => ownAt.add(ps));
+      const lastOwn = j => { let b = 0; for (const q of ownAt) if (q <= j && q > b) b = q; return b; }, nextOwn = i => { let b = n; for (const q of ownAt) if (q > i && q < b) b = q; return b; };
+      const midOk = q => q > 0 && q < n && !ownAt.has(q) && isL(G[q - 1]) && isL(G[q]);
+      const minAt = sz => { const fits = fitsAt(sz), dp = new Array(n + 1).fill(Infinity); dp[0] = 0;
+        for (let j = 1; j <= n; j++) { if (j < n && !ownAt.has(j) && !midOk(j)) continue; for (let i = 0; i < j; i++) { if (dp[i] === Infinity || (i > 0 && !ownAt.has(i) && !midOk(i))) continue;
+          const mi = i > 0 && !ownAt.has(i), mj = j < n && !ownAt.has(j); if (mi && lets(G.slice(i, Math.min(j, nextOwn(i))).join('')) < 4) continue; if (mj && lets(G.slice(Math.max(i, lastOwn(j)), j).join('')) < 4) continue;
+          if (fits(G.slice(i, j).join('') + (mj ? '-' : ''), i === 0, j === n)) dp[j] = Math.min(dp[j], dp[i] + 1); } } return dp[n]; };
+      const bfMin = minAt(24); let bfTop = 0; if (bfMin < Infinity) { let lo = 24, hi = base; if (minAt(hi) <= bfMin) lo = hi; else while (hi - lo > 0.01) { const m = (lo + hi) / 2; if (minAt(m) <= bfMin) lo = m; else hi = m; } bfTop = Math.round(lo * 100) / 100; }
+      pw.remove(); return { word, drawn, fs, base, fewest, top: top(drawn.length), bfMin, bfTop, l11 }; }, id, tileSel);
+    const okL11 = v => v.l11.allHy && v.l11.rebuilt && v.l11.added.every(x => x.left >= 4 && x.right >= 4 && !x.partFitsDrawn); // a part is broken inside only when it can't fit a line by itself at the drawn size (L13/L14: size first)
+    const sizes = []; for (const [w, mode, vh] of [[320, 'classic', 760], [390, 'classic', 760], [390, 'classic', 844], [320, 'overlay', 760], [390, 'overlay', 760], [390, 'overlay', 844], [1000, 'classic', 900], [1280, 'overlay', 900]]) {
       const b = await puppeteer.launch({ executablePath: '/usr/bin/google-chrome', headless: 'new', ignoreDefaultArgs: mode === 'classic' ? ['--hide-scrollbars'] : [], args: ['--no-sandbox', `--host-resolver-rules=MAP ${H.split(':')[0]} ${IP}`] });
       const p = await b.newPage(), errs = []; p.on('pageerror', e => errs.push(String(e))); p.on('dialog', d => d.accept().catch(() => {})); p.setDefaultTimeout(15000);
-      try { await p.setViewport({ width: w, height: w >= 1000 ? 900 : 760 });
+      try { await p.setViewport({ width: w, height: vh });
         for (const wd of WORDS) { await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await fillQ(p, 0, 'Pick?', wd, 'Tea'); await press(p, '#go'); await sleep(300);
           const v = await oracle(p, 'h-l-a'); await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(650); const c = await oracle(p, 'c-a', '#s3');
-          for (const [where, x] of [['board', v], ['chosen', c]]) { sizes.push({ w, mode, where, word: wd, fs: x.fs, top: x.top, n: x.drawn.length });
-            ck(`L11/L13 ${w} ${mode} ${where} “${wd}”: ${x.drawn.join(' / ')} @${x.fs}px — fewest pieces (${x.fewest}), size within 10% of the largest for that count (${x.top}px), hyphen at every break, added breaks 4+ letters each side only in parts too wide at 24px`,
+          for (const [where, x] of [['board', v], ['chosen', c]]) { sizes.push({ w, mode, vh, where, word: wd, fs: x.fs, top: x.top, bfTop: x.bfTop, bfMin: x.bfMin, n: x.drawn.length });
+            ck(`L14 ${w}x${vh} ${mode} ${where} “${wd}”: ${x.drawn.length} pieces @${x.fs}px vs brute force ${x.bfMin} pieces, largest ${x.bfTop}px (${Math.round(x.fs / x.bfTop * 1000) / 10}%, >= 90%)`, x.drawn.length === x.bfMin && x.fs >= 0.9 * x.bfTop - 0.01, x);
+            ck(`L11/L13 ${w}x${vh} ${mode} ${where} “${wd}”: ${x.drawn.join(' / ')} @${x.fs}px — fewest pieces (${x.fewest}), size within 10% of the largest for that count (${x.top}px), hyphen at every break, added breaks 4+ letters each side only in parts too wide for a line at the drawn size`,
               x.drawn.length === x.fewest && x.fs >= 0.9 * x.top - 0.01 && okL11(x), x); }
+          if (w === 390 && vh === 844 && wd === 'Pneumonoultramicroscopicsi') ck(`L14 390x844 ${mode}: Pneumonoultramicroscopicsi on the board: 3 pieces within 10% of the brute-force largest (${v.fs}px: ${v.drawn.join(' / ')}; brute force ${v.bfTop}px; was 26.6px at 2304261)`, v.fs >= 0.9 * v.bfTop - 0.01 && v.fs > 26.6 && v.drawn.length === 3, v);
           if (w === 390 && wd.startsWith('Abc')) ck(`L13 390 ${mode}: abc30 on the chosen screen comes out at about 36px (${c.fs}px: ${c.drawn.join(' / ')})`, c.fs >= 34, c); }
         ck(`L11/L13 ${w} ${mode}: no page errors`, !errs.length, errs); } catch (e) { ck(`L11/L13 ${w} ${mode}: the checks ran to the end`, false, String(e && e.stack || e).slice(0, 400)); } await b.close(); }
+    const worstBf = sizes.reduce((m, x) => Math.min(m, x.fs / x.bfTop), 9); ck(`L14: ${sizes.length} renders, the smallest is ${Math.round(worstBf * 1000) / 10}% of the brute-force largest for its piece count (>= 90%)`, sizes.length >= 120 && worstBf >= 0.9 - 1e-4, sizes.filter(x => x.fs < 0.95 * x.bfTop));
     const worst = sizes.reduce((m, x) => Math.min(m, x.fs / x.top), 9); ck(`L13: ${sizes.length} renders, the smallest is ${Math.round(worst * 1000) / 10}% of the largest size for its count (>= 90%)`, sizes.length >= 80 && worst >= 0.9 - 1e-4, sizes.filter(x => x.fs < x.top)); }
   // QA local-2a8c67b L12, geometry at all five QA widths: every Tab stop on the editor (tap, switch and hold settings, link and
   // answers), board, chosen L/R (+ copy fallback) and recipient screens; the ring box must not intersect other text or controls
@@ -670,7 +701,7 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
     const s = await session(H, IP), { p } = s; await p.setBypassCSP(true); await p.setViewport({ width: w, height: w >= 1000 ? 900 : 760 }); await p.evaluateOnNewDocument(clipStub);
     await p.evaluateOnNewDocument(() => document.addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = '*{caret-color:transparent!important;transition:none!important;animation:none!important}'; document.head.appendChild(st); }));
     const stops = [], walk = async screen => { await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); window.scrollTo(0, 0); }); const seen = new Set();
-      for (let i = 0; i < 80; i++) { await p.keyboard.press('Tab'); await sleep(40); const o = await p.evaluate(f => { const e = document.activeElement; if (!e || e === document.body) return null; if (!e.dataset.ov) e.dataset.ov = Math.random().toString(36).slice(2, 8); return Object.assign({ k: e.dataset.ov, id: e.id || e.tagName }, (0, eval)('(' + f + ')')()); }, ringOverlap.toString());
+      for (let i = 0; i < 80; i++) { await p.keyboard.press('Tab'); await sleep(40); const o = await p.evaluate((f, g) => { const e = document.activeElement; if (!e || e === document.body) return null; if (!e.dataset.ov) e.dataset.ov = Math.random().toString(36).slice(2, 8); return Object.assign({ k: e.dataset.ov, id: e.id || e.tagName }, (0, eval)('(' + f + ')')(), { clear: (0, eval)('(' + g + ')')() }); }, ringOverlap.toString(), ringClear.toString());
         if (!o) continue; if (seen.has(o.k)) break; seen.add(o.k); stops.push(Object.assign({ screen }, o)); } };
     try {
       await p.goto(BASE, { waitUntil: 'load' }); await sleep(250); await setVal(p, '#from', 'Maya'); await fillQ(p, 0, 'Your question here?', "Grandmother's", 'Watch a movie at home', '\u{1F475}', ''); await fillQ(p, 1, 'Park or pool?', 'Park', 'Pool');
@@ -684,9 +715,15 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
       const frag = await p.evaluate(() => MILL.pack('l', 1, { f: 'Maya', m: 0, k: 0, s: 0, e: 20, d: 15, q: [['Who reads tonight?', "Grandmother's", 'Tacos', '', '']] }));
       await p.goto('about:blank'); await p.goto(BASE + '#' + frag, { waitUntil: 'load' }); await sleep(250); await walk('recipient');
       await p.goto('about:blank'); await p.goto(BASE + '#garbage', { waitUntil: 'load' }); await sleep(250); await walk('bad-link banner');
+      // validation errors (QA's L15 case): empty left answers beside filled right ones, a picture with two emoji, Show it big
+      await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(250); await fillQ(p, 0, 'Pizza or pasta?', '', 'Coffee', '\u{1F375}\u{1F375}', ''); await fillQ(p, 1, 'Park or pool?', '', 'Pool');
+      await press(p, '#m-switch'); await sleep(100); await p.evaluate(() => window.scrollTo(0, 0)); await press(p, '#go'); await sleep(250);
+      const nErr = await p.evaluate(() => document.querySelectorAll('[aria-invalid=true]').length); ck(`L15 ${w}: the error state is on (${nErr} fields marked invalid)`, nErr >= 3, nErr); await walk('editor errors (switch)');
     } catch (e) { ck(`L12 overlap ${w}: the walk ran to the end`, false, String(e && e.stack || e).slice(0, 400)); }
     const bad = stops.filter(o => o.hits.length);
     ck(`L12 overlap ${w}: ${stops.length} Tab stops on ${new Set(stops.map(o => o.screen)).size} screens; no focus ring box intersects other text or another control (rings reach ${[...new Set(stops.map(o => o.ext))].join('/')}px)`, stops.length >= 60 && !bad.length, bad.map(o => o.screen + ' | ' + o.id + ' ext ' + o.ext + ': ' + o.hits.join('; ')));
+    const tight = stops.filter(o => o.clear && o.clear.near.length);
+    ck(`L15 ${w}: ${stops.length} Tab stops (with the error state): every ring stays 3px+ clear of every neighbouring control, border (incl. a red error ring) and text box (closest ${Math.min(...stops.map(o => o.clear && typeof o.clear.min === 'number' ? o.clear.min : Infinity)).toFixed(2)}px)`, stops.length >= 60 && !tight.length, tight.map(o => o.screen + ' | ' + o.id + ' ext ' + o.clear.ext + ': ' + o.clear.near.map(x => x.what + ' ' + x.d).join('; ')));
     ck(`L12 overlap ${w}: no page errors`, !errsOf(s, SCHEME).filter(e => !/Content Security Policy/.test(e)).length, errsOf(s, SCHEME)); await s.b.close(); }
   // PM 04:57 query-string ruling: every history write is origin + path (+ #fragment), never a ?query. A valid received link
   // with ?q=<marker>: after opening, answering, reset and making a link, location.search is '' and the marker is not in

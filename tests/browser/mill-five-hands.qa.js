@@ -547,7 +547,7 @@ async function checkAll(p, who) { await p.evaluate(who => { const m = document.g
         const rr = e => { const rg = document.createRange(); rg.selectNodeContents(e); const rs = [...rg.getClientRects()].filter(x => x.width > 0); if (!rs.length) return null; return { l: Math.min(...rs.map(x => x.left)) - T.left, r: Math.max(...rs.map(x => x.right)) - T.left, t: Math.min(...rs.map(x => x.top)) - T.top }; };
         let op = 1; for (let x = m; x && x !== document.body; x = x.parentElement) op *= parseFloat(getComputedStyle(x).opacity);
         const mm = +s.style.getPropertyValue('--m'), scv = +s.style.getPropertyValue('--sc'), want = Math.max(3, mm / scv * W);
-        return { k: i, out, cls: s.className, m: rr(m), t: rr(t), mTxt: m.textContent, op: +op.toFixed(3), tw: T.width, bw: b.width, want: +want.toFixed(2) }; }); }).flat();
+        return { k: i, out, cls: s.className, bl: b.left - T.left, br: b.right - T.left, m: rr(m), t: rr(t), mTxt: m.textContent, op: +op.toFixed(3), tw: T.width, bw: b.width, want: +want.toFixed(2) }; }); }).flat();
     for (const w of [320, 390, 1280]) { const s = await session(H, IP), { p } = s; await p.setViewport({ width: w, height: 900 }); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
       await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await fillQ(p, QST); await clickq(p, '#b-split'); await sleep(30);
       // freeze every animation on the page and step it through the slide-in: 0, 50, 125, 250, 375, 450 ms, then the end state
@@ -557,11 +557,13 @@ async function checkAll(p, who) { await p.evaluate(who => { const m = document.g
       frames.forEach(({ t, f }) => f.forEach((x, i) => { const e = end[i];
         if (!x.m) { bad.push(t + ' #' + i + ' minutes not rendered'); return; }
         if (x.m.r > x.tw + 0.5 || x.m.l < -0.5) bad.push(t + ' #' + i + ' "' + x.mTxt + '" cut by the card edge (' + x.m.l.toFixed(1) + '..' + x.m.r.toFixed(1) + ' of ' + x.tw.toFixed(0) + ')');
-        if (Math.abs(x.m.l - e.m.l) > 0.5 || Math.abs(x.m.t - e.m.t) > 0.5 || (x.t && e.t && Math.abs(x.t.l - e.t.l) > 0.5)) bad.push(t + ' #' + i + ' label not at its final place (dx ' + (x.m.l - e.m.l).toFixed(1) + ')');
+        if (x.out && (Math.abs(x.m.l - e.m.l) > 0.5 || Math.abs(x.m.t - e.m.t) > 0.5 || (x.t && e.t && Math.abs(x.t.l - e.t.l) > 0.5))) bad.push(t + ' #' + i + ' outside label not at its final place (dx ' + (x.m.l - e.m.l).toFixed(1) + ')');
+        // QA H18: an in-bar label rides inside its own bar (it may move with the bar, never past either end); see the H18 block for its pixels
+        if (!x.out && (x.m.l < x.bl - 0.5 || x.m.r > x.br + 0.5 || (x.t && (x.t.l < x.bl - 0.5 || x.t.r > x.br + 0.5)))) bad.push(t + ' #' + i + ' in-bar label outside its bar (' + x.m.l.toFixed(1) + '..' + x.m.r.toFixed(1) + ' in ' + x.bl.toFixed(1) + '..' + x.br.toFixed(1) + ')');
         if (x.op < 1) bad.push(t + ' #' + i + ' label opacity ' + x.op);
         if (Math.abs(x.bw - x.want) > 1) bad.push(t + ' #' + i + ' bar ' + x.bw.toFixed(1) + 'px, minutes say ' + x.want); }));
       const outs = end.filter(x => x.out), maxR = Math.max(...end.map(x => x.m ? x.m.r - x.tw : -99));
-      ck(w + ` QA H15 (PM 07:39), normal motion, QA repro (Ana 10 / Ben 480, 12 hyphenated tasks on Ana): at 0/50/125/250/375/450 ms and the end state every minutes label is inside its card, at its final place, fully opaque (${end.length} sticks, ${outs.length} outside labels; closest minutes end ${maxR.toFixed(1)}px from the card edge)`, !bad.length && outs.length > 0, { problems: bad.length, cutByEdge: bad.filter(x => /cut by/.test(x)).slice(0, 10), endState: bad.filter(x => /^end/.test(x)).slice(0, 6), first: bad.slice(0, 4) });
+      ck(w + ` QA H15 (PM 07:39), normal motion, QA repro (Ana 10 / Ben 480, 12 hyphenated tasks on Ana): at 0/50/125/250/375/450 ms and the end state every minutes label is inside its card, fully opaque; outside labels at their final place, in-bar labels inside their bar (${end.length} sticks, ${outs.length} outside labels; closest minutes end ${maxR.toFixed(1)}px from the card edge)`, !bad.length && outs.length > 0, { problems: bad.length, cutByEdge: bad.filter(x => /cut by/.test(x)).slice(0, 10), endState: bad.filter(x => /^end/.test(x)).slice(0, 6), first: bad.slice(0, 4) });
       const h14 = frames.every(({ f }) => f.every(x => Math.abs(x.bw - x.want) <= 1));
       ck(w + ' QA H14, normal motion: every bar width = its minutes / scale x track (±1px, 3px floor) on every sampled frame', h14, frames.map(({ t, f }) => t + ': ' + f.filter(x => Math.abs(x.bw - x.want) > 1).map(x => x.bw.toFixed(1) + '/' + x.want).join(',')));
       // outside label 8px after its bar where it sits on the bar's row (end state)
@@ -604,6 +606,81 @@ async function checkAll(p, who) { await p.evaluate(who => { const m = document.g
         const exactTxt = v.text.every(x => !/\s{2}/.test(x)) && axn.every(x => !/\u200B|\u2060/.test(x)) && v.text.some(x => x === '“Plant the beds ' + EM + EM + '”');
         ck(w + ' ' + mode + ` QA H17: an emoji / flag word (with its closing quote) never breaks inside when it fits its own line (${v.words} emoji words checked); typed values and the sheet\'s task cells; text and accessible names unchanged`, !v.out.length && v.words > 0 && exactTxt, { out: v.out, text: v.text.slice(0, 4), axn: axn.slice(0, 4) });
         if (w === 390 && mode === 'check' && process.env.FH_SHOTS) { const e = await p.evaluateHandle(() => [...document.querySelectorAll('.mill-typed')].find(x => x.textContent.startsWith('“Plant the beds')).closest('li,.row,.fh-check-row,div')); await e.asElement().evaluate(x => x.scrollIntoView({ block: 'center' })); await sleep(100); await e.asElement().screenshot({ path: process.env.FH_SHOTS + '/H17-390-check.png' }); }
-        ck(w + ' ' + mode + ' QA H17 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); } } }
+        ck(w + ' ' + mode + ' QA H17 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); } }
+    // ---------- QA local-82c4667 H17 remainder (PM 08:31): QA's h17probe set. Every space-free emoji/flag token in any visible text (typed values AND the
+    // product sentences that quote a typed name: p.fh-over, the roll card's span.over load line, the Copy-the-card button, the sheet's minutes cell) is on one
+    // line whenever it fits its box; no flag (or any emoji cluster) is ever split across lines, on any surface. Text, copy, aria and Chrome's named-role names are
+    // byte-identical to 82c4667 (snapshot hashes taken from 82c4667 with this same state).
+    { const FL = '🇫🇷🇩🇪🇮🇹', EM = '🌱🌻🪴🧤', crypto = require('crypto');
+      const PST = mode => ({ title: 'Garden day ' + FL + FL + FL + ' ' + EM + EM + ' street', helpers: [['Zoë ' + FL + FL + FL, 60], ['Ana' + EM + EM, 120], ['Bo ' + FL, 60]],
+        tasks: [['Plant the beds ' + EM + EM, 50], ['Weed by the shed ' + FL + FL + FL, 30], ['Rake ' + FL + ' paths and front border', 20], ['Water' + EM + FL, 15], ['Sweep the yard ' + FL, 10]], mode, assign: mode === 'check' ? [0, 1, 2, 0, 1] : undefined });
+      const SNAP = { '320 suggest': '412bfc37abc93d0b', '390 suggest': '412bfc37abc93d0b', '641 suggest': '24acdc5e3ab83353', '1280 suggest': '24acdc5e3ab83353', '320 check': '9ac21fd80293580b', '390 check': '9ac21fd80293580b', '641 check': '51776a7bcd95c3f4', '1280 check': '51776a7bcd95c3f4' }; // from 82c4667, this state
+      for (const w of [320, 390, 641, 1280]) for (const mode of ['suggest', 'check']) { const s = await session(H, IP), { p } = s; await p.setViewport({ width: w, height: 900, deviceScaleFactor: 2 }); await p.evaluateOnNewDocument(clipStub); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+        await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await fillQ(p, PST(mode)); await clickq(p, '#b-split'); await sleep(400);
+        // identity snapshot: result texts, every aria-label, every copied card, Chrome's names of named roles
+        const btns = await p.$$eval('#s2 button', b => b.map((x, i) => ({ i, t: x.textContent, vis: x.checkVisibility() })).filter(z => z.vis && /^Copy/.test(z.t)));
+        for (const b of btns) await p.evaluate(i => document.querySelectorAll('#s2 button')[i].click(), b.i); await sleep(200);
+        const v = await p.evaluate(() => { const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' }), EMO = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u, viol = [], split = [], seen = new Set(); let n, toks = 0;
+          const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+          while ((n = tw.nextNode())) { if (!EMO.test(n.data)) continue; const el = n.parentElement; if (!el.checkVisibility() || el.closest('.fh-vh,option,script')) continue; const re = /\S+/g; let m;
+            while ((m = re.exec(n.data))) { if (!EMO.test(m[0])) continue; toks++; const tops = new Set();
+              for (const g of seg.segment(m[0])) { const r = document.createRange(); r.setStart(n, m.index + g.index); r.setEnd(n, m.index + g.index + g.segment.length); const rs = [...r.getClientRects()].filter(x => x.width > 0); if (rs.length) tops.add(Math.round(rs[0].top)); if (new Set(rs.map(x => Math.round(x.top))).size > 1) split.push(g.segment); }
+              let box = el; while (box && getComputedStyle(box).display.startsWith('inline')) box = box.parentElement; const bs = getComputedStyle(box), cw = box.clientWidth - parseFloat(bs.paddingLeft) - parseFloat(bs.paddingRight);
+              const c = document.createElement('span'); c.textContent = m[0]; c.style.cssText = 'position:absolute;white-space:nowrap;visibility:hidden;font:' + getComputedStyle(el).font; document.body.append(c); const ww = c.getBoundingClientRect().width; c.remove();
+              const where = el.closest('.fh-over') ? 'p.fh-over' : el.closest('.load .over') ? 'span.over' : el.closest('button') ? 'button' : el.closest('#preview-h') ? 'preview-h' : el.closest('#sheet td:not(.n)') && el.closest('td').cellIndex === 2 ? 'sheet td3' : el.closest('[id]').id;
+              seen.add(where); if (tops.size > 1 && ww <= cw + 0.5) viol.push({ where, tok: m[0], w: +ww.toFixed(1), box: +cw.toFixed(1) }); } }
+          return { toks, viol, split, seen: [...seen] }; });
+        const txt = await p.evaluate(() => ({ s2: document.getElementById('s2').textContent, sheet: document.getElementById('sheet').textContent, aria: [...document.querySelectorAll('[aria-label]')].map(e => e.getAttribute('aria-label')), clip: window.__clip.slice() }));
+        const ax = await (await p.target().createCDPSession()).send('Accessibility.getFullAXTree'), axn = ax.nodes.filter(z => !z.ignored && z.name && z.name.value && z.role && !/StaticText|InlineTextBox/.test(z.role.value)).map(z => z.role.value + ':' + z.name.value);
+        const h = crypto.createHash('sha256').update(JSON.stringify({ ...txt, axn })).digest('hex').slice(0, 16), key = w + ' ' + mode;
+        if (process.env.FH_SNAP) console.error('SNAP', key, h);
+        const need = mode === 'check' ? ['p.fh-over', 'span.over', 'button', 'sheet td3', 'preview-h'] : ['button', 'preview-h'];
+        ck(w + ' ' + mode + ` QA H17 remainder (PM 08:31): no emoji/flag token breaks inside when it fits its box, on any surface (${v.toks} tokens incl. ${need.join(', ')}); no flag or emoji split across lines; text, aria, copied cards and named-role names identical to 82c4667 (${h})`,
+          !v.viol.length && !v.split.length && need.every(x => v.seen.includes(x)) && txt.clip.length === btns.length && btns.length > 0 && (!SNAP[key] || SNAP[key] === h), { viol: v.viol, split: v.split, seen: v.seen, h, want: SNAP[key], clips: txt.clip.length, btns: btns.length });
+        ck(w + ' ' + mode + ' QA H17 remainder block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); } }
+    // ---------- QA local-82c4667 H18 (PM 08:31, Joshua frame rule 1a): every in-bar label sits inside its own bar, fully drawn and readable, on every frame
+    // of the slide-in from t=0 (QA's frame sampling: pause every animation and seek), then the end state, plus reduced motion; 320/390/1280. QA's worst glyph
+    // pixel: the label is drawn once in a marker colour and once transparent; glyph pixels = pixels that differ; each one's background is read from the
+    // transparent shot and compared with the label's real colour. Glyph-pixel count against the settled count catches any clipping (H15).
+    { const HCASES = { tinyCheck: { title: 'Tiny', helpers: [['Ana', 10], ['Ben', 480]], tasks: [['Wab3', 5], ['Sweep the path', 5], ['Greenhouse-Greenhouse10', 120], ['rake rake rake', 480], ['Weed', 15]], mode: 'check', assign: [0, 0, 0, 0, 0] },
+        tiny1: { title: 'Tiny', helpers: [['Ana', 480]], tasks: [['Sweep', 1], ['Wipe', 2], ['Rake', 3], ['Haul everything left', 474]], mode: 'suggest' }, narrow: QST };
+      const lum = c => { const f = v => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); }, cr = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+      const INBAR = () => [...document.querySelectorAll('#rolls .sticks > .stick, #plank .sticks > .stick')].map((s, k) => ({ s, k })).filter(o => !o.s.classList.contains('out')).flatMap(({ s, k }) => ['t', 'm'].map(part => { const e = s.querySelector('.' + part), rg = document.createRange(); rg.selectNodeContents(e);
+        const rs = [...rg.getClientRects()].filter(x => x.width > 0), b = s.getBoundingClientRect(), T = s.closest('.track').getBoundingClientRect(); if (!rs.length) return null;
+        const r = { l: Math.min(...rs.map(x => x.left)), r: Math.max(...rs.map(x => x.right)), t: Math.min(...rs.map(x => x.top)), b: Math.max(...rs.map(x => x.bottom)) };
+        return { k, part, txt: e.textContent, color: getComputedStyle(e).color, r, bar: { l: b.left, r: b.right, t: b.top, b: b.bottom }, track: { l: T.left, r: T.right }, rad: parseFloat(getComputedStyle(s).borderTopRightRadius) || 0 }; })).filter(Boolean);
+      // two shots of every track that holds an in-bar label (marker colour / transparent), decoded on a canvas page; per label: glyph pixels and their worst contrast
+      const glyphFrame = async (p, q) => { const tracks = await p.evaluate(() => [...document.querySelectorAll('#rolls .track, #plank .track')].map((t, i) => ({ i, n: t.querySelectorAll('.stick:not(.out)').length })).filter(x => x.n).map(x => x.i)), res = [];
+        for (const ti of tracks) { const clip = await p.evaluate(ti => { const t = [...document.querySelectorAll('#rolls .track, #plank .track')][ti]; t.scrollIntoView({ block: 'center' }); const r = t.getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height, scale: 1 }; }, ti);
+          const labs = (await p.evaluate(INBAR)).map(l => ({ ...l, ti: null })), mine = await p.evaluate(ti => { const t = [...document.querySelectorAll('#rolls .track, #plank .track')][ti]; return [...document.querySelectorAll('#rolls .sticks > .stick, #plank .sticks > .stick')].map((s, k) => t.contains(s) ? k : -1).filter(k => k >= 0); }, ti);
+          const here = labs.filter(l => mine.includes(l.k)), sx = await p.evaluate(() => [scrollX, scrollY]), c = await p.target().createCDPSession(), shot = async () => (await c.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: false })).data;
+          const sheet = col => p.evaluate(col => { if (!window.__qaH18) { window.__qaH18 = new CSSStyleSheet(); document.adoptedStyleSheets = [...document.adoptedStyleSheets, window.__qaH18]; } window.__qaH18.replaceSync(col ? `.stick:not(.out) .t,.stick:not(.out) .t *,.stick:not(.out) .m{color:${col}!important;-webkit-text-fill-color:${col}!important;text-shadow:none!important}` : ''); }, col); // constructed sheet: the page's CSP refuses inline <style>
+          const paint = () => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+          await p.bringToFront(); await sheet('#FF00FF'); await paint(); const A = await shot(); await sheet('transparent'); await paint(); const B = await shot(); await sheet(''); await c.detach();
+          const boxes = here.map(l => ({ x: l.r.l + sx[0] - clip.x, y: l.r.t + sx[1] - clip.y, w: l.r.r - l.r.l, h: l.r.b - l.r.t, fg: l.color.match(/[\d.]+/g).slice(0, 3).map(Number) }));
+          const px = await q.evaluate(async (A, B, boxes, cw) => { const dec = async d => { const im = new Image(); im.src = 'data:image/png;base64,' + d; await im.decode(); const cv = document.createElement('canvas'); cv.width = im.width; cv.height = im.height; const x = cv.getContext('2d'); x.drawImage(im, 0, 0); return { d: x.getImageData(0, 0, im.width, im.height).data, w: im.width, h: im.height }; };
+            const a = await dec(A), b = await dec(B), dpr = a.w / cw;
+            return boxes.map(bx => { const out = []; let cov = 0; for (let y = Math.max(0, Math.floor((bx.y - 3) * dpr)); y < Math.min(a.h, Math.ceil((bx.y + bx.h + 3) * dpr)); y++) for (let x = Math.max(0, Math.floor((bx.x - 3) * dpr)); x < Math.min(a.w, Math.ceil((bx.x + bx.w + 3) * dpr)); x++) { const i = (y * a.w + x) * 4;
+              const df = Math.max(Math.abs(a.d[i] - b.d[i]), Math.abs(a.d[i + 1] - b.d[i + 1]), Math.abs(a.d[i + 2] - b.d[i + 2])), full = Math.max(255 - b.d[i], b.d[i + 1], 255 - b.d[i + 2]);
+              if (full > 0) cov += Math.min(1, df / full); if (df > 60) out.push([b.d[i], b.d[i + 1], b.d[i + 2]]); } return { out, cov }; }); }, A, B, boxes, clip.width);
+          here.forEach((l, j) => { const crs = px[j].out.map(bg => cr(boxes[j].fg, bg)).sort((x, y) => x - y); res.push({ k: l.k, part: l.part, txt: l.txt, n: crs.length, cov: +px[j].cov.toFixed(1), worst: crs.length ? +crs[0].toFixed(2) : 0, low: crs.filter(x => x < 4.5).length,
+            inBar: l.r.l >= l.bar.l - 0.5 && l.r.r <= l.bar.r - Math.min(l.rad, 2) + 0.5, inTrack: l.r.l >= l.track.l - 0.5 && l.r.r <= l.track.r + 0.5, gapR: +(l.bar.r - l.r.r).toFixed(1) }); }); }
+        return res; };
+      for (const w of [320, 390, 1280]) { const s = await session(H, IP), { p, b } = s, q = await b.newPage(); await p.setViewport({ width: w, height: 900, deviceScaleFactor: 2 }); await q.setViewport({ width: 400, height: 300, deviceScaleFactor: 2 });
+        for (const [cn, st] of Object.entries(HCASES)) { const bad = []; let ends = null, worst = 99, labels = 0;
+          for (const motion of ['no-preference', 'reduce']) { await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: motion }]); await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); await fillQ(p, st);
+            await p.evaluate(() => { document.getElementById('b-split').click(); document.getAnimations().forEach(a => { a.pause(); a.currentTime = 0; }); });
+            const ts = motion === 'reduce' ? ['reduced'] : [0, 25, 50, 75, 100, 250, 'end'], fr = {};
+            for (const t of ts) { await p.evaluate(t => document.getAnimations().forEach(a => { if (t === 'end' || t === 'reduced') a.finish(); else { a.pause(); a.currentTime = t; } }), t); await sleep(60);
+              const g = await glyphFrame(p, q), geo = await p.evaluate(FRAME); fr[t] = g; if (t === 'end') ends = g;
+              if (t === 'reduced' && motion === 'reduce' && await p.evaluate(() => document.getAnimations().length)) bad.push('reduced: animations still running');
+              geo.forEach(x => { if (Math.abs(x.bw - x.want) > 1) bad.push(t + ' #' + x.k + ' bar ' + x.bw.toFixed(1) + ' vs ' + x.want + ' (H14)'); if (x.m && (x.m.r > x.tw + 0.5 || x.m.l < -0.5)) bad.push(t + ' #' + x.k + ' "' + x.mTxt + '" outside its card (H15)'); });
+              g.forEach(l => { labels++; worst = Math.min(worst, l.worst);
+                if (!l.inBar) bad.push(t + ' #' + l.k + l.part + ' "' + l.txt + '" past its bar (' + l.gapR + 'px)'); if (!l.inTrack) bad.push(t + ' #' + l.k + l.part + ' "' + l.txt + '" cut by the track');
+                if (l.worst < 4.5) bad.push(t + ' #' + l.k + l.part + ' "' + l.txt + '" worst glyph pixel ' + l.worst + ':1 (' + l.low + ' of ' + l.n + ' px < 4.5)'); }); }
+            if (ends) Object.entries(fr).forEach(([t, g]) => g.forEach(l => { const e = ends.find(x => x.k === l.k && x.part === l.part); if (e && l.cov < e.cov * 0.97) bad.push(t + ' #' + l.k + l.part + ' "' + l.txt + '" ' + (100 * l.cov / e.cov).toFixed(1) + '% of its settled glyph coverage drawn'); })); }
+          ck(w + ' ' + cn + ` QA H18 (PM 08:31, frame rule 1a): at 0/25/50/75/100/250 ms, the end state and reduced motion every in-bar name and minutes label is inside its own bar and the card, all of its glyphs drawn (≥97% of the settled glyph coverage) and >= 4.5:1 on what is under it (${labels ? labels + ' label-frames, worst glyph pixel ' + worst.toFixed(2) + ':1' : 'no in-bar labels in this case at this width'}); bars to scale on every frame`, !bad.length && (labels > 0 || cn === 'narrow'), { n: bad.length, first: bad.slice(0, 8) }); }
+        ck(w + ' QA H18 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); } }
+  }
   process.exit(result(rows));
 })();

@@ -328,5 +328,35 @@ const stubClip = (p, ok) => p.evaluate(ok => { window.__clip = null; Object.defi
     const vis = await p.evaluate(() => [...document.querySelectorAll('.tsh-zb')].length);
     ck('QA all9 W-1: the break points are still there on screen (' + vis + ' zero-width breaks after "/" and "_")', vis >= 2, vis);
     ck('QA all9 W-1: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA wp-sweep-231ce2c W-9b: every input's placeholder ≥4.5:1 against the darkest/worst pixel under it, in the normal (blank sender form), error (Find
+  // pressed with every field empty: aria-invalid tint) and focused states, at 320/390/1280. Background shot = same view with only the placeholder made
+  // transparent; band = the placeholder's own text width × line height inside the field's content box (native icons sit outside it).
+  for (const w of [320, 390, 1280]) { const s = await session(H, IP); const { p, b } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(250); await p.evaluate(() => document.fonts.ready);
+    const runs = [];
+    const measure = async (state, only) => { const items = await p.evaluate(only => [...document.querySelectorAll('input[placeholder]')].filter(e => !e.value && e.placeholder && e.checkVisibility() && (!only || e.id === only)).map(e => { const c = getComputedStyle(e), ph = getComputedStyle(e, '::placeholder'), r = e.getBoundingClientRect();
+        const cx = document.createElement('canvas').getContext('2d'); cx.font = ph.font || c.font; const tw = cx.measureText(e.placeholder).width, lh = parseFloat(c.fontSize) * 1.25;
+        const L = r.left + parseFloat(c.borderLeftWidth) + parseFloat(c.paddingLeft), T = r.top + (r.height - lh) / 2;
+        return { id: e.id, ph: e.placeholder, color: ph.color, bg: c.backgroundColor, invalid: e.getAttribute('aria-invalid') === 'true', focused: document.activeElement === e, box: [L + scrollX, T + scrollY, Math.min(tw, r.width - (L - r.left) - parseFloat(c.paddingRight)), lh] }; }), only);
+      const shot = () => p.screenshot({ encoding: 'base64', fullPage: true });
+      await p.evaluate(() => { const sh = new CSSStyleSheet(); sh.replaceSync('input{caret-color:transparent!important}'); document.adoptedStyleSheets = [...document.adoptedStyleSheets, sh]; }); await sleep(40);
+      const A = await shot(); await p.evaluate(() => { const sh = new CSSStyleSheet(); sh.replaceSync('input::placeholder{color:transparent!important}'); document.adoptedStyleSheets = [...document.adoptedStyleSheets, sh]; }); await sleep(40); const B = await shot(); await p.evaluate(() => { document.adoptedStyleSheets = document.adoptedStyleSheets.slice(0, -2); });
+      const q = await b.newPage(); const res = await q.evaluate(async (A, B, items) => { const dec = async s => { const im = new Image(); im.src = 'data:image/png;base64,' + s; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); return x; };
+        const xa = await dec(A), xb = await dec(B), lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }, Lm = c => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+        return items.map(it => { const [l, t, ww, hh] = it.box.map(Math.round), da = xa.getImageData(l, t, Math.max(1, ww), Math.max(1, hh)).data, db = xb.getImageData(l, t, Math.max(1, ww), Math.max(1, hh)).data, col = it.color.match(/[\d.]+/g).slice(0, 3).map(Number), lc = Lm(col);
+          let worst = 99, wbg = null, glyph = 0; for (let i = 0; i < db.length; i += 4) { if (Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2]) > 30) glyph++; const bg = [db[i], db[i + 1], db[i + 2]], lb = Lm(bg), k = (Math.max(lb, lc) + 0.05) / (Math.min(lb, lc) + 0.05); if (k < worst) { worst = k; wbg = bg; } }
+          return { worst: Math.round(worst * 100) / 100, wbg: wbg && wbg.join(), glyph }; }); }, A, B, items); await q.close();
+      items.forEach((it, i) => runs.push(Object.assign({ state, id: it.id, ph: it.ph, color: it.color, fieldBg: it.bg, invalid: it.invalid, focused: it.focused }, res[i]))); };
+    const clearAll = () => p.evaluate(() => { document.activeElement && document.activeElement.blur(); document.querySelectorAll('.tsh input:not([type=date])').forEach(e => { e.value = ''; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); }); });
+    await p.click('#pa-1'); await sleep(150); await clearAll(); await sleep(150); await measure('normal');
+    const ids = await p.$$eval('input[placeholder]', es => es.filter(e => !e.value && e.checkVisibility()).map(e => e.id));
+    for (const id of ids) { await p.keyboard.press('Shift'); await p.evaluate(id => document.getElementById(id).focus({ focusVisible: true }), id); await sleep(60); await measure('normal, focused', id); }
+    await clearAll(); if (!(await p.$('[id^="vs-"]'))) { await p.click('#pa-1'); await sleep(150); await clearAll(); }
+    await p.click('#find'); await sleep(300); await p.evaluate(() => document.activeElement && document.activeElement.blur()); await measure('error');
+    const eids = await p.$$eval('input[placeholder]', es => es.filter(e => !e.value && e.checkVisibility()).map(e => e.id));
+    for (const id of eids) { await p.keyboard.press('Shift'); await p.evaluate(id => document.getElementById(id).focus({ focusVisible: true }), id); await sleep(60); await measure('error, focused', id); }
+    const by = st => runs.filter(r => r.state === st);
+    ck(w + ' QA W-9b: every input placeholder ≥4.5:1 against the worst pixel under it — normal, error (aria-invalid tint) and focused, rendered pixels (' + runs.length + ' runs)', ['normal', 'normal, focused', 'error', 'error, focused'].every(st => by(st).length >= 3) && ['pn-1', 'n', 't'].every(id => by('normal').some(r => r.id === id)) && by('normal').some(r => /^vs-/.test(r.id)) && by('normal').some(r => /^ve-/.test(r.id)) && runs.some(r => r.invalid && r.id === 'pn-1') && runs.filter(r => r.state.includes('focused')).every(r => r.focused) && runs.every(r => r.glyph > 0 && r.worst >= 4.5),
+      runs.map(r => ({ st: r.state, id: r.id, ph: r.ph, color: r.color, fieldBg: r.fieldBg, inv: r.invalid, worst: r.worst, wbg: r.wbg, glyph: r.glyph })));
+    ck(w + ' QA W-9b: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })();
