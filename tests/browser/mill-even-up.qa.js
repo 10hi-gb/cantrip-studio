@@ -364,5 +364,30 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
     ck('query ruling: received link + ?q=<marker>, normal path: opens; marker nowhere; links generated onward carry no query', rcv.opened && !rcv.mark && !rcv.genQ, rcv);
     ck('query ruling: 2,002-char total incl. ?q=<marker> (long path; ' + l2002.lenNoQ + ' without the query, so within 2,000): opens; marker nowhere; no query onward', l2002.len === 2002 && l2002.lenNoQ <= 2000 && l2002.opened && !l2002.mark && !l2002.genQ, l2002);
     ck('query ruling: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // ---------- PM wrap rule (03:33): shared .mill-typed is overflow-wrap:break-word. Break at spaces or existing hyphens; mid-word only when one
+  // word can't fit its box. No anywhere / break-all in Even Up's CSS or computed on any element; long typed text never widens the page.
+  { const css = ['theme.css', 'app.css'].map(f => require('fs').readFileSync(__dirname + '/../../mill/even-up/' + f, 'utf8')).join('\n');
+    ck('PM wrap rule: Even Up CSS has no overflow-wrap:anywhere / word-break:break-all', !/anywhere|break-all/.test(css), (css.match(/[^\n]*(anywhere|break-all)[^\n]*/g) || []).slice(0, 4)); }
+  { const W20 = 'Supercalifragilistic', HY = 'Okonkwo-Smythe-Laurent', NM = 'Anne-Marie Okonkwo', W16 = 'Wolfeschlegelstei', LONG = 'Pick up the Supercalifragilistic compost bins from Okonkwo-Smythe-Laurent garden';
+    const WRAP = { e: LONG.slice(0, 60), c: 0, p: [HY, W20, NM, W16], x: [[W20 + ' ' + HY.slice(0, 18), 12345, 0, 0, [0, 1, 2, 3]], [HY, 999999, 1, 0, [0, 1]]] };
+    const AUD = () => { const cw = document.documentElement.clientWidth, out = { loose: [], viewport: [], clipped: [], midword: [], spill: [] }, cx = document.createElement('canvas').getContext('2d');
+      const nm = e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).join('.') : '');
+      const sr = e => { for (let a = e; a && a !== document.body; a = a.parentElement) { const c = getComputedStyle(a); if (/inset\(50%/.test(c.clipPath) || /rect\(0/.test(c.clip)) return true; } return false; };
+      const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden' && !sr(e); };
+      document.querySelectorAll('body *').forEach(e => { const c = getComputedStyle(e); if (c.overflowWrap === 'anywhere' || c.wordBreak === 'break-all') out.loose.push(nm(e)); if (!vis(e)) return; const r = e.getBoundingClientRect();
+        if (c.position !== 'fixed' && (r.right > cw + 1 || r.left < -1)) out.viewport.push(nm(e) + ' R' + Math.round(r.right));
+        if (!/^(INPUT|TEXTAREA|SELECT)$/.test(e.tagName) && /hidden|auto|clip|scroll/.test(c.overflowX) && e.scrollWidth > e.clientWidth + 1) out.clipped.push(nm(e) + ' sw' + e.scrollWidth + '>cw' + e.clientWidth); });
+      const blockOf = e => { let b = e; while (b && /^(inline|contents)/.test(getComputedStyle(b).display)) b = b.parentElement; return b; };
+      document.querySelectorAll('.mill-typed').forEach(e => { if (!vis(e)) return; const b = blockOf(e), bs = getComputedStyle(b), br = b.getBoundingClientRect(), box = br.width - parseFloat(bs.paddingLeft) - parseFloat(bs.paddingRight) - parseFloat(bs.borderLeftWidth) - parseFloat(bs.borderRightWidth);
+        cx.font = getComputedStyle(e).font; const tw = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+        for (let n = tw.nextNode(); n; n = tw.nextNode()) { const t = n.textContent, re = /[^\s-]+-?/g; let m; while ((m = re.exec(t))) { const rg = document.createRange(); rg.setStart(n, m.index); rg.setEnd(n, m.index + m[0].length); const rs = [...rg.getClientRects()].filter(x => x.width > 0);
+          if (new Set(rs.map(x => Math.round(x.top))).size > 1 && cx.measureText(m[0]).width <= box - 1) out.midword.push(nm(b) + ' "' + m[0] + '"');
+          if (rs.some(x => x.right > br.right + 1 || x.left < br.left - 1)) out.spill.push(nm(b) + ' "' + m[0] + '"'); } } });
+      for (const k in out) out[k] = [...new Set(out[k])]; return { out, sw: document.documentElement.scrollWidth, cw, ow: getComputedStyle(document.querySelector('.mill-typed')).overflowWrap }; };
+    for (const w of [320, 390, 1280]) { const s = await session(H, IP), { p } = s; await p.setViewport({ width: w, height: 900 }); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]); await p.goto(BASE, { waitUntil: 'load' });
+      for (const [nmc, o] of [['long typed values', WRAP], ['8 people at the cap', EIGHT]]) for (const own of [false, true]) { await openFrag(p, o, own); const a = await p.evaluate(AUD), x = a.out;
+        ck(w + ` PM wrap rule, ${nmc} (${own ? 'own copy' : 'recipient'}): .mill-typed is break-word, nothing computes anywhere/break-all; no sideways scroll, nothing past the edge or clipped; no word that fits its box breaks mid-word; no typed word painted outside its block`,
+          a.ow === 'break-word' && !x.loose.length && a.sw <= a.cw && !x.viewport.length && !x.clipped.length && !x.midword.length && !x.spill.length, a); }
+      ck(w + ' PM wrap rule block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); } }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

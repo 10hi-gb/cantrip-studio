@@ -5,7 +5,7 @@
 .eu-status p{margin:0 0 4px}
 .eu-status .eu-btn{margin-top:6px}
 .eu-fixlinks{margin:4px 0 0;padding-left:18px}
-.eu-fixlinks a{color:var(--eu-err);font-weight:600;overflow-wrap:anywhere}
+.eu-fixlinks a{color:var(--eu-err);font-weight:600;overflow-wrap:break-word}
 .eu-meta{font:400 13px/1.4 var(--eu-sans);color:var(--eu-mute);margin:0 0 6px}
 .eu-unnamed{opacity:.55}
 /* frame: each rod row carries its own name (no separate aria-hidden name column), rows grow with long names */
@@ -26,8 +26,8 @@
 .eu-empty{padding:14px 10px 4px}
 /* settle card */
 .eu-transfers .eu-num{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:10px;border:1.5px solid var(--eu-line);color:var(--eu-line);font:600 11px var(--eu-sans)}
-.eu-transfers b{overflow-wrap:anywhere;min-width:0}
-.eu-settle h3{overflow-wrap:anywhere}
+.eu-transfers b{overflow-wrap:break-word;min-width:0}
+.eu-settle h3{overflow-wrap:break-word}
 .eu-btn{max-width:100%;white-space:normal;line-height:1.15;text-align:center}
 .eu-linkbox{display:flex;flex-direction:column;gap:3px;margin-top:10px}
 .eu-linkbox textarea{font:400 13px/1.4 var(--eu-sans);width:100%;border:1.5px solid #C7BCA8;border-radius:6px;padding:6px 8px;background:#fff;color:var(--eu-ink);resize:vertical}
@@ -36,7 +36,7 @@
 .eu-x:focus{outline:3px solid var(--eu-focus);outline-offset:2px}
 .eu-tape:focus{outline:none}
 .eu-x-h{flex-wrap:wrap}
-.eu-x-meta{overflow-wrap:anywhere}
+.eu-x-meta{overflow-wrap:break-word}
 .eu-xacts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .eu-mini{min-height:44px;padding:0 12px;font-size:13px}
 .eu-net .eu-check{margin:6px 0 0}
@@ -52,7 +52,7 @@
 .eu-field input,.eu-field select{min-height:44px}
 .eu-chipwrap{display:inline-flex;align-items:center;gap:4px;max-width:100%}
 .eu-chip{min-height:44px;max-width:100%;cursor:pointer;color:var(--eu-ink);text-align:left}
-.eu-chip span{overflow-wrap:anywhere}
+.eu-chip span{overflow-wrap:break-word}
 .eu-w{width:4.2em;min-height:44px;border:1.5px solid #C7BCA8;border-radius:6px;font:400 15px var(--eu-sans);text-align:center;padding:0 4px;background:#fff;color:var(--eu-ink)}
 .eu-w[aria-invalid=true]{border-color:var(--eu-err);background:var(--eu-err-bg)}
 .eu-w:disabled{opacity:.45}
@@ -148,3 +148,8 @@
 /* 3) tight frames (a token would step to 11px, or <=360px with more than 4 people): the tag leaves the screen on every token
    but stays in the accessible text (visually hidden, never aria-hidden); the figure keeps a 10px minimum. 5) Print keeps the tags. */
 @media screen{.eu-frame.eu-notags .eu-token small{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}}
+/* PM wrap rule (03:33), shared .mill-typed is overflow-wrap:break-word: break at spaces or existing hyphens, mid-word only when one word
+   can't fit its box. Never the looser wrap values (no mid-word breaking of words that fit) on this page. break-word doesn't lower min-content, so every
+   flex/grid child that holds typed text gets min-width:0 (and max-width:100% where it wraps onto its own line) so it shrinks to its box. */
+.eu-name>*,.eu-x-h>*,.eu-x dt,.eu-x dd,.eu-chip>span,.eu-transfers li>*{min-width:0;max-width:100%}
+.eu-chip{min-width:0}
