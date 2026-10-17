@@ -110,8 +110,9 @@
     r.helpers.forEach(function (h) { host.append(card(null, CR.handoff(C, r, c, h), M.fill(C.copyHelper, { name: q(h.name) }), V.typed(h.name))); });
     host.append(card(C.stillOpenHeading, CR.stillOpen(C, r, c), C.copyStillOpen)); }
   function sheetView(s, head, recv) { $('sheet-h').textContent = M.fill(C.sheetHeading, { for: q(head.forName) }); $('sheet-range').textContent = M.fill(C.sheetRange, { first: CR.d2(CR.parseISO(head.first)), last: CR.d2(CR.parseISO(head.last)) });
+    // explicit table roles: on a phone the rows are stacked with display:block (QA W-7), which would otherwise turn the table into a layout table
     var tb = $('sheet-t').tBodies[0]; tb.textContent = ''; $('sheet').classList.toggle('is-long', s.length > 14); // print: up to 28 days on one Letter page
-    s.forEach(function (d) { var tr = el('tr'), td = el('td', 'day', CR.d2(d.t)), tw = el('td'); tr.append(td, tw);
+    s.forEach(function (d) { var tr = el('tr'), td = el('td', 'day', CR.d2(d.t)), tw = el('td'); tr.setAttribute('role', 'row'); td.setAttribute('role', 'cell'); tw.setAttribute('role', 'cell'); tr.append(td, tw);
       if (!d.who.length) tw.textContent = C.sheetNothing; else tw.textContent = d.who.map(function (w) { return M.fill(C.sheetLine, { name: q(w.name), needs: w.needs.map(function (n) { return head.std(n) ? n : q(n); }).join(' + ') }); }).join(' · ');
       tb.append(tr); });
     $('stamp-4').textContent = M.fill(C.stamp, { datetime: head.stamp, org: q(head.org) }); $('sheet-note').textContent = M.fill(C.sheetChangeNote, { org: q(head.org) }); $('b-print').textContent = C.printSheet;

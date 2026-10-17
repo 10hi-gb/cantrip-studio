@@ -185,3 +185,11 @@ label{margin-bottom:10px}
 /* Creative 07:05: inside a selected (navy) day chip the checkbox is a cream box with a dark tick, not the browser's default blue. Native checkbox,
    so semantics, keyboard and focus are unchanged; Chrome draws a dark tick on a light accent colour. Unchecked chips are untouched. */
 .cr-chip input:checked{accent-color:#FFFDF8}
+/* QA W-7 + PM wrap rule (break at a space first, mid-word only when a word can't fit its cell): on a phone screen the sheet's day sits above that
+   day's entries, so the entries get the full sheet width and a long single word (“Pneumonoultramicroscopic”, 220px at 18px) fits whole at 320.
+   Screen only: print keeps the two-column table (C13). The table stays a table to assistive tech (checked in the browser test). */
+@media screen and (max-width:560px){
+ .sheet tr{display:block;border-bottom:2px dashed #C9BC9E}
+ .sheet td{display:block;width:auto;border-bottom:0}
+ .sheet td.day{width:auto;padding-bottom:0}
+}
