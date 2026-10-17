@@ -566,6 +566,23 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
       for (const q of rg.getClientRects()) if (q.width > 0.5) { inter(q, 'text “' + t.data.trim().slice(0, 24) + '”'); } }
     for (const c of document.querySelectorAll('input,select,textarea,button,a[href],[tabindex]:not([tabindex="-1"])')) { if (c === e || c.contains(e) || e.contains(c) || !vis(c)) continue; const q = c.getBoundingClientRect(); if (q.width < 2 || q.height < 2) continue; inter(q, 'control #' + (c.id || c.tagName)); }
     return { ext: Math.round(ext * 10) / 10, hits: [...new Set(hits)] }; };
+  // QA local-2304261 L15: clearance, not just overlap. From the ring's outer edge to every neighbouring box: other controls
+  // (with their own box-shadow, e.g. the red error ring), visible text line boxes, and bordered boxes (outside them, or the
+  // inside of a bordered box that holds the control). PM spacing rule: at least 3px clear (ring reach + 3px from the control).
+  const ringClear = () => { const e = document.activeElement; if (!e || e === document.body) return null; const cs = getComputedStyle(e);
+    const shadow = c => (c.boxShadow || '').split(/,(?![^(]*\))/).filter(x => !/inset/.test(x) && x.trim() !== 'none').map(x => { const n = (x.replace(/rgba?\([^)]*\)|#[0-9a-f]+/gi, '').match(/-?[\d.]+px/g) || []).map(parseFloat); return n.length >= 4 ? n[3] : 0; });
+    const ow = cs.outlineStyle !== 'none' ? parseFloat(cs.outlineWidth) + parseFloat(cs.outlineOffset) : 0, ext = Math.max(ow, 0, ...shadow(cs)), r = e.getBoundingClientRect(), R = { l: r.left - ext, t: r.top - ext, r: r.right + ext, b: r.bottom + ext };
+    if (ext <= 0) return { ext, min: Infinity, near: [] };
+    const vis = n => { for (let x = n; x && x !== document.documentElement; x = x.parentElement) { const c = getComputedStyle(x); if (c.position === 'fixed' || c.display === 'none' || c.visibility === 'hidden' || c.clipPath !== 'none' || (c.clip && c.clip !== 'auto') || parseFloat(c.opacity) === 0) return false; } return true; };
+    const near = [], gap = (q, what) => { const dx = Math.max(q.left - R.r, R.l - q.right), dy = Math.max(q.top - R.b, R.t - q.bottom), d = dx > 0 && dy > 0 ? Math.hypot(dx, dy) : Math.max(dx, dy); if (d < 3 - 0.01) near.push({ what, d: Math.round(d * 100) / 100 }); };
+    const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let t;
+    while ((t = tw.nextNode())) { if (!t.data.trim() || e.contains(t) || !vis(t.parentElement)) continue; const pr = t.parentElement.getBoundingClientRect(); if (pr.width < 2 || pr.height < 2) continue; const rg = document.createRange(); rg.selectNodeContents(t); for (const q of rg.getClientRects()) if (q.width > 0.5) gap(q, 'text “' + t.data.trim().slice(0, 22) + '”'); }
+    for (const c of document.querySelectorAll('body *')) { if (c === e || e.contains(c) || !vis(c)) continue; const cc = getComputedStyle(c), q = c.getBoundingClientRect(); if (q.width < 2 || q.height < 2) continue;
+      const ctl = c.matches('input,select,textarea,button,a[href],[tabindex]:not([tabindex="-1"])'), bw = ['Top', 'Right', 'Bottom', 'Left'].map(sd => cc['border' + sd + 'Style'] !== 'none' && !/rgba\(\d+, \d+, \d+, 0\)/.test(cc['border' + sd + 'Color']) ? parseFloat(cc['border' + sd + 'Width']) : 0);
+      const sp = Math.max(0, ...shadow(cc)), name = (ctl ? 'control #' : 'border ') + (c.id || c.className || c.tagName);
+      if (c.contains(e)) { if (bw.some(Boolean)) { const ins = [bw[0] ? R.t - (q.top + bw[0]) : 99, bw[1] ? (q.right - bw[1]) - R.r : 99, bw[2] ? (q.bottom - bw[2]) - R.b : 99, bw[3] ? R.l - (q.left + bw[3]) : 99], d = Math.min(...ins); if (d < 3 - 0.01) near.push({ what: 'inside ' + name, d: Math.round(d * 100) / 100 }); } continue; }
+      if (ctl || bw.some(Boolean) || sp) gap({ left: q.left - sp, top: q.top - sp, right: q.right + sp, bottom: q.bottom + sp }, name); }
+    return { ext: Math.round(ext * 10) / 10, min: near.length ? Math.min(...near.map(x => x.d)) : Infinity, near }; };
   async function ringAt(p, info) { const m = info.fw + 16, x = Math.max(0, Math.floor(info.x - m)), y = Math.max(0, Math.floor(info.y - m)), clip = { x: x + info.sx, y: y + info.sy, width: Math.min(info.vw, Math.ceil(info.x + info.w + m)) - x, height: Math.min(info.vh, Math.ceil(info.y + info.h + m)) - y };
     if (clip.width < 4 || clip.height < 4) return { skip: 'off screen' };
     const B = png(await p.screenshot({ clip })); await p.evaluate(() => document.activeElement && document.activeElement.blur()); await sleep(260); const A = png(await p.screenshot({ clip }));
@@ -628,7 +645,7 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
   // by itself at 24px is broken inside. L13: the drawn count is the fewest at >= 24px and the size is never more than 10%
   // under the largest size that count fits at (oracle: own-hyphen-aware first-fit with 4+-letter added breaks, page metrics,
   // the size grid from the tile's normal size down to 24px). abc30 on the 390 chosen screen comes out at about 36px.
-  { const puppeteer = require('puppeteer-core'), WORDS = ['N' + 'o'.repeat(29), 'Abcdefghijklmnopqrstuvwxyzabcd', "Grandmother's", 'Bartholomew-Smythe', 'Jean-Baptiste-Alexandre', 'Pneumonoultramicroscopic', 'Superextraordinarily'];
+  if (!process.env.MILL_SKIP_L11) { const puppeteer = require('puppeteer-core'), WORDS = ['N' + 'o'.repeat(29), 'Abcdefghijklmnopqrstuvwxyzabcd', "Grandmother's", 'Bartholomew-Smythe', 'Jean-Baptiste-Alexandre', 'Pneumonoultramicroscopic', 'Superextraordinarily'];
     const oracle = (p, id, tileSel) => p.evaluate((id, tileSel) => { const a = document.getElementById(id), tile = tileSel ? document.querySelector(tileSel) : (a.closest('.half') || a.parentElement), ts = getComputedStyle(tile);
       const word = a.querySelector('.lr-sr').textContent.slice(1, -1), drawn = a.querySelector('.lr-vt').getAttribute('data-v').split('\n'), fs = parseFloat(getComputedStyle(a).fontSize);
       const keep = [a.style.fontSize, a.style.paddingInlineStart, a.style.paddingInlineEnd]; a.style.fontSize = ''; a.style.paddingInlineStart = a.style.paddingInlineEnd = ''; const base = parseFloat(getComputedStyle(a).fontSize), cw = a.clientWidth; [a.style.fontSize, a.style.paddingInlineStart, a.style.paddingInlineEnd] = keep;
@@ -670,7 +687,7 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
     const s = await session(H, IP), { p } = s; await p.setBypassCSP(true); await p.setViewport({ width: w, height: w >= 1000 ? 900 : 760 }); await p.evaluateOnNewDocument(clipStub);
     await p.evaluateOnNewDocument(() => document.addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = '*{caret-color:transparent!important;transition:none!important;animation:none!important}'; document.head.appendChild(st); }));
     const stops = [], walk = async screen => { await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); window.scrollTo(0, 0); }); const seen = new Set();
-      for (let i = 0; i < 80; i++) { await p.keyboard.press('Tab'); await sleep(40); const o = await p.evaluate(f => { const e = document.activeElement; if (!e || e === document.body) return null; if (!e.dataset.ov) e.dataset.ov = Math.random().toString(36).slice(2, 8); return Object.assign({ k: e.dataset.ov, id: e.id || e.tagName }, (0, eval)('(' + f + ')')()); }, ringOverlap.toString());
+      for (let i = 0; i < 80; i++) { await p.keyboard.press('Tab'); await sleep(40); const o = await p.evaluate((f, g) => { const e = document.activeElement; if (!e || e === document.body) return null; if (!e.dataset.ov) e.dataset.ov = Math.random().toString(36).slice(2, 8); return Object.assign({ k: e.dataset.ov, id: e.id || e.tagName }, (0, eval)('(' + f + ')')(), { clear: (0, eval)('(' + g + ')')() }); }, ringOverlap.toString(), ringClear.toString());
         if (!o) continue; if (seen.has(o.k)) break; seen.add(o.k); stops.push(Object.assign({ screen }, o)); } };
     try {
       await p.goto(BASE, { waitUntil: 'load' }); await sleep(250); await setVal(p, '#from', 'Maya'); await fillQ(p, 0, 'Your question here?', "Grandmother's", 'Watch a movie at home', '\u{1F475}', ''); await fillQ(p, 1, 'Park or pool?', 'Park', 'Pool');
@@ -684,9 +701,15 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
       const frag = await p.evaluate(() => MILL.pack('l', 1, { f: 'Maya', m: 0, k: 0, s: 0, e: 20, d: 15, q: [['Who reads tonight?', "Grandmother's", 'Tacos', '', '']] }));
       await p.goto('about:blank'); await p.goto(BASE + '#' + frag, { waitUntil: 'load' }); await sleep(250); await walk('recipient');
       await p.goto('about:blank'); await p.goto(BASE + '#garbage', { waitUntil: 'load' }); await sleep(250); await walk('bad-link banner');
+      // validation errors (QA's L15 case): empty left answers beside filled right ones, a picture with two emoji, Show it big
+      await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(250); await fillQ(p, 0, 'Pizza or pasta?', '', 'Coffee', '\u{1F375}\u{1F375}', ''); await fillQ(p, 1, 'Park or pool?', '', 'Pool');
+      await press(p, '#m-switch'); await sleep(100); await p.evaluate(() => window.scrollTo(0, 0)); await press(p, '#go'); await sleep(250);
+      const nErr = await p.evaluate(() => document.querySelectorAll('[aria-invalid=true]').length); ck(`L15 ${w}: the error state is on (${nErr} fields marked invalid)`, nErr >= 3, nErr); await walk('editor errors (switch)');
     } catch (e) { ck(`L12 overlap ${w}: the walk ran to the end`, false, String(e && e.stack || e).slice(0, 400)); }
     const bad = stops.filter(o => o.hits.length);
     ck(`L12 overlap ${w}: ${stops.length} Tab stops on ${new Set(stops.map(o => o.screen)).size} screens; no focus ring box intersects other text or another control (rings reach ${[...new Set(stops.map(o => o.ext))].join('/')}px)`, stops.length >= 60 && !bad.length, bad.map(o => o.screen + ' | ' + o.id + ' ext ' + o.ext + ': ' + o.hits.join('; ')));
+    const tight = stops.filter(o => o.clear && o.clear.near.length);
+    ck(`L15 ${w}: ${stops.length} Tab stops (with the error state): every ring stays 3px+ clear of every neighbouring control, border (incl. a red error ring) and text box (closest ${Math.min(...stops.map(o => o.clear ? o.clear.min : Infinity)).toFixed(2)}px)`, stops.length >= 60 && !tight.length, tight.map(o => o.screen + ' | ' + o.id + ' ext ' + o.clear.ext + ': ' + o.clear.near.map(x => x.what + ' ' + x.d).join('; ')));
     ck(`L12 overlap ${w}: no page errors`, !errsOf(s, SCHEME).filter(e => !/Content Security Policy/.test(e)).length, errsOf(s, SCHEME)); await s.b.close(); }
   // PM 04:57 query-string ruling: every history write is origin + path (+ #fragment), never a ?query. A valid received link
   // with ?q=<marker>: after opening, answering, reset and making a link, location.search is '' and the marker is not in
