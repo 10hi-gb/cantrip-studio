@@ -165,7 +165,7 @@ t('QA local-e5780b7 regression names: Corey, Orla, Andrea, Leonor, Igor placed a
   assert.deepEqual(r.helpers.filter(h => NM.includes(h.name)).map(h => h.name + ' ' + h.items.length), NM.map(n => n + ' 1'));
   const o = CR.check(CFG, ['Mon 19 dinner Ana orben']); assert.deepEqual([o.rows[0].result, o.rows[0].name], ['placed', 'Ana orben']); });
 t('PM C9 (03:48): "<name> or|and<Capitalised>" with no space is TO FIX (tagTwoNames, line quoted), never placed; "Anaor Ben", "AnaorBen", lowercase "Ana orben" and the "or/and" names stay one helper', () => {
-  for (const pr of ['Ana orBen', 'Ana andBen', 'Ana OrBen', 'Ana ORBen', 'Ana AndBen', 'Ana ANDBen', 'Ana orÉlise', 'Mary Jo andBen']) for (const l of ['Mon 19 dinner ' + pr, pr + ': Mon 19 dinner', pr + ' Mon 19 dinner', 'Mon 19 ' + pr + ' dinner']) {
+  for (const pr of ['Ana orBen', 'Ana andBen', 'Ana orÉlise', 'Mary Jo andBen']) for (const l of ['Mon 19 dinner ' + pr, pr + ': Mon 19 dinner', pr + ' Mon 19 dinner', 'Mon 19 ' + pr + ' dinner']) {
     const r = CR.check(CFG, [l]); assert.deepEqual([r.rows[0].result, r.issues.map(i => i.kind).join()], ['toFix', 'twoNames'], l); assert.equal(Object.keys(r.got).length, 0, l); assert.ok(!r.helpers.length, l);
     assert.equal(M.fill(C.tagTwoNames, { line: r.issues[0].line }), 'To fix: “' + l + '” has more than one name. One person per line.'); }
   for (const nm of ['Anaor Ben', 'AnaorBen', 'Ana orben', 'Ana andben', 'Igor', 'Leonor', 'Corey', 'Andrea', 'Orla', 'Brandon', 'Sandra', 'Igor Petrov', 'Leonor Ben', 'Ana Andrea', 'Mary Orla', 'orBen'])
@@ -173,4 +173,13 @@ t('PM C9 (03:48): "<name> or|and<Capitalised>" with no space is TO FIX (tagTwoNa
   const r = CR.check(CFG, ['Mon 19 dinner Igor', 'Tue 20 dinner Ana orBen', 'Wed 21 ride Leonor', 'Thu 22 dinner Corey', 'Fri 23 dinner Ana andBen', 'Sun 25 dinner Sandra']);
   assert.deepEqual(r.issues.map(i => i.kind + ':' + i.line), ['twoNames:Tue 20 dinner Ana orBen', 'twoNames:Fri 23 dinner Ana andBen']);
   assert.deepEqual(r.helpers.map(h => h.name), ['Igor', 'Leonor', 'Corey', 'Sandra']); });
+t('QA C10 + PM 04:38: a joiner is ONLY lowercase or|and glued to an uppercase letter; all-caps surnames and Or/OR/And/AND spellings are one helper', () => {
+  const PLACE = ['Mary ANDERSON', 'Ana ORLANDO', 'ANA ORTIZ', 'JO ORR', 'SAM ANDREWS', 'Ana OrBen', 'Ana ORBen', 'Ana AndBen', 'Ana ANDBen', 'ANA ORBEN', 'Mary Anderson', 'MARY JANE', 'Ana Ortiz',
+    'Anaor Ben', 'AnaorBen', 'Ana orben', 'Igor', 'Leonor', 'Corey', 'Andrea', 'Orla', 'Brandon', 'Sandra'];
+  for (const nm of PLACE) for (const l of ['Mon 19 dinner ' + nm, nm + ': Mon 19 dinner', nm + ' Mon 19 dinner']) { const r = CR.check(CFG, [l]);
+    assert.deepEqual([r.rows[0].result, r.issues.length], ['placed', 0], l); assert.deepEqual(got(r), { '2026-10-19 Dinner': [nm] }, l); }
+  for (const pr of ['Ana orBen', 'Ana andBen']) for (const l of ['Mon 19 dinner ' + pr, pr + ': Mon 19 dinner']) { const r = CR.check(CFG, [l]);
+    assert.deepEqual([r.rows[0].result, r.issues.map(i => i.kind).join(), Object.keys(r.got).length], ['toFix', 'twoNames', 0], l); }
+  const r = CR.check(CFG, PLACE.slice(0, 5).map((nm, i) => ['Mon 19', 'Tue 20', 'Wed 21', 'Thu 22', 'Fri 23'][i] + ' dinner ' + nm).concat(['Sun 25 dinner Ana orBen']));
+  assert.deepEqual(r.helpers.map(h => h.name), PLACE.slice(0, 5)); assert.deepEqual(r.issues.map(i => i.kind + ':' + i.line), ['twoNames:Sun 25 dinner Ana orBen']); });
 console.log('PASS ' + n + ' tests');

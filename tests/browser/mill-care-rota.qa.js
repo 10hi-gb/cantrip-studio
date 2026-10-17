@@ -282,6 +282,18 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     ck('C9 session: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
   }
   {
+    // QA C10 + PM 04:38: all-caps surnames and Or/OR/And/AND spellings are one helper; only lowercase or|and + uppercase is a joiner
+    const s = await session(H, IP), { p } = s; await p.setViewport({ width: 1280, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const NM = ['Mary ANDERSON', 'Ana ORLANDO', 'ANA ORTIZ', 'JO ORR', 'SAM ANDREWS', 'Ana ORBen', 'Ana OrBen'], D = ['Mon 19', 'Tue 20', 'Wed 21', 'Thu 22', 'Fri 23', 'Sat 24', 'Sun 25'];
+    const L = NM.map((nm, i) => D[i] + ' dinner ' + nm).concat(['Mon 19 walk Ana orBen', 'Tue 20 walk Ana andBen', 'Wed 21 walk Igor', 'Thu 22 walk Leonor', 'Fri 23 walk Corey', 'Sat 24 walk Andrea']);
+    await form(p, { forName: 'Priya', org: 'Jess', first: '2026-10-19', last: '2026-10-25', needs: [{ key: 'dinner', rule: 'every' }, { key: 'walk', rule: 'every' }], lines: L }); await check(p);
+    const st = await state(p), fx = st.tags.filter(x => x.startsWith('To fix'));
+    const placed = NM.concat(['Igor', 'Leonor', 'Corey', 'Andrea']).every(nm => st.patches.some(x => x.endsWith('“' + nm + '”')));
+    ck('QA C10: Mary ANDERSON, Ana ORLANDO, ANA ORTIZ, JO ORR, SAM ANDREWS (and Ana ORBen / Ana OrBen, Igor, Leonor, Corey, Andrea) placed as single helpers; only "Ana orBen" / "Ana andBen" -> To fix (Writer tagTwoNames)',
+      placed && JSON.stringify(fx) === JSON.stringify(['Mon 19 walk Ana orBen', 'Tue 20 walk Ana andBen'].map(l => M.fill(C.tagTwoNames, { line: l }))), { fx, patches: st.patches });
+    ck('C10 session: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
+  }
+  {
     // C1: the WHOLE URL is capped at 2,000, made side and received side, at 1999 / 2000 / 2001 chars, via a long path on a local
     // throwaway server (nested dirs + a symlink to the repo). Date.now frozen so the made fragment is stable.
     const os = require('os'), path = require('path'), { spawn } = require('child_process'), REPO = path.resolve(__dirname, '../..');

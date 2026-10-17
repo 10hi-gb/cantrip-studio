@@ -14,7 +14,10 @@
   var FIXED = { dinner: ['dinner', 'meal', 'food'], ride: ['ride', 'lift', 'drive'], walk: ['dog walk', 'walk', 'dog'] };
   // name separators (QA C3): a whole word and/or, & + (ASCII and full-width) ➕ and /, spaced or not. A comma counts when it sits
   // between two name words. Any of them -> TO FIX (tagTwoNames), never placed, never folded into one name.
-  var HALF = /^(?:or|and|Or|And|OR|AND)\p{Lu}/u; // C9 half-spaced joiner glued to a capitalised name (case-sensitive on purpose)
+  // C9 half-spaced joiner, PM ruling narrowed 04:38 (QA C10): a name word is a joiner ONLY when it starts with lowercase "or" or
+  // "and" directly followed by an uppercase letter ("orBen", "andBen"). All-caps words (ANDERSON, ORTIZ, ORR, ORLANDO, ANDREWS) and
+  // the Or/OR/And/AND spellings ("Ana OrBen", "Ana ORBen") are never joiners: one helper, placed as typed.
+  var HALF = /^(?:or|and)\p{Lu}/u;
   var JOIN = { and: 1, or: 1, '&': 1, '+': 1, '\uFF06': 1, '\uFF0B': 1, '\u2795': 1, '/': 1 };
   // ---- dates ----
   function parseISO(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); if (!m) return null; var t = Date.UTC(+m[1], +m[2] - 1, +m[3]); var d = new Date(t); return d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3] ? t : null; }
