@@ -177,7 +177,7 @@
   function readReply() {
     mode = 'reply'; var r = reply, a = A.termValues(C, r.a), p = r.p ? A.termValues(C, r.p) : null, d = r.p ? A.diff(r.a, r.p) : null;
     var intro = { y: r.a.o ? typed(C.replyIntroYes, 'to', r.a.o) : C.replyIntroYesAnon, p: r.a.o ? typed(C.replyIntroPart, 'to', r.a.o) : C.replyIntroPartAnon, n: r.a.o ? typed(C.replyIntroNo, 'to', r.a.o) : C.replyIntroNoAnon }[r.v];
-    page(intro, C.receiverTypedNote); // N3: shown once on reply views too
+    page(intro, C.replyTypedNote); // Writer N4: the asker's reply views (yes/part/no) get replyTypedNote, once
     if (r.v === 'p') { var dl = $('delta'), was = [], now = []; A.TERMS.forEach(function (t) { if (d[t[0]]) { was.push(tv(t[0], a[t[0]])); now.push(tv(t[0], p[t[0]])); } }); dl.textContent = ''; dl.appendChild(el('span', 'a', was.join(' · '))); var to = el('span', 'to', '→'); to.setAttribute('aria-hidden', 'true'); dl.appendChild(to); dl.appendChild(el('span', 'b', now.join(' · '))); dl.setAttribute('aria-label', C.deltaAria); dl.hidden = false; }
     var x = $('x'); x.appendChild(el('span', 'osa-seamline')).setAttribute('aria-hidden', 'true');
     var vp = el('span', 'osa-verdict is-' + { y: 'yes', p: 'part', n: 'no' }[r.v], { y: C.replyYes, p: C.replyPart, n: C.replyNo }[r.v]);

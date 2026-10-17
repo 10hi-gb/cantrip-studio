@@ -62,6 +62,7 @@ const COPY = {
   "receiverIntro": "Small ask from: {from}",
   "receiverIntroAnon": "Small ask (no name given)",
   "receiverTypedNote": "Names and the favor are as typed by the sender. Not checked.",
+  "replyTypedNote": "Your ask is as you sent it. Their reply is as they typed it. Not checked.",
   "replyHeading": "Your answer",
   "replyYes": "Yes",
   "replyPart": "Part of it",
