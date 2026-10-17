@@ -105,8 +105,8 @@
     var c = compute(st), L = [C.textHeader, ''];
     function sp(t) { return t.replace(/ {2,}/g, ' ').replace(/ ·/g, ' ·'); }
     function lines(b) { b.lines.forEach(function (l) {
-      if (l.merged) L.push(sp(M.fill(C.textMergedItemLine, { item: l.item, qty: fmtQty(l.q), unit: l.unit || '', owners: l.traces.map(function (t) { return t.owner; }).join(', ') })));
-      else { var t = l.traces[0]; L.push(sp(M.fill(C.textItemLine, { item: l.item, qty: fmtQty(t.q), unit: t.unit || '', owner: t.owner }))); }
+      if (l.merged) L.push(sp(M.fill(C.textMergedItemLine, { item: l.item, qty: fmtQty(l.q), unit: l.unit || '', owners: l.traces.map(function (t) { return M.quote(t.owner); }).join(', ') })));
+      else { var t = l.traces[0]; L.push(sp(M.fill(C.textItemLine, { item: l.item, qty: fmtQty(t.q), unit: t.unit || '', owner: M.quote(t.owner) }))); }
     }); }
     c.stops.forEach(function (s) { L.push(M.fill(C.textStopLine, { stop: s.name })); lines(s); L.push(''); });
     if (c.unknown.lines.length) { L.push(C.textUnknownStopLine); lines(c.unknown); L.push(''); }

@@ -16,9 +16,9 @@
   function today() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function roomLine(node, err, value, cap, tpl) { var used = B.room(M.strip(value)), over = used - cap; node.textContent = M.fill(C.limitCounter, { n: used, max: cap }); err.textContent = over > 0 ? M.plural(tpl, over, { max: cap }) : ''; return over; }
   function edited() { clearHash(); $('linkbox').hidden = true; $('link').value = ''; }
-  function quoted(v) { return '“' + v + '”'; }
+  function quoted(v) { return window.MILLVIEW.quote(v); } // shared typed-text rule (mill/shared/view.js)
   // label + separate value node (D4: typed text is never part of a product sentence)
-  function typedInto(node, tpl, key, value) { node.textContent = ''; var parts = String(tpl).split('{' + key + '}'); node.appendChild(document.createTextNode(parts[0])); node.appendChild(el('span', 'byg-typed', value)); if (parts[1]) node.appendChild(document.createTextNode(parts[1])); }
+  function typedInto(node, tpl, key, value) { node.textContent = ''; var parts = String(tpl).split('{' + key + '}'); node.appendChild(document.createTextNode(parts[0])); var q = /[“"]$/.test(parts[0]); node.appendChild(q ? el('span', 'byg-typed mill-typed', value) : V.typed(value, 'byg-typed')); if (parts[1]) node.appendChild(document.createTextNode(parts[1])); }
   function whenPair(prefix, labelText) { // date (required for a value) + optional time
     var w = el('div', 'byg-when'), d = el('input', 'byg-in'), t = el('input', 'byg-in'), dl = el('label', null, C.whenDateLabel), tl = el('label', null, C.whenTimeLabel);
     d.type = 'date'; t.type = 'time'; d.id = prefix + '-d'; t.id = prefix + '-t'; dl.htmlFor = d.id; tl.htmlFor = t.id; d.setAttribute('aria-label', labelText + ' · ' + C.whenDateLabel); t.setAttribute('aria-label', labelText + ' · ' + C.whenTimeLabel);
@@ -139,6 +139,7 @@
     st = B.blank(); senderName = ''; setMode('own'); V.clearInputs(document);
     $('linkbox').hidden = true; $('own-e').textContent = ''; $('banner').hidden = true; $('banner-t').textContent = ''; $('banner-n').textContent = ''; $('banner-y').textContent = ''; $('banner-y').hidden = true; $('own-copy').hidden = true;
     B.ALL.forEach(function (k) { rows[k].hint.textContent = ''; rows[k].wtouched = false; });
+    V.clearErrors(document, '.byg-err,#own-e,#own-e2,#pickup-e,#by-e');
   }
   function load(h) {
     resetAll();

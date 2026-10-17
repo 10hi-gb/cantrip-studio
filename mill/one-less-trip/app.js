@@ -2,7 +2,7 @@
 // One Less Trip — UI. Visitor text only via textContent/value. Nothing stored; ticks live in memory; the address bar is only ever cleared.
 (function () {
   var C = COPY, M = MILL, O = OLT, $ = function (id) { return document.getElementById(id); };
-  var st = O.blank(), checks = {}, editing = null, toastT = 0, mode = 'own', isCopy = false, prevSig = null, V = window.MILLVIEW;
+  var st = O.blank(), checks = {}, editing = null, toastT = 0, mode = 'own', isCopy = false, prevSig = null, hhTouched = {}, V = window.MILLVIEW;
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function btn(cls, txt, fn) { var b = el('button', cls, txt); b.type = 'button'; b.addEventListener('click', fn); return b; }
   function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 3200); }
@@ -17,7 +17,8 @@
     st.h.forEach(function (h, i) {
       var li = el('li'), inp = el('input'); inp.id = 'hh-' + h.id; inp.value = h.name; inp.placeholder = C.householdPlaceholder; inp.autocomplete = 'off'; inp.setAttribute('aria-label', C.householdLabel + ' ' + (i + 1));
       var err = el('span', 'olt-err'); err.id = 'hhe-' + h.id; inp.setAttribute('aria-describedby', err.id);
-      inp.addEventListener('input', function () { h.name = inp.value; changed(); refresh(); });
+      inp.addEventListener('input', function () { h.name = inp.value; hhTouched[h.id] = 1; changed(); refresh(); });
+      inp.addEventListener('blur', function () { if (!hhTouched[h.id]) { hhTouched[h.id] = 1; refresh(); } });
       li.appendChild(inp);
       var rm = btn('olt-mini', C.removeHousehold.replace(/\s*\{name\}/, ''), function () { O.removeHousehold(st, h.id); changed(); drawHouseholds(); drawRows(); refresh(); var f = $('hh-add'); f.focus(); });
       rm.id = 'hhr-' + h.id; rm.setAttribute('aria-label', M.fill(C.removeHousehold, { name: M.strip(h.name) || (C.householdLabel + ' ' + (i + 1)) })); rm.disabled = st.h.length <= O.LIM.hhMin; li.appendChild(rm); li.appendChild(err); ul.appendChild(li);
@@ -129,7 +130,8 @@
     var c = O.compute(st), L = c.ledger;
     // households
     var herr = {}; c.hhErr.forEach(function (e) { if (e.id) herr[e.id] = e; });
-    st.h.forEach(function (h) { var e = herr[h.id], inp = $('hh-' + h.id); if (!inp) return; inp.setAttribute('aria-invalid', e ? 'true' : 'false');
+    // An empty household name is only flagged once that field was used (or a row was added): a blank start shows no errors.
+    st.h.forEach(function (h) { var e = herr[h.id], inp = $('hh-' + h.id); if (!inp) return; if (e && e.why === 'empty' && !hhTouched[h.id] && !st.r.length) e = null; if (e) inp.setAttribute('aria-invalid', 'true'); else inp.removeAttribute('aria-invalid');
       $('hhe-' + h.id).textContent = !e ? '' : e.why === 'empty' ? C.householdEmpty : e.why === 'dup' ? C.householdDuplicate : M.plural(C.householdTooLong, e.over);
       var rm = $('hhr-' + h.id); if (rm) rm.setAttribute('aria-label', M.fill(C.removeHousehold, { name: M.strip(h.name) || C.householdLabel })); });
     $('hh-meta').textContent = M.plural(C.householdCount, st.h.length);
@@ -207,9 +209,9 @@
   // Every load and every hashchange (valid, bad, old or empty) starts from a blank tab: nothing from a previous link survives.
   function load(h) {
     var bn = $('banner');
-    st = O.blank(); checks = {}; editing = null; mode = 'own'; isCopy = false; prevSig = null; $('link-l').textContent = C.linkLabel; $('banner-typed').hidden = true;
+    st = O.blank(); checks = {}; editing = null; mode = 'own'; isCopy = false; prevSig = null; hhTouched = {}; $('link-l').textContent = C.linkLabel; $('banner-typed').hidden = true;
     $('f-add').textContent = C.addRow; $('f-cancel').hidden = true; V.clearInputs($('form')); $('f-s').disabled = false;
-    ['o', 'i', 'q', 'u', 's'].forEach(function (k) { formErr(k, ''); }); $('e-form').textContent = '';
+    ['o', 'i', 'q', 'u', 's'].forEach(function (k) { formErr(k, ''); }); $('e-form').textContent = ''; V.clearErrors(document, '.olt-err');
     bn.hidden = true; $('own-copy').hidden = true; $('linkbox').hidden = true; $('link').value = ''; $('fbwrap').hidden = true; $('fallback').value = '';
     if (h) {
       var d = O.decode(h);

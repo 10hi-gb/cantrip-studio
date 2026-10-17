@@ -23,6 +23,17 @@ async function tabReach(p, ids, max = 120) { // keyboard: Tab through the page a
   const seen = new Set(); for (let i = 0; i < max; i++) { await p.keyboard.press('Tab'); const id = await p.evaluate(() => document.activeElement && (document.activeElement.id || document.activeElement.getAttribute('data-k') || '')); if (id) seen.add(id); }
   return ids.filter(x => !seen.has(x));
 }
+// QA N1 (all pieces): fill -> make a link -> open it in the SAME tab -> open a bad link in the same tab -> no visible error
+// (every error element really hidden or empty, nothing aria-invalid). fill(p) fills the sender form; link(p) returns the made URL.
+async function sameTabBadLink(p, { fill, link, bad, errSel }) {
+  await fill(p); const url = await link(p); const frag = (url || '').split('#')[1];
+  await p.evaluate(() => history.replaceState(null, '', location.pathname)); await p.evaluate(f => { location.hash = f; }, frag); await sleep(250);
+  const opened = await p.evaluate(() => location.hash.length > 5);
+  await p.evaluate(b => { location.hash = b; }, bad); await sleep(250);
+  const vis = await p.evaluate(sel => [...document.querySelectorAll(sel)].filter(e => e.textContent.trim() && e.getClientRects().length).map(e => (e.id || e.className) + ':' + e.textContent.trim().slice(0, 40)), errSel);
+  const rh = await reallyHidden(p, [errSel]); const inv = await p.evaluate(() => [...document.querySelectorAll('[aria-invalid=true]')].map(e => e.id));
+  return { ok: !!frag && opened && !vis.length && !inv.length && (rh.ok || !vis.length), frag: !!frag, opened, vis, inv };
+}
 function result(rows) { const bad = rows.filter(r => !r.ok); console.log(JSON.stringify(rows, null, 1)); console.log(bad.length ? 'FAIL ' + bad.map(r => r.name).join(', ') : 'PASS ' + rows.length + ' checks'); return bad.length ? 1 : 0; }
 // Local http only: Chrome logs that COOP is ignored on an untrustworthy origin. Not a page error; never filtered on https.
 function errsOf(s, scheme) { return s.errs.filter(e => !(scheme === 'http' && /Cross-Origin-Opener-Policy header has been ignored/.test(e))); }
@@ -46,4 +57,4 @@ async function reallyHidden(p, selectors) {
   }
   return { ok: Object.values(out).every(x => x.ok), out };
 }
-module.exports = { reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };
+module.exports = { sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };

@@ -236,7 +236,7 @@
   // Every load and every hashchange (valid, bad, old or empty) starts from a blank tab: nothing from a previous link survives.
   function load(h) {
     var bn = $('banner');
-    st = T.blank(defaultWeek()); selA = null; touched = {}; showAll = false; mode = 'own'; lastText = '';
+    st = T.blank(defaultWeek()); selA = null; touched = {}; showAll = false; mode = 'own'; lastText = ''; V.clearErrors(document, '.tsh-err');
     bn.hidden = true; $('own-copy').hidden = true; $('linkbox').hidden = true; $('link').value = ''; $('fbwrap').hidden = true; $('fallback').value = '';
     if (h) {
       var d = T.decode(h);

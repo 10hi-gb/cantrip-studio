@@ -1,7 +1,7 @@
 // node tests/browser/mill-byg.qa.js <host[:port]> <ip> [scheme] — Before You Go @320/390/1280 (ENGINEER SELF-CHECK)
 // QA 83a2ebcd D1–D10 + PM 10:33 scope + Writer QA-83 strings (exact). Rendered visibility via reallyHidden (computed style/box + a11y tree).
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/before-you-go/copy.js', 'utf8') + ';COPY');
 const M = require('../../mill/shared/core.js');
 const BASE = `${SCHEME}://${H}/mill/before-you-go/`;
@@ -53,7 +53,7 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     ck(w + ' 6th own question: ownLimitReached, 5 kept', oe === 'Up to 5 questions.' && nq === 5, { oe, nq });
     for (let i = 0; i < 4; i++) { await p.evaluate(() => [...document.querySelectorAll('#script .byg-rm')].pop().click()); await sleep(20); }
     t = await state(p);
-    ck(w + ' copy text: Writer templates exactly', t.text.split('\n').slice(0, 13).join('\n') === ['Pickup notes for “Used bike”', 'Notes by: Jo', '', 'Not set: 3 essentials still open. Still open: When, Contact, Instructions.', '', 'Place: “Corner of 5th and Main, by the blue mailbox” · Confirmed', 'Answer: “Side gate, ring twice”', 'When: “Sat Oct 24 2026” · Your note, not confirmed', 'Contact: “Message Sam on Marketplace or call 412-555-0187” · Your note, not confirmed', 'Instructions: Not sure', 'Bring: “Cash, $80” · Confirmed', '', 'Ask before you go:'].join('\n') && t.text.includes('• “Is the lock included?”') && t.text.endsWith(C.textFooter), t.text);
+    ck(w + ' copy text: Writer templates exactly', t.text.split('\n').slice(0, 13).join('\n') === ['Pickup notes for “Used bike”', 'Notes by: “Jo”', '', 'Not set: 3 essentials still open. Still open: When, Contact, Instructions.', '', 'Place: “Corner of 5th and Main, by the blue mailbox” · Confirmed', 'Answer: “Side gate, ring twice”', 'When: “Sat Oct 24 2026” · Your note, not confirmed', 'Contact: “Message Sam on Marketplace or call 412-555-0187” · Your note, not confirmed', 'Instructions: Not sure', 'Bring: “Cash, $80” · Confirmed', '', 'Ask before you go:'].join('\n') && t.text.includes('• “Is the lock included?”') && t.text.endsWith(C.textFooter), t.text);
     // link -> recipient
     await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(250);
     const url = await p.$eval('#link', e => e.value); ck(w + ' link made (#b2), <= 2000 chars, address bar untouched', /#b2\./.test(url) && url.length <= 2000 && (await p.evaluate(() => location.hash)) === '', url.length);
@@ -61,7 +61,7 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     await q.goto(url, { waitUntil: 'load' }); await sleep(250);
     t = await state(q);
     const rb = await q.evaluate(() => ({ t: document.getElementById('banner-t').textContent, y: document.getElementById('banner-y').textContent, n: document.getElementById('banner-n').textContent, name: (document.querySelector('.byg-fact .byg-by .byg-typed') || {}).textContent, callnote: document.getElementById('callnote').getClientRects().length ? document.getElementById('callnote').textContent : null, all: document.body.innerText }));
-    ck(w + ' D3 recipient: sender\'s facts credited to the sender (saidSender / confirmedBy with name node), never "Your note" or "Confirmed by you"', t.chips.place === 'Confirmed' && t.by.place === 'Marked confirmed by the sender: Jo' && rb.name === 'Jo' && t.chips.contact === "Sender's note · not confirmed" && t.chips.window === "Sender's note · not confirmed" && t.chips.instructions === 'Not sure' && t.by.instructions === '|Marked not sure by the sender: Jo' && !/Your note|Confirmed by you|You said/i.test(rb.all), { chips: t.chips, by: t.by });
+    ck(w + ' D3 recipient: sender\'s facts credited to the sender (saidSender / confirmedBy with name node), never "Your note" or "Confirmed by you"', t.chips.place === 'Confirmed' && t.by.place === 'Marked confirmed by the sender: “Jo”' && rb.name === '“Jo”' && t.chips.contact === "Sender's note · not confirmed" && t.chips.window === "Sender's note · not confirmed" && t.chips.instructions === 'Not sure' && t.by.instructions === '|Marked not sure by the sender: “Jo”' && !/Your note|Confirmed by you|You said/i.test(rb.all), { chips: t.chips, by: t.by });
     ck(w + ' D4 recipient: intro quotes the pickup; typedBySenderMarker under the intro and beside Contact/Call', rb.t === 'Pickup notes for “Used bike”' && rb.y === 'Typed by the sender. Not checked.' && rb.callnote === 'Typed by the sender. Not checked.' && t.call, rb);
     ck(w + ' recipient readiness note uses someSaidNoteSender', t.s === "Still open: When, Contact, Instructions. 2 details are the sender's notes, not confirmed.", t.s);
     const dom = await q.evaluate(() => ({ editable: [...document.querySelectorAll('input,textarea,select')].filter(e => !e.disabled && !e.readOnly).map(e => e.id), destructive: [...document.querySelectorAll('#b-reset,#b-link,#b-share,[id^=ok-],[id^=un-],[id^=ns-],#own-add,.byg-rm')].filter(e => !e.disabled).map(e => e.id || e.className) }));
@@ -75,8 +75,8 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     await q.click('#own-copy'); await sleep(100);
     const byv = await q.$eval('#by', e => e.value); await setVal(q, 'a-window-d', '2026-10-24'); await setVal(q, 'a-window-t', '15:00'); await q.click('#ok-window'); await sleep(80);
     t = await state(q);
-    ck(w + ' D3 own copy: name field empty; recipient confirm changes only that fact; sender\'s confirmations keep their credit', byv === '' && t.by.window === 'Confirmed by you' && t.by.place === 'Marked confirmed by the sender: Jo' && t.by.bring === 'Marked confirmed by the sender: Jo' && t.chips.contact === "Sender's note · not confirmed", t.by);
-    ck(w + ' D3 own-copy export keeps per-fact attribution', t.text.includes('When: “Sat Oct 24 2026” · Sender\'s note, not confirmed') === false && t.text.includes('When: “Sat Oct 24 2026” · Confirmed') && t.text.includes('Answer: “Sat Oct 24 2026, 3 PM”') && t.text.includes('Place: “Side gate, ring twice” · Confirmed by the sender') && t.text.includes("Contact: “Message Sam on Marketplace or call 412-555-0187” · Sender's note, not confirmed") && !t.text.includes('Notes by: Jo'), t.text);
+    ck(w + ' D3 own copy: name field empty; recipient confirm changes only that fact; sender\'s confirmations keep their credit', byv === '' && t.by.window === 'Confirmed by you' && t.by.place === 'Marked confirmed by the sender: “Jo”' && t.by.bring === 'Marked confirmed by the sender: “Jo”' && t.chips.contact === "Sender's note · not confirmed", t.by);
+    ck(w + ' D3 own-copy export keeps per-fact attribution', t.text.includes('When: “Sat Oct 24 2026” · Sender\'s note, not confirmed') === false && t.text.includes('When: “Sat Oct 24 2026” · Confirmed') && t.text.includes('Answer: “Sat Oct 24 2026, 3 PM”') && t.text.includes('Place: “Side gate, ring twice” · Confirmed by the sender') && t.text.includes("Contact: “Message Sam on Marketplace or call 412-555-0187” · Sender's note, not confirmed") && !t.text.includes('Notes by: “Jo”'), t.text);
     // D1/D2 same tab: half-typed question + link box, then bad / old / empty links reset everything
     await typeInto(q, '#own-in', 'half typed'); await q.focus('#b-link'); await q.keyboard.press('Enter'); await sleep(150);
     const lb = await q.evaluate(() => !document.getElementById('linkbox').hidden && document.getElementById('link').value.length > 0);
@@ -112,5 +112,11 @@ const toastOf = p => p.$eval('#toast', e => e.textContent);
     const r = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, wide: [...document.querySelectorAll('.byg-fact')].filter(e => e.getBoundingClientRect().right > document.documentElement.clientWidth + 1).length, clip: [...document.querySelectorAll('.byg-line')].filter(e => e.getClientRects().length && e.scrollWidth > e.clientWidth + 1).length }));
     const ov = await textOverlap(p, '#kicker, #title, #what, #ready-h, #ready-s, .byg-chip, .byg-lab > span, .byg-lab > label, .byg-line, .byg-by');
     ck(w + ' long unbroken values on the recipient view: cards fit, full text wraps, no overlap', r.sw <= w && !r.wide && !r.clip && !ov.length, { r, ov }); await s.b.close(); }
+  // QA N1 (same tab, all pieces): fill -> Copy link -> open it -> open a bad link: no stale validation errors
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const r = await sameTabBadLink(p, { errSel: '.byg-err, #own-e, #own-e2, #pickup-e, #by-e', bad: 'b2.broken',
+      fill: async p => { await typeInto(p, '#pickup', 'x'.repeat(61)); await typeInto(p, '#pickup', 'Used bike'); await typeInto(p, '#f-place', 'Corner of 5th and Main'); await typeInto(p, '#f-contact', 'Message Sam on Marketplace'); },
+      link: async p => { await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.click('#b-link'); await sleep(200); return p.$eval('#link', e => e.value); } });
+    ck(w + ' N1 same tab: bad link after fill + link + open shows zero validation errors', r.ok, r); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
