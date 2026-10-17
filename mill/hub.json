@@ -282,22 +282,23 @@
     "Nothing is booked or confirmed. Messages are copied and the sheet is printed by hand, each stamped with when the plan was checked.",
     "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it.",
     "QA all-9 NOT TESTED: C11–C14 and the tag grid (covered by the other QA run); the Edit lines address-bar step (control not shown on a received sheet, 3 cases).",
-    "QA local-64ea179 NOT TESTED: everything outside C14, C15, C16 and the listed regressions, including the full text-contrast scan (C11 scope), print and PDF, the recipient view beyond the address-bar rows, the 2,000-character URL boundary, timezone and DST, and copy text; window widths between 391 and 1279 except as used for resize; real devices and other browsers (Chrome headless only)."
+    "QA local-64ea179 NOT TESTED: everything outside C14, C15, C16 and the listed regressions, including the full text-contrast scan (C11 scope), print and PDF, the recipient view beyond the address-bar rows, the 2,000-character URL boundary, timezone and DST, and copy text; window widths between 391 and 1279 except as used for resize; real devices and other browsers (Chrome headless only).",
+    "later commit ced37c4 (household-sheet layout: app.css, app.js, index.html) untested"
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 83edf87d032af47d88508f7eed08a8e1a528a9a2: cr unit 24/24; care-rota browser 216/216 at 305–1440. Not QA.",
-   "status": "NOT READY (C11–C16 fixed: local-64ea179 retest PASS for C14–C16; open W-7 (Medium) from the all-9 recheck)",
+   "status": "READY ON LOCALHOST-PREVIEW (targeted retest at 3539188: C1–C16 and W-7 fixed)",
    "qaLocal": {
-    "verdict": "NOT READY",
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "64ea1799741988c047941a8fa5a0c37cfc138152",
-    "report": "qa/care-rota/local-64ea179/QA-local-64ea179.md",
-    "note": "C11–C16 fixed; open W-7 (Medium)"
+    "sha": "3539188eb0ef9b6d97bf9d99c79326f9bf85e791",
+    "report": "qa/care-rota/local-3539188/QA-local-3539188.md",
+    "note": "targeted retest; C1–C16 and W-7 fixed; NOT TESTED: Firefox/Safari, real devices, screen readers, real Windows High Contrast, zoom, print, dark mode"
    },
    "qaPrevious": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "83edf87d032af47d88508f7eed08a8e1a528a9a2",
-    "report": "qa/care-rota/local-83edf87/QA-local-83edf87.md"
+    "sha": "64ea1799741988c047941a8fa5a0c37cfc138152",
+    "report": "qa/care-rota/local-64ea179/QA-local-64ea179.md (also qa/care-rota/local-83edf87/QA-local-83edf87.md: 83edf87d032af47d88508f7eed08a8e1a528a9a2 also NOT READY)"
    }
   },
   {
@@ -317,6 +318,7 @@
     "Suggest uses a simple rule, not the best possible split. A task that fits nobody whole stays on the bench; nothing is split or dropped. Check only adds up your own split.",
     "Proposal only: every card, the copied text and the sheet say “Nobody has agreed to this yet.”",
     "The optional link holds only task names, minutes and helper names. Anyone with the link can read it.",
+    "History (superseded by the address-bar pass at 11d8017): QA all-9 NOT TESTED: the address-bar strip at f893087 was informational only; Five Hands has no strip commit yet.",
     "QA local-11d8017 NOT TESTED: real devices, Safari/Firefox and any engine other than Chrome 155 headless; screen readers (only ax-tree text was checked) and real clipboard permission prompts; physical printing (only the Chrome PDF for Letter, and A4 only for the suggest/check PDFs); widths other than those listed, high-contrast or forced-colors mode, and browser zoom above 100%; the 12.45 and 16.14 ring pairs as separate figures; production; experience and design calls (Creative); whether H16 is present at d68094a."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview d68094ade9c8d49edd528b278dcf2583711c78c0: unit 18 (every proto r1d assert, check() validates, conservation, stamp/stampCheck by mode); browser 247/247 at 320/360/390/641/1024/1280/1440 (incl. Creative check 5f127ab items 1–6; QA local-8206084 H1–H3; QA local-08b466c/2a02a48 H5 tiny and huge sticks in Suggest and Check, H6 tip and capacity-bar contrast and H7 over-text contrast sampled on the rendered page, H8 rolled-up label on phones). Not QA.",
