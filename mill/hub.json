@@ -269,14 +269,20 @@
     "Nothing is booked or confirmed. Messages are copied and the sheet is printed by hand, each stamped with when the plan was checked.",
     "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview cde64e3b02ca689ee7442fa3bc5bf48434c79c1c: unit 24/24 (every proto r1d assert, QA C3/C4/C7/C10, PM C9 as narrowed 04:38, regression names, codec agreement, 6,000-case reference sweep; QA 400 reference cases 400/400); browser 189/189 at 305/320/390/1280/1440. Not QA.",
-   "status": "NOT READY (QA open: C11–C13; PM-added: C14; retest pending at 83edf87; shared wrap f893087, recheck pending)",
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview 83edf87d032af47d88508f7eed08a8e1a528a9a2: cr unit 24/24; care-rota browser 216/216 at 305–1440. Not QA.",
+   "status": "NOT READY (C11–C13 fixed; open C14 (Low), C15 (Med), C16 (Low); shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
+    "sha": "83edf87d032af47d88508f7eed08a8e1a528a9a2",
+    "report": "qa/care-rota/local-83edf87/QA-local-83edf87.md",
+    "note": "C11–C13 fixed; open C14 (Low), C15 (Med), C16 (Low)"
+   },
+   "qaPrevious": {
+    "verdict": "NOT READY",
+    "label": "LOCALHOST-PREVIEW",
     "sha": "cde64e3b02ca689ee7442fa3bc5bf48434c79c1c",
-    "report": "qa/care-rota/local-cde64e3/QA-local-cde64e3.md (C14 added by PM, not in this file)",
-    "note": "open: C11 (Med), C12 (Low), C13 (Low) per QA; C14 (Low, PM-added): at 1280+ a 10-grapheme quoted name fits on one line"
+    "report": "qa/care-rota/local-cde64e3/QA-local-cde64e3.md"
    }
   },
   {
