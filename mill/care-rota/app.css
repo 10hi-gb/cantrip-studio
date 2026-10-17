@@ -62,7 +62,7 @@ textarea.plan{font:400 17px/1.5 ui-monospace,"Courier New",monospace;min-height:
 .cr-sw--covered{background:var(--meal)}
 .cr-sw--gap{background:var(--muslin);outline:2px dashed #B8452F}
 .cr-sw--double{background:#8E3E2B}
-.cr-sw--notNeeded{outline:2px solid rgba(0,0,0,.35)}
+.cr-sw--notNeeded{outline:2px solid rgba(0,0,0,.35)} /* darkened below (QA local-83edf87 C16) */
 .selvedge{gap:6px 0}
 .cr-sep{white-space:pre}
 .qgrid .patch.dbl{padding-bottom:30px}
@@ -150,3 +150,35 @@ body{overflow-wrap:break-word}
  #tags .cr-tag-dbl{grid-column:1/-1}
  #per-l{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
 }
+/* QA local-83edf87 C14: at ≥1280 the check section uses more of the window (up to 1400px, never past it, room left for a classic scrollbar) and
+   named squares keep 7px side padding (the stitching ends at 6px), so a quoted 10-grapheme name, emoji and flags included, fits one line at ≥10px. */
+@media (min-width:1280px){
+ #s2{width:min(calc(100vw - 53px),1400px);margin-left:calc((100% - min(calc(100vw - 53px),1400px))/2)}
+ .qgrid .patch.taken,.qgrid .patch.dbl{padding-left:7px;padding-right:7px}
+}
+/* QA local-83edf87 C15: a day chip's focus ring goes around the whole chip, outside it with a 3px gap of panel colour, so it shows on a checked
+   (#2F3B4C) chip as well as an unchecked one; the checkbox itself draws no ring of its own inside the chip. */
+.cr-chip input:focus-visible{outline:none}
+.cr-chip:has(input:focus-visible){outline:4px solid var(--binding);outline-offset:3px}
+/* QA local-83edf87 C16: the empty "Not needed" swatch keeps its empty look with a ≥3:1 outline against the page */
+.cr-sw--notNeeded{outline-color:var(--muted)}
+/* QA local-83edf87 C15 audit: the 4px ring sits 3px outside a control, so it reaches 7px out. Give it clear page around it: labels, legends and
+   neighbouring chips/controls stay ≥10px away, so the ring never lands on a label's descender or on the next chip's border. */
+label{margin-bottom:10px}
+.cr-need-b label{margin:10px 0 10px}
+.cr-chips{gap:10px}
+.cr-chips legend{margin-bottom:10px}
+.cr-need-h input[type=checkbox]{margin-right:4px}
+.cr-fe{margin-top:8px}
+.cr-need-h input[type=text]{margin-left:4px}
+.cr-err{padding:12px 14px}
+.cr-err ul{padding-left:24px}
+.cr-err li+li{margin-top:8px}
+.cr-err a:focus-visible{outline-offset:1px}
+.cr-fe{margin-top:12px}
+.needrow{column-gap:18px}
+.cr-err li+li{margin-top:10px}
+.cr-err a{margin-left:4px;padding:3px 4px}
+.cr-err a:focus-visible{outline-offset:2px}
+/* an invalid field keeps its red border while focused, but drops the extra 2px red halo so the ring keeps its 3px gap of field colour */
+[aria-invalid=true]:focus-visible{box-shadow:none}
