@@ -8,7 +8,7 @@
 @font-face{font-family:"Hanken Grotesk";src:url(fonts/hanken-grotesk-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
 :root{
   --osa-paper:#FFF7EE; --osa-ink:#2B1D16; --osa-mute:#6B5547;
-  --osa-ask:#C8553D; --osa-ask-ink:#9E3B26; --osa-ask-tint:#F9DED5; --osa-ask-soft:#FCEDE7;
+  --osa-ask:#C14F37; /* QA all9 W-2: was #C8553D (white on it 4.35:1); same hue (10deg), white on it 4.73:1 */ --osa-ask-ink:#9E3B26; --osa-ask-tint:#F9DED5; --osa-ask-soft:#FCEDE7;
   --osa-ans:#E9A23B; --osa-ans-ink:#7A4E00; --osa-ans-tint:#FCE6BE; --osa-ans-soft:#FEF3DE;
   --osa-seam:#2B1D16; --osa-chg:#2B1D16; --osa-focus:#1F5FBF;
   --osa-head:"Chivo",system-ui,sans-serif; --osa-body:"Hanken Grotesk",system-ui,sans-serif;
