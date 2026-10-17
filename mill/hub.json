@@ -22,18 +22,14 @@
     "Fee rule: by amount, the fee is split over all quantity and the unclaimed row carries its own fee share until someone takes it or the sender assigns it; equal, the fee is split among households taking some, and with no takers the split is blocked.",
     "Recipients see a read-only split. \"Change my amount\" makes a new link on the recipient's device; it does not update or notify the sender."
    ],
-   "engineer": {
-    "pin": "83a2ebcd",
-    "commit": "d37121e7f446865ae3e7e930042ffb1582390070",
-    "tree": "dd88bafd8539e76efa7a2ffbc142dfb3a1a6fd6d",
-    "result": "unit tests 21+5 pass; live browser check 107/107 at 320/390/1280 (incl. D1-D4 checks, read-only recipient, fee rule); byte-compare 65/65."
-   },
-   "status": "NOT READY",
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview 7dfd6acc992de8166ba4ba4d8e3c1678a44d74c1: unit 21+5; browser sack 309/309 at 320/390/1280 (incl. QA local-a254042 D10-r1/D10-r2 checks); quote-spoof 63/63, recipient-a11y 87/87, sender-typed 12/12. Not QA.",
+   "status": "NOT READY (retest pending at 7dfd6ac)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "7b5ceebe537f5f0e88827800af3a0579dcb089a9",
-    "report": "qa/split-the-sack/local-7b5ceeb/QA-local-7b5ceeb.md"
+    "sha": "a254042a59e94fb6881c36f78f84f14d124da5a6",
+    "report": "qa/split-the-sack/local-a254042/QA-local-a254042.md",
+    "note": "retest pending at 7dfd6ac"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -62,12 +58,12 @@
     "tree": "1f37ffe0ce0236ea213816e7f4cdf74961bf59c9",
     "result": "unit tests 9 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
    "qaLocal": {
-    "verdict": "NOT READY",
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "92575f199084d598f107bc98fa22e7bb4aae6be2",
-    "report": "qa/before-you-go/local-92575f1/QA-local-92575f1.md"
+    "sha": "774b68d4a03a7d5c0fa0e64fd4a2f0de40497f06",
+    "report": "qa/before-you-go/local-774b68d/QA-local-774b68d.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -156,12 +152,12 @@
     "Nothing is sent or booked. A proposal is a suggestion worked out from what the sender typed; nobody has replied to it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 715aa3a: unit 19 incl. DST; browser 116/116 at 320/390/1280. Not QA.",
-   "status": "NOT READY",
+   "status": "READY ON LOCALHOST-PREVIEW",
    "qaLocal": {
-    "verdict": "NOT READY",
+    "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "2e2d9c5aff35e5ef79c3ce57b31179b92cb42c96",
-    "report": "qa/the-same-hour/local-2e2d9c5/QA-local-2e2d9c5.md"
+    "sha": "14df77a1622593f85adf2d50ba8a0369390c37c6",
+    "report": "qa/the-same-hour/local-14df77a/QA-local-14df77a.md"
    }
   },
   {
