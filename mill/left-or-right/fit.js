@@ -1,14 +1,14 @@
 'use strict';
-// Left or Right: answer layout for the board tiles and the chosen screen (Creative r2 + QA local-372ce92 L1). Pure: no DOM;
+// Left or Right: answer layout for the board tiles and the chosen screen (Creative r2 + QA local-372ce92 L1 + local-d0ca704 L5). Pure: no DOM;
 // widths come from an injected measure(). fit.js decides every line; the page draws exactly these lines (white-space:pre,
 // no CSS hyphenation), so what is planned is what is rendered.
-// Wrap rule (PM): break at spaces first, then at the hyphens already in the text (no hyphen added; 2+ letters each side). Only a segment (the run
-// between those breaks) that can't fit on a line by itself may be broken inside, and then: tier 1 dictionary points (Liang
-// patterns, hyph-en.js), tier 2 any letter point, both with at least 4 letters on each side and a visible added hyphen,
-// tier 3 grapheme boundaries (a run of emoji that can't fit; never inside an emoji, no hyphen). A segment that fits is never
-// split. The closing quote is counted on the last line and always stays with the last grapheme.
-// Order: natural breaks only (spaces + existing hyphens) at the largest size from the normal size down to the 24px floor;
-// only if that fails at 24px, inner breaks: fewest lines, then the largest size, then the most even lines.
+// Wrap rule (PM, QA local-d0ca704 L5): greedy first-fit, never balanced. Words go on the current line while they fit (the
+// closing quote counted on the last line, the opening one on the first). A word that can't fit on a line by itself is
+// split at its own hyphens (no hyphen added; 2+ letters each side), filled greedily too. Only a hyphen segment that still
+// can't fit a line by itself is broken inside, greedily at the latest point that fits: tier 1 dictionary points (Liang
+// patterns, hyph-en.js), tier 2 any letter point, both with 4+ letters each side (and in every piece) and an added hyphen, tier 3 grapheme
+// boundaries (emoji runs; never inside an emoji, no hyphen). Size: the largest size, normal down to the 24px floor, at
+// which the greedy layout fits with no inner break; only if none, the largest size with tier 1, then tier 2, then tier 3.
 (function (root, factory) { var m = factory(root.LR_HYPH || (typeof require === 'function' ? require('./hyph-en.js') : null)); if (typeof module === 'object' && module.exports) module.exports = m; else root.LRFIT = m; })(this, function (HY) {
   var PAT = null, EXC = null, MAXP = 0, MINF = 4;
   function load() { if (PAT) return; PAT = Object.create(null); EXC = Object.create(null);
@@ -40,33 +40,48 @@
       else if (HYPH.test(G[i]) && i > a && i + 1 < n && G[i + 1] !== ' ' && lets(a, i, -1) >= 2 && lets(i + 1, n, 1) >= 2) { seg(a, i + 1); nat.push({ pos: i + 1, skip: 0, hy: false, kind: 'h' }); a = i + 1; } }
     seg(a, n); return { G: G, n: n, nat: nat, segs: segs };
   }
-  // fewest lines (<= K), then the smallest widest line, then the smallest spread, over the allowed breaks
-  function layout(P, cands, fits, width, K) {
-    var C = [{ pos: 0, skip: 0, hy: false, kind: 'start' }].concat(cands.slice().sort(function (x, y) { return x.pos - y.pos; })).concat([{ pos: P.n, skip: 0, hy: false, kind: 'end' }]), m = C.length;
-    function text(i, j) { return P.G.slice(C[i].pos + C[i].skip, C[j].pos).join('') + (C[j].hy ? '-' : ''); }
-    var best = []; for (var i = 0; i < m; i++) best.push([]); best[0][0] = { M: 0, mn: Infinity, prev: -1 };
-    for (var k = 1; k <= K; k++) for (var j = 1; j < m; j++) for (var i2 = 0; i2 < j; i2++) { var b = best[i2][k - 1]; if (!b) continue; var s = text(i2, j); if (!s) continue; var f = i2 === 0, l = j === m - 1;
-      if (!fits(s, f, l)) continue; var w = width(s, f, l), M = Math.max(b.M, w), mn = Math.min(b.mn, w), cur = best[j][k];
-      if (!cur || M < cur.M - 0.01 || (Math.abs(M - cur.M) <= 0.01 && M - mn < cur.M - cur.mn - 0.01)) best[j][k] = { M: M, mn: mn, prev: i2 }; }
-    for (var k2 = 1; k2 <= K; k2++) if (best[m - 1][k2]) { var lines = [], kinds = [], j2 = m - 1, kk = k2; while (j2 > 0) { var pr = best[j2][kk].prev; lines.unshift(text(pr, j2)); if (j2 < m - 1) kinds.unshift(C[j2].kind); j2 = pr; kk--; } return { lines: lines, kinds: kinds }; }
-    return null;
+  // greedy first-fit at one size; level 0 natural breaks only, 1 + dictionary, 2 + letter fallback, 3 + graphemes
+  function greedy(P, fits, level) {
+    var G = P.G, n = P.n, lines = [], kinds = [], ls = -1, le = -1, i, k;
+    function txt(a, b, hy) { return G.slice(a, b).join('') + (hy ? '-' : ''); }
+    function fit(a, b, hy) { return fits(txt(a, b, hy), a === 0, b === n && !hy); }
+    function push(a, b, hy, kind) { lines.push(txt(a, b, hy)); kinds.push(kind); }
+    function lets(x, y) { var c = 0; for (var q = x; q < y; q++) if (LETTER.test(G[q])) c++; return c; } // a piece between two inner breaks keeps 4+ letters too
+    function close(nextStart) { push(ls, le, false, G[le] === ' ' && nextStart === le + 1 ? 's' : 'h'); ls = -1; }
+    var words = [], a = 0; for (i = 0; i <= n; i++) if (i === n || G[i] === ' ') { if (i > a) words.push([a, i]); a = i + 1; }
+    var hpos = {}; P.nat.forEach(function (b) { if (b.kind === 'h') hpos[b.pos] = 1; });
+    for (var w = 0; w < words.length; w++) { var ws = words[w][0], we = words[w][1];
+      if (ls >= 0 && fit(ls, we)) { le = we; continue; }
+      if (fit(ws, we)) { if (ls >= 0) close(ws); ls = ws; le = we; continue; }
+      // the word can't fit a line by itself: its own hyphens, greedily
+      var cuts = [ws]; for (k = ws + 1; k < we; k++) if (hpos[k]) cuts.push(k); cuts.push(we);
+      for (var c = 0; c + 1 < cuts.length; c++) { var ps = cuts[c], pe = cuts[c + 1];
+        if (ls >= 0 && fit(ls, pe)) { le = pe; continue; }
+        if (fit(ps, pe)) { if (ls >= 0) close(ps); ls = ps; le = pe; continue; }
+        if (!level) return null;
+        // a hyphen segment that can't fit a line by itself: break inside, greedily at the latest allowed point that fits
+        var sg = null; P.segs.forEach(function (x) { if (x.s === ps) sg = x; }); if (!sg) return null;
+        var pts = []; for (k = 0; k < level; k++) pts = pts.concat(sg.t[k]); pts.sort(function (x, y) { return x.pos - y.pos; });
+        var pos = ps;
+        for (;;) { var st = ls >= 0 ? ls : pos;
+          if (fit(st, pe)) { ls = st; le = pe; break; }
+          var best = null; for (k = pts.length - 1; k >= 0; k--) if (pts[k].pos > pos && pts[k].pos < pe && (pts[k].kind === 'g' || lets(pos, pts[k].pos) >= MINF) && fit(st, pts[k].pos, pts[k].hy)) { best = pts[k]; break; }
+          if (best) { push(st, best.pos, best.hy, best.kind); ls = -1; pos = best.pos; continue; }
+          if (ls >= 0) { close(pos); continue; }
+          return null; } } }
+    if (ls >= 0) { lines.push(txt(ls, le, false)); }
+    return lines.length ? { lines: lines, kinds: kinds } : null;
   }
-  // allowed breaks at one size and level (0 natural only; 1 + dictionary; 2 + letter fallback; 3 + graphemes), inner
-  // breaks only inside segments that don't fit by themselves
-  function cands(P, level, fits) { var out = P.nat.slice(); if (!level) return out;
-    P.segs.forEach(function (x) { var s = P.G.slice(x.s, x.e).join(''); if (fits(s, x.s === 0, x.e === P.n)) return; for (var t = 0; t < level; t++) out = out.concat(x.t[t]); }); return out; }
   // o: { sizes: [desc px], measure(str, first, last) -> {w, marks, hang} at o.R px, R, avail (px or fn(size)), full, ok(size, lines)? }
   // A line must fit the content box with its marks counted, and with the marks hung it must stay inside the tile padding.
   function plan(inner, o) {
-    var P = parse(inner), cache = {}, ok = o.ok || function () { return true; }, i, K, L;
+    var P = parse(inner), cache = {}, ok = o.ok || function () { return true; }, i, L;
     function mz(s, f, l) { var key = (f ? 1 : 0) + (l ? 2 : 0) + s; return cache[key] || (cache[key] = o.measure(s, f, l)); }
-    function mk(size) { var r = size / o.R, av = typeof o.avail === 'function' ? o.avail(size) : o.avail; return { fits: function (s, f, l) { var m = mz(s, f, l); return (m.w + (m.marks || 0)) * r <= av - 1 && (m.w + m.hang) * r <= o.full - 1; }, width: function (s, f, l) { return mz(s, f, l).w * r; } }; }
+    function fitsAt(size) { var r = size / o.R, av = typeof o.avail === 'function' ? o.avail(size) : o.avail; return function (s, f, l) { var m = mz(s, f, l); return (m.w + (m.marks || 0)) * r <= av - 1 && (m.w + m.hang) * r <= o.full - 1; }; }
     function done(size, res, level) { return { size: size, lines: res.lines, kinds: res.kinds, level: level, broken: res.kinds.some(function (k) { return k === 'd' || k === 'f' || k === 'g'; }) }; }
-    var maxK = P.nat.length + 1 + 12;
-    for (i = 0; i < o.sizes.length; i++) { var f0 = mk(o.sizes[i]), r0 = layout(P, cands(P, 0, f0.fits), f0.fits, f0.width, maxK); if (r0 && ok(o.sizes[i], r0.lines)) return done(o.sizes[i], r0, 0); }
-    for (L = 1; L <= 3; L++) for (K = 1; K <= maxK; K++) for (i = 0; i < o.sizes.length; i++) { var f = mk(o.sizes[i]), r = layout(P, cands(P, L, f.fits), f.fits, f.width, K); if (r && ok(o.sizes[i], r.lines)) return done(o.sizes[i], r, L); }
+    for (L = 0; L <= 3; L++) for (i = 0; i < o.sizes.length; i++) { var r = greedy(P, fitsAt(o.sizes[i]), L); if (r && ok(o.sizes[i], r.lines)) return done(o.sizes[i], r, L); }
     var last = o.sizes[o.sizes.length - 1]; return { size: last, lines: [P.G.join('')], kinds: [], level: 4, broken: false, overflow: true };
   }
   function sizes(base, floor) { var out = [], s = base; while (s > floor + 0.01) { out.push(Math.round(s * 100) / 100); s -= 2; } out.push(floor); return out; }
-  return { hyphenate: hyphenate, graphemes: graphemes, parse: parse, layout: layout, plan: plan, sizes: sizes, MINF: MINF };
+  return { hyphenate: hyphenate, graphemes: graphemes, parse: parse, greedy: greedy, plan: plan, sizes: sizes, MINF: MINF };
 });

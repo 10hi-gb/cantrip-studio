@@ -79,15 +79,21 @@
   // QA local-372ce92 L3: Chrome may break between any two emoji, so a word holding emoji (🍕🍕🍕, 🍕🍕🍕!) goes in an inline
   // block no wider than the line: it moves whole to the next line when it fits there, and only a run wider than the whole
   // line breaks, between emoji (never inside one). The text itself is unchanged for copy and the accessibility tree.
-  var EMO = /\p{Extended_Pictographic}/u;
+  // QA local-d0ca704 L6: "emoji" is any extended grapheme cluster (Intl.Segmenter, as on the board) holding an
+  // Extended_Pictographic or Regional_Indicator code point, so flag pairs (🇬🇧🇫🇷🇯🇵) count too.
+  var EMO = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
+  function hasEmoji(x) { return LRFIT.graphemes(x).some(function (g) { return EMO.test(g); }); }
   function keepEmoji(n) { var w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT), ts = [], t; while ((t = w.nextNode())) ts.push(t);
-    ts.forEach(function (t) { if (!EMO.test(t.data)) return; var f = document.createDocumentFragment();
-      t.data.split(/(\s+)/).forEach(function (x) { if (!x) return; if (EMO.test(x)) { var b = el('span', 'lr-nb'); b.textContent = x; f.appendChild(b); } else f.appendChild(document.createTextNode(x)); });
+    ts.forEach(function (t) { if (!hasEmoji(t.data)) return; var f = document.createDocumentFragment();
+      t.data.split(/(\s+)/).forEach(function (x) { if (!x) return; if (hasEmoji(x)) { var b = el('span', 'lr-nb'); b.textContent = x; f.appendChild(b); } else f.appendChild(document.createTextNode(x)); });
       t.parentNode.replaceChild(f, t); }); return n; }
   function preview() {
     var x = st.qs[edRow] || st.qs[0];
     function set(id, v) { var e = $(id); e.textContent = ''; if (L.clean(v)) e.appendChild(keepEmoji(typed(v))); }
-    set('pv-q', x.q); set('pv-l', x.l); set('pv-r', x.r); $('pv-la').textContent = '\u25C0 ' + C.leftSide; $('pv-ra').textContent = C.rightSide + ' \u25B6';
+    // the preview answers are drawn like the board tiles (QA local-d0ca704 L5): fit.js plans the lines, the page draws them
+    function setA(id, v) { var e = $(id); e.textContent = ''; e.style.fontSize = ''; if (L.clean(v)) e.appendChild(typedVis(v)); }
+    set('pv-q', x.q); setA('pv-l', x.l); setA('pv-r', x.r); $('pv-la').textContent = '\u25C0 ' + C.leftSide; $('pv-ra').textContent = C.rightSide + ' \u25B6';
+    fitPreview();
   }
 
   // ---------- recipient (read-only) view
@@ -133,15 +139,15 @@
     var cs = getComputedStyle(box), key = cs.fontFamily + '|' + cs.fontWeight + '|' + cs.fontStyle;
     if (!qCache[key]) { var pr = probe(box, R); pr.textContent = '\u201C'; var o = pr.offsetWidth; pr.textContent = '\u201D'; var c = pr.offsetWidth; unprobe(pr); qCache[key] = { o: o / R, c: c / R }; }
     return qCache[key]; }
-  function tileOf(box) { return box.closest('.half,.chosen,.qstrip') || box.parentElement; }
+  function tileOf(box) { return box.closest('.half,.chosen,.qstrip,.lr-pv') || box.parentElement; }
   function extra(q, size, pad) { return { s: Math.max(0, Math.ceil(q.o * 0.8 * size - pad + 1)), e: Math.max(0, Math.ceil(q.c * 0.8 * size - pad + 1)) }; } // the part of a hung mark the tile padding can't hold
   function hang(box, size) { if (!box.getClientRects().length) return; var q = quoteEm(box), t = tileOf(box); box.style.setProperty('--qo', q.o.toFixed(3)); box.style.setProperty('--qc', q.c.toFixed(3));
     box.style.paddingInlineStart = box.style.paddingInlineEnd = ''; var x = extra(q, size || px(box, 'fontSize'), Math.min(px(t, 'paddingLeft'), px(t, 'paddingRight'))); // a full-width line still hangs inside the tile
     box.style.paddingInlineStart = x.s + 'px'; box.style.paddingInlineEnd = x.e + 'px'; }
   function innerOf(box) { var t = box.querySelector('.lr-sr').textContent; return t.length >= 2 && t[0] === '\u201C' && t[t.length - 1] === '\u201D' ? t.slice(1, -1) : t; }
   function lines(box, ls) { box.querySelector('.lr-vt').setAttribute('data-v', ls.join('\n')); }
-  function planFor(box, tile, sizes) { // measure at R px once per string; widths scale with the size
-    lines(box, ['']); box.style.fontSize = ''; box.style.paddingInlineStart = box.style.paddingInlineEnd = ''; hang(box, 0); var q = quoteEm(box), cw = box.clientWidth, pr = probe(box, R), padIn = px(tile, 'paddingLeft') + px(tile, 'paddingRight'), padMin = Math.min(px(tile, 'paddingLeft'), px(tile, 'paddingRight'));
+  function planFor(box, tile, sizes, cwAt) { // measure at R px once per string; widths scale with the size
+    lines(box, ['']); box.style.fontSize = ''; box.style.paddingInlineStart = box.style.paddingInlineEnd = ''; hang(box, 0); var q = quoteEm(box), cw = cwAt || box.clientWidth, pr = probe(box, R), padIn = px(tile, 'paddingLeft') + px(tile, 'paddingRight'), padMin = Math.min(px(tile, 'paddingLeft'), px(tile, 'paddingRight'));
     var o = { R: R, avail: function (size) { var x = extra(q, size, padMin); return cw - x.s - x.e; }, sizes: sizes || LRFIT.sizes(px(box, 'fontSize'), FLOOR),
       measure: function (s, f, l) { pr.textContent = s; return { w: pr.offsetWidth, marks: (f ? q.o * 0.8 * R : 0) + (l ? q.c * 0.8 * R : 0), hang: 2 * Math.max(f ? q.o * 0.8 * R : 0, l ? q.c * 0.8 * R : 0) }; } };
     o.full = cw + padIn - 4; // hanging marks may use the tile padding, never the tile edge
@@ -153,13 +159,18 @@
   // scroll (with classic scrollbars that took 15px off the width being planned: 24.7px where 26.8px fits at 320x760); if
   // the page width still changes once drawn, plan again once at the new width
   function blank(box) { lines(box, ['']); box.style.fontSize = ''; }
+  // if drawing changes the page width (a classic scrollbar comes or goes with the new height), plan once more at the
+  // width the drawn page actually has (read before blanking, since blanking would take the scrollbar away again)
   function fitBoard(again) { if ($('s2').hidden) return; hang($('b-q'));
-    var a = $('h-l-a'), b = $('h-r-a'), vw = (blank(a), blank(b), document.documentElement.clientWidth), ra = planFor(a, $('h-l')), rb = planFor(b, $('h-r')), m = Math.min(ra.size, rb.size); // one size for both halves, so neither looks favoured
-    draw(a, ra.size === m ? ra : planFor(a, $('h-l'), [m])); draw(b, rb.size === m ? rb : planFor(b, $('h-r'), [m]));
+    var a = $('h-l-a'), b = $('h-r-a'), wa = again && a.clientWidth, wb = again && b.clientWidth, vw = (blank(a), blank(b), document.documentElement.clientWidth), ra = planFor(a, $('h-l'), null, wa), rb = planFor(b, $('h-r'), null, wb), m = Math.min(ra.size, rb.size); // one size for both halves, so neither looks favoured
+    draw(a, ra.size === m ? ra : planFor(a, $('h-l'), [m], wa)); draw(b, rb.size === m ? rb : planFor(b, $('h-r'), [m], wb));
     if (!again && document.documentElement.clientWidth !== vw) fitBoard(true); }
-  function fitChosen(again) { if ($('s3').hidden) return; hang($('c-q')); var a = $('c-a'), vw = (blank(a), document.documentElement.clientWidth); draw(a, planFor(a, $('s3')));
+  function fitChosen(again) { if ($('s3').hidden) return; hang($('c-q')); var a = $('c-a'), wa = again && a.clientWidth, vw = (blank(a), document.documentElement.clientWidth); draw(a, planFor(a, $('s3'), null, wa));
     if (!again && document.documentElement.clientWidth !== vw) fitChosen(true); }
-  function refit() { fitBoard(false); fitChosen(false); }
+  function fitPreview() { var a = $('pv-l'), b = $('pv-r'); if (!a || !a.getClientRects().length) return; var bx = [a, b].filter(function (e) { return e.querySelector('.lr-vt'); }); if (!bx.length) return;
+    bx.forEach(blank); var rs = bx.map(function (e) { return planFor(e, e.parentElement); }), m = Math.min.apply(null, rs.map(function (r) { return r.size; }));
+    bx.forEach(function (e, i) { draw(e, rs[i].size === m ? rs[i] : planFor(e, e.parentElement, [m])); }); }
+  function refit() { fitBoard(false); fitChosen(false); fitPreview(); }
   function setHi() { ['l', 'r'].forEach(function (s) { $('h-' + s).classList.toggle('scan', st.mode === 'switch' && bd && bd.hi === s); }); }
   function stopBoard() { clearInterval(scanT); clearTimeout(dueT); cancelAnimationFrame(raf); scanT = dueT = raf = 0; ringOff(); }
   function ringOff() { cancelAnimationFrame(raf); raf = 0; ['l', 'r'].forEach(function (s) { var h = $('h-' + s); h.classList.remove('holding'); h.style.removeProperty('--p'); }); }
@@ -192,7 +203,7 @@
     put($('c-q'), typedVis(x.q)); put($('c-a'), typedVis(L.answerOf(x, side))); $('c-tag').textContent = M.fill(C.chosenTag, { side: L.sideWord(C, side) });
     $('c-next').hidden = last; $('c-done').hidden = !last; $('c-done').textContent = C.done; $('c-fb').hidden = true;
     $('live').textContent = M.fill(C.chosenAria, { answer: qt(L.answerOf(x, side)), side: L.sideWord(C, side) });
-    screen(3); fitChosen(); renderAnswers();
+    screen(3); renderAnswers(); fitChosen(); // the answers list first: it can bring in a page scrollbar (classic scrollbars), which the chosen answer is planned under
     guard(s3); // the press that picked can't also press a button here
     (last ? $('c-send') : $('c-next')).focus({ preventScroll: true });
   }
