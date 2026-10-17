@@ -18,7 +18,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     await typeInto(p, '#f-d', 'Tue Oct 20'); await p.focus('#f-s'); await p.keyboard.type('0400PM'); await p.focus('#f-t'); await p.keyboard.type('0600PM');
     await typeInto(p, '#f-f', 'Dana'); await typeInto(p, '#f-o', 'Sam');
     t = await p.evaluate(() => ({ s: document.getElementById('f-s').value, t: document.getElementById('f-t').value, text: document.getElementById('text').textContent }));
-    ck(w + ' sender text export', t.s === '16:00' && t.t === '18:00' && t.text.includes('When: Tue Oct 20, 4 PM–6 PM') && t.text.startsWith('From Dana'), t);
+    ck(w + ' sender text export', t.s === '16:00' && t.t === '18:00' && t.text.includes('When: Tue Oct 20, 4 PM–6 PM') && t.text.startsWith('From: Dana\nThe favor, as typed: “Pick up groceries from my porch and drop them at Mom\'s”\n'), t);
     await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(300);
     const askUrl = await p.$eval('#link', e => e.value); ck(w + ' ask link made (#a1)', /#a1\./.test(askUrl), askUrl.length);
     ck(w + ' address bar not rewritten', (await p.evaluate(() => location.hash)) === '', null);
@@ -36,7 +36,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     // counteroffer: collection-only Wed 5–6
     await typeInto(q, '#o-w', 'Collection only'); await sleep(50); await typeInto(q, '#o-d', 'Wed Oct 21'); await sleep(50); await q.focus('#o-s'); await q.keyboard.type('0500PM'); await sleep(100);
     t = await q.evaluate(() => ({ states: [...document.querySelectorAll('.osa-term')].map(e => e.className.replace('osa-term ', '')), struck: [...document.querySelectorAll('.osa-term .ask s')].map(e => e.textContent), btn: document.getElementById('b-rlink').textContent, text: document.getElementById('text').textContent }));
-    ck(w + ' changed terms shown against original', t.states.join() === 'is-changed,is-same,is-changed' && t.struck.length === 2 && t.btn === 'Copy my reply link' && t.text.includes('Favor: Collection only (asked: Pick up groceries') && t.text.includes('Time it takes: 20 minutes max (same)'), t);
+    ck(w + ' changed terms shown against original', t.states.join() === 'is-changed,is-same,is-changed' && t.struck.length === 2 && t.btn === 'Copy my reply link' && t.text.includes('Favor: “Collection only” (asked: “Pick up groceries from my porch and drop them at Mom\'s”)') && t.text.includes('Time it takes: 20 minutes max (same)'), t);
     await q.focus('#b-rlink'); await q.keyboard.press('Enter'); await sleep(300);
     const repUrl = await q.$eval('#link', e => e.value); ck(w + ' reply link made (#r1)', /#r1\./.test(repUrl), repUrl.length);
     // SENDER opens the reply
@@ -74,7 +74,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
   { const s = await session(H, IP, { shareCancel: true }); const { p } = s; await p.setViewport({ width: 390, height: 800 });
     await p.goto(BASE, { waitUntil: 'load' }); const f = await p.evaluate(() => ASK.encodeAsk({ w: 'Water plants', e: 10, u: 'min', d: 'Sat', s: '09:00', t: '10:00', h: '', f: 'Ana', o: 'Bo' }));
     await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await p.focus('#c-y'); await p.keyboard.press('Enter'); await sleep(50);
-    await p.focus('#f-note'); await p.keyboard.type('Happy to.'); const nt = await p.evaluate(() => ({ vis: document.getElementById('f-note').getBoundingClientRect().height > 20, text: document.getElementById('text').textContent })); ck('390 yes + optional note visible and exported', nt.vis && nt.text.endsWith('Note: Happy to.'), nt); await p.focus('#b-rshare'); await p.keyboard.press('Enter'); await sleep(300);
+    await p.focus('#f-note'); await p.keyboard.type('Happy to.'); const nt = await p.evaluate(() => ({ vis: document.getElementById('f-note').getBoundingClientRect().height > 20, text: document.getElementById('text').textContent })); ck('390 yes + optional note visible and exported', nt.vis && nt.text.endsWith('Note: “Happy to.”'), nt); await p.focus('#b-rshare'); await p.keyboard.press('Enter'); await sleep(300);
     const t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, sel: document.activeElement.id, link: document.getElementById('link').value }));
     ck('390 reply share cancel keeps link selectable', t.toast === 'Not sent. Your reply is still here.' && t.sel === 'link' && /#r1\./.test(t.link), t); ck('390 share-cancel no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   // D1/D2/D4 pattern checks carried over from Split the Sack QA: long single-word sender values never widen the page or overlap; full name kept in title
@@ -127,8 +127,9 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     ck(w + ' D7: replyPrivacy shown once on Yes / Part of it / Not this time; no note field on Not this time', views.y.n === 1 && views.p.n === 1 && views.n.n === 1 && views.y.note && views.p.note && !views.n.note, views);
     // recipient Start over: clears own unsent reply, keeps ask + hash
     await p.click('#c-y'); await sleep(50); await typeInto(p, '#f-note', 'Happy to'); await p.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.focus('#b-rlink'); await p.keyboard.press('Enter'); await sleep(120);
-    const before = await p.evaluate(() => location.hash); await p.focus('#b-rreset'); await p.keyboard.press('Enter'); await sleep(150);
+    let dlgMsg = ''; const onD = d => { dlgMsg = d.message(); }; p.on('dialog', onD); const before = await p.evaluate(() => location.hash); await p.focus('#b-rreset'); await p.keyboard.press('Enter'); await sleep(150);
     let t = await p.evaluate(() => ({ hash: location.hash, checked: [...document.querySelectorAll('[role=radio]')].filter(b => b.getAttribute('aria-checked') === 'true').length, note: !!document.getElementById('f-note'), link: document.getElementById('link').value, lb: document.getElementById('linkbox').hidden, title: document.getElementById('title').textContent, toast: document.getElementById('toast').textContent }));
+    p.off('dialog', onD); ck(w + ' recipient Start over confirm uses Writer replyResetConfirm exactly', dlgMsg === 'Clear your reply? The ask stays as it is.', dlgMsg);
     ck(w + ' recipient Start over: own reply cleared (choice, note, link box value), ask and its link kept', t.hash === before && /^#a1\./.test(t.hash) && !t.checked && !t.note && t.link === '' && t.lb && t.title.startsWith('Small ask from:') && t.toast === C.resetDone, t);
     // reply link from "Not this time" holds no note
     await p.click('#c-n'); await sleep(50); await p.focus('#b-rlink'); await p.keyboard.press('Enter'); await sleep(120); const rl = await p.$eval('#link', e => e.value);
@@ -147,7 +148,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     await typeInto(p, '#f-w', 'x'.repeat(141)); await p.focus('#f-e'); await sleep(60); const e141 = await p.$eval('#e-w', e => e.textContent);
     await typeInto(p, '#f-w', 'Line A'); await p.keyboard.down('Shift'); await p.keyboard.press('Enter'); await p.keyboard.up('Shift'); await p.keyboard.type('Line B'); await typeInto(p, '#f-e', '20'); await typeInto(p, '#f-d', 'Tue'); await p.focus('#f-s'); await p.keyboard.type('0400PM'); await p.focus('#f-t'); await p.keyboard.type('0600PM'); await typeInto(p, '#f-f', 'Dana'); await typeInto(p, '#f-o', 'Sam'); await sleep(60);
     const tx = await p.$eval('#text', e => e.textContent);
-    ck(w + ' composer: 141 characters refused (cap 140); typed line break kept in copy text', e141 === M.plural(C.actionTooLong, 1) && tx.includes('Small favor: Line A\nLine B\n'), { e141, tx });
+    ck(w + ' composer: 141 characters refused (cap 140); typed line break kept in copy text', e141 === M.plural(C.actionTooLong, 1) && tx.includes('The favor, as typed: “Line A\nLine B”\n'), { e141, tx });
     await p.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(120); const had = await p.$eval('#link', e => e.value);
     await p.focus('#b-reset'); await p.keyboard.press('Enter'); await sleep(150); const after = await p.$eval('#link', e => e.value);
     ck(w + ' D6: Start over empties the hidden link box', /#a1\./.test(had) && after === '', { had: had.length, after });
