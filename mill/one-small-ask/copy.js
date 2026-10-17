@@ -1,4 +1,4 @@
-// one-small-ask — visitor copy (Writing Bot, 2026-10-16). Matches the Wave 1-2 scope brief in briefs/ (scopes proposed by the Cantrip agents under Joshua's authorization). App reads all text from COPY.
+// one-small-ask — visitor copy (Writing Bot, 2026-10-16). Matches briefs/JOSHUA-SCOPES-WAVE1-2.md. App reads all text from COPY.
 const COPY = {
   "title": "One Small Ask",
   "studioName": "Cantrip Studio",
@@ -58,8 +58,8 @@ const COPY = {
   "shareText": "Small favor?",
   "shareCancel": "Not sent. The ask is still here.",
   "privacy": "The ask lives in the link and nowhere else; nothing is uploaded. Anyone with the link can read it, and it may stay in browser history.",
-  "receiverIntro": "{from} is asking:",
-  "receiverIntroAnon": "Someone is asking:",
+  "receiverIntro": "Small ask from: {from}",
+  "receiverIntroAnon": "Small ask (no name given)",
   "replyHeading": "Your answer",
   "replyYes": "Yes",
   "replyPart": "Part of it",
@@ -128,13 +128,15 @@ const COPY = {
   "copyReplyLink": "Copy my reply link",
   "askAgainChanged": "Ask again, changed",
   "askSomeoneElse": "Ask someone else",
-  "replySendYourself": "You send this yourself. {from} won't see it until you do.",
+  "replySendYourself": "You send this yourself. Nobody sees it until you do.",
   "replySendYourselfAnon": "You send this yourself. Nobody sees it until you do.",
+  "linkLabel": "Link",
+  "errorRange": "Up to {max}.",
   "noBookingNote": "Nothing has been booked.",
   "noReasonReceived": "No reason was given, and none is needed.",
   "knownPersonNote": "For someone you know.",
   "emergencyNote": "In an emergency, call your local emergency number.",
-  "textAsk": "{fromLine}Small favor: {action}\nAt most: {effort}\nWhen: {window}\n{whereLine}You can say yes, take part of it, or say not this time.",
+  "textAsk": "{fromLine}Small favor: {action}\nTime: {effort}\nWhen: {window}\n{whereLine}You can say yes, take part of it, or say not this time.",
   "textFromLine": "From {from}\n",
   "textWhereLine": "Where: {where}\n",
   "textReplyYes": "Re: {action}\nYes, as asked: {effort}, {window}.{whereSuffix}{noteLine}",
@@ -145,5 +147,7 @@ const COPY = {
   "textReplyNo": "Re: {action}\nNot this time.{noteLine}",
   "textNoteLine": "\nNote: {note}",
   "diffWhere": "Where",
-  "deltaAria": "Changes"
+  "deltaAria": "Changes",
+  "receiverAskLabel": "Their ask, as typed:",
+  "quoteWrap": "“{text}”"
 };

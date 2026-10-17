@@ -147,5 +147,15 @@ const COPY = {
   "changeNoteNamed": "This makes a new link for you to send back. It doesn't change {organizer}'s copy or tell them anything.",
   "changeMakeLink": "Make my new link",
   "changeShareText": "A changed amount for the split",
-  "changeCancel": "Back to the proposal"
+  "changeCancel": "Back to the proposal",
+  "unitTooLong": {
+    "one": "Unit: {max} characters max. 1 over.",
+    "other": "Unit: {max} characters max. {n} over."
+  },
+  "currencyTooLong": {
+    "one": "Currency: {max} characters max. 1 over.",
+    "other": "Currency: {max} characters max. {n} over."
+  },
+  "linkLabel": "Link",
+  "notReady": "Item, package, price and every household's amount first. Then the proposal's ready."
 };

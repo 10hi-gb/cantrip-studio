@@ -62,8 +62,8 @@
   function fieldErrors() {
     var e = [], h = [], q = S.parseQty(st.q), inc = S.parseQty(st.i), x;
     if ((x = M.len(M.strip(st.n)) - L.ITEM_MAX) > 0) e.push(C.itemLabel + ' ' + M.plural(C.itemTooLong, x));
-    if ((x = M.len(unit()) - L.UNIT_MAX) > 0) e.push(M.plural(C.unitTooLong, x));
-    if ((x = M.len(M.strip(st.c)) - L.SYM_MAX) > 0) e.push(M.plural(C.currencyTooLong, x));
+    if ((x = M.len(unit()) - L.UNIT_MAX) > 0) e.push(M.plural(C.unitTooLong, x, { max: L.UNIT_MAX }));
+    if ((x = M.len(M.strip(st.c)) - L.SYM_MAX) > 0) e.push(M.plural(C.currencyTooLong, x, { max: L.SYM_MAX }));
     if ((x = numErr(st.q, false))) e.push(C.packageQtyLabel + ': ' + x);
     if ((x = numErr(st.i, false))) e.push(C.incrementLabel + ': ' + x);
     else if (q && inc && q % inc) e.push(C.packageQtyLabel + ': ' + M.fill(C.errorIncrement, { increment: S.fmtQty(inc), unit: unit() }));

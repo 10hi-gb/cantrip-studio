@@ -28,3 +28,4 @@
 .byg-fact,.byg-fact>*{min-width:0}
 .byg-said{overflow-wrap:anywhere}
 #banner-t,#banner-h{overflow-wrap:anywhere;min-width:0}
+.byg-astyped{font:700 12px var(--byg-font);color:var(--byg-mute);margin-right:2px}.byg-typed{overflow-wrap:anywhere;unicode-bidi:plaintext}

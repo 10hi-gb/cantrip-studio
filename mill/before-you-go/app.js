@@ -37,6 +37,8 @@
     r.undo.addEventListener('click', function () { st.f[k].c = false; edited(); refresh(); r.ans.focus(); });
     list.appendChild(li); rows[k] = r;
   }
+  // D4: typed values as label + separate text node.
+  function typedInto(node, tpl, key, value) { node.textContent = ''; var parts = String(tpl).split('{' + key + '}'); node.appendChild(document.createTextNode(parts[0])); node.appendChild(el('span', 'byg-typed', value)); if (parts[1]) node.appendChild(document.createTextNode(parts[1])); }
   var recvBy = null; // name shown on confirmations that came in a received link (until the visitor changes one)
   function paintRow(k) {
     var r = rows[k], s = B.status(st, k), x = st.f[k], conf = s === 'confirmed';
@@ -44,14 +46,14 @@
     r.li.className = 'byg-fact ' + (conf ? 'is-ok' : s === 'optional' ? 'is-opt' : 'is-wait');
     var over = M.len(M.strip(x.v)) - B.CAP.v; r.err.textContent = over > 0 ? overMsg(over) : '';
     r.inp.hidden = conf; r.val.hidden = !conf && s !== 'unknown' && s !== 'optional';
-    r.val.textContent = conf ? B.shown(st, k) : (s === 'optional' ? '' : C.status.unknown); r.val.className = 'byg-val' + (conf ? '' : ' is-none'); if (s === 'optional') r.val.hidden = true;
+    if (conf) { r.val.textContent = ''; r.val.appendChild(el('span', 'byg-astyped', C.answerAsTyped)); r.val.appendChild(document.createTextNode(' ')); r.val.appendChild(el('span', 'byg-typed', B.shown(st, k))); } else r.val.textContent = s === 'optional' ? '' : C.status.unknown; r.val.className = 'byg-val' + (conf ? '' : ' is-none'); if (s === 'optional') r.val.hidden = true;
     r.said.textContent = conf && M.strip(x.v) && M.strip(x.v) !== M.strip(x.a) ? C.status.said + ': ' + M.strip(x.v) : ''; r.said.hidden = !r.said.textContent;
     r.chip.textContent = C.status[s]; r.chip.setAttribute('aria-label', M.fill(C.statusAria, { field: label(k), status: C.status[s] }));
     r.q.hidden = conf; r.edit.hidden = conf; r.conf.hidden = !conf;
     var aover = M.len(M.strip(x.a)) - B.CAP.a;
     r.ok.disabled = false; r.ok.setAttribute('aria-disabled', M.strip(x.a) && aover <= 0 ? 'false' : 'true');
     r.hint.textContent = aover > 0 ? overMsg(aover) : (M.strip(x.a) ? '' : C.confirmHint);
-    r.by.textContent = conf ? (recvBy ? M.fill(C.confirmedBy, { name: recvBy }) : C.confirmedByYou) : '';
+    if (conf && recvBy) typedInto(r.by, C.confirmedBy, 'name', recvBy); else r.by.textContent = conf ? C.confirmedByYou : '';
     if (k === 'contact') {
       var num = B.phone(B.shown(st, 'contact'));
       r.call.hidden = r.text.hidden = !num; r.nocall.hidden = s !== 'unknown' || !!num;
@@ -125,8 +127,8 @@
     var d = B.decode(h), bn = $('banner');
     if (!d.ok) { if (d.why === 'empty') { refresh(); return; } bn.hidden = false; $('banner-t').textContent = d.why === 'oldVersion' ? C.oldVersion : d.why === 'tooLong' ? C.tooLongLink : C.badLink; $('banner-n').textContent = ''; $('own-copy').hidden = true; refresh(); return; }
     st = d.data; recvBy = M.strip(st.by) || null; $('pickup').value = st.k; $('by').value = st.by;
-    bn.hidden = false; $('banner-t').textContent = M.fill(C.receiverIntro, { pickup: st.k || C.title });
-    $('banner-n').textContent = C.receiverNote + ' ' + (recvBy ? M.fill(C.receiverEditNote, { by: recvBy }) : C.receiverEditNoteAnon); $('own-copy').hidden = false;
+    bn.hidden = false; if (M.strip(st.k)) typedInto($('banner-t'), C.receiverIntro, 'pickup', st.k); else $('banner-t').textContent = M.fill(C.receiverIntro, { pickup: C.title });
+    $('banner-n').textContent = C.receiverNote + ' ' + C.receiverEditNote; $('own-copy').hidden = false;
     refresh();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

@@ -24,8 +24,8 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     // RECIPIENT opens in a fresh tab
     const q = await b.newPage(); await q.setViewport({ width: w, height: 800 }); const qe = []; q.on('pageerror', e => qe.push(String(e))); q.on('console', m => { if (m.type() === 'error' && !/Cross-Origin-Opener-Policy/.test(m.text())) qe.push(m.text()); });
     await q.goto(askUrl, { waitUntil: 'load' }); await sleep(200);
-    t = await q.evaluate(() => ({ title: document.getElementById('title').textContent, ask: [...document.querySelectorAll('.osa-term .ask')].map(e => e.textContent), choices: document.querySelectorAll('[role=radio]').length }));
-    ck(w + ' recipient sees the ask', t.title === 'Dana is asking:' && t.ask[0].includes('Pick up groceries') && t.ask[2] === 'Tue Oct 20, 4 PM–6 PM' && t.choices === 3 && t.ask.length === 3, t);
+    t = await q.evaluate(() => ({ title: document.getElementById('title').textContent, typed: (document.querySelector('#title .osa-typed') || {}).textContent, qlab: [...document.querySelectorAll('.osa-term .ask .osa-qlabel')].map(e => e.textContent), send: [...document.querySelectorAll('.osa-fine')].map(e => e.textContent).join('|'), ask: [...document.querySelectorAll('.osa-term .ask')].map(e => e.textContent), choices: document.querySelectorAll('[role=radio]').length }));
+    ck(w + ' recipient sees the ask (D4: name after its label as separate text; favor quoted under receiverAskLabel)', t.title === 'Small ask from: Dana' && t.typed === 'Dana' && t.qlab[0] === 'Their ask, as typed:' && t.ask[0].includes('“Pick up groceries') && t.ask[0].endsWith('”') && t.ask[2] === 'Tue Oct 20, 4 PM–6 PM' && t.choices === 3 && t.ask.length === 3, t);
     // keyboard radiogroup: focus Yes, arrow to Part of it
     await q.focus('#c-y'); await q.keyboard.press('ArrowDown'); await sleep(100);
     t = await q.evaluate(() => ({ checked: document.querySelector('[aria-checked=true]').id, focus: document.activeElement.id, inputs: !!document.getElementById('o-w') }));
@@ -43,6 +43,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     await r.goto(repUrl, { waitUntil: 'load' }); await sleep(200);
     t = await r.evaluate(() => ({ title: document.getElementById('title').textContent, delta: document.getElementById('delta').textContent, verdict: document.querySelector('.osa-verdict').textContent, note: document.getElementById('note').textContent, body: document.body.innerText }));
     ck(w + ' sender sees reply with delta + snapshot note', t.title === 'Sam replied with what they can do.' && t.delta.includes('Collection only · Wed Oct 21, 5 PM–6 PM') && t.verdict === 'Part of it' && /Nothing has been booked/.test(t.note) && !/\b(accepted|confirmed|agreed|delivered|notified)\b/i.test(t.body), t);
+    { const qv = await r.evaluate(() => [...document.querySelectorAll('.osa-term .ask .osa-quoted')].map(e => e.textContent)); ck(w + ' reply view: original typed favor quoted under receiverAskLabel (D4)', qv.length >= 1 && qv[0].startsWith('Their ask, as typed: “Pick up groceries') && qv[0].endsWith('”'), qv); }
     // ask again, changed -> composer prefilled with the offer
     await r.focus('#b-again'); await r.keyboard.press('Enter'); await sleep(100);
     t = await r.evaluate(() => ({ w: document.getElementById('f-w').value, d: document.getElementById('f-d').value, hash: location.hash }));

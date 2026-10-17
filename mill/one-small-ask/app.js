@@ -28,7 +28,10 @@
   function txt(t, cls) { return el('span', cls || null, t); }
   function errBox(id) { var e = el('span', 'osa-err'); e.id = id; e.setAttribute('aria-live', 'polite'); return e; }
   function setText(t) { lastText = t || ''; $('text').textContent = lastText; $('text').setAttribute('aria-label', C.copyAsText); }
-  function page(title, lede) { $('title').textContent = title; $('lede').textContent = lede || ''; $('lede').hidden = !lede; $('delta').hidden = true; $('note').hidden = true; $('linkbox').hidden = true; $('x').textContent = ''; $('x').setAttribute('aria-label', C.exchangeAria); rowN = 0; }
+  // D4: sender-typed values are shown as label + separate value, never voiced inside product copy.
+  function typed(tpl, key, value) { var f = document.createDocumentFragment(), parts = String(tpl).split('{' + key + '}'); f.appendChild(document.createTextNode(parts[0])); f.appendChild(el('span', 'osa-typed', value)); if (parts[1]) f.appendChild(document.createTextNode(parts[1])); return f; }
+  function quoted(value) { var w = el('span', 'osa-quoted'); w.appendChild(el('span', 'osa-qlabel', C.receiverAskLabel)); w.appendChild(document.createTextNode(' ')); w.appendChild(el('span', 'osa-qtext', M.fill(C.quoteWrap, { text: value }))); return w; }
+  function page(title, lede) { var tt = $('title'); tt.textContent = ''; if (typeof title === 'string') tt.textContent = title; else tt.appendChild(title); $('lede').textContent = lede || ''; $('lede').hidden = !lede; $('delta').hidden = true; $('note').hidden = true; $('linkbox').hidden = true; $('x').textContent = ''; $('x').setAttribute('aria-label', C.exchangeAria); rowN = 0; }
   function noteLine(t) { $('note').textContent = t; $('note').hidden = !t; }
   // ---------- copy / share ----------
   function selectText(node) { node.focus(); if (node.select) node.select(); else { var r = document.createRange(); r.selectNodeContents(node); var s = getSelection(); s.removeAllRanges(); s.addRange(r); } }
@@ -88,7 +91,7 @@
   function edited() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); $('linkbox').hidden = true; $('banner').hidden = true; validate(); }
   // ---------- answer (#a1) ----------
   function answer() {
-    mode = 'answer'; page(ask.f ? M.fill(C.receiverIntro, { from: ask.f }) : C.receiverIntroAnon, ''); drawAnswer();
+    mode = 'answer'; page(ask.f ? typed(C.receiverIntro, 'from', ask.f) : C.receiverIntroAnon, ''); drawAnswer();
   }
   function offerTerms() { return { w: offer.w, e: /^\d{1,4}$/.test(String(offer.e).trim()) ? +String(offer.e).trim() : NaN, u: offer.u, d: offer.d, s: offer.s, t: offer.t, h: offer.h }; }
   function partState() { var t = offerTerms(), err = A.termsError(t); return { err: err, diff: err ? null : A.diff(ask, t), t: t }; }
@@ -107,10 +110,11 @@
     x.appendChild(heads(head('ask', initial(ask.f), ask.f || C.receiverIntroAnon.replace(/:$/, ''), C.previewHeading), head('ans', initial(ask.o), C.replyHeading, ask.o || '', ch)));
     var ps = choice === 'p' ? partState() : null;
     function roRow(key, label, value) {
-      if (choice === 'y') return term('same', label, txt(value), '=', txt(M.fill(C.sameLine, { value: value })), C.unchangedLabel);
-      if (choice === 'n') return term('same', label, txt(value), '·', el('span', 'none', key === 'action' ? C.replyNo : '—'));
-      if (choice !== 'p') return term('open', label, txt(value), '·', el('span', 'none', '—'));
-      var row = term('same', label, txt(value), '=', partInput(key, label), C.unchangedLabel); row.setAttribute('data-key', key); row.setAttribute('data-val', value); return row;
+      var q = (key === 'action' || key === 'where') && value !== '—', av = function () { return q ? quoted(value) : txt(value); };
+      if (choice === 'y') return term('same', label, av(), '=', txt(M.fill(C.sameLine, { value: q ? M.fill(C.quoteWrap, { text: value }) : value })), C.unchangedLabel);
+      if (choice === 'n') return term('same', label, av(), '·', el('span', 'none', key === 'action' ? C.replyNo : '—'));
+      if (choice !== 'p') return term('open', label, av(), '·', el('span', 'none', '—'));
+      var row = term('same', label, av(), '=', partInput(key, label), C.unchangedLabel); row.setAttribute('data-key', key); row.setAttribute('data-val', value); return row;
     }
     x.appendChild(roRow('action', C.actionLabel, v.action));
     x.appendChild(roRow('effort', C.effortLabel, v.effort));
@@ -121,7 +125,7 @@
     if (choice === 'y' || choice === 'p') { var nl = el('label', 'osa-lab', C.noteLabel), na = input('osa-note-in', note, null, { area: true, ph: C.notePlaceholder, id: 'f-note' }); nl.htmlFor = 'f-note'; na.addEventListener('input', function () { note = na.value; refreshReply(); }); side.push(nl, na, errBox('e-note')); }
     if (choice === 'n') side.push(el('p', 'osa-fine', C.noConfirm));
     if (choice === 'p') side.push(errBox('e-part'));
-    if (choice) side.push(btns([btn(C.copyReplyLink, 'osa-btn--ans', function () { var fr = makeReply(); if (fr != null) { var u = linkOrText(fr); if (u) copy(u, $('link')); } }, 'b-rlink'), btn(C.replyShare, '', function () { var fr = makeReply(); if (fr != null) share(fr, C.title, C.replyShareText, C.replyShareCancel); }, 'b-rshare'), btn(C.copyAsText, '', function () { copy(lastText, $('text')); }, 'b-rtext')]), el('p', 'osa-fine', ask.f ? M.fill(C.replySendYourself, { from: ask.f }) : C.replySendYourselfAnon), el('p', 'osa-fine', C.replySnapshot));
+    if (choice) side.push(btns([btn(C.copyReplyLink, 'osa-btn--ans', function () { var fr = makeReply(); if (fr != null) { var u = linkOrText(fr); if (u) copy(u, $('link')); } }, 'b-rlink'), btn(C.replyShare, '', function () { var fr = makeReply(); if (fr != null) share(fr, C.title, C.replyShareText, C.replyShareCancel); }, 'b-rshare'), btn(C.copyAsText, '', function () { copy(lastText, $('text')); }, 'b-rtext')]), el('p', 'osa-fine', C.replySendYourself), el('p', 'osa-fine', C.replySnapshot));
     x.appendChild(foot([el('p', 'osa-fine', C.knownPersonNote)], side));
     refreshReply(); markRows();
     if (focusId && $(focusId)) { var f = $(focusId); f.focus(); if (f.setSelectionRange && typeof f.value === 'string' && f.type !== 'time') try { f.setSelectionRange(f.value.length, f.value.length); } catch (e) {} }
@@ -175,9 +179,10 @@
     A.TERMS.forEach(function (t, i) {
       var k = t[0], label = [C.actionLabel, C.effortLabel, C.windowLabel, C.whereLabel][i];
       if (k === 'where' && !r.a.h && !(r.p && r.p.h)) return;
-      if (r.v === 'n') { x.appendChild(term('same', label, txt(a[k] || '—'), '·', el('span', 'none', k === 'action' ? C.replyNo : '—'))); return; }
-      if (r.v === 'y' || !d[k]) { x.appendChild(term('same', label, txt(a[k] || '—'), '=', txt(M.fill(C.sameLine, { value: a[k] || '—' })), C.unchangedLabel)); return; }
-      x.appendChild(term('changed', label, el('s', null, a[k] || '—'), '→', txt(p[k] || '—'), M.fill(C.diffAria, { term: C[t[1]], was: a[k] || '—', now: p[k] || '—' })));
+      var q = (k === 'action' || k === 'where') && a[k], orig = function () { return q ? quoted(a[k]) : txt(a[k] || '—'); };
+      if (r.v === 'n') { x.appendChild(term('same', label, orig(), '·', el('span', 'none', k === 'action' ? C.replyNo : '—'))); return; }
+      if (r.v === 'y' || !d[k]) { x.appendChild(term('same', label, orig(), '=', txt(M.fill(C.sameLine, { value: q ? M.fill(C.quoteWrap, { text: a[k] }) : (a[k] || '—') })), C.unchangedLabel)); return; }
+      var sw = el('s'); if (q) sw.appendChild(quoted(a[k])); else sw.textContent = a[k] || '—'; x.appendChild(term('changed', label, sw, '→', txt(p[k] || '—'), M.fill(C.diffAria, { term: C[t[1]], was: a[k] || '—', now: p[k] || '—' })));
     });
     if (r.n) x.appendChild(term('same', C.noteLabel, el('span', 'none', '—'), '·', txt(r.n)));
     x.appendChild(foot([btns([btn(C.askAgainChanged, 'osa-btn--ask', function () { var src = r.p || r.a; draft = { w: src.w, e: String(src.e), u: src.u, d: src.d, s: src.s, t: src.t, h: src.h, f: r.a.f, o: r.a.o }; leave(); }, 'b-again'), btn(C.askSomeoneElse, '', function () { draft = { w: r.a.w, e: String(r.a.e), u: r.a.u, d: r.a.d, s: r.a.s, t: r.a.t, h: r.a.h, f: r.a.f, o: '' }; leave(); }, 'b-else'), btn(C.copyAsText, '', function () { copy(lastText, $('text')); }, 'b-text'), btn(C.printLabel, '', function () { window.print(); }, 'b-print')])], []));

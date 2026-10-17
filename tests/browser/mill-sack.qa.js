@@ -124,6 +124,8 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     { const rq = await p.$$('#hh input.sk-rq'); await typeInto(p, '#' + await rq[0].evaluate(e => e.id), '0'); await typeInto(p, '#' + await rq[1].evaluate(e => e.id), '0'); } await sleep(50); t = await rowsOf();
     ck('390 equal with nobody taking: errorFeeNoBasis, export blocked', t.status === COPYV2.errorFeeNoBasis && (await p.$eval('#share', e => e.disabled)), t);
     await p.focus('#bp'); await p.keyboard.press('Enter'); await sleep(50); t = await rowsOf(); ck('390 proportional with nobody taking: fee sits on Unclaimed', t.tots.join() === '$0.00,$0.00,$11.00', t);
+    await typeInto(p, '#u', 'u'.repeat(17)); await typeInto(p, '#c', 'ABCDE'); await sleep(50);
+    { const body = await p.evaluate(() => document.body.innerText); ck('390 unit/currency limits use Writer copy with {max} (16 / 3)', body.includes('Unit: 16 characters max. 1 over.') && body.includes('Currency: 3 characters max. 2 over.'), body.match(/(Unit|Currency):[^\n]*/g)); }
     ck('390 fee-mode checks no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

@@ -1,4 +1,4 @@
-// before-you-go — visitor copy (Writing Bot, 2026-10-16). Matches the Wave 1-2 scope brief in briefs/ (scopes proposed by the Cantrip agents under Joshua's authorization). App reads all text from COPY.
+// before-you-go — visitor copy (Writing Bot, 2026-10-16). Matches briefs/JOSHUA-SCOPES-WAVE1-2.md. App reads all text from COPY.
 const COPY = {
   "title": "Before You Go",
   "studioName": "Cantrip Studio",
@@ -115,19 +115,21 @@ const COPY = {
   },
   "questionWindowDay": "What time can I come on {day}?",
   "optionalHeading": "Optional",
-  "confirmedBy": "Confirmed by {name}",
+  "confirmedBy": "Marked confirmed by: {name}",
   "confirmedByYou": "Confirmed by you",
-  "notSureNote": "{name} wasn't sure.",
+  "notSureNote": "Marked not sure by: {name}",
   "notSureNoteAnon": "Not sure.",
   "notSureToggle": "Not sure",
   "confirmHint": "Use what you heard or read. If they said nothing's needed, type that.",
   "answerAria": "Answer for {field}",
   "copyLink": "Copy link",
   "noLookupNote": "It only shows what you typed. Nothing is looked up.",
-  "receiverEditNote": "Your edits make a new copy. {by}'s link doesn't change.",
+  "receiverEditNote": "Your edits make a new copy. The link you were sent doesn't change.",
   "receiverEditNoteAnon": "Your edits make a new copy. The original link doesn't change.",
   "printFooter": "Only what was entered is shown. Confirmed means confirmed by whoever filled it in. Nothing was looked up.",
   "printAnswerLine": "Answer:",
   "datePassed": "This date has passed.",
-  "readinessAria": "{n} essentials still open"
+  "readinessAria": "{n} essentials still open",
+  "answerAsTyped": "As typed:",
+  "linkLabel": "Link"
 };
