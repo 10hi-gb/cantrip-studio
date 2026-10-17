@@ -1,6 +1,6 @@
 // node tests/browser/mill-ask.qa.js <host[:port]> <ip> [scheme] — One Small Ask end to end: sender -> recipient -> reply, @320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const M = require('../../mill/shared/core.js'), C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/one-small-ask/copy.js', 'utf8') + ';COPY');
 const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
 (async () => {
@@ -99,6 +99,14 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     await p.goto(BASE + '#' + L.part, { waitUntil: 'load' }); await sleep(150); await p.focus('#b-again'); await p.keyboard.press('Enter'); await sleep(150); const da = await delta();
     await p.focus('#b-reset'); await p.keyboard.press('Enter'); await sleep(150); const dr = await delta();
     ck(w + ' D1: delta from a Part reply never carries over (yes reply, bad link, Ask again, Start over) in the same tab', okPart && !dy.shown && !dy.text && !db.shown && !da.shown && !dr.shown, { okPart, dy, db, da, dr });
+    // Joshua 10:25: rendered + a11y-tree check of the delta along part -> yes -> compose -> Start over -> bad link (one tab)
+    const seq = {}; await p.goto(BASE + '#' + L.part, { waitUntil: 'load' }); await sleep(150); seq.partShown = !(await reallyHidden(p, ['#delta'])).ok;
+    await p.goto(BASE + '#' + L.yes, { waitUntil: 'load' }); await sleep(150); seq.yes = await reallyHidden(p, ['#delta']);
+    await p.goto(BASE + '#', { waitUntil: 'load' }); await sleep(150); seq.compose = await reallyHidden(p, ['#delta']);
+    await p.focus('#b-reset'); await p.keyboard.press('Enter'); await sleep(150); seq.reset = await reallyHidden(p, ['#delta']);
+    await p.goto(BASE + '#r1.zzzz.000000', { waitUntil: 'load' }); await sleep(150); seq.bad = await reallyHidden(p, ['#delta']);
+    seq.text = await p.$eval('#delta', e => e.textContent);
+    ck(w + ' D1 rendered: delta shown for Part, then not rendered and not in the a11y tree after yes -> compose -> Start over -> bad link', seq.partShown && seq.yes.ok && seq.compose.ok && seq.reset.ok && seq.bad.ok && seq.text === '', seq);
     await p.goto(BASE + '#' + L.urlPart, { waitUntil: 'load' }); await sleep(150); let of = await overflow(p); const dd = await p.evaluate(() => { const r = document.getElementById('delta').getBoundingClientRect(); return [...document.querySelectorAll('#delta span')].every(e => e.getBoundingClientRect().right <= document.documentElement.clientWidth + 1); });
     const tb = await p.evaluate(() => { const t = document.getElementById('text'); return t.scrollWidth <= t.clientWidth + 1; });
     ck(w + ' D2/D3: long USPS URL wraps in delta line (incl. struck original) and copy-text box', of.sw <= w && !of.bad.length && dd && tb, { of, dd, tb });
@@ -111,6 +119,8 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     const D8 = await p.evaluate(() => ({ title: document.getElementById('title').textContent, typed: (document.querySelector('#title .osa-typed') || {}).textContent, q: (document.querySelector('.osa-term .ask .osa-qlabel') || {}).textContent }));
     ck(w + ' D8: "Small ask from:" label + separate name; "Their ask, as typed:" + quotes', D8.title === 'Small ask from: Christopher Montgomery' && D8.typed === 'Christopher Montgomery' && D8.q === 'Their ask, as typed:', D8);
     const domA = await p.evaluate(() => ({ editable: [...document.querySelectorAll('input,textarea,select,[contenteditable=true]')].filter(e => !e.disabled && !e.readOnly).map(e => e.id || e.className), askInputs: document.querySelectorAll('.is-ask.osa-in,#f-w,#f-e,#f-u,#f-d,#f-s,#f-t,#f-h,#f-f,#f-o').length, reset: !!document.getElementById('b-reset') }));
+    const hidA = await reallyHidden(p, ['#f-w', '#f-h', '#b-reset', '#b-link', '#delta']);
+    ck(w + ' recipient view rendered: composer controls and delta not rendered, not in a11y tree', hidA.ok, hidA);
     ck(w + ' recipient DOM (not just CSS): the ask has no editor inputs and no composer Start over; nothing editable before a choice', domA.askInputs === 0 && !domA.reset && domA.editable.length === 0, domA);
     // D7: reply privacy once on all three answer views; "Not this time" has no note field
     const views = {}; for (const c of ['y', 'p', 'n']) { await p.click('#c-' + c); await sleep(80); views[c] = await p.evaluate(P => ({ n: [...document.querySelectorAll('.osa-fine')].filter(e => e.textContent === P).length, note: !!document.getElementById('f-note') }), C.replyPrivacy); }

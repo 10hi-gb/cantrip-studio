@@ -1,6 +1,6 @@
 // node tests/browser/mill-sack.qa.js <host[:port]> <ip> [scheme]  — Split the Sack full flow at 320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const COPYV2 = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/split-the-sack/copy.js', 'utf8') + ';COPY');
 const COPY = COPYV2;
 const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
@@ -132,12 +132,14 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
   const RICE = { n: 'Rice', u: 'lb', c: '$', q: '25', i: '0.5', p: '31.47', f: '2.99', b: 'p', x: -1, h: [['Ana', '8'], ['Unit 2B', '7.5'], ['Bao & Linh', '6']] };
   for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 800 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
     const vis = () => p.evaluate(() => { const v = e => !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden'; return { inputs: [...document.querySelectorAll('input,select,textarea,button')].filter(v).map(e => e.id || e.className || e.tagName), editor: v(document.getElementById('editor')), recv: v(document.getElementById('recv')), pick: v(document.getElementById('pick')), change: v(document.getElementById('change')), reset: v(document.getElementById('reset')) }; });
+    const hs = await reallyHidden(p, ['#recv', '#pick', '#change', '#changebox']); ck(w + ' D7 sender view rendered: recipient panel/picker/Change not rendered, not in a11y tree', hs.ok, hs);
     let o = await vis(); ck(w + ' D7 sender view: no household picker and no Change my amount', o.editor && !o.recv && !o.pick && !o.change && o.reset, o);
     const f = await p.evaluate(o => SACKLINK.encode(o), RICE); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(150);
     const nums = () => p.evaluate(() => [...document.querySelectorAll('#rows .ss-alloc')].map(r => r.textContent).join('|'));
     const n0 = await nums(); o = await vis();
     const editable = o.inputs.filter(x => !['pick', 'change', 'ss-btn', 'home'].includes(x) && !/^(BUTTON|A)$/.test(x));
     ck(w + ' D7 recipient view: editor and Clear the table not shown; only picker/Change are controls', !o.editor && o.recv && o.pick && o.change && !o.reset && !o.inputs.some(x => ['item', 'q', 'p', 'f', 'inc', 'u', 'c', 'add', 'reset', 'bp', 'be'].includes(x)) && !o.inputs.some(x => /ss-in|sk-/.test(x)), o);
+    const hr = await reallyHidden(p, ['#editor', '#reset', '#add', '#item', '#q', '#p', '#f', '#bp', '#be', '#hh input']); ck(w + ' D7 recipient view rendered: editor, Clear the table, inputs not rendered, not in a11y tree', hr.ok, hr);
     const dom = await p.evaluate(() => ({ editable: [...document.querySelectorAll('input,textarea,select')].filter(e => !e.disabled && !e.readOnly).map(e => e.id || e.className), buttons: [...document.querySelectorAll('button')].filter(e => !e.disabled).map(e => e.id || e.className), hhRows: document.querySelectorAll('#hh li, #hh input').length, inert: document.getElementById('editor').inert }));
     ck(w + ' D7 recipient DOM (not just CSS): no editable editor inputs, no enabled Clear/add/remove/basis/export buttons, household editor not rendered, editor inert', dom.editable.every(x => x === 'pick') && !dom.buttons.some(x => ['reset', 'add', 'bp', 'be', 'share', 'copytext', 'print'].includes(x) || /ss-x|sk-x/.test(x)) && dom.hhRows === 0 && dom.inert, dom);
     // even forced input events on the hidden editor change nothing

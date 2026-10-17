@@ -30,4 +30,20 @@ function errsOf(s, scheme) { return s.errs.filter(e => !(scheme === 'http' && /C
 async function textOverlap(p, sel) { return p.evaluate(sel => { const els = [...document.querySelectorAll(sel)].filter(e => e.offsetParent !== null && e.textContent.trim()); const boxes = els.map(e => { const r = document.createRange(); r.selectNodeContents(e); return { id: e.id || e.className, rs: [...r.getClientRects()] }; });
   const bad = []; for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) for (const a of boxes[i].rs) for (const b of boxes[j].rs) if (a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5) bad.push(boxes[i].id + '×' + boxes[j].id);
   return [...new Set(bad)]; }, sel); }
-module.exports = { textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };
+// Actual rendered hiddenness (not just the attribute): computed display none OR zero box, AND absent from the accessibility tree.
+async function reallyHidden(p, selectors) {
+  const out = {};
+  for (const sel of selectors) {
+    const hs = await p.$$(sel); if (!hs.length) { out[sel] = { ok: true, absent: true }; continue; }
+    const res = [];
+    for (const h of hs) {
+      const v = await h.evaluate(e => { const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return { display: cs.display, w: r.width, h: r.height, rects: e.getClientRects().length }; });
+      const snap = await p.accessibility.snapshot({ root: h, interestingOnly: false }).catch(() => null);
+      const inTree = !!(snap && (snap.name || (snap.children && snap.children.length) || (snap.role && snap.role !== 'none' && snap.role !== 'generic')));
+      res.push({ ...v, inTree, ok: (v.display === 'none' || v.rects === 0 || (v.w === 0 && v.h === 0)) && !inTree });
+    }
+    out[sel] = { ok: res.every(x => x.ok), res };
+  }
+  return { ok: Object.values(out).every(x => x.ok), out };
+}
+module.exports = { reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };
