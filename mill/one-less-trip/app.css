@@ -34,3 +34,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .olt-same .olt-mini{margin-right:6px}
 @media print{#linkroom,#samestop,#limits,.olt-hint{display:none!important}}
 @media print{.olt-toast,.olt-linkbox,.olt-skip,.olt-status--info,.olt-note--merge{display:none!important}}
+/* QA local-652d0e0 N3: notes inside the form grid span the whole row; at narrow widths For, Item and Stop stack full-width,
+   Qty + Unit share a row, so "The Nguyen-Okafors" and a 30–40-char stop are readable at 320. */
+.olt-form > p,.olt-form > .olt-err{grid-column:1/-1}
+@media (max-width:480px){.olt-form .olt-field{grid-column:1/-1}.olt-form .olt-field.is-s{grid-column:span 3}.olt-form .olt-field.is-stop{grid-column:1/-1}}
+.olt-item.is-done .olt-unit{text-decoration:line-through;text-decoration-thickness:2px;color:var(--olt-mute)}

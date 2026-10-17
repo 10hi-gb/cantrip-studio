@@ -57,4 +57,37 @@ async function reallyHidden(p, selectors) {
   }
   return { ok: Object.values(out).every(x => x.ok), out };
 }
-module.exports = { sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };
+
+// Typed-text audit (QA D5/N3, Joshua 23:52): every occurrence of a sender-typed seed in VISIBLE text, aria-label,
+// aria-description, title, aria-describedby targets, live regions (role=status/alert/log, aria-live), <option> labels,
+// the toast and any extra strings (copied text) must sit inside curly quotes
+// “seed”. Returns {ok, hits:[{where, ctx}]}. Form control values are not scanned (an editor shows raw text by design).
+// Seeds should be distinct per field so a seed never appears inside another quoted value.
+function unquotedIn(str, seed) {
+  const out = []; let i = str.indexOf(seed);
+  while (i >= 0) { const before = str[i - 1], after = str[i + seed.length]; if (!(before === '\u201C' && after === '\u201D')) out.push(str.slice(Math.max(0, i - 30), i + seed.length + 30)); i = str.indexOf(seed, i + 1); }
+  return out;
+}
+async function typedAudit(p, seeds, extra = {}) {
+  const got = await p.evaluate(() => {
+    const vis = e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return cs.display !== 'none' && cs.visibility !== 'hidden' && (r.width > 0 || r.height > 0); };
+    const attrs = []; document.querySelectorAll('[aria-label],[aria-description],[title]').forEach(e => { ['aria-label', 'aria-description', 'title'].forEach(a => { const v = e.getAttribute(a); if (v) attrs.push([a + '@' + (e.id || e.tagName), v]); }); });
+    const opts = [...document.querySelectorAll('option')].map(o => ['option@' + (o.parentElement.id || ''), o.textContent]);
+    const t = document.getElementById('toast');
+    // screen-reader-only text (PM 23:52): aria-describedby targets and every live region, visible or not
+    const desc = []; document.querySelectorAll('[aria-describedby]').forEach(e => e.getAttribute('aria-describedby').split(/\s+/).forEach(id => { const d = id && document.getElementById(id); if (d && d.textContent) desc.push(['describedby@' + (e.id || e.tagName) + '>' + id, d.textContent]); }));
+    document.querySelectorAll('[aria-live],[role=status],[role=alert],[role=log]').forEach(e => { if (e.textContent) desc.push(['live@' + (e.id || e.tagName), e.textContent]); });
+    attrs.push(...desc);
+    return { visible: document.body.innerText, attrs, opts, toast: t && vis(t) ? t.textContent : '', title: document.title };
+  });
+  const hits = [];
+  for (const seed of seeds) {
+    unquotedIn(got.visible, seed).forEach(ctx => hits.push({ where: 'visible', seed, ctx }));
+    unquotedIn(got.toast, seed).forEach(ctx => hits.push({ where: 'toast', seed, ctx }));
+    unquotedIn(got.title, seed).forEach(ctx => hits.push({ where: 'document.title', seed, ctx }));
+    got.attrs.concat(got.opts).forEach(([w, v]) => unquotedIn(v, seed).forEach(ctx => hits.push({ where: w, seed, ctx })));
+    Object.entries(extra).forEach(([w, v]) => unquotedIn(String(v || ''), seed).forEach(ctx => hits.push({ where: w, seed, ctx })));
+  }
+  return { ok: !hits.length, hits: hits.slice(0, 20), n: hits.length };
+}
+module.exports = { typedAudit, unquotedIn, sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result };

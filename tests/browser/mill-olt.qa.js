@@ -1,6 +1,6 @@
 // node tests/browser/mill-olt.qa.js <host[:port]> <ip> [scheme] — One Less Trip @320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { sameTabBadLink, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result, reallyHidden } = require('./mill-common');
+const { typedAudit, sameTabBadLink, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result, reallyHidden } = require('./mill-common');
 const BASE = `${SCHEME}://${H}/mill/one-less-trip/`;
 async function addRow(p, owner, item, qty, unit, stop) {
   await p.select('#f-o', String(owner)); await typeInto(p, '#f-i', item); await typeInto(p, '#f-q', qty); await typeInto(p, '#f-u', unit);
@@ -27,7 +27,7 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     for (const r of R) await addRow(p, ...r);
     t = await view(p);
     ck(w + ' regrouped by stop in entered order; unknown tray; ledger reconciles', t.stops.join() === '“Corner Co-op”:4,“Post office”:2,“Hardware store”:2' && t.tray.join() === 'AA batteries,Sourdough' && t.ledger === '10 rows in8 on tickets2 set asideEvery item from every list is here once.', t);
-    ck(w + ' exact dup offered (not merged); different unit kept separate', t.offers.join() === 'Merge r01 + r02' && t.kept.join() === "Kept separate: litre isn't carton." && t.tags.length === 10, t);
+    ck(w + ' exact dup offered (not merged); different unit kept separate', t.offers.join() === 'Merge r01 + r02' && t.kept.join() === "Kept separate: “litre” isn't “carton”." && t.tags.length === 10, t);
     // form validation
     await addRow(p, 1, 'Glue', '1e9', '', 'X'); let fe = await p.evaluate(() => ({ q: document.getElementById('e-q').textContent, n: document.querySelectorAll('#rows li').length, f: document.activeElement.id }));
     ck(w + ' qty 1e9 rejected inline, no row added', fe.q === 'Use a plain number, like 2 or 0.5.' && fe.n === 10 && fe.f === 'f-q', fe);
@@ -173,6 +173,60 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     ck(w + ' D11 one row less: link made, whole URL <= 2,000 and opens', !t.lb && t.link.length <= 2000 && t.link.length > 1900 && t.ok, { len: t.link.length, ok: t.ok });
     ck(w + ' D4–D13 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
   }
+  // ---- QA local-652d0e0: D5 typed-text audit, N1 first mouse click, N2 toast reset, N3 320 form, N4 real link length
+  const HOST = ['Verified ✔ Bank', 'Kiwi Flat', 'You owe me, deadbeat', 'deadbeatunit', 'boxunit', 'I know where you live'];
+  const HL = { h: ['Verified ✔ Bank', 'Kiwi Flat'], r: [[0, 'You owe me, deadbeat', '2', 'deadbeatunit', 'I know where you live'], [1, 'You owe me, deadbeat', '1', 'deadbeatunit', 'I know where you live'], [1, 'You owe me, deadbeat', '1', 'boxunit', 'I know where you live']], m: [] };
+  const clipStub = p => p.evaluate(() => { window.__clip = ''; Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: t => { window.__clip = t; return Promise.resolve(); } } }); });
+  const mouseOn = async (p, sel) => { const h = await p.$(sel); await h.evaluate(e => e.scrollIntoView({ block: 'center' })); const b = await h.boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await sleep(40); await p.mouse.up(); await sleep(150); };
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); let t;
+    await p.goto(BASE, { waitUntil: 'load' }); await sleep(100);
+    const frag = await p.evaluate(o => MILL.pack('t', 1, o), HL);
+    await p.goto('about:blank'); await p.goto(BASE + '#' + frag, { waitUntil: 'load' }); await sleep(250); await clipStub(p);
+    await p.click('#b-copy'); await sleep(120); const clip = await p.evaluate(() => window.__clip);
+    let a = await typedAudit(p, HOST, { copied: clip, fallback: await p.$eval('#fallback', e => e.value) });
+    ck(w + ' D5 recipient: every sender string quoted in visible text, aria-labels, describedby, live regions, toast and copied text', a.ok && /“deadbeatunit”/.test(clip), a);
+    t = await p.evaluate(() => [...document.querySelectorAll('#lane .olt-line')].map(l => l.textContent));
+    ck(w + ' D5 ticket line: qty, then quoted unit, then quoted item', t.some(x => x.startsWith('2 “deadbeatunit” “You owe me, deadbeat”')) || t.some(x => x.startsWith('3 “deadbeatunit” “You owe me, deadbeat”')), t);
+    await mouseOn(p, '[id^=mg-]'); a = await typedAudit(p, HOST, { copied: await p.$eval('#fallback', e => e.value) });
+    t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, kept: [...document.querySelectorAll('.olt-note--kept')].map(e => e.textContent) }));
+    ck(w + ' D5 merge (recipient -> own copy): toast + editor + kept note quoted', a.ok && t.toast === 'Merged “You owe me, deadbeat” into one line.' && t.kept.every(k => /“[^”]+” isn't “[^”]+”/.test(k)), { a, t });
+    await mouseOn(p, '[id^=um-]'); a = await typedAudit(p, HOST);
+    t = await p.evaluate(() => document.getElementById('toast').textContent);
+    ck(w + ' D5 split back out: toast quoted; whole page still clean', a.ok && t === '“You owe me, deadbeat” split back out.', { a, t });
+    // N2: a visible toast is gone (and its timer cleared) after the hash changes, bad link or good
+    await p.click('#b-copy'); await sleep(60); const before = await p.$eval('#toast', e => !e.hidden);
+    await p.evaluate(() => { location.hash = 't1.broken'; }); await sleep(150);
+    t = await p.evaluate(() => ({ hidden: document.getElementById('toast').hidden, txt: document.getElementById('toast').textContent }));
+    ck(w + ' N2 toast cleared on route change (bad link)', before && t.hidden && t.txt === '', t);
+    await p.evaluate(f => { location.hash = f; }, frag); await sleep(150); await mouseOn(p, '#own-copy'); await mouseOn(p, '[id^=mg-]');
+    await p.evaluate(() => { location.hash = ''; }); await sleep(3400);
+    t = await p.evaluate(() => ({ hidden: document.getElementById('toast').hidden, txt: document.getElementById('toast').textContent }));
+    ck(w + ' N2 toast from an own-copy merge does not come back over the next list (timer cleared)', t.hidden && t.txt === '', t);
+    // N1: first real mouse click after "Make my own from this" / "Add household" acts (no re-render on blur)
+    const N1L = await p.evaluate(() => MILL.pack('t', 1, { h: ['Fay', 'Gus'], r: [[0, 'Tea', '1', '', 'Cafe'], [1, 'Tea', '2', '', 'Cafe']], m: [] }));
+    const fresh = async () => { await p.goto('about:blank'); await p.goto(BASE + '#' + N1L, { waitUntil: 'load' }); await sleep(200); await mouseOn(p, '#own-copy'); };
+    await fresh(); const act = await p.evaluate(() => document.activeElement.id); await mouseOn(p, '[id^=ed-]');
+    t = await p.evaluate(() => ({ i: document.getElementById('f-i').value, add: document.getElementById('f-add').textContent }));
+    ck(w + ' N1 own copy -> first mouse click on Edit opens the edit', t.i === 'Tea' && t.add === 'Save item', { act, t });
+    await fresh(); await mouseOn(p, '#lane .olt-check'); t = await p.evaluate(() => document.querySelectorAll('#lane .olt-check:checked').length);
+    ck(w + ' N1 own copy -> first mouse click on a checkbox ticks it', t === 1, t);
+    await fresh(); await mouseOn(p, '[id^=mg-]'); t = await p.evaluate(() => document.querySelectorAll('.olt-merged').length);
+    ck(w + ' N1 own copy -> first mouse click on Merge merges', t === 1, t);
+    await fresh(); await mouseOn(p, '#hh-add'); const act2 = await p.evaluate(() => document.activeElement.id); await mouseOn(p, '[id^=ed-]');
+    t = await p.evaluate(() => ({ i: document.getElementById('f-i').value, err: [...document.querySelectorAll('[id^=hhe-]')].map(e => e.textContent).filter(Boolean) }));
+    ck(w + ' N1 Add household -> first mouse click on Edit opens the edit; empty-name error still shown in place', t.i === 'Tea' && t.err.length === 1, { act2, t });
+    // N4: an over-cap list shows its REAL link length (not a made-up FRAG_MAX + prefix + 1)
+    const N4 = await p.evaluate(() => { const h = ['A', 'B'], r = []; for (let i = 0; i < 26; i++) r.push([i % 2, 'Item ' + i + 'x'.repeat(24), '1', 'u', 'Stop ' + i]); return { h, r, f: MILL.pack('t', 1, { h, r, m: [] }) }; });
+    await p.goto('about:blank'); await p.goto(BASE + '#' + N4.f, { waitUntil: 'load' }); await sleep(200); await mouseOn(p, '#own-copy');
+    const extra = []; for (let k = 0; k < 4; k++) { const it = 'More ' + k + 'z'.repeat(30); extra.push([0, it, '1', 'u', 'Stop Z' + k]); await addRow(p, 1, it, '1', 'u', 'Stop Z' + k); }
+    t = await p.evaluate((N4, extra, base) => ({ txt: document.getElementById('linkroom').textContent, real: base.length + 1 + MILL.pack('t', 1, { h: N4.h, r: N4.r.concat(extra), m: [] }).length, fake: OLT.FRAG_MAX + base.length + 1 + 1 }), N4, extra, BASE);
+    const shown = +((t.txt.match(/Link length: ([\d,]+) of/) || [])[1] || '0').replace(/,/g, '');
+    ck(w + ' N4 over-cap link length shows the real length', shown === t.real && shown > 2000 && /Too much for a link/.test(t.txt), { shown, t });
+    // N3: at 320 the For select, the Stop field and the limits note are full width
+    if (w === 320) { await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+      t = await p.evaluate(() => { const W = id => Math.round(document.getElementById(id).getBoundingClientRect().width); return { fo: W('f-o'), fs: W('f-s'), fi: W('f-i'), lim: W('limits'), hint: W('h-s'), form: W('form') }; });
+      ck('320 N3 For, Item, Stop and the limits note stack full width (no "The Nguyen-(" / "Hardware" clipping)', t.fo >= t.form - 4 && t.fs >= t.form - 4 && t.fi >= t.form - 4 && t.lim >= t.form - 4 && t.hint >= t.form - 30, t); }
+    await s.b.close(); }
   // QA N1 (same tab, all pieces)
   for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
     const r = await sameTabBadLink(p, { errSel: '.olt-err', bad: 't1.broken',

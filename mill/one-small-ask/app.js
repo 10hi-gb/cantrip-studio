@@ -5,7 +5,7 @@
   var C = COPY, M = MILL, A = ASK, $ = function (id) { return document.getElementById(id); };
   var V = window.MILLVIEW, mode, draft, ask, reply, choice, offer, note, touched = {}, toastT, lastText = '';
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
-  function toast(t) { var e = $('toast'); e.textContent = t; e.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { e.hidden = true; }, 2600); }
+  function toast(t) { V.toast(t, 2600); } // shared: route() clears it (QA N2)
   function blankDraft() { return { w: '', e: '', u: 'min', d: '', s: '', t: '', h: '', f: '', o: '' }; }
   function initial(name) { var g = Array.from(M.strip(name))[0]; return g ? g.toUpperCase() : '?'; }
   function draftTerms(d) { return { w: d.w, e: /^\d{1,4}$/.test(String(d.e).trim()) ? +String(d.e).trim() : NaN, u: d.u, d: d.d, s: d.s, t: d.t, h: d.h }; }
@@ -58,7 +58,7 @@
     mode = 'compose'; page(C.title, C.invitation); var d = draft, x = $('x');
     x.appendChild(el('span', 'osa-seamline')).setAttribute('aria-hidden', 'true');
     x.appendChild(heads(head('ask', initial(d.f), M.strip(d.f) || C.fromLabel, C.previewHeading), head('ans', initial(d.o), M.strip(d.o) || C.toLabel, C.ghostAnswer)));
-    function bind(e, k) { e.addEventListener('input', function () { draft[k] = e.value; touched[k] = 1; edited(); }); e.addEventListener('blur', function () { touched[k] = 1; validate(); }); return e; }
+    function bind(e, k) { e.addEventListener('input', function () { draft[k] = e.value; touched[k] = 1; edited(); }); e.addEventListener('blur', function () { touched[k] = 1; V.afterPointer(validate); }); return e; }
     function wrap(nodes) { var w = el('div'); nodes.forEach(function (n) { w.appendChild(n); }); return w; }
     var ghost = el('span', 'ghost', C.ghostAnswer), none = function () { return el('span', 'none', '—'); };
     var w = bind(input('is-ask', d.w, C.actionLabel, { area: true, ph: C.actionPlaceholder, id: 'f-w' }), 'w');

@@ -7,7 +7,7 @@
   function blank() { return { n: '', u: '', c: '$', q: '', i: '1', p: '', f: '', b: 'p', x: -1, h: [['', ''], ['', '']] }; }
   function key(k) { return k.split('.').reduce(function (o, p) { return o && o[p]; }, C); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-  function toast(t) { var e = $('toast'); e.textContent = t; e.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { e.hidden = true; }, 2600); }
+  function toast(t) { V.toast(t, 2600); } // shared: route() clears it (QA N2)
   function nameOf(i) { return M.strip(st.h[i][0]) || (C.householdLabel + ' ' + (i + 1)); }
   // Sender-typed household names are quoted (shared MILLVIEW.quote) wherever someone else reads them: the recipient view and
   // the copied text. A blank name falls back to the app's own "Household N", which is not typed text and is not quoted.
