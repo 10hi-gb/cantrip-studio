@@ -24,7 +24,7 @@
 Use the local server above for any real review: it's the only way that matches how the pages are served.
 
 ## Security headers in this build
-`python3 -m http.server` can't send the `_headers` file, so the Content-Security-Policy from `_headers` is injected into every HTML page ({CSP_PAGES} pages) as `<meta http-equiv="Content-Security-Policy">`. Browsers ignore `frame-ancestors`, `report-uri` and `sandbox` in a meta tag, so those directives were dropped from the meta copy (they stay in `_headers` for a real deploy). The other `_headers` lines (Referrer-Policy, Permissions-Policy, COOP, X-Robots-Tag, nosniff) are not applied by a plain local server. `connect-src 'none'` still blocks any network call from the pages, and every font, script and style is self-hosted.
+`python3 -m http.server` can't send the `_headers` file, so the Content-Security-Policy from `_headers` is injected into every HTML page that `_headers` covers (its only CSP rule is `/mill/*`: the hub and every Mill piece, {CSP_PAGES} pages) as `<meta http-equiv="Content-Security-Policy">`. Browsers ignore `frame-ancestors`, `report-uri` and `sandbox` in a meta tag, so those directives were dropped from the meta copy (they stay in `_headers` for a real deploy). The older studio pages outside /mill/ have no CSP rule in `_headers`, so none was added to them. The other `_headers` lines (Referrer-Policy, Permissions-Policy, COOP, X-Robots-Tag, nosniff) are not applied by a plain local server. `connect-src 'none'` still blocks any network call from the pages, and every font, script and style is self-hosted.
 
 ## Status of each piece (taken ONLY from QA's latest verdict files)
 {STATUS}

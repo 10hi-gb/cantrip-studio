@@ -1,6 +1,6 @@
 // node tests/browser/mill-sack.qa.js <host[:port]> <ip> [scheme]  — Split the Sack full flow at 320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const COPYV2 = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/split-the-sack/copy.js', 'utf8') + ';COPY');
 const COPY = COPYV2;
 const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
@@ -152,9 +152,9 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     // D9: sentence vs math (rice example: Unclaimed gets +2¢)
     await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(150);
     const d9 = await p.evaluate(st => { const c = SACK.compute(SACKLINK.toCompute(st)); const per = c.rows.map((r, i) => [st.h[i][0], r.extraCents]).concat([[COPY.unallocatedRow, c.unallocated.extraCents]]).filter(x => x[1]); return { per, line: document.getElementById('residual').textContent, total: per.reduce((a, x) => a + x[1], 0) }; }, RICE);
-    const parsed = (d9.line.match(/: (.*)\.$/) || [])[1]; const pairs = parsed ? parsed.split(', ').map(x => { const m = x.match(/^(.*) (\d+)¢$/); return m ? [m[1], +m[2]] : null; }) : null;
+    const parsed = (d9.line.match(/: (.*)\.$/) || [])[1]; const pairs = parsed ? parsed.split(', ').map(x => { const m = x.match(/^(.*) (\d+)¢$/); return m ? [m[1].replace(/^“(.*)”$/, '$1'), +m[2]] : null; }) : null;
     const allOne = d9.per.every(x => x[1] === 1);
-    ck(w + ' D9 leftover-cents sentence matches the per-row math (no "one each" unless every row got 1¢)', d9.per.some(x => x[1] === 2) && !/one each/.test(d9.line) && d9.line.startsWith(d9.total + ' extra cents') && JSON.stringify(pairs) === JSON.stringify(d9.per) && !allOne, d9);
+    ck(w + ' D9 leftover-cents sentence matches the per-row math (no "one each" unless every row got 1¢)', d9.per.some(x => x[1] === 2) && !/one each/.test(d9.line) && d9.line.startsWith(d9.total + ' extra cents') && JSON.stringify(pairs) === JSON.stringify(d9.per) && !allOne && d9.line.includes('“Unit 2B” 1¢') && d9.line.includes(' Unclaimed 2¢'), d9);
     // D8: equal fee, nobody takes any
     await p.goto(BASE + '#', { waitUntil: 'load' }); await sleep(100);
     await typeInto(p, '#item', 'Oats'); await typeInto(p, '#q', '10'); await typeInto(p, '#u', 'unit'); await typeInto(p, '#inc', '1'); await typeInto(p, '#p', '10.00'); await typeInto(p, '#f', '1.00'); await p.click('#be');
@@ -168,5 +168,27 @@ const BASE = `${SCHEME}://${H}/mill/split-the-sack/`;
     const of = await overflow(p);
     ck(w + ' D1b money/quantity values stay on one line (no mid-number wrap), no overflow', d1.length >= 6 && d1.every(x => x.lines === 1) && of.sw <= w && !of.bad.length, { d1, of });
     ck(w + ' QA-recheck checks no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA local-58436b3 N1 (same tab) + D10/D11/D12/D1c
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const fillSack = async p => { await typeInto(p, '#item', 'You owe me, deadbeat. Pay up'); await typeInto(p, '#q', '10'); await typeInto(p, '#inc', '1'); await typeInto(p, '#p', '20.00'); await typeInto(p, '#f', '1.00'); await typeInto(p, '#u', 'kg');
+      await p.click('#be'); const hh = await p.$$('#hh input'); await hh[0].click({ clickCount: 3 }); await hh[0].type('Verified ✔ Bank'); await hh[1].click({ clickCount: 3 }); await hh[1].type('4'); await hh[2].click({ clickCount: 3 }); await hh[2].type('Kiwi Flat'); await hh[3].click({ clickCount: 3 }); await hh[3].type('3'); await sleep(80); };
+    const r = await sameTabBadLink(p, { errSel: '#item-msg li, #hh-msg li, #change-err', bad: 's1.broken', fill: async p => { await typeInto(p, '#item', ''); await typeInto(p, '#q', 'x'); await fillSack(p); },
+      link: async p => { await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.click('#share'); await sleep(200); return p.$eval('#link', e => e.value); } });
+    ck(w + ' N1 same tab: bad link after fill + link + open shows zero validation errors', r.ok, r);
+    await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(120); await fillSack(p);
+    const txt = await p.$eval('#text', e => e.value); await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.click('#share'); await sleep(200); const url = await p.$eval('#link', e => e.value);
+    ck(w + ' D10 copy-as-text: household names quoted + attributed (textNamesTyped)', txt.split('\n')[0] === 'Proposed split for “You owe me, deadbeat. Pay up” (typed by the sender)' && txt.includes('\nHousehold names in quotes are as typed by the sender.\n') && /\n“Verified ✔ Bank”: 4 kg · /.test(txt) && /\n“Kiwi Flat”: 3 kg · /.test(txt), txt);
+    await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(200);
+    const rv = await p.evaluate(() => { const sn = document.getElementById('sname'), ty = sn.querySelector('.mill-typed'), stp = sn.querySelector('.ss-step');
+      return { typed: ty && ty.textContent, tt: ty && getComputedStyle(ty).textTransform, step: stp && stp.textContent, sep: ty && stp ? stp.getBoundingClientRect().top >= ty.getBoundingClientRect().bottom - 1 : false,
+        cells: [...document.querySelectorAll('#rows .ss-alloc .who')].map(e => e.textContent), opts: [...document.getElementById('pick').options].map(o => o.textContent) }; });
+    ck(w + ' D11 recipient item: quoted typed text (no uppercase), the app\'s step line on its own line', rv.typed === '“You owe me, deadbeat. Pay up”' && rv.tt === 'none' && rv.step === 'Split in steps of 1 kg' && rv.sep, rv);
+    ck(w + ' D12 recipient table + picker quote typed household names', rv.cells.includes('“Verified ✔ Bank”') && rv.cells.includes('“Kiwi Flat”') && rv.opts.includes('“Verified ✔ Bank”') && rv.opts.includes('“Kiwi Flat”'), rv);
+    for (const [nm, price] of [['100000', '100000.00'], ['app max', '9999999.99']]) {
+      await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(100); await typeInto(p, '#item', 'Rice'); await typeInto(p, '#q', '100000'); await typeInto(p, '#p', price); await typeInto(p, '#f', price); await sleep(60);
+      const b = await p.evaluate(() => { const pan = document.querySelector('.ss-lcd').getBoundingClientRect(); return ['lcd-p', 'lcd-f', 'lcd-q'].map(id => { const r = document.getElementById(id).getBoundingClientRect(); const rg = document.createRange(); rg.selectNodeContents(document.getElementById(id)); const tr = rg.getBoundingClientRect(); return { id, txt: document.getElementById(id).textContent, inside: tr.right <= pan.right - 2 && tr.left >= pan.left + 2, tr: Math.round(tr.right), pr: Math.round(pan.right) }; }); });
+      ck(w + ' D1c LCD money ' + nm + ' ($' + price + ') sits inside the panel', b.every(x => x.inside) && b[0].txt.includes(price), b);
+    }
+    await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

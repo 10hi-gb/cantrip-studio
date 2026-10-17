@@ -96,7 +96,7 @@
   // Plain-text export (Writer QA-83 templates). Typed text quoted; product text not. Reads complete without the page.
   function text(st, C, print) {
     var pk = M.strip(st.k), L = [pk ? M.fill(print ? C.printHeading : C.textHeading, { pickup: pk }) : C.title], open = openEssentials(st);
-    if (M.strip(st.by)) L.push(M.fill(C.textByLine, { name: M.strip(st.by) }));
+    if (M.strip(st.by)) L.push(M.fill(C.textByLine, { name: M.quote(M.strip(st.by)) }));
     L.push('', open.length ? M.plural(C.notSetHeading, open.length) + '. ' + M.fill(C.openList, { fields: open.map(function (k) { return C.fields[k]; }).join(', ') }) : C.allConfirmedHeading, '');
     function fact(k, field) { var s = status(st, k), x = st.f[k];
       if (s === 'unknown') { L.push(M.fill(C.textFactUnknown, { field: field })); return; } if (s === 'optional') return;

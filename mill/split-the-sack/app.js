@@ -9,6 +9,10 @@
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function toast(t) { var e = $('toast'); e.textContent = t; e.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { e.hidden = true; }, 2600); }
   function nameOf(i) { return M.strip(st.h[i][0]) || (C.householdLabel + ' ' + (i + 1)); }
+  // Sender-typed household names are quoted (shared MILLVIEW.quote) wherever someone else reads them: the recipient view and
+  // the copied text. A blank name falls back to the app's own "Household N", which is not typed text and is not quoted.
+  function typedName(i) { return M.strip(st.h[i][0]) ? V.quote(M.strip(st.h[i][0])) : nameOf(i); }
+  function shownName(i) { return mode === 'own' ? nameOf(i) : typedName(i); }
   function unit() { return M.strip(st.u); }
   function money(c) { return S.fmtMoney(c, M.strip(st.c)); }
   function staticText() {
@@ -113,7 +117,11 @@
     var lq = $('lcd-q'); lq.textContent = ''; lq.appendChild(el('span', 'num', st.q ? (S.parseQty(st.q) != null ? S.fmtQty(S.parseQty(st.q)) : '—') : '—')); if (st.q && u) { lq.appendChild(document.createTextNode(' ')); lq.appendChild(el('span', 'unit', u)); }
     $('lcd-p').textContent = S.parseMoney(st.p) != null ? money(S.parseMoney(st.p)) : '—';
     $('lcd-f').textContent = money(S.parseMoney(st.f) || 0);
-    var inc = S.parseQty(st.i); $('sname').textContent = (M.strip(st.n) || C.itemPlaceholder) + (inc ? ' · ' + C.incrementLabel + ' ' + S.fmtQty(inc) + (u ? ' ' + u : '') : '');
+    // D11: on the recipient page the item is the sender's typed text (quoted, typed style), on its own line; the app's
+    // "Split in steps of" line is a separate element so the two never run together.
+    var inc = S.parseQty(st.i), sn = $('sname'), stepTxt = inc ? C.incrementLabel + ' ' + S.fmtQty(inc) + (u ? ' ' + u : '') : ''; sn.textContent = '';
+    if (mode !== 'own' && M.strip(st.n)) { sn.appendChild(V.typed(M.strip(st.n), 'ss-typedname')); if (stepTxt) sn.appendChild(el('span', 'ss-step', stepTxt)); }
+    else sn.textContent = (M.strip(st.n) || C.itemPlaceholder) + (stepTxt ? ' · ' + stepTxt : '');
     status.className = 'ss-status'; status.setAttribute('role', 'status'); $('reconcile').textContent = ''; $('residual').textContent = '';
     rows.setAttribute('aria-label', M.fill(C.tableAria, { n: st.h.length }));
     if (!res) { status.textContent = C.emptyState; }
@@ -122,14 +130,14 @@
       status.textContent = M.fill(C.statusShortage, { qty: S.fmtQty(res.shortage), unit: u }) + ' ' + M.fill(C.overAllocationBlock, { qty: S.fmtQty(res.shortage), unit: u }) + ' ' + C.noProrateNote;
       status.classList.add('is-short'); status.setAttribute('role', 'alert');
       rows.appendChild(colhead(C.colAsked));
-      st.h.forEach(function (x, i) { var r = S.parseQty(String(x[1]).trim() === '' ? '0' : x[1]) || 0; rows.appendChild(arow(r ? '' : 'is-zero', nameOf(i), { n: Math.min(r, q), Q: q, t: S.fmtQty(r) + ' ' + u }, '—', '—', '—')); });
+      st.h.forEach(function (x, i) { var r = S.parseQty(String(x[1]).trim() === '' ? '0' : x[1]) || 0; rows.appendChild(arow(r ? '' : 'is-zero', shownName(i), { n: Math.min(r, q), Q: q, t: S.fmtQty(r) + ' ' + u }, '—', '—', '—')); });
       rows.appendChild(arow('is-short', C.shortRow, { n: 0, Q: q, t: S.fmtQty(res.shortage) + ' ' + u }, '—', '—', '—'));
     }
     else if (res.status === 'under') { status.textContent = M.fill(C.statusRemainder, { qty: S.fmtQty(res.unallocated.qty), unit: u }) + ' ' + C.unallocatedHint; status.classList.add('is-unalloc'); }
     else { status.textContent = M.fill(C.statusExact, { package: S.fmtQty(res.pkgQty), unit: u }); status.classList.add('is-full'); }
     if (res && res.complete) {
       rows.appendChild(colhead(C.colQty));
-      res.rows.forEach(function (r, i) { var ar = rows.appendChild(arow((r.qty ? '' : 'is-zero') + (res.assigned === i ? ' is-assigned' : '') + (mode !== 'own' && i === pick ? ' is-you' : '') + (wasOf(i) ? ' is-changed' : ''), nameOf(i), { n: r.qty, Q: res.pkgQty, t: S.fmtQty(r.qty) + ' ' + u }, money(r.goods), money(r.fee), money(r.total), r.extraCents ? M.plural(C.pennyTag, r.extraCents) : '')); if (wasOf(i)) ar.querySelector('.qty').setAttribute('data-was', wasOf(i)); });
+      res.rows.forEach(function (r, i) { var ar = rows.appendChild(arow((r.qty ? '' : 'is-zero') + (res.assigned === i ? ' is-assigned' : '') + (mode !== 'own' && i === pick ? ' is-you' : '') + (wasOf(i) ? ' is-changed' : ''), shownName(i), { n: r.qty, Q: res.pkgQty, t: S.fmtQty(r.qty) + ' ' + u }, money(r.goods), money(r.fee), money(r.total), r.extraCents ? M.plural(C.pennyTag, r.extraCents) : '')); if (wasOf(i)) ar.querySelector('.qty').setAttribute('data-was', wasOf(i)); });
       var un = res.unallocated; rows.appendChild(arow('is-unalloc' + (un.qty ? '' : ' is-zero'), C.unallocatedRow, { n: un.qty, Q: res.pkgQty, t: S.fmtQty(un.qty) + ' ' + u }, money(un.goods), money(un.fee), money(un.total), un.extraCents ? M.plural(C.pennyTag, un.extraCents) : ''));
       var sumQ = res.rows.reduce(function (a, r) { return a + r.qty; }, un.qty), sumM = res.rows.reduce(function (a, r) { return a + r.total; }, un.total);
       var sum = el('div', 'ss-sum'); sum.setAttribute('role', 'row'); var ok = sumQ === res.pkgQty && sumM === res.total;
@@ -154,19 +162,22 @@
     lockEditor(); var txt = ready ? proposal(res) : ''; $('text').value = txt; $('printout').textContent = ready ? M.fill(C.proposalPolicy, { feeBasisLine: C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'], residualNote: C.residualNote }) + '\n' + C.proposalSnapshot + '\n' + C.noPaymentNote : '';
   }
   // D9: the leftover-cents sentence names each row's actual extra cents. Writer's "one each" form is used only when every listed row got exactly 1.
+  var textNames = false;
   function residualSentence(res) {
-    var parts = [], n = 0; res.rows.forEach(function (r, i) { if (r.extraCents) parts.push([nameOf(i), r.extraCents]); }); if (res.unallocated && res.unallocated.extraCents) parts.push([C.unallocatedRow, res.unallocated.extraCents]);
+    var parts = [], n = 0; res.rows.forEach(function (r, i) { if (r.extraCents) parts.push([textNames ? typedName(i) : shownName(i), r.extraCents]); }); if (res.unallocated && res.unallocated.extraCents) parts.push([C.unallocatedRow, res.unallocated.extraCents]);
     parts.forEach(function (p) { n += p[1]; }); if (!n) return C.residualNone;
     if (parts.every(function (p) { return p[1] === 1; })) return M.plural(C.residualLine, n, { names: parts.map(function (p) { return p[0]; }).join(', ') });
     return M.plural(C.residualLineMixed, n, { names: parts.map(function (p) { return M.plural(C.residualShare, p[1], { name: p[0] }); }).join(', ') });
   }
   function proposal(res) {
     var u = unit(), out = [M.fill(C.shareTextTyped, { item: M.strip(st.n) }), C.packageQtyLabel + ': ' + S.fmtQty(res.pkgQty) + ' ' + u + ' · ' + C.priceLabel + ': ' + money(res.price) + ' · ' + C.feeLabel + ': ' + money(res.fee), ''];
-    res.rows.forEach(function (r, i) { out.push(nameOf(i) + ': ' + S.fmtQty(r.qty) + ' ' + u + ' · ' + C.colItem + ' ' + money(r.goods) + ' + ' + C.colFee + ' ' + money(r.fee) + ' = ' + C.colPays + ' ' + money(r.total)); });
+    out.push(C.textNamesTyped, '');
+    res.rows.forEach(function (r, i) { out.push(typedName(i) + ': ' + S.fmtQty(r.qty) + ' ' + u + ' · ' + C.colItem + ' ' + money(r.goods) + ' + ' + C.colFee + ' ' + money(r.fee) + ' = ' + C.colPays + ' ' + money(r.total)); });
     out.push(C.unallocatedRow + ': ' + M.fill(C.unallocatedLine, { qty: S.fmtQty(res.unallocated.qty), unit: u, cost: money(res.unallocated.total) }));
     out.push(C.rowTotal + ': ' + S.fmtQty(res.pkgQty) + ' ' + u + ' · ' + money(res.total), '');
     out.push(M.fill(C.proposalPolicy, { feeBasisLine: C.feeBasisLine[st.b === 'e' ? 'equal' : 'proportional'], residualNote: C.residualNote }));
-    out.push($('residual').textContent, C.proposalSnapshot, C.noPaymentNote);
+    textNames = true; var resid = residualSentence(res); textNames = false;
+    out.push(resid, C.proposalSnapshot, C.noPaymentNote);
     return out.join('\n');
   }
   function wasOf(i) { if (mode !== 'change' || !orig || i !== pick) return ''; var a = S.parseQty(String(orig.h[i][1]).trim() || '0'), b = S.parseQty(String(st.h[i][1]).trim() || '0'); return a !== b ? M.fill(C.changedWas, { qty: S.fmtQty(a), unit: unit() }) : ''; }
@@ -180,7 +191,7 @@
   }
   function recvPanel() {
     var sel = $('pick'), v = pick; sel.textContent = ''; var o0 = el('option', null, '—'); o0.value = ''; sel.appendChild(o0);
-    st.h.forEach(function (_, i) { var o = el('option', null, nameOf(i)); o.value = String(i); sel.appendChild(o); }); sel.value = v >= 0 ? String(v) : '';
+    st.h.forEach(function (_, i) { var o = el('option', null, typedName(i)); o.value = String(i); sel.appendChild(o); }); sel.value = v >= 0 ? String(v) : '';
     $('change').disabled = pick < 0; var inc = S.parseQty(st.i);
     if (pick >= 0) { $('amt-l').textContent = M.fill(C.answerAmountLabel, { increment: S.fmtQty(inc), unit: unit() }); $('down').setAttribute('aria-label', M.fill(C.stepDownAria, { name: nameOf(pick) })); $('up').setAttribute('aria-label', M.fill(C.stepUpAria, { name: nameOf(pick) })); $('amt').textContent = S.fmtQty(S.parseQty(String(st.h[pick][1]).trim() || '0')) + ' ' + unit(); }
     var res = result(), oc = $('owncost'); oc.textContent = '';
@@ -212,7 +223,7 @@
   function reset() { if (mode !== 'own') return; if (!confirm(C.resetConfirm)) return; st = blank(); orig = null; pick = -1; lastLink = ''; $('link').value = ''; history.replaceState(null, '', location.pathname); $('linkbox').hidden = true; $('banner').hidden = true; setMode('own'); toForm(); render(); toast(C.resetDone); $('item').focus(); }
   function banner(t) { $('banner-h').hidden = true; $('banner-q').hidden = true; $('banner-t').textContent = t; $('banner').hidden = false; }
   function fromHash() {
-    $('banner').hidden = true; lastLink = ''; $('link').value = ''; $('linkbox').hidden = true; $('rlink').value = ''; $('rlinkbox').hidden = true;
+    V.clearErrors(document, '#item-msg,#hh-msg,#change-err'); $('banner').hidden = true; lastLink = ''; $('link').value = ''; $('linkbox').hidden = true; $('rlink').value = ''; $('rlinkbox').hidden = true;
     if (!location.hash || location.hash === '#') { st = blank(); setMode('own'); return; }
     var d = L.decode(location.hash);
     if (d.ok) {

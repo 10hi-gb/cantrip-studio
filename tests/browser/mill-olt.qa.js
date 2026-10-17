@@ -1,6 +1,6 @@
 // node tests/browser/mill-olt.qa.js <host[:port]> <ip> [scheme] — One Less Trip @320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result, reallyHidden } = require('./mill-common');
+const { sameTabBadLink, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result, reallyHidden } = require('./mill-common');
 const BASE = `${SCHEME}://${H}/mill/one-less-trip/`;
 async function addRow(p, owner, item, qty, unit, stop) {
   await p.select('#f-o', String(owner)); await typeInto(p, '#f-i', item); await typeInto(p, '#f-q', qty); await typeInto(p, '#f-u', unit);
@@ -44,7 +44,7 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     await p.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.reject(new Error('denied')) } }); });
     await p.focus('#b-copy'); await p.keyboard.press('Enter'); await sleep(150);
     t = await p.evaluate(() => ({ toast: document.getElementById('toast').textContent, f: document.activeElement.id, v: document.getElementById('fallback').value, sel: document.activeElement.selectionEnd - document.activeElement.selectionStart }));
-    ck(w + ' copy failure leaves full list selected', t.toast === "Couldn't copy. Select the text below and copy it yourself." && t.f === 'fallback' && t.sel > 100 && t.v.startsWith('Shopping by stop. Items, stops and names as typed by the sender.\n\nStop: “Corner Co-op”\n☐ “Oat milk”: 3 carton total · for Ana, Ben\n') && t.v.includes('\nStop unknown\n☐ “AA batteries”: 8 each · for Ana\n'), t);
+    ck(w + ' copy failure leaves full list selected', t.toast === "Couldn't copy. Select the text below and copy it yourself." && t.f === 'fallback' && t.sel > 100 && t.v.startsWith('Shopping by stop. Items, stops and names as typed by the sender.\n\nStop: “Corner Co-op”\n☐ “Oat milk”: 3 carton total · for “Ana”, “Ben”\n') && t.v.includes('\nStop unknown\n☐ “AA batteries”: 8 each · for “Ana”\n'), t);
     // remove a household -> rows held back, copy blocked
     await p.focus('#hhr-3'); await p.keyboard.press('Enter'); await sleep(60); t = await view(p);
     ck(w + ' removed household: its rows held back, never dropped; copy blocked', t.ledger.includes('10 rows in') && t.ledger.includes('4 held back') && t.copy && t.fix.startsWith('4 rows need fixing'), t);
@@ -173,5 +173,11 @@ const view = p => p.evaluate(() => ({ ledger: document.getElementById('ledger').
     ck(w + ' D11 one row less: link made, whole URL <= 2,000 and opens', !t.lb && t.link.length <= 2000 && t.link.length > 1900 && t.ok, { len: t.link.length, ok: t.ok });
     ck(w + ' D4–D13 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
   }
+  // QA N1 (same tab, all pieces)
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const r = await sameTabBadLink(p, { errSel: '.olt-err', bad: 't1.broken',
+      fill: async p => { await p.click('#f-add'); await sleep(50); await typeInto(p, '#hh-1', 'Ana'); await typeInto(p, '#hh-2', 'Ben'); await addRow(p, 1, 'Milk', '1', 'l', 'Shop'); await typeInto(p, '#f-q', 'abc'); await p.click('#f-add'); await sleep(50); },
+      link: async p => { await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.click('#b-share'); await sleep(200); return p.$eval('#link', e => e.value); } });
+    ck(w + ' N1 same tab: bad link after fill + link + open shows zero validation errors', r.ok, r); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

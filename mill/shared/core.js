@@ -22,5 +22,8 @@
   }
   function fill(t, v) { return String(t).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? String(v[k]) : a; }); }
   function plural(o, n, v) { var t = typeof o === 'string' ? o : (n === 1 ? o.one : o.other); var x = { n: n }; for (var k in v) x[k] = v[k]; return fill(t, x); }
-  return { strip: strip, len: len, ck: ck, b64e: b64e, b64d: b64d, pack: pack, unpack: unpack, fill: fill, plural: plural };
+  // The ONE typed-text rule for every Mill piece: someone else's typed text is shown in curly quotes (plain-text places use
+  // this directly; DOM places use MILLVIEW.typed, which calls it).
+  function quote(s) { return '\u201C' + s + '\u201D'; }
+  return { quote: quote, strip: strip, len: len, ck: ck, b64e: b64e, b64d: b64d, pack: pack, unpack: unpack, fill: fill, plural: plural };
 });

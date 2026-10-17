@@ -1,6 +1,6 @@
 // node tests/browser/mill-ask.qa.js <host[:port]> <ip> [scheme] — One Small Ask end to end: sender -> recipient -> reply, @320/390/1280 (ENGINEER SELF-CHECK)
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
-const { reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
+const { sameTabBadLink, reallyHidden, textOverlap, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result } = require('./mill-common');
 const M = require('../../mill/shared/core.js'), C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/one-small-ask/copy.js', 'utf8') + ';COPY');
 const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
 (async () => {
@@ -18,7 +18,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     await typeInto(p, '#f-d', 'Tue Oct 20'); await p.focus('#f-s'); await p.keyboard.type('0400PM'); await p.focus('#f-t'); await p.keyboard.type('0600PM');
     await typeInto(p, '#f-f', 'Dana'); await typeInto(p, '#f-o', 'Sam');
     t = await p.evaluate(() => ({ s: document.getElementById('f-s').value, t: document.getElementById('f-t').value, text: document.getElementById('text').textContent }));
-    ck(w + ' sender text export', t.s === '16:00' && t.t === '18:00' && t.text.includes('When: Tue Oct 20, 4 PM–6 PM') && t.text.startsWith('From: Dana\nThe favor, as typed: “Pick up groceries from my porch and drop them at Mom\'s”\n'), t);
+    ck(w + ' sender text export', t.s === '16:00' && t.t === '18:00' && t.text.includes('When: Tue Oct 20, 4 PM–6 PM') && t.text.startsWith('From: “Dana”\nThe favor, as typed: “Pick up groceries from my porch and drop them at Mom\'s”\n'), t);
     await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(300);
     const askUrl = await p.$eval('#link', e => e.value); ck(w + ' ask link made (#a1)', /#a1\./.test(askUrl), askUrl.length);
     ck(w + ' address bar not rewritten', (await p.evaluate(() => location.hash)) === '', null);
@@ -26,7 +26,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     const q = await b.newPage(); await q.setViewport({ width: w, height: 800 }); const qe = []; q.on('pageerror', e => qe.push(String(e))); q.on('console', m => { if (m.type() === 'error' && !/Cross-Origin-Opener-Policy/.test(m.text())) qe.push(m.text()); });
     await q.goto(askUrl, { waitUntil: 'load' }); await sleep(200);
     t = await q.evaluate(() => ({ title: document.getElementById('title').textContent, typed: (document.querySelector('#title .osa-typed') || {}).textContent, qlab: [...document.querySelectorAll('.osa-term .ask .osa-qlabel')].map(e => e.textContent), send: [...document.querySelectorAll('.osa-fine')].map(e => e.textContent).join('|'), ask: [...document.querySelectorAll('.osa-term .ask')].map(e => e.textContent), choices: document.querySelectorAll('[role=radio]').length }));
-    ck(w + ' recipient sees the ask (D4: name after its label as separate text; favor quoted under receiverAskLabel)', t.title === 'Small ask from: Dana' && t.typed === 'Dana' && t.qlab[0] === 'Their ask, as typed:' && t.ask[0].includes('“Pick up groceries') && t.ask[0].endsWith('”') && t.ask[2] === 'Tue Oct 20, 4 PM–6 PM' && t.choices === 3 && t.ask.length === 3, t);
+    ck(w + ' recipient sees the ask (D4: name after its label as separate text; favor quoted under receiverAskLabel)', t.title === 'Small ask from: “Dana”' && t.typed === '“Dana”' && t.qlab[0] === 'Their ask, as typed:' && t.ask[0].includes('“Pick up groceries') && t.ask[0].endsWith('”') && t.ask[2] === 'Tue Oct 20, 4 PM–6 PM' && t.choices === 3 && t.ask.length === 3, t);
     // keyboard radiogroup: focus Yes, arrow to Part of it
     await q.focus('#c-y'); await q.keyboard.press('ArrowDown'); await sleep(100);
     t = await q.evaluate(() => ({ checked: document.querySelector('[aria-checked=true]').id, focus: document.activeElement.id, inputs: !!document.getElementById('o-w') }));
@@ -43,7 +43,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     const r = await b.newPage(); await r.setViewport({ width: w, height: 800 }); const re = []; r.on('pageerror', e => re.push(String(e)));
     await r.goto(repUrl, { waitUntil: 'load' }); await sleep(200);
     t = await r.evaluate(() => ({ title: document.getElementById('title').textContent, delta: document.getElementById('delta').textContent, verdict: document.querySelector('.osa-verdict').textContent, note: document.getElementById('note').textContent, body: document.body.innerText }));
-    ck(w + ' sender sees reply with delta + snapshot note', t.title === 'Sam replied with what they can do.' && t.delta.includes('Collection only · Wed Oct 21, 5 PM–6 PM') && t.verdict === 'Part of it' && /Nothing has been booked/.test(t.note) && !/\b(accepted|confirmed|agreed|delivered|notified)\b/i.test(t.body), t);
+    ck(w + ' sender sees reply with delta + snapshot note', t.title === '“Sam” replied with what they can do.' && t.delta.includes('Collection only · Wed Oct 21, 5 PM–6 PM') && t.verdict === 'Part of it' && /Nothing has been booked/.test(t.note) && !/\b(accepted|confirmed|agreed|delivered|notified)\b/i.test(t.body), t);
     { const qv = await r.evaluate(() => [...document.querySelectorAll('.osa-term .ask .osa-quoted')].map(e => e.textContent)); ck(w + ' reply view: original typed favor quoted under receiverAskLabel (D4)', qv.length >= 1 && qv[0].startsWith('Their ask, as typed: “Pick up groceries') && qv[0].endsWith('”'), qv); }
     // ask again, changed -> composer prefilled with the offer
     await r.focus('#b-again'); await r.keyboard.press('Enter'); await sleep(100);
@@ -83,7 +83,7 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(150);
     const sw = await p.evaluate(() => document.documentElement.scrollWidth); const ov = await textOverlap(p, '#title, .osa-who b, .osa-who small, .osa-term .k1, .osa-term .ask, .osa-choice');
     const ttl = await p.$$eval('.osa-who b', bs => bs.map(b => b.title));
-    ck(w + ' ask long single-word values: no overflow, no overlap, full name in title attr', sw <= w && !ov.length && ttl.includes(L), { sw, ov, ttl }); await s.b.close(); }
+    ck(w + ' ask long single-word values: no overflow, no overlap, full name in title attr', sw <= w && !ov.length && ttl.includes('“' + L + '”'), { sw, ov, ttl }); await s.b.close(); }
   // ---- QA 83a2ebcd fixes (D1-D9) + PM scope (140 cap, line breaks, no note on "Not this time", recipient Start over)
   const USPS = 'Track at https://tools.usps.com/go/TrackConfirmAction?tLabels=9400111899223344556677';
   const A0 = { w: 'pickup', e: 20, u: 'min', d: 'Tue', s: '16:00', t: '18:00', h: '', f: 'Jordan', o: 'Sam' };
@@ -115,9 +115,9 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     ck(w + ' D4: avatar initials stay round', ini.length && ini.every(x => { const [a, b] = x.split('x').map(Number); return Math.abs(a - b) <= 1; }), ini);
     await p.goto(BASE + '#' + L.names, { waitUntil: 'load' }); await sleep(150);
     const nm = await p.evaluate(() => [...document.querySelectorAll('.osa-who b')].map(b => ({ t: b.textContent, clipped: b.scrollWidth > b.clientWidth + 1, ell: getComputedStyle(b).textOverflow, lines: Math.round(b.getBoundingClientRect().height / parseFloat(getComputedStyle(b).lineHeight || 20)) })));
-    ck(w + ' D5: 20+ character names wrap instead of ellipsis', nm.some(x => x.t === 'Christopher Montgomery') && nm.every(x => !x.clipped && x.ell !== 'ellipsis'), nm);
+    ck(w + ' D5: 20+ character names wrap instead of ellipsis', nm.some(x => x.t === '“Christopher Montgomery”') && nm.every(x => !x.clipped && x.ell !== 'ellipsis'), nm);
     const D8 = await p.evaluate(() => ({ title: document.getElementById('title').textContent, typed: (document.querySelector('#title .osa-typed') || {}).textContent, q: (document.querySelector('.osa-term .ask .osa-qlabel') || {}).textContent }));
-    ck(w + ' D8: "Small ask from:" label + separate name; "Their ask, as typed:" + quotes', D8.title === 'Small ask from: Christopher Montgomery' && D8.typed === 'Christopher Montgomery' && D8.q === 'Their ask, as typed:', D8);
+    ck(w + ' D8: "Small ask from:" label + separate name; "Their ask, as typed:" + quotes', D8.title === 'Small ask from: “Christopher Montgomery”' && D8.typed === '“Christopher Montgomery”' && D8.q === 'Their ask, as typed:', D8);
     const domA = await p.evaluate(() => ({ editable: [...document.querySelectorAll('input,textarea,select,[contenteditable=true]')].filter(e => !e.disabled && !e.readOnly).map(e => e.id || e.className), askInputs: document.querySelectorAll('.is-ask.osa-in,#f-w,#f-e,#f-u,#f-d,#f-s,#f-t,#f-h,#f-f,#f-o').length, reset: !!document.getElementById('b-reset') }));
     const hidA = await reallyHidden(p, ['#f-w', '#f-h', '#b-reset', '#b-link', '#delta']);
     ck(w + ' recipient view rendered: composer controls and delta not rendered, not in a11y tree', hidA.ok, hidA);
@@ -153,5 +153,20 @@ const BASE = `${SCHEME}://${H}/mill/one-small-ask/`;
     await p.focus('#b-reset'); await p.keyboard.press('Enter'); await sleep(150); const after = await p.$eval('#link', e => e.value);
     ck(w + ' D6: Start over empties the hidden link box', /#a1\./.test(had) && after === '', { had: had.length, after });
     ck(w + ' QA-fix checks no errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA local-58436b3 N1 (same tab): fill -> Copy the ask link -> open it -> open a bad link: no stale validation errors
+  for (const w of W) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150);
+    const r = await sameTabBadLink(p, { errSel: '.osa-err', bad: 'a1.broken',
+      fill: async p => { await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(80); await typeInto(p, '#f-w', 'Confirm your account by replying yes'); await typeInto(p, '#f-e', '20'); await typeInto(p, '#f-d', 'Tue Oct 20'); await p.focus('#f-s'); await p.keyboard.type('0400PM'); await p.focus('#f-t'); await p.keyboard.type('0600PM'); await typeInto(p, '#f-h', 'Verified ✔ Bank branch'); await typeInto(p, '#f-f', 'Verified ✔ Bank'); await typeInto(p, '#f-o', 'Sam'); },
+      link: async p => { await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(200); return p.$eval('#link', e => e.value); } });
+    ck(w + ' N1 same tab: bad link after fill + link + open shows zero validation errors (none rendered, nothing aria-invalid)', r.ok, r);
+    // D8 + N2: typed name quoted in the headline + card header, typed-by note; copy-as-text quotes from/favor/Re:
+    const t0 = await p.evaluate(() => 1); await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(120);
+    await typeInto(p, '#f-w', 'Confirm your account by replying yes'); await typeInto(p, '#f-e', '20'); await typeInto(p, '#f-d', 'Tue Oct 20'); await p.focus('#f-s'); await p.keyboard.type('0400PM'); await p.focus('#f-t'); await p.keyboard.type('0600PM'); await typeInto(p, '#f-h', 'Verified ✔ Bank branch'); await typeInto(p, '#f-f', 'Verified ✔ Bank'); await typeInto(p, '#f-o', 'Sam');
+    const sTxt = await p.$eval('#text', e => e.textContent); await p.evaluate(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); }); await p.focus('#b-link'); await p.keyboard.press('Enter'); await sleep(200); const url = await p.$eval('#link', e => e.value);
+    await p.goto('about:blank'); await p.goto(url, { waitUntil: 'load' }); await sleep(200);
+    const rv = await p.evaluate(() => ({ h1: document.getElementById('title').textContent, lede: document.getElementById('lede').textContent, heads: [...document.querySelectorAll('.osa-heads b')].map(e => e.textContent) }));
+    ck(w + ' D8 recipient: headline + card header quote the typed name; typed-by-sender note shown', rv.h1 === 'Small ask from: “Verified ✔ Bank”' && rv.lede === 'Names and words in quotes are as typed by the sender. Not checked.' && rv.heads[0] === '“Verified ✔ Bank”', rv);
+    ck(w + ' N2 sender copy-as-text: from-name, favor and Where quoted', sTxt.startsWith('From: “Verified ✔ Bank”\nThe favor, as typed: “Confirm your account by replying yes”\n') && sTxt.includes('Where: “Verified ✔ Bank branch”\n'), sTxt);
+    await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

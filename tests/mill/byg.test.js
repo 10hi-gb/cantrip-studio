@@ -63,7 +63,7 @@ t('questions: only fixed templates or the visitor\'s own text; bring never menti
 t('text export uses Writer templates verbatim: quoted typed text, per-fact status, questions, footer', () => {
   const s = st({ top: { k: 'Used bike', by: 'Jo', o: ['Is the lock included?'] }, f: { place: { v: 'Corner of 5th', a: 'Side gate', c: true }, window: { v: '2026-10-24' }, contact: { v: 'Sam 412-555-0187', vby: 'sender' }, instructions: { ns: true }, bring: { a: 'Cash, $80', c: true, cby: 'sender' } } });
   const x = B.text(s, C).split('\n');
-  assert.deepEqual(x, ['Pickup notes for “Used bike”', 'Notes by: Jo', '', 'Not set: 3 essentials still open. Still open: When, Contact, Instructions.', '',
+  assert.deepEqual(x, ['Pickup notes for “Used bike”', 'Notes by: “Jo”', '', 'Not set: 3 essentials still open. Still open: When, Contact, Instructions.', '',
     'Place: “Corner of 5th” · Confirmed', 'Answer: “Side gate”', 'When: “Sat Oct 24 2026” · Your note, not confirmed', 'Contact: “Sam 412-555-0187” · Sender\'s note, not confirmed', 'Instructions: Not sure', 'Bring: “Cash, $80” · Confirmed by the sender',
     '', 'Ask before you go:', '• What time can I come on Sat Oct 24 2026?', '• Who do I contact, and how?', '• Anything I should know when I arrive?', '• “Is the lock included?”', '', C.textFooter]);
   const pr = B.text(s, C, true); assert.ok(pr.startsWith('Pickup: “Used bike”\n')); assert.ok(pr.endsWith('\n' + C.printFooter));

@@ -50,3 +50,9 @@
 .ss-alloc .qty,.ss-alloc .m,.ss-alloc .tot,.ss-sum span{overflow-wrap:normal;word-break:keep-all}
 .ss-alloc .tot .p,.ss-alloc .m .fw{white-space:normal}
 @media (max-width:360px){.ss-lcd .v{font-size:17px}}
+/* QA local-58436b3 D11/D12: sender-typed text in typed style, never the uppercase product heading; app's step line apart */
+.ss-name .ss-typedname{display:block;font:500 17px/1.3 var(--ss-sans,system-ui);text-transform:none;letter-spacing:0}
+.ss-name .ss-step{display:block;margin-top:4px;font:700 12px var(--ss-cond);letter-spacing:.12em;text-transform:uppercase;color:var(--ss-mute)}
+body.is-recv .ss-alloc .who{text-transform:none;letter-spacing:0}
+/* D1c: at 320 the LCD values shrink so $100000.00 and $9999999.99 stay inside the panel (no mid-number break) */
+@media (max-width:360px){.ss-lcd{column-gap:8px;padding:8px 10px}.ss-lcd .v{font-size:15px}.ss-lcd .k{letter-spacing:.08em}}
