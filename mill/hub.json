@@ -177,13 +177,12 @@
     "A received link is a snapshot of what the sender entered; nobody has agreed to anything by opening it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 6f5f5435f607b901a8fae6cd674e704af77f1324: unit 21 (incl. 5000-case settlement property test); browser 312/312 at 320/360/390/700–999/1280/1440. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW, pending a PM ruling on E2h (a hyphen break at 360–361 where a space break would fit)",
+   "status": "READY ON LOCALHOST-PREVIEW (also READY at 5ad5c277f48e52f1864513b3bfca3782b25fe79f)",
    "qaLocal": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "6f5f5435f607b901a8fae6cd674e704af77f1324",
-    "report": "qa/even-up/local-6f5f543/QA-local-6f5f543.md",
-    "note": "pending a PM ruling on E2h (a hyphen break at 360–361 where a space break would fit)"
+    "report": "qa/even-up/local-6f5f543/QA-local-6f5f543.md"
    }
   },
   {
