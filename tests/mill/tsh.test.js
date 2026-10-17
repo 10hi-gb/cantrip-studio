@@ -126,4 +126,18 @@ t('QA D1: current and legacy zone names both accepted; links and the picker use 
   ['Asia/Calcutta', 'Europe/Kiev', 'America/Buenos_Aires'].forEach(z => assert.ok(!zs.includes(z), 'picker lists only current ' + z)); assert.equal(new Set(zs).size, zs.length);
   const st = ex({ z: 'Asia/Calcutta' }); const d = T.decode(T.encode(st)); assert.ok(d.ok); assert.equal(d.data.z, 'Asia/Kolkata');
   const r = T.compute(ex({ z: 'Asia/Kolkata' })); assert.equal(r.options.length, 1); assert.equal(T.zoneInfo(0, 'Asia/Kolkata').offset, '+05:30'); assert.equal(T.zoneInfo(0, 'Europe/Kyiv').offset.length > 0, true); });
+t('QA D1-r: backward names (US/*, Etc/UTC, GMT…) open and normalise to one canonical name; random-case harness over every Intl name', () => {
+  const US = { 'US/Pacific': 'America/Los_Angeles', 'US/Eastern': 'America/New_York', 'US/Central': 'America/Chicago', 'US/Mountain': 'America/Denver', 'US/Alaska': 'America/Anchorage', 'US/Hawaii': 'Pacific/Honolulu', 'US/Arizona': 'America/Phoenix', 'US/Aleutian': 'America/Adak', 'US/East-Indiana': 'America/Indiana/Indianapolis', 'US/Indiana-Starke': 'America/Indiana/Knox', 'US/Michigan': 'America/Detroit', 'US/Samoa': 'Pacific/Pago_Pago', 'Etc/UTC': 'UTC', 'GMT': 'UTC' };
+  const zs = T.zones();
+  for (const [z, c] of Object.entries(US)) { assert.ok(T.validZone(z), z); assert.equal(T.canon(z), c, z); assert.ok(zs.includes(c), c + ' in picker');
+    const st = mk([['A', [[0, '09:00', '12:00']]], ['B', [[0, '11:00', '13:00']]]], { z }); const d = T.decode(T.encode(st)); assert.ok(d.ok, z); assert.equal(d.data.z, c);
+    const raw = M.pack('h', 1, { w: '2026-10-19', z, n: '60', u: 'min', t: '', p: [['A', [[0, '09:00', '12:00']]], ['B', [[0, '11:00', '13:00']]]] }); const r = T.decode(raw); assert.ok(r.ok, 'QA-packed link with ' + z); assert.equal(r.data.z, c);
+    const res = T.compute(r.data); assert.equal(res.state, 'found', z); assert.equal(res.options[0].len, 60); }
+  for (const z of ['Mars/Olympus', 'US/Nowhere', '', '../etc', 'America/Los_Angeles ', 'x'.repeat(70)]) assert.ok(!T.validZone(z), JSON.stringify(z));
+  // random-case harness (seeded): every name Intl lists, each picker name, and each table alias: valid, canonical in the picker, round-trips, same offsets as its canonical
+  let seed = 20261017; const rnd = n => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed % n; };
+  const pool = [...new Set([].concat(Intl.supportedValuesOf('timeZone'), zs, Object.keys(US), ['Asia/Calcutta', 'Europe/Kiev', 'America/Buenos_Aires', 'Asia/Katmandu', 'Asia/Saigon']))];
+  let n0 = 0; for (let k = 0; k < 400; k++) { const z = pool[rnd(pool.length)]; assert.ok(T.validZone(z), z); const c = T.canon(z); assert.ok(zs.includes(c), z + ' -> ' + c);
+    const t0 = Date.UTC(2026, 9, 19, 12) + rnd(400) * 864e5; assert.equal(T.zoneInfo(t0, z).offset, T.zoneInfo(t0, c).offset, z); n0++; }
+  assert.equal(n0, 400); });
 console.log('PASS ' + n + ' tests');

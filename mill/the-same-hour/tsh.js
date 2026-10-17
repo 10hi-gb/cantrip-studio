@@ -16,12 +16,24 @@
     'Pacific/Truk': 'Pacific/Chuuk', 'Pacific/Ponape': 'Pacific/Pohnpei', 'America/Indianapolis': 'America/Indiana/Indianapolis', 'America/Louisville': 'America/Kentucky/Louisville',
     'America/Coral_Harbour': 'America/Atikokan', 'Asia/Dacca': 'Asia/Dhaka', 'Asia/Thimbu': 'Asia/Thimphu', 'Asia/Ulan_Bator': 'Asia/Ulaanbaatar', 'Asia/Macao': 'Asia/Macau',
     'Asia/Chongqing': 'Asia/Shanghai', 'Asia/Kashgar': 'Asia/Urumqi', 'Europe/Uzhgorod': 'Europe/Kyiv', 'Europe/Zaporozhye': 'Europe/Kyiv', 'Asia/Ujung_Pandang': 'Asia/Makassar' };
+  // QA D1-r: the backward-link names browsers' Intl may carry (US/*, Etc/UTC…) map to one canonical name; anything else Intl
+  // accepts is canonicalized through resolvedOptions().timeZone when that lands on a picker name (canonical()).
+  var BACKWARD = { 'US/Pacific': 'America/Los_Angeles', 'US/Eastern': 'America/New_York', 'US/Central': 'America/Chicago', 'US/Mountain': 'America/Denver',
+    'US/Alaska': 'America/Anchorage', 'US/Hawaii': 'Pacific/Honolulu', 'US/Arizona': 'America/Phoenix', 'US/Aleutian': 'America/Adak', 'US/East-Indiana': 'America/Indiana/Indianapolis',
+    'US/Indiana-Starke': 'America/Indiana/Knox', 'US/Michigan': 'America/Detroit', 'US/Samoa': 'Pacific/Pago_Pago', 'US/Pacific-New': 'America/Los_Angeles',
+    'Etc/UTC': 'UTC', 'Etc/UCT': 'UTC', 'UCT': 'UTC', 'Etc/Universal': 'UTC', 'Universal': 'UTC', 'Etc/Zulu': 'UTC', 'Zulu': 'UTC', 'Etc/GMT': 'UTC', 'GMT': 'UTC', 'Etc/Greenwich': 'UTC', 'Greenwich': 'UTC', 'GMT0': 'UTC', 'GMT+0': 'UTC', 'GMT-0': 'UTC', 'Etc/GMT0': 'UTC', 'Etc/GMT+0': 'UTC', 'Etc/GMT-0': 'UTC' };
+  Object.keys(BACKWARD).forEach(function (k) { if (!RENAMED[k]) RENAMED[k] = BACKWARD[k]; });
   var LEGACY = {}; Object.keys(RENAMED).forEach(function (k) { if (!LEGACY[RENAMED[k]]) LEGACY[RENAMED[k]] = k; });
   function canon(z) { return typeof z === 'string' && RENAMED[z] ? RENAMED[z] : z; }
+  // full canonicalization for names arriving in links: table first, then the picker, then Intl's own resolution
+  var CANON = {}; function canonical(z) { if (typeof z !== 'string' || !z || z.length > 64 || !/^[A-Za-z0-9_+\-\/]+$/.test(z)) return null; if (z in CANON) return CANON[z];
+    var c = canon(z), list = zones(), out = null; if (list.indexOf(c) >= 0) out = c;
+    else if (intlOk(z)) { var r = ''; try { r = new Intl.DateTimeFormat('en-US', { timeZone: z }).resolvedOptions().timeZone; } catch (e) {} r = canon(r); if (list.indexOf(r) >= 0) out = r; }
+    CANON[z] = out; return out; }
   function intlOk(z) { try { new Intl.DateTimeFormat('en-US', { timeZone: z }); return true; } catch (e) { return false; } }
   var ZL = null; function zones() { if (ZL) return ZL.slice(); var z = []; try { z = Intl.supportedValuesOf('timeZone').slice(); } catch (e) {} if (z.indexOf('UTC') < 0) z.push('UTC');
     var seen = {}; ZL = []; z.forEach(function (k) { var c = canon(k); if (!seen[c] && (c === k || intlOk(c))) { seen[c] = 1; ZL.push(c); } else if (!seen[c] && !seen[k]) { seen[k] = 1; ZL.push(k); } }); ZL.sort(); return ZL.slice(); }
-  var ZSET = null; function validZone(z) { if (!ZSET) { ZSET = {}; zones().forEach(function (k) { ZSET[k] = 1; if (LEGACY[k]) ZSET[LEGACY[k]] = 1; }); } return typeof z === 'string' && ZSET[z] === 1 && intlOk(z); }
+  function validZone(z) { var c = canonical(z); return !!c && intlOk(zid(c)); }
   // the id Intl is given: the canonical name when the engine knows it, else its legacy alias
   var ZID = {}; function zid(z) { if (!(z in ZID)) ZID[z] = intlOk(z) ? z : (LEGACY[z] && intlOk(LEGACY[z]) ? LEGACY[z] : z); return ZID[z]; }
   function fmt(z) { if (!fmts[z]) fmts[z] = new Intl.DateTimeFormat('en-US', { timeZone: zid(z), hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }); return fmts[z]; }
@@ -157,7 +169,7 @@
   }
   // ---- fragment #h1
   function encode(st) {
-    var o = { w: st.w, z: canon(st.z), n: String(st.n), u: st.u, t: M.strip(st.t), p: st.p.map(function (p) { return [M.strip(p.n), (p.iv || []).filter(function (v) { return String(v.s || '').trim() || String(v.e || '').trim(); }).map(function (v) { return [+v.d, String(v.s || '').trim(), String(v.e || '').trim()]; })]; }) };
+    var o = { w: st.w, z: canonical(st.z) || st.z, n: String(st.n), u: st.u, t: M.strip(st.t), p: st.p.map(function (p) { return [M.strip(p.n), (p.iv || []).filter(function (v) { return String(v.s || '').trim() || String(v.e || '').trim(); }).map(function (v) { return [+v.d, String(v.s || '').trim(), String(v.e || '').trim()]; })]; }) };
     var f = M.pack('h', 1, o); return f.length > LIM.frag ? '' : f;
   }
   function decode(h) {
@@ -166,7 +178,7 @@
     if (!s(d.w, 10) || !s(d.z, 64) || !s(d.n, 4) || (d.u !== 'min' && d.u !== 'hr') || !s(d.t, LIM.title) || !Array.isArray(d.p) || d.p.length > LIM.pMax) return { ok: false, why: 'bad' };
     if (d.w && parseDate(d.w) === null) return { ok: false, why: 'bad' };
     if (d.z && !validZone(d.z)) return { ok: false, why: 'bad' };
-    var st = { w: d.w, z: canon(d.z), n: d.n, u: d.u, t: d.t, p: [], next: 1 }, okAll = true;
+    var st = { w: d.w, z: canonical(d.z) || d.z, n: d.n, u: d.u, t: d.t, p: [], next: 1 }, okAll = true;
     d.p.forEach(function (pp) {
       if (!Array.isArray(pp) || pp.length !== 2 || !s(pp[0], LIM.name) || !Array.isArray(pp[1]) || pp[1].length > LIM.ivPer) { okAll = false; return; }
       var p = { id: st.next++, n: pp[0], iv: [] };
@@ -177,5 +189,5 @@
     while (st.p.length < LIM.pMin) st.p.push({ id: st.next++, n: '', iv: [] });
     return { ok: true, data: st };
   }
-  return { LIM: LIM, zones: zones, validZone: validZone, canon: canon, dayStart: dayStart, wall: wall, off: off, parseDate: parseDate, iso: iso, parseTime: parseTime, hhmm: hhmm, resolve: resolve, blank: blank, durMin: durMin, days: days, zoneInfo: zoneInfo, changes: changes, mergeIv: mergeIv, interAll: interAll, compute: compute, localMin: localMin, windowOf: windowOf, encode: encode, decode: decode };
+  return { LIM: LIM, zones: zones, validZone: validZone, canon: canonical, dayStart: dayStart, wall: wall, off: off, parseDate: parseDate, iso: iso, parseTime: parseTime, hhmm: hhmm, resolve: resolve, blank: blank, durMin: durMin, days: days, zoneInfo: zoneInfo, changes: changes, mergeIv: mergeIv, interAll: interAll, compute: compute, localMin: localMin, windowOf: windowOf, encode: encode, decode: decode };
 });

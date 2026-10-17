@@ -161,8 +161,8 @@ window.MILL_HUB = {
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "715aa3a42da68f1c1e339b396cb6611f49c7ba46",
-    "report": "qa/the-same-hour/local-715aa3a/QA-local-715aa3a.md"
+    "sha": "2e2d9c5aff35e5ef79c3ce57b31179b92cb42c96",
+    "report": "qa/the-same-hour/local-2e2d9c5/QA-local-2e2d9c5.md"
    }
   },
   {

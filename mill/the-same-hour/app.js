@@ -126,7 +126,7 @@
       var d0 = res.starts[d.i], d1 = res.starts[d.i + 1], cap = [];
       function seam(x, cls, text) { var a = T.localMin(Math.max(x.a, d0), d.date, st.z), b = T.localMin(Math.min(x.b, d1), d.date, st.z), s = el('div', 'tsh-seam' + (cls ? ' ' + cls : ''), text); s.style.setProperty('--s', frac(a, w)); s.style.setProperty('--e', frac(b, w)); wv.appendChild(s); return [T.hhmm(a), T.hhmm(b)]; }
       var on = function (x) { return x.a < d1 && x.b > d0; }; // QA D2: a span over midnight is drawn on both days, labelled with both days
-      res.options.filter(on).forEach(function (x) { var sl = slot(x); seam(x, x.a === selA ? 'is-picked' : '', sl.start + '–' + sl.end); var t = M.fill(C.overlapAria, { day: sl.day, start: sl.start, end: sl.end }); aria.push(t + '.'); cap.push(sl.start + '–' + sl.end); });
+      res.options.filter(on).forEach(function (x) { var sl = slot(x), lab = seamLab(x, sl); seam(x, x.a === selA ? 'is-picked' : '', lab); var t = M.fill(C.overlapAria, { day: sl.day, start: sl.start, end: sl.end }); aria.push(t + '.'); cap.push(lab); });
       res.short.filter(on).forEach(function (x) { var sl = slot(x); seam(x, 'is-short', lenText(x.len)); aria.push(M.fill(C.tooShortLine, { day: sl.day, start: sl.start, end: sl.end, length: lenText(x.len) })); });
       d.maybe.forEach(function (x) { var who = d.unknown.map(nm).join(', '); var tt = seam(x, 'is-maybe', '?'); aria.push(M.fill(C.proposalExcluded, { day: DF.fmt(d.date), start: tt[0], end: tt[1], name: who, dayName: DL.format(d.date) })); });
       d.touch.forEach(function (t) { var m = T.localMin(t, d.date, st.z), p = el('div', 'tsh-touch'); p.style.setProperty('--s', frac(m, w)); p.appendChild(el('span', null, T.hhmm(m))); wv.appendChild(p); });
@@ -162,6 +162,8 @@
   // ---------- results / proposal ----------
   function picked() { var o = res.options.filter(function (x) { return x.a === selA; })[0]; if (!o) { o = res.options[0]; selA = o ? o.a : null; } return o; }
   // QA D2: a span that ends on a later day names that day in its end ("Mon 19 Oct, 22:00–Tue 02:00"); ending exactly at midnight stays 24:00
+  // QA D2-r: on the week chart a span over midnight names BOTH days on every row it is drawn on ("Mon 22:00–Tue 02:00")
+  function seamLab(x, sl) { var ed = x.endDay != null ? x.endDay : x.day; return (ed !== x.day ? DW.format(res.days[x.day]) + ' ' : '') + sl.start + '–' + sl.end; }
   function endLab(x) { var ed = x.endDay != null ? x.endDay : x.day; return ed !== x.day ? DW.format(res.days[ed]) + ' ' + tm(x.b, ed) : endTm(x.b, x.day); }
   function slot(x) { var di = x.day; return { day: DF.fmt(res.days[di]), date: DFY.fmt(res.days[di]), start: tm(x.a, di), end: endLab(x) }; }
   // DST: a slot that runs across a clock change says so (Writer's dstChangeLine), so 00:30–03:00 on a fall-back day isn't read as 2½ h.
