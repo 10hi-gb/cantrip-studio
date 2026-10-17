@@ -15,6 +15,8 @@
 <script src="../shared/core.js" defer></script>
 <script src="../shared/view.js" defer></script>
 <script src="lr.js" defer></script>
+<script src="hyph-en.js" defer></script>
+<script src="fit.js" defer></script>
 <script src="app.js" defer></script>
 </head>
 <body class="lr">
@@ -76,18 +78,18 @@
   <div class="lr-pv-halves"><div class="lr-pv l"><span class="arrow" id="pv-la"></span><span id="pv-l"></span></div><div class="lr-pv r"><span class="arrow" id="pv-ra"></span><span id="pv-r"></span></div></div>
  </div>
 </main>
-<section class="board lr-board" id="s2" hidden>
- <div class="qstrip"><p class="from" id="b-from"></p><p class="q" id="b-q"></p></div>
+<section class="board lr-board" id="s2" lang="en" hidden>
+ <div class="qstrip"><p class="from" id="b-from"></p><p class="q lr-hang" id="b-q"></p></div>
  <div class="halves" id="halves" tabindex="-1">
-  <button type="button" class="half l" id="h-l"><span class="lr-ring"></span><span class="arrow" id="h-l-s"></span><span class="sym" id="h-l-e"></span><span class="lr-ans" id="h-l-a"></span></button>
-  <button type="button" class="half r" id="h-r"><span class="lr-ring"></span><span class="arrow" id="h-r-s"></span><span class="sym" id="h-r-e"></span><span class="lr-ans" id="h-r-a"></span></button>
+  <button type="button" class="half l" id="h-l"><span class="lr-ring"></span><span class="arrow" id="h-l-s"></span><span class="sym" id="h-l-e"></span><span class="lr-ans lr-hang" id="h-l-a"></span></button>
+  <button type="button" class="half r" id="h-r"><span class="lr-ring"></span><span class="arrow" id="h-r-s"></span><span class="sym" id="h-r-e"></span><span class="lr-ans lr-hang" id="h-r-a"></span></button>
  </div>
  <div class="hint lr-hint"><p id="hint" aria-live="polite"></p><p class="lr-banner lr-banner--dark" id="limit2"></p><button type="button" class="btn lr-back" id="b-back"></button></div>
 </section>
 <div class="lr-clip">
 <section class="chosen lr-chosen" id="s3" hidden>
- <p class="q" id="c-q"></p>
- <p class="ans" id="c-a"></p>
+ <p class="q lr-hang" id="c-q"></p>
+ <p class="ans lr-hang" id="c-a"></p>
  <p class="q" id="c-tag"></p>
  <p class="lr-done" id="c-done" hidden></p>
  <div class="row">
