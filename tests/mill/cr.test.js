@@ -81,7 +81,7 @@ t('PM 02:34: typed names quoted in copy text (helper, who it\'s for, organizer, 
   assert.ok(CR.stillOpen(C, r, cfg).startsWith('For: “Milk" from "Your bank”\nStill open. Reply to me, not the group:\n• Tue Oct 20 “Gro"c"”'));
   assert.equal(CR.sheetText(C, CR.sheet(r), { forName: cfg.forName, org: cfg.org, first: cfg.first, last: cfg.last, stamp: 'S', std: () => false }).split('\n')[2], 'Mon Oct 19: “Zq"x” (“Gro"c"”)');
   const WR = '/workspace/mill-sprint-2026-10-16/writer/care-rota/copy.v2.js'; if (fs.existsSync(WR)) assert.equal(fs.readFileSync(__dirname + '/../../mill/care-rota/copy.js', 'utf8'), fs.readFileSync(WR, 'utf8'), 'copy.js is Writer copy.v2.js verbatim');
-  { const ex = fs.readFileSync(__dirname + '/../../mill/care-rota/copy-extra.js', 'utf8'); assert.ok(/STAND-IN/.test(ex) && Object.keys(vm.runInNewContext(ex + ';COPY_EXTRA')).join() === 'tagNameTooLong', 'only the marked QA C7 stand-in in copy-extra.js'); }
+  assert.ok(!fs.existsSync(__dirname + '/../../mill/care-rota/copy-extra.js'), 'no stand-in file left (Writer N5b supplied tagNameTooLong)');
 });
 t('Writer finals (N5) verbatim: tagTwoNeeds, tagTwoNames, tagNoDay quote {line}; patchGap, patchNotNeeded, copyHelper, label-line templates', () => {
   assert.equal(C.tagTwoNeeds, 'To fix: “{line}” has two needs. Put each on its own line.'); assert.equal(C.tagTwoNames, 'To fix: “{line}” has more than one name. One person per line.');
@@ -106,8 +106,8 @@ t('QA C7: helper name cap 40 at paste/parse and in a received link; over-cap lin
   const n40 = 'A' + 'b'.repeat(39), n41 = n40 + 'c'; assert.deepEqual(got(CR.check(CFG, ['Mon 19 dinner ' + n40])), { '2026-10-19 Dinner': [n40] });
   const r = CR.check(CFG, ['Mon 19 dinner ' + n41]); assert.equal(r.rows[0].result, 'toFix'); assert.deepEqual(r.issues.map(i => [i.kind, i.max]), [['nameTooLong', 40]]); assert.equal(Object.keys(r.got).length, 0);
   const r2 = CR.check(CFG, ['Mon 19 dinner Zoë ' + 'é'.repeat(35)]); assert.equal(r2.rows[0].result, 'placed', '40 code points incl. accents');
-  const X = vm.runInNewContext(fs.readFileSync(__dirname + '/../../mill/care-rota/copy-extra.js', 'utf8') + ';COPY_EXTRA'); assert.ok(!('tagNameTooLong' in C), 'Writer has no key yet: stand-in in copy-extra.js');
-  assert.equal(M.fill(X.tagNameTooLong, { line: 'Mon 19 dinner ' + n41, max: 40 }), 'To fix: “Mon 19 dinner ' + n41 + '”. The name is over 40 characters. Use a shorter name.');
+  assert.equal(C.tagNameTooLong, 'To fix: “{line}”. Names can be up to {max} characters. Shorten this one.', 'Writer N5b verbatim');
+  assert.equal(M.fill(C.tagNameTooLong, { line: 'Mon 19 dinner ' + n41, max: 40 }), 'To fix: “Mon 19 dinner ' + n41 + '”. Names can be up to 40 characters. Shorten this one.');
   const mk = nm => { const o = { f: 'Priya', o: 'Jess', a: '2026-10-19', b: '2026-10-19', s: 'Fri Oct 16, 10:04 PM PDT', d: [[[nm, ['Dinner']]]] }; const h = 'cr2.' + M.b64e(JSON.stringify(o)); return h + '.' + M.ck(h); };
   assert.ok(CR.decodeSheet(mk(n40)).ok); assert.ok(!CR.decodeSheet(mk(n41)).ok); });
 const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let x = Math.imul(seed ^ seed >>> 15, 1 | seed); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };

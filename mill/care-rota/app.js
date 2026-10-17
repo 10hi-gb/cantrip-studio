@@ -4,7 +4,7 @@
 // everywhere: screen, aria, print and copied text (PM 02:34: no exemption; Writer's templates are filled with quoted values).
 // Shared helpers: MILLVIEW.route/readOnly/toast/quote/typed/linkFor/clearInputs.
 (function () {
-  var C = COPY, X = COPY_EXTRA, M = MILL, V = MILLVIEW, $ = function (id) { return document.getElementById(id); };
+  var C = COPY, M = MILL, V = MILLVIEW, $ = function (id) { return document.getElementById(id); };
   var KEYS = ['dinner', 'ride', 'walk', 'other'], NC = { dinner: 'meal', ride: 'ride', walk: 'walk', other: 'other' };
   var last = null, lastCfg = null, prevPatch = {}, fbText = '';
   var q = V.quote;
@@ -87,7 +87,7 @@
   function issueText(i) { switch (i.kind) {
     case 'wrongWeekday': return M.fill(C.tagToFix, { line: i.line, date: CR.d2(i.t), weekday: i.weekday, typedWeekday: i.typedWeekday, name: q(i.name) });
     case 'twoNeeds': return M.fill(C.tagTwoNeeds, { line: i.line }); case 'twoNames': return M.fill(C.tagTwoNames, { line: i.line });
-    case 'noDay': return M.fill(C.tagNoDay, { line: i.line }); case 'nameTooLong': return M.fill(X.tagNameTooLong, { line: i.line, max: i.max }); case 'ambiguous': return M.fill(C.tagAmbiguous, { line: i.line, n: i.n });
+    case 'noDay': return M.fill(C.tagNoDay, { line: i.line }); case 'nameTooLong': return M.fill(C.tagNameTooLong, { line: i.line, max: i.max }); case 'ambiguous': return M.fill(C.tagAmbiguous, { line: i.line, n: i.n });
     default: return M.fill(C.tagCouldntRead, { line: i.line }); } }
   function tags(r) { var host = $('tags'); host.textContent = ''; var add = function (txt, info) { var d = el('div', 'tag' + (info ? ' info' : '')); d.append(el('p', null, txt)); host.append(d); };
     r.issues.forEach(function (i) { add(issueText(i)); });

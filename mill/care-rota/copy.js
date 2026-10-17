@@ -179,6 +179,7 @@ const COPY = {
   "tagTwoNeeds": "To fix: “{line}” has two needs. Put each on its own line.",
   "tagTwoNames": "To fix: “{line}” has more than one name. One person per line.",
   "tagNoDay": "To fix: “{line}”. No day in this rota matches it.",
+  "tagNameTooLong": "To fix: “{line}”. Names can be up to {max} characters. Shorten this one.",
   "otherEmpty": "Name the other kind of help.",
   "pickDays": "Pick the days",
   "quiltLabel": "Who covers each day",

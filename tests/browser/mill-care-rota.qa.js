@@ -9,7 +9,6 @@ const { typedAudit, recipientAccess, mouseAt, errsOf, W, sleep, session, overflo
 const fs = require('fs'), vm = require('vm');
 const C = vm.runInNewContext(fs.readFileSync(__dirname + '/../../mill/care-rota/copy.js', 'utf8') + ';COPY');
 const X = C; // Writer N5 supplied the former stand-in keys
-const XE = vm.runInNewContext(fs.readFileSync(__dirname + '/../../mill/care-rota/copy-extra.js', 'utf8') + ';COPY_EXTRA'); // QA C7 stand-in only (STAND-IN, logged for Writer)
 const CR = require('../../mill/care-rota/cr.js'), M = require('../../mill/shared/core.js');
 const pdfPages = buf => { const f = require('os').tmpdir() + '/cr-print-' + process.pid + '.pdf'; fs.writeFileSync(f, buf); const m = /Pages:\s+(\d+)/.exec(require('child_process').execFileSync('pdfinfo', [f]).toString()); fs.unlinkSync(f); return m ? +m[1] : -1; };
 const BASE = `${SCHEME}://${H}/mill/care-rota/`;
@@ -248,8 +247,8 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     const n41 = 'Q' + 'w'.repeat(40);
     await form(p, Object.assign({}, JESS, { lines: ['Mon 19 dinner ' + n41, 'Mon 19 walk Ana / Ben', 'Tue 20 dinner Ana or Ben', 'Wed 21 ride Ana\uFF06Ben', 'Fri 23 dinner Ana, Ben', 'May: 20 dinner', 'Thu 22 walk Orla'] })); await check(p);
     const st = await state(p);
-    ck('QA C7 + C3 in the UI: the 41-char name -> to fix with the marked stand-in (tagNameTooLong, max 40); "/", "or", "＆", "," -> tagTwoNames; May: and Orla placed',
-      JSON.stringify(st.tags.filter(x => x.startsWith('To fix'))) === JSON.stringify([M.fill(XE.tagNameTooLong, { line: 'Mon 19 dinner ' + n41, max: 40 })].concat(['Mon 19 walk Ana / Ben', 'Tue 20 dinner Ana or Ben', 'Wed 21 ride Ana\uFF06Ben', 'Fri 23 dinner Ana, Ben'].map(l => M.fill(C.tagTwoNames, { line: l }))))
+    ck('QA C7 + C3 in the UI: the 41-char name -> to fix with Writer tagNameTooLong (N5b, max 40); "/", "or", "＆", "," -> tagTwoNames; May: and Orla placed',
+      JSON.stringify(st.tags.filter(x => x.startsWith('To fix'))) === JSON.stringify([M.fill(C.tagNameTooLong, { line: 'Mon 19 dinner ' + n41, max: 40 })].concat(['Mon 19 walk Ana / Ben', 'Tue 20 dinner Ana or Ben', 'Wed 21 ride Ana\uFF06Ben', 'Fri 23 dinner Ana, Ben'].map(l => M.fill(C.tagTwoNames, { line: l }))))
       && st.patches.some(x => /Oct 20.*Dinner.*May/.test(x)) && st.patches.some(x => /Oct 22.*Dog walk.*Orla/.test(x)) && !st.patches.some(x => /Ben|Qwww/.test(x)), st);
     ck('C2/C3/C7 session: no page errors, no off-origin requests', !errsOf(s, SCHEME).length && !netCheck(s.reqs, H, []).offending.length, errsOf(s, SCHEME)); await s.b.close();
   }
