@@ -390,5 +390,26 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
           a.sw <= a.cw && !x.viewport.length && !x.clipped.length && !x.midword.length && !x.spill.length, a);
         if (nmc === 'long typed values' && own) ck(w + ' PM wrap rule: shared .mill-typed computes overflow-wrap:break-word and no element on the page computes anywhere/break-all (needs the shared break-word commit)', a.ow === 'break-word' && !x.loose.length, { ow: a.ow, loose: x.loose }); }
       ck(w + ' PM wrap rule block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); } }
+  // ---------- PM 04:57 query strip: replaceState writes origin + path (+ #fragment) only. Load and hashchange keep path + #fragment; edit, reset and
+  // Start my own write the path only; Make a link drops a query too. Before each action a ?q=<marker> is put back (replaceState, no event) so each
+  // writer is checked on its own: location.search is '' and the marker is nowhere in location.href afterwards.
+  { const s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 }); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    const MK = 'qzMARK' + Date.now().toString(36), PATH = new URL(BASE).pathname; await p.goto(BASE, { waitUntil: 'load' });
+    const fa = await p.evaluate(() => MILL.pack('e', 1, { e: 'Zqv trip', c: 0, p: ['Ade', 'Ben', 'Cy'], x: [['Groceries', 1000, 0, 0, [0, 1, 2]]] })), fb = await p.evaluate(() => MILL.pack('e', 1, { e: 'Second', c: 0, p: ['Dee', 'Eli'], x: [['Taxi', 2000, 0, 0, [0, 1]]] }));
+    const loc = () => p.evaluate(() => ({ href: location.href, search: location.search, hash: location.hash, path: location.pathname, origin: location.origin }));
+    const putQ = (hash) => p.evaluate((q, h) => history.replaceState(null, '', location.pathname + '?q=' + q + (h ? '#' + h : '')), MK, hash);
+    const okL = (l, frag) => l.search === '' && !l.href.includes(MK) && l.path === PATH && l.href === l.origin + l.path + (frag ? '#' + frag : '');
+    const steps = [];
+    await p.goto('about:blank'); await p.goto(BASE + '?q=' + MK + '#' + fa, { waitUntil: 'load' }); await sleep(350);
+    let l = await loc(), seen = await p.evaluate(() => document.body.innerText.includes('Zqv')); steps.push(['load ?q=<marker>#link -> path + #fragment', okL(l, fa) && seen, l]);
+    await putQ(fa); await p.evaluate(f => { location.hash = f; }, fb); await sleep(350); l = await loc(); seen = await p.evaluate(() => document.body.innerText.includes('Second'));
+    steps.push(['hashchange to another link -> path + #new fragment', okL(l, fb) && seen, l]);
+    await putQ(fb); await press(p, '#own-copy'); await sleep(250); l = await loc(); steps.push(['Start my own -> path only', okL(l, ''), l]);
+    await putQ(''); await p.focus('#ev'); await p.keyboard.type('x'); await sleep(200); l = await loc(); steps.push(['edit (event name) -> path only', okL(l, ''), l]);
+    await putQ(''); await p.evaluate(() => document.getElementById('b-share').click()); await sleep(300); l = await loc(); const made = await p.$eval('#link', e => e.value).catch(() => '');
+    steps.push(['Make a link -> path only; the link made carries no ? and no marker', okL(l, '') && /#/.test(made) && !made.includes('?') && !made.includes(MK), Object.assign({ made: made.slice(0, 80) }, l)]);
+    await putQ(''); await p.evaluate(() => document.getElementById('b-reset').click()); await sleep(300); l = await loc(); steps.push(['Clear (reset) -> path only', okL(l, ''), l]);
+    for (const [nm, ok, info] of steps) ck('PM 04:57 query strip: ' + nm + '; location.search is "" and the marker is not in location.href', ok, info);
+    ck('PM 04:57 query strip: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });

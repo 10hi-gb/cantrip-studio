@@ -448,6 +448,34 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
         if (i < CASES.length - 1) { await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(650); await press(p, '#c-next'); await sleep(300); } }
       ck(`L5/L6 ${w}: no page errors`, !c.errs.length, c.errs); } catch (e) { ck(`L5/L6 ${w}: the checks ran to the end`, false, String(e && e.stack || e).slice(0, 400)); } await c.b.close();
     }
+    // Creative r5 (after f66fb8e): a single word takes the fewest pieces at any size >= 24px, then the largest size for that
+    // count. Oracle: the fewest letter-point pieces (4+ letters each, hyphen added, marks counted and hung as the page does)
+    // at the 24px floor, by first-fit at 24px; the drawn count must equal it, and the drawn size must not fit fewer pieces.
+    const minPieces = (p, id, tileSel) => p.evaluate((id, tileSel) => { const a = document.getElementById(id), tile = tileSel ? document.querySelector(tileSel) : (a.closest('.half') || a.parentElement), ts = getComputedStyle(tile);
+      const word = a.querySelector('.lr-sr').textContent.slice(1, -1), cw = a.clientWidth, pad = Math.min(parseFloat(ts.paddingLeft), parseFloat(ts.paddingRight)), full = cw + parseFloat(ts.paddingLeft) + parseFloat(ts.paddingRight) - 4;
+      const pw = document.createElement('span'), pr = document.createElement('span'); pw.className = 'lr-probe-w'; pr.className = 'lr-probe'; pr.style.fontSize = '100px'; pw.appendChild(pr); a.appendChild(pw);
+      const W = t => { pr.textContent = t; return pr.offsetWidth; }, qo = W('\u201C') / 100, qc = W('\u201D') / 100;
+      const count = s => { const av = cw - Math.max(0, Math.ceil(qo * 0.8 * s - pad + 1)) - Math.max(0, Math.ceil(qc * 0.8 * s - pad + 1)), r = s / 100;
+        const fits = (t, f, l) => { const mo = f ? qo * 80 : 0, mc = l ? qc * 80 : 0; return (W(t) + mo + mc) * r <= av - 1 && (W(t) + 2 * Math.max(mo, mc)) * r <= full - 1; };
+        let i = 0, k = 0; const n = word.length; while (i < n) { k++; if (fits(word.slice(i), i === 0, true)) return k; let j = -1; for (let e = n - 4; e >= i + 4; e--) if (fits(word.slice(i, e) + '-', i === 0, false)) { j = e; break; } if (j < 0) return Infinity; i = j; } return k; };
+      const drawn = a.querySelector('.lr-vt').getAttribute('data-v').split('\n'), fs = parseFloat(getComputedStyle(a).fontSize), out = { word, drawn, fs, at24: count(24), atDrawn: count(fs) }; pw.remove(); return out; }, id, tileSel);
+    const NOOO = 'N' + 'o'.repeat(29), r5 = {};
+    for (const w of [320, 360, 390, 700, 1280, 1440]) {
+      const c = await classic(), p = c.p; try { await p.setViewport({ width: w, height: VH[w] || 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
+      await fillQ(p, 0, 'Shall we go?', NOOO, 'Yes'); await sleep(150);
+      if (w >= 1000) { const v = await minPieces(p, 'pv-l'), L = await lw(p, 'pv-l');
+        ck(`r5 preview ${w}: “${NOOO}” in the fewest pieces possible at >= 24px (${v.drawn.length} at ${v.fs}px; oracle ${v.at24} at 24px); rendered = plan`, lwOk(L) && v.drawn.length === v.at24 && v.fs >= 24 && v.drawn.join('').replace(/-/g, '') === NOOO, v); }
+      await fillQ(p, 1, 'Which one?', 'Superextraordinarily', 'Grandmother'); await sleep(100); await press(p, '#go'); await sleep(300);
+      const v = await minPieces(p, 'h-l-a'), L = await lw(p, 'h-l-a'), R = await lw(p, 'h-r-a'); r5[w] = v.drawn.length + ' pieces @ ' + v.fs + 'px';
+      ck(`r5 board ${w}: “${NOOO}” in the fewest pieces possible at >= 24px (${v.drawn.length} at ${v.fs}px: ${v.drawn.join(' / ')}; oracle ${v.at24} at 24px), every piece 4+ letters, “Yes” at the same size; rendered = plan`, lwOk(L) && lwOk(R) && v.drawn.length === v.at24 && v.fs >= 24 && L.fs === R.fs && v.drawn.every(x => (x.match(/\p{L}/gu) || []).length >= 4) && v.drawn.join('').replace(/-/g, '') === NOOO, { v, R: R.lines });
+      if (w === 390) ck(`r5 board 390: the 30-letter word lands in 2-3 pieces (${v.drawn.length})`, v.drawn.length >= 2 && v.drawn.length <= 3, v);
+      await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(650); const cv = await minPieces(p, 'c-a', '#s3'), A = await lw(p, 'c-a');
+      ck(`r5 chosen ${w}: “${NOOO}” in the fewest pieces possible at >= 24px (${cv.drawn.length} at ${cv.fs}px; oracle ${cv.at24}); rendered = plan`, lwOk(A) && cv.drawn.length === cv.at24 && cv.fs >= 24, cv);
+      await press(p, '#c-next'); await sleep(300); const S = await lw(p, 'h-l-a'), G = await lw(p, 'h-r-a'), sv = await minPieces(p, 'h-l-a');
+      ck(`r5 board ${w}: “Superextraordinarily” fewest pieces too (${S.lines.join(' / ')} @ ${S.fs}px, oracle ${sv.at24}); “Grandmother” drawn at the shared size (${G.lines.join(' / ')} @ ${G.fs}px)`, lwOk(S) && lwOk(G) && S.fs === G.fs && S.lines.length === sv.at24, { S: S.lines, G: G.lines, sv });
+      ck(`r5 ${w}: no page errors`, !c.errs.length, c.errs); } catch (e) { ck(`r5 ${w}: the checks ran to the end`, false, String(e && e.stack || e).slice(0, 400)); } await c.b.close();
+    }
+    ck('r5: Nooo… piece counts by width (info) ' + JSON.stringify(r5), true, r5);
     // QA local-d0ca704 L7: every quote-mark location, both sides; 4.5:1 normal size, 3:1 large (the mark's own size)
     for (const w of [320, 390, 1280]) {
       const c = await classic(), p = c.p; try { await p.setViewport({ width: w, height: VH[w] || 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
@@ -520,6 +548,65 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
         res[0].len === 1999 && res[1].len === 2000 && res[2].len === 2001 && res[0].recv && res[0].items === 6 && res[1].recv && res[1].items === 6 && !res[2].recv && res[2].banner === C.badLink && !res[0].banner && !res[1].banner, res);
       ck('L2: no page errors', !c.errs.length, c.errs); await c.b.close(); }
   }
+  // QA local-f66fb8e L8/L9 + full focus-ring audit: every focusable stop on every screen, reached with real Tab, at 390 and
+  // 1280. Rendered pixels: the ring = pixels that change between the focused and the blurred frame; for each solid ring
+  // colour, every unchanged colour touching it (4-neighbours; contacts under 2% of that band's edge count as anti-alias)
+  // must be 3:1+, and there must be a visible ring at all (L9: an ink ring on the ink bar changes nothing).
+  async function ringAt(p, info) { const m = info.fw + 16, x = Math.max(0, Math.floor(info.x - m)), y = Math.max(0, Math.floor(info.y - m)), clip = { x: x + info.sx, y: y + info.sy, width: Math.min(info.vw, Math.ceil(info.x + info.w + m)) - x, height: Math.min(info.vh, Math.ceil(info.y + info.h + m)) - y };
+    if (clip.width < 4 || clip.height < 4) return { skip: 'off screen' };
+    const B = png(await p.screenshot({ clip })); await p.evaluate(() => document.activeElement && document.activeElement.blur()); await sleep(260); const A = png(await p.screenshot({ clip }));
+    await p.evaluate(k => { const e = document.querySelector('[data-ra="' + k + '"]'); if (e) e.focus({ preventScroll: true }); }, info.key); await sleep(120);
+    const W = B.w, H = B.h, ch = new Uint8Array(W * H), col = {}; let n = 0;
+    for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) { const a = A.at(xx, yy), b = B.at(xx, yy); if (Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) > 30) { ch[yy * W + xx] = 1; n++; const k = b.join(','); col[k] = (col[k] || 0) + 1; } }
+    const major = Object.keys(col).filter(k => col[k] >= Math.max(8, n * 0.12)), contacts = {}; let touch = 0;
+    for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) { if (!ch[yy * W + xx]) continue; const k = B.at(xx, yy).join(','); if (!major.includes(k)) continue;
+      // the neighbour across the band's edge; an unchanged pixel of the band's own colour (the control's own border, or a
+      // same-colour neighbour it touches) continues the band, so walk on to the first different colour (touch noted)
+      const bc = B.at(xx, yy); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { let X = xx + dx, Y = yy + dy; if (X < 0 || Y < 0 || X >= W || Y >= H || ch[Y * W + X]) continue; let c = B.at(X, Y), t = 0;
+        while (ratioC(c, bc) < 1.15 && t < 60) { X += dx; Y += dy; t++; if (X < 0 || Y < 0 || X >= W || Y >= H) { c = null; break; } c = B.at(X, Y); } if (!c || t >= 60) continue; if (t) touch++; // a walk along a same-colour line is no contact
+        const ck2 = c.join(','); (contacts[k] = contacts[k] || {})[ck2] = (contacts[k][ck2] || 0) + 1; } }
+    const pairs = []; for (const k of Object.keys(contacts)) { const tot = Object.values(contacts[k]).reduce((a, b) => a + b, 0); for (const [c, v] of Object.entries(contacts[k])) if (v / tot >= 0.02) pairs.push({ ring: k, next: c, share: Math.round(v / tot * 100), ratio: ratioC(k.split(',').map(Number), c.split(',').map(Number)) }); }
+    const per = 2 * (info.w + info.h); return { changed: n, visible: n >= per * 1.5 && major.length > 0, rings: major, pairs, touch, min: pairs.length ? Math.min(...pairs.map(q => q.ratio)) : 0 }; }
+  async function tabAudit(p, screen, rows, max = 70) { let first = null; const out = [];
+    await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); window.scrollTo(0, 0); });
+    for (let i = 0; i < max; i++) { await p.keyboard.press('Tab'); await sleep(260);
+      const info = await p.evaluate(() => { const e = document.activeElement; if (!e || e === document.body) return null; if (!e.dataset.ra) e.dataset.ra = Math.random().toString(36).slice(2, 9);
+        if ((e.tagName === 'TEXTAREA' || (e.tagName === 'INPUT' && /text|search|url/.test(e.type))) && e.setSelectionRange) try { e.setSelectionRange(0, 0); } catch (x) {}
+        const r = e.getBoundingClientRect(); return { key: e.dataset.ra, id: e.id || (e.className + '').split(' ')[0] || e.tagName, label: (e.getAttribute('aria-label') || e.textContent || e.value || '').trim().replace(/\s+/g, ' ').slice(0, 28), x: r.left, y: r.top, w: r.width, h: r.height, fv: e.matches(':focus-visible'),
+          fw: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--focus-w')), vw: document.documentElement.clientWidth, vh: innerHeight, sx: scrollX, sy: scrollY }; });
+      if (!info) continue; if (info.key === first) break; if (!first) first = info.key; if (out.some(o => o.key === info.key)) break;
+      const r = await ringAt(p, info); out.push(Object.assign({ key: info.key, screen, id: info.id, label: info.label, fv: info.fv }, r)); }
+    out.forEach(o => rows.push(o)); return out; }
+  for (const w of (process.env.MILL_SKIP_AUDIT ? [] : [390, 1280])) {
+    const s = await session(H, IP), { p } = s; await p.setBypassCSP(true); await p.setViewport({ width: w, height: w > 1000 ? 900 : 844 }); await p.evaluateOnNewDocument(clipStub);
+    await p.evaluateOnNewDocument(() => document.addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = '*{caret-color:transparent!important;transition:none!important}'; document.head.appendChild(st); }));
+    const rows = []; let o;
+    try {
+      // editor + preview, link made, two questions
+      await p.goto(BASE, { waitUntil: 'load' }); await sleep(300); await setVal(p, '#from', 'Maya'); await fillQ(p, 0, 'Who reads tonight?', "Grandmother's", 'Watch a movie at home', '\u{1F475}', ''); await fillQ(p, 1, 'Park or pool?', 'Park', 'Pool');
+      await press(p, '#mk'); await sleep(200); await tabAudit(p, 'editor+preview+link', rows);
+      // board (left tile, right tile, Back), chosen left (Next) and right (Next), last question (Send) both sides, copy fallback
+      await p.evaluate(() => window.scrollTo(0, 0)); await press(p, '#go'); await sleep(400); await tabAudit(p, 'board', rows);
+      await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(800); await tabAudit(p, 'chosen-left (Next)', rows);
+      await press(p, '#c-again'); await sleep(400); await p.focus('#h-r'); await p.keyboard.press('Enter'); await sleep(800); await tabAudit(p, 'chosen-right (Next)', rows);
+      await press(p, '#c-next'); await sleep(400); await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(800); await tabAudit(p, 'chosen-left last (Send)', rows);
+      await press(p, '#c-again'); await sleep(400); await p.focus('#h-r'); await p.keyboard.press('Enter'); await sleep(800);
+      await p.evaluate(() => { window.__clipFail = true; }); await press(p, '#c-send'); await sleep(400); await tabAudit(p, 'chosen-right last (Send) + copy fallback', rows);
+      // editor with answers list
+      await press(p, '#c-back'); await sleep(400); await tabAudit(p, 'editor + answers', rows);
+      // switch highlight is covered by the L8 block; bad-link banner (editor), recipient view
+      await p.goto('about:blank'); await p.goto(BASE + '#garbage', { waitUntil: 'load' }); await sleep(300); await tabAudit(p, 'bad-link banner', rows);
+      const frag = await p.evaluate(() => MILL.pack('l', 1, { f: 'Maya', m: 0, k: 0, s: 0, e: 20, d: 15, q: [['Who reads tonight?', "Grandmother's", 'Tacos', '', '']] }));
+      await p.goto('about:blank'); await p.goto(BASE + '#' + frag, { waitUntil: 'load' }); await sleep(300); await tabAudit(p, 'recipient', rows);
+      await press(p, '#r-go'); await sleep(400); await tabAudit(p, 'recipient board', rows);
+    } catch (e) { ck(`ring audit ${w}: the walk ran to the end`, false, String(e && e.stack || e).slice(0, 400)); }
+    const bad = rows.filter(r => !r.skip && (!r.visible || !r.fv || r.min < 3));
+    ck(`ring audit ${w}: ${rows.length} keyboard focus stops on ${[...new Set(rows.map(r => r.screen))].length} screens all show a ring 3:1+ against every colour next to it (lowest ${Math.min(...rows.filter(r => !r.skip).map(r => r.min))})`, rows.length >= 30 && !bad.length,
+      { bad: bad.map(r => ({ screen: r.screen, id: r.id, label: r.label, visible: r.visible, fv: r.fv, pairs: r.pairs })), table: rows.map(r => r.screen + ' | ' + r.id + ' “' + r.label + '” | ' + (r.skip || (r.rings.join(' + ') + ' | min ' + r.min))) });
+    for (const [scr, id] of [['chosen-right (Next)', 'c-next'], ['board', 'b-back'], ['recipient board', 'b-back']]) { const r = rows.find(x => x.screen === scr && x.id === id);
+      ck(`ring audit ${w}: ${id} on ${scr}: visible ring, every band 3:1+ (${r ? r.pairs.map(q => q.ring + '→' + q.next + ' ' + q.ratio).join('; ') : 'not reached'})`, r && r.visible && r.min >= 3, r); }
+    ck(`ring audit ${w}: no page errors`, !errsOf(s, SCHEME).filter(e => !/Content Security Policy/.test(e)).length, errsOf(s, SCHEME)); await s.b.close();
+  }
   // PM 04:57 query-string ruling: every history write is origin + path (+ #fragment), never a ?query. A valid received link
   // with ?q=<marker>: after opening, answering, reset and making a link, location.search is '' and the marker is not in
   // location.href; links generated carry no '?'; the marker is nowhere in text, attributes (accessible names), values,
@@ -553,5 +640,34 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
     for (const [k, v] of Object.entries(at)) ck(`query ruling: after ${k} (received ?q=${QM} link${k.startsWith('sender') ? ' / ?q= sender page' : ''}): location.search '' and the marker not in location.href (${v.href.replace(/#.*/, '#…')}); marker nowhere in text, attributes/accessible names, values, copied/shared/printed text`, v.search === '' && !v.inHref && !v.hit && (k !== 'open' || v.opened) && (k !== 'answer' || v.chosen), v);
     ck('query ruling: copied/shared/printed text was produced (the scan saw real output)', at.copy.outs.length >= 2 && at.answer.outs.length >= 1, { a: at.answer.outs, c: at.copy.outs });
     ck('query ruling: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // QA local-f66fb8e L10: after a bad link (#garbage, also with ?q=, also reached by a same-tab hashchange), an edit or
+  // Make a link writes the path only (no #fragment, no ?query); a reload then shows no damaged-link banner. The banner
+  // still shows on the bad link itself before anything is edited.
+  { const s = await session(H, IP), { p } = s; await p.setViewport({ width: 390, height: 900 });
+    const st = () => p.evaluate(() => ({ hash: location.hash, search: location.search, href: location.href, banner: !document.getElementById('banner').hidden }));
+    const routes = [['#garbage', BASE + '#garbage'], ['?q=Zq#garbage', BASE + '?q=Zq#garbage'], ['hashchange to #garbage', null]];
+    for (const [name, url] of routes) for (const how of ['edit', 'make a link']) {
+      await p.goto('about:blank');
+      if (url) await p.goto(url, { waitUntil: 'load' }); else { await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await p.evaluate(() => { location.hash = 'garbage'; }); }
+      await sleep(300); const before = await st();
+      if (how === 'edit') await setVal(p, '#q-0', 'Zqv edited?'); else { await fillQ(p, 0, 'Zqv linked?', 'Left', 'Right'); await p.evaluate(() => history.replaceState(null, '', location.pathname + location.search + '#garbage')); await press(p, '#mk'); }
+      await sleep(200); const after = await st();
+      await p.reload({ waitUntil: 'load' }); await sleep(300); const reload = await st();
+      ck(`L10: ${name}, then ${how}: banner on the bad link first; then location is the path only (${after.href.replace(BASE, '…/')}); reload shows no banner`,
+        before.banner && after.hash === '' && after.search === '' && after.href === BASE && !reload.banner, { before, after, reload }); }
+    ck('L10: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // Japanese (QA local-f66fb8e): a single CJK/kana run breaks between characters with no Latin hyphen, on the board, the
+  // chosen screen and the preview; the drawn lines are the text itself, in order, and every line fits its tile.
+  { const JA = '今日は映画を見に行きましょう', JB = 'はい', broke = [], s = await session(H, IP), { p } = s;
+    for (const w of [320, 390, 1280]) { await p.setViewport({ width: w, height: 760 }); await p.goto('about:blank'); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
+      await fillQ(p, 0, '映画?', JA, JB); await sleep(250);
+      const read = id => p.evaluate(id => { const b = document.getElementById(id), v = b.querySelector('.lr-vt'), t = b.closest('.half,.chosen,.lr-pv') || b.parentElement, tr = t.getBoundingClientRect(), vr = v.getBoundingClientRect();
+        return { lines: (v.getAttribute('data-v') || '').split('\n'), size: parseFloat(getComputedStyle(b).fontSize), inside: vr.left >= tr.left - 0.5 && vr.right <= tr.right + 0.5 && v.scrollWidth <= Math.ceil(vr.width) + 1 }; }, id);
+      const shown = {}; shown.preview = await read('pv-l'); await press(p, '#go'); await sleep(400); shown.board = await read('h-l-a');
+      await p.focus('#h-l'); await p.keyboard.press('Enter'); await sleep(800); shown.chosen = await read('c-a');
+      for (const [k, v] of Object.entries(shown)) ck(`Japanese ${w}: ${k} breaks 「${JA}」 between characters, no hyphen (${v.lines.length} lines @${v.size}px: ${v.lines.join(' / ')})`,
+        v.lines.join('') === JA && !v.lines.some(l => /[-\u2010\u00AD]/.test(l)) && !v.lines.slice(1).some(l => /^[ゃゅょっャュョッー々、。」）]/.test(l)) && v.inside, v); broke.push(...Object.values(shown).map(v => v.lines.length)); }
+    ck(`Japanese: the run really broke on some screens (line counts ${broke.join(',')})`, broke.filter(n => n > 1).length >= 3, broke);
+    ck('Japanese: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
