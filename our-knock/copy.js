@@ -17,7 +17,7 @@ const COPY = {
   "share": "Send the door",
   "copied": "Link copied.",
   "shareCancel": "Not sent. The door is still here.",
-  "privacy": "The knock timing and your note live in the link. Nothing is uploaded. This is a game, not a lock: anyone with the link could open the door or read the note.",
+  "privacy": "The knocks, the expected answer, and your note live in the link. Nothing is uploaded. This is a game, not a lock: anyone with the link could open the door or read the note.",
   "receiverIntro": "Someone left you a door.",
   "tolerance": "Close counts. The rhythm matters, not the speed.",
   "close": "So close. One more.",
