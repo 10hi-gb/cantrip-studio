@@ -124,11 +124,18 @@
 .eu-frame .eu-token small{font:500 10px/1 var(--eu-sans);letter-spacing:.06em;text-transform:uppercase}
 /* 2) the axis header shows at every width: "← Owes" left, "0" over the post, "Gets back →" right; 11px Lexend 500, sticky over the rods */
 .eu-frame .eu-scale{display:grid;font:500 11px/1.3 var(--eu-sans);letter-spacing:.06em;text-transform:uppercase;color:var(--eu-mute);position:sticky;top:0;z-index:3;background:var(--eu-board);padding:3px 0}
-.eu-frame .eu-scale span:nth-child(2){display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:baseline;padding:0;min-width:0}
-.eu-frame .eu-scale span:nth-child(2) i{font-style:normal;min-width:0}
-.eu-frame .eu-scale span:nth-child(2) i:first-child{justify-self:start;padding-right:6px}
-.eu-frame .eu-scale span:nth-child(2) i:nth-child(2){padding:0 2px}
-.eu-frame .eu-scale span:nth-child(2) i:last-child{justify-self:end;text-align:right;padding-left:6px} /* wraps at its space on narrow rods, never across the post */
+.eu-frame .eu-scale span:nth-child(2){display:block;position:relative;min-height:1.3em;padding:0;min-width:0}
+/* Creative check 9daa483: the labels track the post (centre of the rod column): "Gets back →" starts 6px right of it, "← Owes" ends
+   6px left of it (or runs from the frame's inner left edge when it doesn't fit, .is-owes-left set by app.js); never wrapped. */
+.eu-frame .eu-scale span:nth-child(2) i{font-style:normal;white-space:nowrap;position:absolute;top:0}
+.eu-frame .eu-scale span:nth-child(2) i:first-child{right:calc(50% + 6px)}
+.eu-frame .eu-scale.is-owes-left span:nth-child(2) i:first-child{right:auto;left:calc(-1 * var(--eu-name))}
+.eu-frame .eu-scale span:nth-child(2) i:nth-child(2){left:50%;transform:translateX(-50%)}
+.eu-frame .eu-scale span:nth-child(2) i:last-child{left:calc(50% + 6px)}
+@media(max-width:360px){.eu-frame .eu-scale span:nth-child(2) i:nth-child(2){display:none}}
+/* Creative check 9daa483: rows grow with their name (min-height var(--eu-row), height auto) with breathing room; rod and token
+   centre on the name block; lines and dots use each row's measured centre (app.js layoutLines, re-run on resize and font load). */
+.eu-rods .eu-rod-row{height:auto;min-height:var(--eu-row);padding-top:6px;padding-bottom:6px;align-items:center}
 .eu-frame.is-empty .eu-scale{display:none}
 /* 3) tight frames (a token would step to 11px, or <=360px with more than 4 people): the tag leaves the screen on every token
    but stays in the accessible text (visually hidden, never aria-hidden); the figure keeps a 10px minimum. 5) Print keeps the tags. */
