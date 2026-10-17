@@ -203,8 +203,15 @@ window.MILL_HUB = {
     "Up to 6 questions, each with a left and a right answer (and an optional emoji). Answers chosen stay on the page for this visit only; nothing reports back. Send the answer back makes plain text to copy or send by hand.",
     "A link carries the questions and the choosing method, never the answers; anyone with the link can read them."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview 372ce9243c28fc845dfbed36f586af1c69a4299b: unit 26/26; browser 310/310 at 320/390/1280 (synthetic keys and mouse only). Not QA, and not a switch or dwell check.",
-   "status": "No QA verdict, NOT READY"
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview d0ca7043912e6d1a17660e80de478f5193656286: unit 31/31; browser 379/379 at 320/390/1280 plus a classic-scrollbar sweep at 320/360/390/700/1280/1440 (synthetic keys and mouse only). Not QA, and not a switch or dwell check.",
+   "status": "NOT READY (retest pending at d0ca704)",
+   "qaLocal": {
+    "verdict": "NOT READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "372ce9243c28fc845dfbed36f586af1c69a4299b",
+    "report": "qa/left-or-right/local-372ce92/QA-local-372ce92.md",
+    "note": "retest pending at d0ca704"
+   }
   },
   {
    "id": "P017",
