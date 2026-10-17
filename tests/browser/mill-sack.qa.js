@@ -532,10 +532,19 @@ async function textCR(p, b, sel) {
   // on its tint (with and without unclaimed amount), 8 households, received view at 390/1280 (rendered pixels, text alpha x ancestor opacity)
   for (const w of [390, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200); const ok = [], un = [];
     for (const q of ['10', '8']) { const st = { n: 'Rice', u: 'kilograms-ish', c: '$', q, i: '1', p: '20.00', f: '1.00', b: 'p', x: -1, h: Array.from({ length: 8 }, (_, i) => ['Home ' + (i + 1), '1']) };
-      const f = await p.evaluate(o => SACKLINK.encode(o), st); await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(300); await p.evaluate(() => document.fonts.ready);
+      const f = await p.evaluate(o => SACKLINK.encode(o), st); await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(300); await p.evaluate(() => Promise.all([document.fonts.ready, ...document.getAnimations().map(a => a.finished)]));
       ok.push(...(await textCR(p, s.b, '.ss-sum .ok, .ss-sum .ok .qu')).map(r => Object.assign(r, { q }))); un.push(...(await textCR(p, s.b, '.ss-alloc.is-unalloc .who')).map(r => Object.assign(r, { q }))); }
     ck(w + ' QA all9 W-3: green sum line (' + ok.length + ' runs incl. “kilograms-ish”) ≥4.5:1 against every rendered background pixel under the text', ok.length >= 8 && ok.some(r => r.t.includes('“kilograms-ish”')) && ok.every(r => r.worst >= 4.5 && r.n > 0), ok);
     ck(w + ' QA all9 W-4: "Unclaimed" ≥4.5:1 against its tint, with and without an unclaimed amount', un.length === 2 && un.every(r => r.t === COPY.unallocatedRow && r.worst >= 4.5 && r.n > 0), un);
     ck(w + ' QA all9 W-3/W-4: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
+  // PM 07:25: the 11px '+1¢ rounding' note (and any .ss-why b, same colour, if the page draws one: it currently draws none) ≥4.5:1 on every ground it sits on
+  // (white household cards and the Unclaimed tint), measured on rendered pixels at 320/390/1280; 7 households, 10 “kilograms-ish”, $20.03 puts the note on both
+  for (const w of [320, 390, 1280]) { const s = await session(H, IP); const { p } = s; await p.setViewport({ width: w, height: 900 }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
+    const st = { n: 'Rice', u: 'kilograms-ish', c: '$', q: '10', i: '1', p: '20.03', f: '1.00', b: 'p', x: -1, h: Array.from({ length: 7 }, (_, i) => ['Home ' + (i + 1), '1']) };
+    const f = await p.evaluate(o => SACKLINK.encode(o), st); await p.goto('about:blank'); await p.goto(BASE + '#' + f, { waitUntil: 'load' }); await sleep(300); await p.evaluate(() => Promise.all([document.fonts.ready, ...document.getAnimations().map(a => a.finished)])); // rows drop in (opacity animation): measure the settled page
+    const where = await p.evaluate(() => [...document.querySelectorAll('.ss-alloc .p')].map(e => e.closest('.ss-alloc').classList.contains('is-unalloc') ? 'unclaimed' : 'card'));
+    const pr = await textCR(p, s.b, '.ss-alloc .p'), why = await textCR(p, s.b, '.ss-why b'), all = pr.map((r, i) => Object.assign(r, { on: where[i] })).concat(why.map(r => Object.assign(r, { on: 'why' })));
+    ck(w + " PM 07:25: '+1¢ rounding' (11px) on the household cards and the Unclaimed tint, ≥4.5:1 on rendered pixels (" + all.length + ' runs)', where.includes('card') && where.includes('unclaimed') && all.every(r => r.worst >= 4.5 && r.n > 0 && parseFloat(r.fs) >= 10), all);
+    ck(w + ' PM 07:25: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close(); }
   process.exit(result(rows));
 })().catch(e => { console.error(e); process.exit(2); });
