@@ -139,3 +139,19 @@ input[aria-invalid=true],textarea[aria-invalid=true]{border-color:var(--red);box
  .fh .sheet table{table-layout:fixed}.fh #sc-helper{width:26%}.fh #sc-min{width:30%}
  .fh .sheet td,.fh .sheet td.n{white-space:normal;overflow-wrap:break-word;min-width:0}
 }
+/* QA H15 (PM 07:39): labels are in their final place and fully readable on every frame of the slide-in. The bar slides (transform only; no fade,
+   since a fading bar fades its label too); each label is held still against it by the same timing in reverse (fh-hold), so bar + label nets to
+   zero movement. Out labels carry the hold on .lab (their positioned box; their .t/.m must not double it); in-bar labels on .t and .m. */
+@media (prefers-reduced-motion:no-preference){
+ @keyframes slide{from{transform:translateX(-14px)}}
+ @keyframes fh-hold{from{transform:translateX(14px)}}
+ .stick{animation:slide .5s ease-out both}
+ .stick .lab,.stick .t,.stick .m{animation:fh-hold .5s ease-out both}
+ .stick.out .t,.stick.out .m{transform:none!important}
+}
+/* QA H16: selected text in a field: ink highlight, chalk text (Creative palette: --ink #1F2124, --chalk #F4EFE3, 15.5:1). Next to the focus
+   ring's inner ink band it reads as part of that band, so the yellow band keeps ink on both sides (9.6:1). */
+.fh input::selection,.fh textarea::selection{background:var(--ink);color:var(--chalk)}
+/* QA H17: an emoji/flag word is one wrapping unit (app.js emoWords) */
+.fh-w{display:inline-block;max-width:100%;text-indent:0}
+
