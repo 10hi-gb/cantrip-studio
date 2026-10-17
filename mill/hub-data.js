@@ -21,16 +21,23 @@ window.MILL_HUB = {
     "Loose support only: the seed comment is about a grocery co-op, and no comment mentions splitting a bulk buy.",
     "One item, one unit, one currency per split. No savings, purchase or payment features.",
     "Fee rule: by amount, the fee is split over all quantity and the unclaimed row carries its own fee share until someone takes it or the sender assigns it; equal, the fee is split among households taking some, and with no takers the split is blocked.",
-    "Recipients see a read-only split. \"Change my amount\" makes a new link on the recipient's device; it does not update or notify the sender."
+    "Recipients see a read-only split. \"Change my amount\" makes a new link on the recipient's device; it does not update or notify the sender.",
+    "Not tested: Change my amount link at the 2,000-character boundary."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 134da28501527078776b63b0ffdc973de96b110e: unit 21+8; browser sack 410/410 at 305/320/390/600/1280 (incl. QA D7r received origin+path+fragment cap at 1999/2000/2001/2040, normal and long path; D10-r5 at-cap names in full, no ellipsis, sender/recipient/change/print + Letter PDF; D2 kept); quote-spoof 63/63, recipient-a11y 87/87, sender-typed 12/12. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL; query-strip 48156f8, untested)",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
    "qaLocal": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
+    "sha": "48156f86a8dd9d1bbd9d52ceceaf34db18ddfdd5",
+    "report": "qa/split-the-sack/local-48156f8/QA-local-48156f8.md",
+    "note": "Not tested: Change my amount link at the 2,000-character boundary."
+   },
+   "qaPrevious": {
+    "verdict": "READY",
+    "label": "LOCALHOST-PREVIEW",
     "sha": "134da28501527078776b63b0ffdc973de96b110e",
-    "report": "qa/split-the-sack/local-134da28/QA-local-134da28.md",
-    "note": "query-strip 48156f8, untested"
+    "report": "qa/split-the-sack/local-134da28/QA-local-134da28.md"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -59,8 +66,13 @@ window.MILL_HUB = {
     "tree": "1f37ffe0ce0236ea213816e7f4cdf74961bf59c9",
     "result": "unit tests 9 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY — verification pending at b225af5 (cap fix bb0c643 + query-strip)",
-   "pendingAt": "b225af5b4bd505a737e46a9f78374d6d77bd5b28",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
+   "qaLocal": {
+    "verdict": "READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "b225af5b4bd505a737e46a9f78374d6d77bd5b28",
+    "report": "qa/before-you-go/local-b225af5/QA-local-b225af5.md"
+   },
    "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
@@ -94,8 +106,13 @@ window.MILL_HUB = {
     "tree": "f83c650c08b683a712f9d700e4ff76e66f756316",
     "result": "unit tests 11 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY — verification pending at eade562 (cap fix b1346d0 + query-strip)",
-   "pendingAt": "eade562ddc783558ad2068f927f7aa576e60dd50",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
+   "qaLocal": {
+    "verdict": "READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "eade562ddc783558ad2068f927f7aa576e60dd50",
+    "report": "qa/one-small-ask/local-eade562/QA-local-eade562.md"
+   },
    "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
@@ -127,8 +144,13 @@ window.MILL_HUB = {
     "tree": "b436439c6fafa24c13bf8e20dc5a3f34a660b771",
     "result": "unit tests 15 pass; live browser check 84/84 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY — verification pending at 6169c34 (cap fix dce1907 + query-strip)",
-   "pendingAt": "6169c34f07ac2c8b51e4066d3acc76e5fee1a3f9",
+   "status": "READY ON LOCALHOST-PREVIEW (deployed pin FAIL)",
+   "qaLocal": {
+    "verdict": "READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "6169c34f07ac2c8b51e4066d3acc76e5fee1a3f9",
+    "report": "qa/one-less-trip/local-6169c34/QA-local-6169c34.md"
+   },
    "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
@@ -156,8 +178,14 @@ window.MILL_HUB = {
     "Nothing is sent or booked. A proposal is a suggestion worked out from what the sender typed; nobody has replied to it."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 715aa3a: unit 19 incl. DST; browser 116/116 at 320/390/1280. Not QA.",
-   "status": "NOT READY — verification pending at 8886943 (cap fix 2dd0f6b + query-strip)",
-   "pendingAt": "88869436943a40e949ac4445487912cc14bec828",
+   "status": "READY ON LOCALHOST-PREVIEW (hardening afb31b8, untested)",
+   "qaLocal": {
+    "verdict": "READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "88869436943a40e949ac4445487912cc14bec828",
+    "report": "qa/the-same-hour/local-8886943/QA-local-8886943.md",
+    "note": "hardening afb31b8, untested"
+   },
    "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
@@ -208,15 +236,20 @@ window.MILL_HUB = {
     "A link carries the questions and the choosing method, never the answers; anyone with the link can read them."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview f66fb8e70ba60af04aa9e1dd0ad3ac4f8db7301c: unit 35/35; browser 487/487 at 320/390/1280 plus a classic-scrollbar sweep at 320/360/390/700/1280/1440 (synthetic keys and mouse only; greedy-wrap reference, flag runs, every quote-mark location, rendered focus-ring pixels, no-?query checks). Not QA, and not a switch or dwell check.",
-   "status": "NOT READY (QA open: L5, L6, L7; fix L5–L8 awaiting independent retest at f66fb8e)",
+   "status": "NOT READY (L5–L7 fixed; open L8 (Low), L9 (Med), L10 (Low); L5 single-word interim)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "d0ca7043912e6d1a17660e80de478f5193656286",
-    "report": "qa/left-or-right/local-d0ca704/QA-local-d0ca704.md (also qa/left-or-right/local-f8dfb9c/QA-local-f8dfb9c.md: f8dfb9c562cb1b71b563b18365a143b022f56dda also NOT READY)",
-    "note": "open: L5 (Low), L6 (Low), L7 (quote-contrast finding for PM)"
+    "sha": "f66fb8e70ba60af04aa9e1dd0ad3ac4f8db7301c",
+    "report": "qa/left-or-right/local-f66fb8e/QA-local-f66fb8e.md",
+    "note": "L5–L7 fixed; open: L8 (Low), L9 (Med), L10 (Low); L5 single-word interim (pending next SHA, not filed)"
    },
-   "pendingAt": "f66fb8e70ba60af04aa9e1dd0ad3ac4f8db7301c"
+   "qaPrevious": {
+    "verdict": "NOT READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "d0ca7043912e6d1a17660e80de478f5193656286",
+    "report": "qa/left-or-right/local-d0ca704/QA-local-d0ca704.md (also qa/left-or-right/local-f8dfb9c/QA-local-f8dfb9c.md: f8dfb9c562cb1b71b563b18365a143b022f56dda also NOT READY)"
+   }
   },
   {
    "id": "P017",
