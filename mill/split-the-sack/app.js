@@ -16,7 +16,10 @@
   // the product fallback "Household N" not. nameOf() is only for comparisons, never for display.
   function typedName(i) { return qName(i); }
   function shownName(i) { return qName(i); }
-  function unit() { return M.strip(st.u); }
+  // QA D10 (reopened): the unit (#u) is free text, so it is shown quoted with the shared rule everywhere it is displayed
+  // (row spans, aria, messages, LCD, status, reconcile, assign, notready, copy text, changedWas, amount label, print). unitRaw() for length checks.
+  function unitRaw() { return M.strip(st.u); }
+  function unit() { var u = unitRaw(); return u ? V.quote(u) : ''; }
   function money(c) { return S.fmtMoney(c, M.strip(st.c)); }
   function staticText() {
     document.querySelectorAll('[data-c]').forEach(function (e) { e.textContent = key(e.getAttribute('data-c')); });
@@ -69,7 +72,7 @@
   function fieldErrors() {
     var e = [], h = [], q = S.parseQty(st.q), inc = S.parseQty(st.i), x;
     if ((x = M.len(M.strip(st.n)) - L.ITEM_MAX) > 0) e.push(C.itemLabel + ' ' + M.plural(C.itemTooLong, x));
-    if ((x = M.len(unit()) - L.UNIT_MAX) > 0) e.push(M.plural(C.unitTooLong, x, { max: L.UNIT_MAX }));
+    if ((x = M.len(unitRaw()) - L.UNIT_MAX) > 0) e.push(M.plural(C.unitTooLong, x, { max: L.UNIT_MAX }));
     if ((x = M.len(M.strip(st.c)) - L.SYM_MAX) > 0) e.push(M.plural(C.currencyTooLong, x, { max: L.SYM_MAX }));
     if ((x = numErr(st.q, false))) e.push(C.packageQtyLabel + ': ' + x);
     if ((x = numErr(st.i, false))) e.push(C.incrementLabel + ': ' + x);
