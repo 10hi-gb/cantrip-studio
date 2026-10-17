@@ -695,6 +695,25 @@ const pieces = (p, sel) => p.evaluate(sel => { const e = document.querySelector(
         ck(`L11/L13 ${w} ${mode}: no page errors`, !errs.length, errs); } catch (e) { ck(`L11/L13 ${w} ${mode}: the checks ran to the end`, false, String(e && e.stack || e).slice(0, 400)); } await b.close(); }
     const worstBf = sizes.reduce((m, x) => Math.min(m, x.fs / x.bfTop), 9); ck(`L14: ${sizes.length} renders, the smallest is ${Math.round(worstBf * 1000) / 10}% of the brute-force largest for its piece count (>= 90%)`, sizes.length >= 120 && worstBf >= 0.9 - 1e-4, sizes.filter(x => x.fs < 0.95 * x.bfTop));
     const worst = sizes.reduce((m, x) => Math.min(m, x.fs / x.top), 9); ck(`L13: ${sizes.length} renders, the smallest is ${Math.round(worst * 1000) / 10}% of the largest size for its count (>= 90%)`, sizes.length >= 80 && worst >= 0.9 - 1e-4, sizes.filter(x => x.fs < x.top)); }
+  // QA local-ad96660 L16 (PM, Creative L13 order): multi-word answers on the board take the fewest pieces, keeping a word whole
+  // when it fits a line by itself at the 24px floor, then the largest size. Rendered in the real tile: exact lines, the size
+  // (QA's true largest for the 4-piece layout: 33.88 / 27.62 / 24.19px), every drawn line inside the tile, no page overflow.
+  if (!process.env.MILL_SKIP_L16) { const puppeteer = require('puppeteer-core');
+    const CASES = [[320, 760, 'classic', "Grandmother's chocolate cake", ['Grand-', "mother's", 'chocolate', 'cake'], 27.62], [390, 844, 'classic', "Grandmother's chocolate cake", ['Grand-', "mother's", 'chocolate', 'cake'], 33.88],
+      [390, 844, 'overlay', "Grandmother's chocolate cake", ['Grand-', "mother's", 'chocolate', 'cake'], 33.88], [320, 760, 'classic', 'Strawberry cheesecake please', ['Straw-', 'berry', 'cheesecake', 'please'], 24.19], [320, 760, 'overlay', 'Strawberry cheesecake please', ['Straw-', 'berry', 'cheesecake', 'please'], 24.19]];
+    for (const [w, vh, mode, ans, want, exp] of CASES) {
+      const b = await puppeteer.launch({ executablePath: '/usr/bin/google-chrome', headless: 'new', ignoreDefaultArgs: mode === 'classic' ? ['--hide-scrollbars'] : [], args: ['--no-sandbox', `--host-resolver-rules=MAP ${H.split(':')[0]} ${IP}`] });
+      const p = await b.newPage(), errs = []; p.on('pageerror', e => errs.push(String(e))); p.on('dialog', d => d.accept().catch(() => {})); p.setDefaultTimeout(15000);
+      try { await p.setViewport({ width: w, height: vh }); await p.goto(BASE, { waitUntil: 'load' }); await sleep(150); await fillQ(p, 0, 'Pick?', ans, 'Tea'); await press(p, '#go'); await sleep(300);
+        const v = await p.evaluate(() => { const a = document.getElementById('h-l-a'), tile = document.getElementById('h-l'), tr = tile.getBoundingClientRect(), cs = getComputedStyle(a), fs = parseFloat(cs.fontSize);
+          const drawn = a.querySelector('.lr-vt').getAttribute('data-v').split('\n'), pr = document.createElement('span'); pr.className = 'lr-probe'; pr.style.cssText = 'position:absolute;white-space:pre;visibility:hidden;font:inherit;font-size:' + fs + 'px'; a.appendChild(pr);
+          const W = t => { pr.textContent = t; return pr.getBoundingClientRect().width; }, ar = a.getBoundingClientRect(), inner = tr.width - parseFloat(getComputedStyle(tile).borderLeftWidth) - parseFloat(getComputedStyle(tile).borderRightWidth);
+          const wide = drawn.map((l, i) => W((i === 0 ? '\u201C' : '') + l + (i === drawn.length - 1 ? '\u201D' : ''))); pr.remove();
+          return { drawn, fs, widest: Math.max(...wide), inner, boxIn: ar.left >= tr.left - 0.5 && ar.right <= tr.right + 0.5 && ar.bottom <= tr.bottom + 0.5, boxOver: a.scrollWidth > a.clientWidth + 1, pageOver: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+            other: parseFloat(getComputedStyle(document.getElementById('h-r-a')).fontSize) }; });
+        ck(`L16 ${w}x${vh} ${mode} board “${ans}”: ${v.drawn.join(' / ')} @${v.fs}px — ${want.length} pieces, ${want[2]} kept whole, ${want[0]}${want[1]} still split, about ${exp}px (QA's largest for this layout), >= 24px`, JSON.stringify(v.drawn) === JSON.stringify(want) && v.fs >= 24 && v.fs >= exp - 0.5 && v.fs <= exp + 0.3 && v.other === v.fs, v);
+        ck(`L16 ${w}x${vh} ${mode} board “${ans}”: no overflow (widest line with its marks ${v.widest.toFixed(1)}px in a ${v.inner.toFixed(1)}px tile; answer box inside the tile; page not wider than the viewport)`, v.widest <= v.inner - 4 + 0.5 && v.boxIn && !v.boxOver && !v.pageOver, v);
+        ck(`L16 ${w}x${vh} ${mode}: no page errors`, !errs.length, errs); } catch (e) { ck(`L16 ${w}x${vh} ${mode}: the checks ran to the end`, false, String(e && e.stack || e).slice(0, 400)); } await b.close(); } }
   // QA local-2a8c67b L12, geometry at all five QA widths: every Tab stop on the editor (tap, switch and hold settings, link and
   // answers), board, chosen L/R (+ copy fallback) and recipient screens; the ring box must not intersect other text or controls
   for (const w of (process.env.MILL_SKIP_OVERLAP ? [] : [320, 390, 1000, 1280, 1440])) {

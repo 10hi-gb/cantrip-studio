@@ -172,7 +172,7 @@ t('fit L1: Bartholomew-Smythe breaks at its hyphen; "Bartholomew-" is split insi
   r.kinds.forEach((k, i) => { if (k === 'd' || k === 'f') { assert.ok(letters(r.lines[i]) >= 4 && r.lines[i].endsWith('-')); } });
   assert.equal(r.lines.join('').replace(/-/g, ''), 'BartholomewSmythe'); });
 t('fit L1: a segment that fits is never split, even when a neighbour must be (Supercalifragilistic-ok, no "o-k")', () => {
-  const r = P('Supercalifragilistic-ok yes', 136); assert.ok(r.lines.includes('ok yes') || r.lines.includes('ok'), JSON.stringify(r.lines));
+  const r = P('Supercalifragilistic-ok yes', 136); assert.ok(r.lines.some(l => /(^|-)ok( yes)?$/.test(l)) && !r.lines.some(l => /o-$/.test(l)), JSON.stringify(r.lines)); // L16: "ok" may share the line after its own hyphen (fewer pieces), never split
   r.lines.forEach(l => { const g = F.graphemes(l.replace(/-$/, '')); if (l.endsWith('-') && !/Supercalifragilistic-$/.test(l)) assert.ok(letters(l) >= 4); assert.ok(g.length >= 1); }); });
 t('fit L1: an existing hyphen never gets a second one added next to it; a leading hyphen is not a break', () => {
   const p = F.parse('-abc in-law'); assert.deepEqual(p.nat.map(b => b.kind), ['s', 'h']); assert.deepEqual(F.parse('x-ray re-do').nat.map(b => b.kind), ['s', 'h']); const r = P('Mother-in-law', 60);
@@ -198,8 +198,23 @@ t('fit r5: a single hyphenated word also takes the fewest pieces (Bartholomew-Sm
 t('fit r5: if even the most pieces cannot fit at 24px, the old behaviour stands (one overflow line at the floor)', () => {
   const r = P(NOOO, 30, 44.8); assert.equal(r.overflow, true); assert.equal(r.size, 24); assert.deepEqual(r.lines, [NOOO]); });
 t('fit r5: multi-word answers are unchanged (greedy at the largest size, same as the reference)', () => {
-  for (const [w, a] of [['Watch a movie at home', 136], ['Twenty-two-year-old cat', 136], ['Nooooooooooooooooooo yes', 136], ['Mother-in-law visit', 136], ['Pizza night at the lake house', 171]]) { const r = P(w, a), old = oldPlan(w, a, 44.8);
+  for (const [w, a] of [['Watch a movie at home', 136], ['Twenty-two-year-old cat', 136], ['Mother-in-law visit', 136], ['Pizza night at the lake house', 171]]) { const r = P(w, a), old = oldPlan(w, a, 44.8); // 'Nooo... yes' moved to L16 (fewer pieces)
     assert.deepEqual([r.size, r.lines], [old.size, old.lines], w); if (!/o{8}/.test(w)) assert.deepEqual(r.lines, refGreedy(w, fake(a), r.size), w); } });
+// QA local-ad96660 L16 (PM, Creative L13 order): multi-word answers take the fewest pieces (a word, or part of one where a line
+// ends without a space), then the largest size, then the lowest tier within 10%; a segment that fits a line by itself at the
+// 24px floor is never broken inside. Inner breaks found by walking the lines back onto the parsed graphemes.
+const innerBreaks = (w, r) => { const PP = F.parse(w); let pos = 0; const out = []; r.lines.forEach((l, i) => { const k = r.kinds[i], g = F.graphemes(l).length - (k === 'd' || k === 'f' ? 1 : 0); pos += g; if (k === 'd' || k === 'f' || k === 'g' || k === 'c') out.push(pos); if (k === 's') pos++; });
+  return out.map(p => PP.segs.find(x => x.s < p && p < x.e)).map(x => ({ t: PP.G.slice(x.s, x.e).join(''), first: x.s === 0, last: x.e === PP.n })); };
+t('fit L16 (QA local-ad96660): a multi-word answer keeps a word whole when it fits at the floor; fewest pieces first (no "choco- / late", no "cheese- / cake")', () => {
+  for (const a of [136, 150, 171]) { const r = P("Grandmother's chocolate cake", a, a > 160 ? 54.6 : 44.8); assert.deepEqual(r.lines, ['Grand-', "mother's", 'chocolate', 'cake'], a + ' ' + JSON.stringify(r.lines)); assert.ok(r.size >= 24 && !r.overflow, r.size); }
+  const s = P('Strawberry cheesecake please', 150); assert.deepEqual(s.lines, ['Straw-', 'berry', 'cheesecake', 'please'], JSON.stringify(s.lines)); assert.ok(s.size >= 24 && !s.overflow);
+  const n = P('Nooooooooooooooooooo yes', 136); assert.equal(n.lines.length, 4, JSON.stringify(n.lines)); assert.ok(n.size > 26, n.size); // 3 word pieces + yes at 28.05, over 5 + yes at 38.8
+  for (const w of ["Grandmother's chocolate cake", 'Strawberry cheesecake please', 'Supercalifragilistic-ok yes', 'Nooooooooooooooooooo yes', 'Watch a movie at home', 'Pizza night at the lake house', 'Butterscotch pudding cups', 'Extraordinary marshmallow surprise', 'Jean-Baptiste eats chocolate']) for (const a of [100, 120, 136, 150, 171, 200]) {
+    const r = P(w, a), old = oldPlan(w, a, 44.8); if (r.overflow || !old) continue; const fl = fitsFn(fake(a), 24);
+    innerBreaks(w, r).forEach(x => assert.ok(!fl(x.t, x.first, x.last), w + '@' + a + ': "' + x.t + '" fits whole at 24px but is broken: ' + JSON.stringify(r.lines)));
+    const pc = ls => ls.slice(0, -1).filter(l => /-$/.test(l)).length; // pieces beyond the word count (lines that end inside a word)
+    assert.ok(pc(r.lines) <= pc(old.lines), w + '@' + a + ' more pieces than before');
+    assert.ok(r.size >= 24, w + '@' + a); } });
 t('fit: Japanese breaks between characters with no Latin hyphen; no line starts with small kana, ー or closing marks, none ends on an opening bracket', () => {
   for (const [w, a] of [['今日は映画を見に行きましょう', 136], ['今日は映画を見に行きましょう', 90], ['チョコレートケーキ', 100], ['「映画」を見に行こう', 100], ['ありがとう、ございます。', 110]]) { const r = P(w, a, 44.8);
     assert.ok(r.lines.length > 1, w + ' ' + JSON.stringify(r.lines)); assert.equal(r.lines.join(''), w, w); assert.ok(!r.lines.some(l => /[-\u2010\u00AD]/.test(l)), w + ' ' + JSON.stringify(r.lines));
