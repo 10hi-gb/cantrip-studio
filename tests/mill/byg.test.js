@@ -31,6 +31,8 @@ t('D8 + QA N4 phone: Call/Text only when the field is basically just a number (7
   assert.equal(B.telHref('(415) 555-0134'), 'tel:4155550134'); assert.equal(B.smsHref('+44 20 7946 0958'), 'sms:+442079460958'); });
 t('QA N11 + N12 (PM exact): one optional leading +; whole-string date and time/range shapes never get a Call button', () => {
   for (const k of ['10-24-2026', '1/2/26', '12.30-14.00', '9:00 - 17:30', '12:30', '++1 555 0100', '555-0100 ext 2', '++15551234567', '10.24.2026', '12.30', '12.30 – 14.00', '+1 555 +0100']) assert.equal(B.phone(k), null, k);
+  // N15b (PM regex ^\d{4}[-./]\d{1,2}[-./]\d{1,2}$): year-first dates get no button; PM's and QA's cases
+  for (const k of ['2026/10/24', '2026.1.2', '2026-1-02', '2026.10.24', '2026-10-4', '2026-1-15', '2026-10-24', '2026/1/2', ' 2026.10.24 ']) assert.equal(B.phone(k), null, 'N15b ' + k);
   for (const k of ['+1 (555) 010-0199', '01.23.45.67.89', '555.0100', '555-0134', '(555) 013-4567', '+44 20 7946 0958', '555.013.4567']) assert.equal(B.phone(k), k, k);
   assert.equal(B.telHref('+1 (555) 010-0199'), 'tel:+15550100199'); });
 t('QA N10: readiness aria plural matches the heading; N13: own-copy footer only when asked (Writer verbatim)', () => {

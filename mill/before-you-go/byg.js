@@ -46,7 +46,7 @@
   function phone(text) {
     // QA N11/N12 (PM exact): optional single leading +, then only digits, spaces, ( ) - . with 7-15 digits; never a date or time shape
     var num = M.strip(String(text || '')); if (!num || !/^\+?[\d\s().-]+$/.test(num)) return null;
-    if (/^\d{1,2}[-./]\d{1,2}[-./](\d{2}|\d{4})$/.test(num) || /^\d{1,2}[.:]\d{2}(\s*[-\u2013]\s*\d{1,2}[.:]\d{2})?$/.test(num) || /^\d{4}-\d{2}-\d{2}$/.test(num)) return null;
+    if (/^\d{1,2}[-./]\d{1,2}[-./](\d{2}|\d{4})$/.test(num) || /^\d{1,2}[.:]\d{2}(\s*[-\u2013]\s*\d{1,2}[.:]\d{2})?$/.test(num) || /^\d{4}[-./]\d{1,2}[-./]\d{1,2}$/.test(num)) return null; // PM N15b: year-first dates in any separator/width
     var d = num.replace(/\D/g, ''); return d.length >= 7 && d.length <= 15 ? num : null;
   }
   function telHref(num) { return 'tel:' + num.replace(/[^\d+]/g, ''); }
