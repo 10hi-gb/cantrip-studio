@@ -237,20 +237,19 @@ window.MILL_HUB = {
     "A link carries the questions and the choosing method, never the answers; anyone with the link can read them."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 2a8c67b7f480614d4c25584a42d7574d5ed8fcb4: unit 42/42; browser 543/543 at 320/390/1280 plus a classic-scrollbar sweep at 320/360/390/700/1280/1440 (synthetic keys and mouse only; single-word fewest-pieces oracle, Japanese breaks, rendered focus-ring audit of every Tab stop at 390 and 1280, bad-link path-only writes, no-?query checks). f66fb8e superseded by 2a8c67b for the single-word rule (and L8–L10) only. Not QA, and not a switch or dwell check.",
-   "status": "NOT READY (L5–L7 fixed; open L8 (Low), L9 (Med), L10 (Low); L5 single-word interim; fix L5 single-word + L8–L10 awaiting independent retest at 2a8c67b; shared wrap f893087, recheck pending)",
-   "pendingAt": "2a8c67b7f480614d4c25584a42d7574d5ed8fcb4",
+   "status": "NOT READY (L8–L10 fixed; open L11 Low, L12 Low, L13 Low (reopened per Creative 07:02; fix in progress); shared wrap f893087, recheck pending)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "f66fb8e70ba60af04aa9e1dd0ad3ac4f8db7301c",
-    "report": "qa/left-or-right/local-f66fb8e/QA-local-f66fb8e.md",
-    "note": "L5–L7 fixed; open: L8 (Low), L9 (Med), L10 (Low); L5 single-word interim (pending next SHA, not filed)"
+    "sha": "2a8c67b7f480614d4c25584a42d7574d5ed8fcb4",
+    "report": "qa/left-or-right/local-2a8c67b/QA-local-2a8c67b.md",
+    "note": "L8–L10 fixed; open L11 Low, L12 Low, L13 Low (reopened per Creative 07:02; fix in progress)"
    },
    "qaPrevious": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "d0ca7043912e6d1a17660e80de478f5193656286",
-    "report": "qa/left-or-right/local-d0ca704/QA-local-d0ca704.md (also qa/left-or-right/local-f8dfb9c/QA-local-f8dfb9c.md: f8dfb9c562cb1b71b563b18365a143b022f56dda also NOT READY)"
+    "sha": "f66fb8e70ba60af04aa9e1dd0ad3ac4f8db7301c",
+    "report": "qa/left-or-right/local-f66fb8e/QA-local-f66fb8e.md"
    }
   },
   {
