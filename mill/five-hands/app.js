@@ -5,8 +5,6 @@
 (function () {
   var C = COPY, M = MILL, V = MILLVIEW, $ = function (id) { return document.getElementById(id); }, q = V.quote, L = FH.LIM;
   var seq = 0, tried = false, last = null, prevSuggest = null, fbText = '';
-  // STAND-IN (no Writer key yet; logged in writer/ENGINEER-NEEDS-five-hands.txt): header of a 0-minute helper with no tasks (Creative check 5f127ab item 3).
-  var SI = { zeroHead: '0 minutes · no tasks' };
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function txt(s) { return document.createTextNode(s); }
   function sep() { var s = el('span', 'fh-sep', C.tallySep); s.setAttribute('aria-hidden', 'true'); return s; }
@@ -69,10 +67,10 @@
     var ok = res.conserved; box.append(sep()); box.append(el('span', ok ? 'ok' : 'bad', ok ? M.fill(C.conservation, { on: res.given, bench: res.benchMin, work: res.work }) : C.conservationFail)); }
   function stick(it, sc) { var s = el('div', 'stick'); setv(s, '--m', it.min); setv(s, '--sc', sc); var t = el('span', 't'); t.append(V.typed(it.name)); s.append(t, el('span', 'm', String(it.min)));
     if (it.overMin) { s.classList.add('over'); if (it.overMin >= it.min) s.classList.add('all'); setv(s, '--p', (Math.round(it.overMin / it.min * 1000) / 10) + '%'); } return s; }
-  // minutes line: loadLine, then (red) tallySep + overBy, or (green) tallySep + loadSpare (Writer N9/N9b). A 0-minute helper with no tasks: SI.zeroHead.
+  // minutes line: loadLine, then (red) tallySep + overBy, or (green) tallySep + loadSpare (Writer N9/N9b). A 0-minute helper with no tasks: zeroHead (Writer N12).
   function helperCard(r, sc, title, mode) { var a = el('article', 'helper' + (r.cap === 0 ? ' zero' : '')), nm = q(M.strip(r.name)), ll = M.fill(C.loadLine, { load: r.load, cap: r.cap });
     var idle = r.cap === 0 && !r.items.length, ov = r.over ? M.fill(C.overBy, { n: r.over, name: nm, cap: r.cap }) : '', sp = !ov && r.cap > 0 && r.spare > 0 ? M.fill(C.loadSpare, { n: r.spare }) : '';
-    var hh = el('div', 'hhead'), tab = el('span', 'tab'); tab.append(V.typed(r.name)); var ld = el('span', 'load', idle ? SI.zeroHead : ll);
+    var hh = el('div', 'hhead'), tab = el('span', 'tab'); tab.append(V.typed(r.name)); var ld = el('span', 'load', idle ? C.zeroHead : ll);
     if (ov) ld.append(el('span', 'over', C.tallySep + ov)); else if (sp) ld.append(el('span', 'spare', C.tallySep + sp));
     a.setAttribute('aria-label', nm + ': ' + ld.textContent);
     var b = el('button', 'btn noprint', M.fill(C.copyCard, { name: nm })); b.type = 'button'; b.addEventListener('click', function () { var t = FH.cardText(C, title, r, mode); preview(nm, t); copy(t); });
@@ -82,7 +80,7 @@
     var tr = el('div', 'track'); setv(tr, '--sc', sc); setv(tr, '--cap', r.cap); setv(tr, '--ov', r.over);
     // the roll (open or rolled up) is canvas only: nothing is painted over it; only the over part of each stick is red (.stick.over, --p)
     if (r.cap === 0) { var ru = el('span', 'rolled'); ru.setAttribute('aria-hidden', 'true'); tr.append(ru);
-      if (idle) { var zn = el('span', 'zeronote'); zn.setAttribute('aria-hidden', 'true'); zn.append(el('span', 'fh-zl', C.rolledUp), el('span', 'fh-zh', C.zeroHint)); tr.append(zn); } }
+      if (idle) { var zn = el('span', 'zeronote'); zn.setAttribute('aria-hidden', 'true'); zn.append(el('span', 'fh-zl', C.rolledUp)); tr.append(zn); } }
     else { var rl = el('span', 'roll'); rl.setAttribute('aria-hidden', 'true'); tr.append(rl); }
     var st = el('div', 'sticks'); r.items.forEach(function (it) { st.append(stick(it, sc)); }); tr.append(st); a.append(tr);
     a.append(el('div', 'stampline', FH.stampFor(C, mode))); return a; }

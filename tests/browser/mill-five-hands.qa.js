@@ -16,7 +16,7 @@ const mk = a => a.map(x => ({ name: x[0], min: x[1] }));
 const HS = [['Ana', 120], ['Ben', 60], ['Chen', 90], ['Dee', 0], ['Eli', 45]];
 const TS = [['Pull tomato cages', 40], ['Turn compost bed A', 30], ['Turn compost bed B', 30], ['Rake paths', 45], ['Cover raised beds', 25], ['Clean and oil tools', 20], ['Haul yard bags to curb', 35], ['Fix gate latch', 15], ['Empty rain barrels', 20]];
 const TITLE = 'Garden cleanup, Saturday';
-const ZEROHEAD = '0 minutes · no tasks'; // STAND-IN in app.js (SI.zeroHead), logged in writer/ENGINEER-NEEDS-five-hands.txt
+const ZEROHEAD = C.zeroHead; // Writer N12
 const clipStub = () => { window.__clip = []; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: t => { window.__clip.push(String(t)); return Promise.resolve(); } } }); };
 const on = p => p.evaluate(() => [...document.querySelectorAll('section')].filter(s => getComputedStyle(s).display !== 'none').map(s => s.id).join());
 // fill the form: add rows with the real Add buttons, then set values (input events fire like typing)
@@ -233,8 +233,8 @@ const RED = [200, 54, 31];
         anaSpare: a[0].querySelector('.load .spare').textContent, anaSpareC: getComputedStyle(a[0].querySelector('.load .spare')).color,
         benchH: document.getElementById('bench-h').textContent, benchHShown: document.getElementById('bench-h').getClientRects().length > 0 && getComputedStyle(document.getElementById('bench-h')).visibility !== 'hidden',
         benchEmpty: (document.querySelector('#plank .empty') || {}).textContent, inBench: document.getElementById('bench').contains(document.getElementById('b-bench')) && document.getElementById('bench').contains(document.getElementById('bench-explain')) }; });
-    ck(w + ' C3 Dee (0 min, no tasks): header "0 minutes · no tasks" (stand-in), never "Rolled up" in the header; aria-label = quoted name + header; ' + (w > 640 ? 'label by the rolled roll = rolledUp + zeroHint' : 'phone: roll label hidden'),
-      t.dee === ZEROHEAD && !/Rolled up/.test(t.dee) && t.deeLabel === '“Dee”: ' + ZEROHEAD && (w > 640 ? t.zn && t.zn.join('|') === C.rolledUp + '|' + C.zeroHint && t.deeText.split(C.rolledUp).length === 2 : t.zn === null && !t.deeText.includes(C.rolledUp)), t);
+    ck(w + ' C3 Dee (0 min, no tasks): header = Writer zeroHead "0 minutes · no tasks", never "Rolled up" in the header; aria-label “Dee”: 0 minutes · no tasks; ' + (w > 640 ? 'label by the rolled roll = rolledUp only (no zeroHint line)' : 'phone: roll label hidden'),
+      t.dee === '0 minutes · no tasks' && ZEROHEAD === '0 minutes · no tasks' && !/Rolled up/.test(t.dee) && t.deeLabel === '“Dee”: 0 minutes · no tasks' && !t.deeText.includes(C.zeroHint) && (w > 640 ? t.zn && t.zn.join('|') === C.rolledUp && C.rolledUp === 'Rolled up · coming, just not on a task' && t.deeText.split(C.rolledUp).length === 2 : t.zn === null && !t.deeText.includes(C.rolledUp)), t);
     ck(w + ' C2 spare: "· N min spare" (loadSpare) after loadLine, green', t.anaSpare === C.tallySep + '5 min spare' && t.anaSpareC === 'rgb(62, 94, 46)', t);
     ck(w + ' C4 empty bench: "Still on the bench" heading always shown (benchHeadingEmpty) above benchEmpty; explainer + copy button live inside the bench', t.benchHShown && t.benchH === C.benchHeadingEmpty && t.benchEmpty === C.benchEmpty && t.inBench, t);
     await p.emulateMediaType('print'); t = await p.evaluate(() => [...document.querySelectorAll('#sheet-t tbody tr')].filter(r => r.getClientRects().length).map(r => [...r.cells].map(c => c.textContent).join(' | '))); await p.emulateMediaType(null);
