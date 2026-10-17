@@ -284,22 +284,22 @@ window.MILL_HUB = {
     "The optional link holds only the household sheet (names, days and needs, no notes); anyone with the link can read it.",
     "QA all-9 NOT TESTED: C11–C14 and the tag grid (covered by the other QA run); the Edit lines address-bar step (control not shown on a received sheet, 3 cases).",
     "QA local-64ea179 NOT TESTED: everything outside C14, C15, C16 and the listed regressions, including the full text-contrast scan (C11 scope), print and PDF, the recipient view beyond the address-bar rows, the 2,000-character URL boundary, timezone and DST, and copy text; window widths between 391 and 1279 except as used for resize; real devices and other browsers (Chrome headless only).",
-    "later commit ced37c4 (household-sheet layout: app.css, app.js, index.html) untested"
+    "QA local-ced37c4 NOT TESTED: Firefox, Safari/WebKit, physical phones, real touch input and real screen readers (AT via the Chrome AX tree only); real Windows High Contrast and forced colours (not rerun), dark mode, zoom at 200% and 400%; real printers and the browser print dialog, print at sizes other than Letter and A4; sheet widths other than 320, 390, 560, 561 and 1280, and the stacked sheet with 15–28 days on screen; the 2,000-character cap at a long origin path; anything outside Checks 1–4 (full text-contrast scan, timezone/DST, copy text)."
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 83edf87d032af47d88508f7eed08a8e1a528a9a2: cr unit 24/24; care-rota browser 216/216 at 305–1440. Not QA.",
-   "status": "READY ON LOCALHOST-PREVIEW (targeted retest at 3539188: C1–C16 and W-7 fixed)",
+   "status": "NOT READY (W-7 fixed; open C17 Low (read-as table overflow 561–600px))",
    "qaLocal": {
+    "verdict": "NOT READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "ced37c460c21508ad3f96fef905c13c022dac060",
+    "report": "qa/care-rota/local-ced37c4/QA-local-ced37c4.md",
+    "note": "W-7 fixed; open C17 Low (read-as table overflow 561–600px)"
+   },
+   "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "3539188eb0ef9b6d97bf9d99c79326f9bf85e791",
-    "report": "qa/care-rota/local-3539188/QA-local-3539188.md",
-    "note": "targeted retest; C1–C16 and W-7 fixed; NOT TESTED: Firefox/Safari, real devices, screen readers, real Windows High Contrast, zoom, print, dark mode"
-   },
-   "qaPrevious": {
-    "verdict": "NOT READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "64ea1799741988c047941a8fa5a0c37cfc138152",
-    "report": "qa/care-rota/local-64ea179/QA-local-64ea179.md (also qa/care-rota/local-83edf87/QA-local-83edf87.md: 83edf87d032af47d88508f7eed08a8e1a528a9a2 also NOT READY)"
+    "report": "qa/care-rota/local-3539188/QA-local-3539188.md — C17 later found present at this SHA (also qa/care-rota/local-64ea179/QA-local-64ea179.md: 64ea1799741988c047941a8fa5a0c37cfc138152 also NOT READY; also qa/care-rota/local-83edf87/QA-local-83edf87.md: 83edf87d032af47d88508f7eed08a8e1a528a9a2 also NOT READY)"
    }
   },
   {
