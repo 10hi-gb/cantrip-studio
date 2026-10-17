@@ -199,7 +199,7 @@
     "Up to 6 questions, each with a left and a right answer (and an optional emoji). Answers chosen stay on the page for this visit only; nothing reports back. Send the answer back makes plain text to copy or send by hand.",
     "A link carries the questions and the choosing method, never the answers; anyone with the link can read them."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview f9a48fa: unit 18; browser 240/240 at 320/390/1280 (synthetic keys and mouse only). Not QA, and not a switch or dwell check.",
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview f9a48fa: unit 18; browser 238/238 at 320/390/1280 (synthetic keys and mouse only). Not QA, and not a switch or dwell check.",
    "status": "No QA verdict, NOT READY"
   },
   {
