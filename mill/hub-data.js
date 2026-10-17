@@ -23,14 +23,14 @@ window.MILL_HUB = {
     "Fee rule: by amount, the fee is split over all quantity and the unclaimed row carries its own fee share until someone takes it or the sender assigns it; equal, the fee is split among households taking some, and with no takers the split is blocked.",
     "Recipients see a read-only split. \"Change my amount\" makes a new link on the recipient's device; it does not update or notify the sender."
    ],
-   "engineer": "ENGINEER SELF-CHECK on localhost-preview 7dfd6acc992de8166ba4ba4d8e3c1678a44d74c1: unit 21+5; browser sack 309/309 at 320/390/1280 (incl. QA local-a254042 D10-r1/D10-r2 checks); quote-spoof 63/63, recipient-a11y 87/87, sender-typed 12/12. Not QA.",
-   "status": "NOT READY (retest pending at 7dfd6ac)",
+   "engineer": "ENGINEER SELF-CHECK on localhost-preview d8d1dcef016c96be1cd3ebf7e9c49cd81193b262: unit 21+8; browser sack 361/361 at 320/390/1280 (+305 layout for D10-r3; incl. QA local-a254042 D10-r1/r2, QA local-7dfd6ac D10-r3, every text cap counted like the link parser); quote-spoof 63/63, recipient-a11y 87/87, sender-typed 12/12. Not QA.",
+   "status": "NOT READY (retest pending at d8d1dce)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "a254042a59e94fb6881c36f78f84f14d124da5a6",
     "report": "qa/split-the-sack/local-a254042/QA-local-a254042.md",
-    "note": "retest pending at 7dfd6ac"
+    "note": "retest pending at d8d1dce"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
