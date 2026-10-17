@@ -48,9 +48,12 @@
   // ---- text outputs (C = Writer COPY). PM: typed names (helpers, tasks, session title) quoted everywhere; Writer's
   // templates verbatim — values in “{x}” slots are framed by the template (fill() neutralises their marks), others get M.quote.
   var Q = function (s) { return M.raw(M.quote(M.strip(s))); };
-  function cardText(C, title, r) { if (!r.items.length && r.cap === 0) return M.fill(C.cardTextNoTasks, { name: Q(r.name), title: M.strip(title) });
-    var t = M.fill(C.cardText, { name: Q(r.name), title: M.strip(title), taskLines: M.raw(r.items.map(function (it) { return M.fill(C.cardTaskLine, { task: M.strip(it.name), m: it.min }); }).join('\n')), load: r.load, cap: r.cap });
-    return r.items.length ? t : t.replace(':\n\n=', ':\n='); } // copy gap: no Writer string for "minutes but no task"; drop the empty task-lines line
+  // Writer finals (N9): "For: {name}" (label line -> shared quote rule); “{title}” and “{task}” are framed by the template, so
+  // fill() applies the same Q1 normalisation (MILL.unquote) to the value inside: a typed ” can't close the frame early.
+  function cardText(C, title, r) { var v = { name: Q(r.name), title: M.strip(title), cap: r.cap };
+    if (!r.items.length) return M.fill(r.cap === 0 ? C.cardTextNoTasks : C.cardTextNoFit, v);
+    v.taskLines = M.raw(r.items.map(function (it) { return M.fill(C.cardTaskLine, { task: M.strip(it.name), m: it.min }); }).join('\n')); v.load = r.load;
+    return M.fill(C.cardText, v); }
   function benchText(C, title, res) { return M.fill(C.benchText, { title: M.strip(title), lines: M.raw(res.bench.map(function (t) { return M.fill(C.benchLine, { task: M.strip(t.name), m: t.min }); }).join('\n')), stamp: C.stamp }); }
   // ---- optional sheet link "#fh1.<b64url JSON>.<ck>": title, task names + minutes, first names + minutes, who does what, mode. Nothing else.
   var TAG = 'fh', VER = 1;
