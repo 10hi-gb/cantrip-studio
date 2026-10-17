@@ -25,10 +25,12 @@
   function clean(s) { return M.strip(s); }
   // ---- money: integer cents only
   // Plain amount: digits with an optional . and 1–2 decimals ("12", "12.5", "12.50", ".50"). Returns {ok, v: cents} or
-  // {ok:false, why: 'empty' | 'negative' | 'plain' | 'big'}.
+  // {ok:false, why: 'empty' | 'negative' | 'commas' | 'plain' | 'big'}.
   function parseAmount(s) {
     s = M.strip(s); if (!s) return { ok: false, why: 'empty' };
     if (/^[-\u2212\u2013]\s*[\d.,]/.test(s)) return { ok: false, why: 'negative' };
+    // QA E7: commas only as standard thousands groups (1,234.56 / 12,345 / 1,000,000); any other comma -> 'commas'
+    if (s.indexOf(',') >= 0) { if (!/^\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?$/.test(s)) return { ok: false, why: /^[\d.,]+$/.test(s) ? 'commas' : 'plain' }; s = s.replace(/,/g, ''); }
     var m = /^(\d{1,12})(?:\.(\d{1,2}))?$/.exec(s) || /^()\.(\d{1,2})$/.exec(s); if (!m) return { ok: false, why: 'plain' };
     var whole = m[1] ? m[1].replace(/^0+(?=\d)/, '') : '0'; if (whole.length > 9) return { ok: false, why: 'big' };
     var v = parseInt(whole, 10) * 100 + (m[2] ? parseInt((m[2] + '0').slice(0, 2), 10) : 0);
@@ -131,6 +133,8 @@
     return true;
   }
   function removeExpense(st, id) { var n = st.x.length; st.x = st.x.filter(function (x) { return x.id !== id; }); return st.x.length < n; }
+  // QA E5: a share in plain text: the final amount first, the rounding cent as Writer's labelled note in brackets.
+  function shareText(c, extra, sym, C) { return fmt(c, sym) + (extra ? ' (' + C.residualMark + ')' : ''); }
   // Event as shown in plain text: the typed name quoted, or Writer's title (unquoted product text) when it was left blank.
   function eventText(st, C) { var e = clean(st.ev); return e ? M.quote(e) : C.title; }
   // ---- plain-text summary (Writer summaryText); every typed value quoted
@@ -174,5 +178,5 @@
     st.next = id; if (!canShare(st)) return bad;
     return { ok: true, data: st };
   }
-  return { LIM: LIM, URL_MAX: URL_MAX, VER: VER, TAG: TAG, CUR: CUR, fold: fold, parseAmount: parseAmount, fmt: fmt, parseWeight: parseWeight, fmtWeight: fmtWeight, split: split, blank: blank, person: person, parts: parts, peopleErrors: peopleErrors, expenseErrors: expenseErrors, compute: compute, settle: settle, after: after, canShare: canShare, removePerson: removePerson, removeExpense: removeExpense, summary: summary, eventText: eventText, rawFragment: rawFragment, encode: encode, decode: decode };
+  return { LIM: LIM, URL_MAX: URL_MAX, VER: VER, TAG: TAG, CUR: CUR, fold: fold, parseAmount: parseAmount, fmt: fmt, parseWeight: parseWeight, fmtWeight: fmtWeight, split: split, blank: blank, person: person, parts: parts, peopleErrors: peopleErrors, expenseErrors: expenseErrors, compute: compute, settle: settle, after: after, canShare: canShare, removePerson: removePerson, removeExpense: removeExpense, summary: summary, eventText: eventText, shareText: shareText, rawFragment: rawFragment, encode: encode, decode: decode };
 });

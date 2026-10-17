@@ -1,6 +1,6 @@
 // node tests/mill/eu.test.js — Even Up model: integer cents, deterministic leftover cents, zero-sum balances, a settlement
 // that zeroes every balance, validation, and the versioned link codec (full rejection of malformed input, 2,000-char URL cap).
-const assert = require('assert'); const E = require('../../mill/even-up/eu.js'), M = require('../../mill/shared/core.js');
+const assert = require('assert'), fs = require('fs'), path = require('path'); const E = require('../../mill/even-up/eu.js'), M = require('../../mill/shared/core.js');
 const C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/even-up/copy.js', 'utf8') + ';COPY');
 let n = 0; const t = (name, f) => { f(); n++; console.log('ok', n, name); };
 // mk(['A','B','C'], [[what, '30.00', payerIdx, 'e'|'w', [idx...] | [[idx, '1'],...]]])
@@ -41,7 +41,7 @@ t('unequal splits: weights 1, 2.5, 0.5 on 12.34 add up exactly', () => {
   assert.equal(c.xs[0].total, 1234); assert.deepEqual(c.xs[0].shares.map(s => s.c), [309, 771, 154]); assert.equal(c.sum, 0); });
 t('refunds / negatives rejected, plain amounts only, caps', () => {
   assert.deepEqual(E.parseAmount('-5'), { ok: false, why: 'negative' }); assert.deepEqual(E.parseAmount('\u22125.00'), { ok: false, why: 'negative' });
-  assert.equal(E.parseAmount('12,5').why, 'plain'); assert.equal(E.parseAmount('1e3').why, 'plain'); assert.equal(E.parseAmount('$5').why, 'plain'); assert.equal(E.parseAmount('5.555').why, 'plain'); assert.equal(E.parseAmount('').why, 'empty'); assert.equal(E.parseAmount('Infinity').why, 'plain'); assert.equal(E.parseAmount('NaN').why, 'plain');
+  assert.equal(E.parseAmount('12,5').why, 'commas'); assert.equal(E.parseAmount('1e3').why, 'plain'); assert.equal(E.parseAmount('$5').why, 'plain'); assert.equal(E.parseAmount('5.555').why, 'plain'); assert.equal(E.parseAmount('').why, 'empty'); assert.equal(E.parseAmount('Infinity').why, 'plain'); assert.equal(E.parseAmount('NaN').why, 'plain');
   assert.equal(E.parseAmount('12.5').v, 1250); assert.equal(E.parseAmount('.5').v, 50); assert.equal(E.parseAmount('0').v, 0); assert.equal(E.parseAmount(' 007.10 ').v, 710);
   assert.equal(E.parseAmount('100000').v, 10000000); assert.equal(E.parseAmount('100000.01').why, 'big'); assert.equal(E.parseAmount('9999999999999').why, 'plain'); assert.equal(E.parseAmount('999999999999').why, 'big');
   const st = mk(['A', 'B'], [['Returned tent', '5', 0, 'e', [0, 1]]]); st.x[0].amt = -500; assert.equal(E.expenseErrors(st, st.x[0]).amt, 'negative');
@@ -121,6 +121,21 @@ t('Creative 8: blank event is valid; summary/link use Writer title (unquoted) as
   assert.equal(E.eventText(st, C), 'Even Up'); assert.ok(E.summary(st, C).startsWith('Even Up ($)\n\u201CB\u201D pays \u201CA\u201D $10.00\n'));
   const d = E.decode(E.encode(st, 30)); assert.ok(d.ok); assert.equal(d.data.ev, ''); assert.equal(E.summary(d.data, C), E.summary(st, C));
   st.ev = 'Trip'; assert.equal(E.eventText(st, C), '\u201CTrip\u201D'); });
+t('QA E7: commas only as standard thousands groups; anything else -> commas (errorCommas); other junk -> plain', () => {
+  assert.equal(E.parseAmount('1,234.56').v, 123456); assert.equal(E.parseAmount('12,345').v, 1234500); assert.equal(E.parseAmount('100,000.00').v, 10000000); assert.equal(E.parseAmount('999,999').why, 'big');
+  assert.equal(E.parseAmount('1,000,000').why, 'big'); assert.equal(E.parseAmount('12,345.6').v, 1234560);
+  for (const bad of ['1,23', '12,34,567', ',5', '12,5', '1,2345', '1,234,56', '1,,234', '1,234.', '1234,567', '1,234.567', '.5,0']) assert.equal(E.parseAmount(bad).why, 'commas', bad);
+  for (const bad of ['$1,234', '1,234 EUR', 'a,bc']) assert.equal(E.parseAmount(bad).why, 'plain', bad);
+  assert.equal(E.parseAmount('-1,234').why, 'negative');
+  assert.equal(C.errorCommas, 'Commas go only between groups of three digits, like 1,234.56.'); });
+t('QA E5: plain-text share puts the final amount first, Writer residualMark in brackets; no "+$0.01"', () => {
+  assert.equal(E.shareText(334, true, '$', C), '$3.34 (includes 1¢ from rounding)'); assert.equal(E.shareText(333, false, '€', C), '€3.33');
+  assert.equal(C.residualMark, 'includes 1¢ from rounding'); assert.equal(C.residualMarkAria, 'includes 1 cent from rounding');
+  const app = fs.readFileSync(path.join(__dirname, '../../mill/even-up/app.js'), 'utf8'); assert.ok(!/'\s*\+'\s*\+\s*money\(1\)/.test(app), 'no +$0.01 mark'); });
+t('Writer a695196 strings: E6 auditLine has {mode}; E8 tooManyPeople; primary/tapePaid removed and unreferenced', () => {
+  assert.equal(C.auditLine, '{payer} paid {amount} for {expense}, split {mode} between {people}.'); assert.deepEqual(JSON.parse(JSON.stringify(C.splitModesInline)), { equal: 'equally', weighted: 'by weight' });
+  assert.equal(C.tooManyPeople, 'Up to eight people.'); assert.ok(!('primary' in C) && !('tapePaid' in C));
+  const src = ['app.js', 'eu.js', 'index.html'].map(f => fs.readFileSync(path.join(__dirname, '../../mill/even-up', f), 'utf8')).join('\n'); assert.ok(!/C\.primary|C\.tapePaid/.test(src)); });
 t('Writer finals (N11): every COPY key the app uses is in Writer copy.js; no copy-extra.js fallback remains', () => {
   const fs = require('fs'), dir = __dirname + '/../../mill/even-up/'; const app = fs.readFileSync(dir + 'app.js', 'utf8') + fs.readFileSync(dir + 'eu.js', 'utf8');
   const used = [...new Set([...app.matchAll(/\bC\.([A-Za-z]\w*)/g)].map(m => m[1]))]; assert.deepEqual(used.filter(k => !(k in C)), []);

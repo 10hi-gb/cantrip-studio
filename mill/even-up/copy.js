@@ -8,7 +8,6 @@ const COPY = {
   "copyFail": "Couldn't copy. Select the text below and copy it yourself.",
   "printLabel": "Print",
   "invitation": "Who paid for what? Even it up after one event.",
-  "primary": "Even it up",
   "eventLabel": "The event",
   "eventPlaceholder": "Cabin weekend",
   "eventTooLong": {
@@ -27,7 +26,7 @@ const COPY = {
     "other": "{n} people"
   },
   "tooFewPeople": "Add at least two people.",
-  "tooManyPeople": "Eight people is the most.",
+  "tooManyPeople": "Up to eight people.",
   "personEmpty": "Give each person a name.",
   "personTooLong": {
     "one": "1 character over.",
@@ -62,7 +61,7 @@ const COPY = {
   "errorNoParticipants": "Pick at least one person to split it between.",
   "errorWeight": "Weights must be numbers above zero.",
   "auditHeading": "How each expense splits",
-  "auditLine": "{payer} paid {amount} for {expense}, split between {people}.",
+  "auditLine": "{payer} paid {amount} for {expense}, split {mode} between {people}.",
   "auditShares": "{shares}",
   "shareItem": "{name} {amount}",
   "auditResidual": {
@@ -110,7 +109,6 @@ const COPY = {
   "allZeroLine": "Every balance is {zero}.",
   "notFewestNote": "These even everything out. They aren't necessarily the fewest payments.",
   "notInIt": "Not in it: {names}",
-  "tapePaid": "Paid",
   "tapeShares": "Shares",
   "netLabel": "Net (paid minus share)",
   "sumLabel": "Sum",
@@ -141,5 +139,12 @@ const COPY = {
   "linkLabel": "Link",
   "linkRoom": "Link length: {n} of {max} characters.",
   "limitsNote": "Names up to {name} characters, the event {event}, what for {what}. Amounts up to {amount} each, weights up to {weight}. Links up to {url} characters.",
-  "copyTakenNote": "This is your copy now. Changes here don't reach the sender."
+  "copyTakenNote": "This is your copy now. Changes here don't reach the sender.",
+  "splitModesInline": {
+    "equal": "equally",
+    "weighted": "by weight"
+  },
+  "residualMark": "includes 1¢ from rounding",
+  "residualMarkAria": "includes 1 cent from rounding",
+  "errorCommas": "Commas go only between groups of three digits, like 1,234.56."
 };

@@ -22,6 +22,13 @@
   }
   // the event: typed -> quoted; left blank -> Writer's title as the default (unquoted product text)
   function eventNode() { var e = M.strip(st.ev); return e ? V.typed(e) : document.createTextNode(C.title); }
+  // QA E2: frame name. Same quoted text as V.typed (class mill-typed), but the closing quote is held to the last word
+  // (or, for one very long word, to its last two letters) with a no-wrap span, so it can never sit alone on a line.
+  function frameName(id) {
+    var n = pname(id); if (!n) return el('span', 'eu-unnamed', '?');
+    var q = V.quote(n), cut = q.lastIndexOf(' ') + 1; if (q.length - cut > 12 || cut <= 0) cut = Math.max(1, q.length - 3);
+    var s = el('span', 'mill-typed'); s.appendChild(document.createTextNode(q.slice(0, cut))); s.appendChild(el('span', 'eu-nobr', q.slice(cut))); return s;
+  }
   function listNodes(ids) { var f = document.createDocumentFragment(); ids.forEach(function (id, i) { if (i) f.appendChild(document.createTextNode(', ')); f.appendChild(nameNode(id)); }); return f; }
   function toast(m) { V.toast(m, 3200); }
   function clearHash() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); }
@@ -52,7 +59,7 @@
     $('e-ev').textContent = !sh ? '' : M.plural(C.eventTooLong, ev.over);
     $('ev').setAttribute('aria-invalid', sh ? 'true' : 'false'); if (sh) $('ev').setAttribute('aria-describedby', 'e-ev'); else $('ev').removeAttribute('aria-describedby');
     $('p-meta').textContent = M.plural(C.personCount, st.p.length);
-    $('p-add').disabled = st.p.length >= E.LIM.pMax; $('p-e').textContent = st.p.length >= E.LIM.pMax ? C.tooManyPeople : '';
+    $('p-add').disabled = st.p.length >= E.LIM.pMax; $('p-hint').textContent = st.p.length >= E.LIM.pMax ? C.tooManyPeople : ''; // QA E8: a neutral hint, not an error
   }
   // ---------- expense form (memory only)
   function blankForm() { var f = { what: '', amt: '', payer: st.p.length ? st.p[0].id : null, mode: 'e', inc: {}, w: {} }; st.p.forEach(function (p) { f.inc[p.id] = true; f.w[p.id] = '1'; }); return f; }
@@ -80,7 +87,7 @@
     function fail(k, m, focusEl) { fErr(k, m); if (!first) first = focusEl || $('f-' + k); }
     var wl = M.len(out.what); if (!wl) fail('what', C.expenseEmpty); else if (wl > E.LIM.what) fail('what', M.plural(C.eventTooLong, wl - E.LIM.what));
     var a = E.parseAmount(form.amt);
-    if (!a.ok) fail('amt', a.why === 'empty' ? C.errorNumber : a.why === 'negative' ? C.errorNegative : a.why === 'big' ? C.errorTooBig : C.errorPlainAmount); else out.amt = a.v;
+    if (!a.ok) fail('amt', a.why === 'empty' ? C.errorNumber : a.why === 'negative' ? C.errorNegative : a.why === 'big' ? C.errorTooBig : a.why === 'commas' ? C.errorCommas : C.errorPlainAmount); else out.amt = a.v;
     var py = +$('f-payer').value; if (!E.person(st, py)) fail('payer', C.errorNoPayer); else out.payer = py;
     st.p.forEach(function (p) { if (form.inc[p.id]) out.inc.push(p.id); });
     if (!out.inc.length) fail('split', C.errorNoParticipants, $('c-' + st.p[0].id));
@@ -113,7 +120,7 @@
         rod.appendChild(el('span', 'eu-trail')); rod.appendChild(tok); li.appendChild(nm); li.appendChild(rod); ol.appendChild(li); rodEls[p.id] = { li: li, nm: nm, rod: rod, tok: tok }; }); }
     c.balances.forEach(function (b) {
       var R = rodEls[b.id], side = b.net < 0 ? 'owes' : b.net > 0 ? 'owed' : 'even';
-      R.nm.textContent = ''; R.nm.appendChild(nameNode(b.id));
+      R.nm.textContent = ''; R.nm.appendChild(frameName(b.id)); R.li.classList.toggle('is-unnamed', !pname(b.id));
       R.rod.setAttribute('data-side', side); R.rod.style.setProperty('--p', max ? (Math.abs(b.net) / max).toFixed(3) : '0');
       R.tok.textContent = ''; R.tok.appendChild(el('span', 'eu-fig', money(Math.abs(b.net)))); R.tok.appendChild(el('small', null, side === 'owes' ? C.tagOwes : side === 'owed' ? C.tagOwed : C.tagEven));
       if (prevSide[b.id] != null && prevSide[b.id] !== b.net) { R.tok.classList.remove('is-arriving'); void R.tok.offsetWidth; R.tok.classList.add('is-arriving'); }
@@ -129,14 +136,16 @@
   function layoutLines(c) {
     lastC = c; var box = $('lines'); box.textContent = '';
     var ids = st.p.map(function (p) { return p.id; }), rows = ids.map(function (id) { return rodEls[id]; }), idx = {}; ids.forEach(function (id, i) { idx[id] = i; });
-    // token half-width (theme --half) from the real token box, so a wide figure never crosses the zero post
-    rows.forEach(function (R) { R.rod.style.setProperty('--half', Math.ceil(R.tok.offsetWidth / 2) + 'px'); });
     var T = c.transfers.map(function (t, i) { var a = idx[t.from], b = idx[t.to]; return { i: i, top: Math.min(a, b), bot: Math.max(a, b), dir: a < b ? 'down' : 'up' }; });
     var tracks = []; T.slice().sort(function (x, y) { return (x.bot - x.top) - (y.bot - y.top) || x.i - y.i; }).forEach(function (t) {
       var k = 0; while (tracks[k] && tracks[k].some(function (o) { return t.top <= o.bot && o.top <= t.bot; })) k++; (tracks[k] = tracks[k] || []).push(t); t.k = k; });
     var narrow = window.matchMedia && window.matchMedia('(max-width: 699px)').matches, gap = narrow ? (tracks.length > 4 ? 12 : 19) : 26;
     $('frame').style.setProperty('--eu-settle', T.length ? (16 + 8 + Math.max(0, tracks.length - 1) * gap + 24) + 'px' : (narrow ? '12px' : '24px'));
     box.style.setProperty('--gap', gap + 'px');
+    // QA E1 (measured after the margin width is set, so the rod is at its final size): the figure never wraps (white-space:nowrap); if a token is wider than its half of the rod, step the type down.
+    rows.forEach(function (R) { R.tok.classList.remove('is-tight', 'is-tighter', 'is-tightest'); var room = R.rod.clientWidth / 2 - 6;
+      if (R.tok.offsetWidth > room) R.tok.classList.add('is-tight'); if (R.tok.offsetWidth > room) R.tok.classList.add('is-tighter'); if (R.tok.offsetWidth > room) R.tok.classList.add('is-tightest');
+      R.rod.style.setProperty('--half', Math.ceil(R.tok.offsetWidth / 2) + 'px'); });
     var bTop = box.getBoundingClientRect().top, cy = rows.map(function (R) { var r = R.rod.getBoundingClientRect(); return r.top + r.height / 2 - bTop; });
     T.forEach(function (t) {
       var ln = el('div', 'eu-link'); ln.setAttribute('data-dir', t.dir); ln.style.setProperty('--k', String(t.k)); ln.style.top = cy[t.top] + 'px'; ln.style.height = Math.max(2, cy[t.bot] - cy[t.top]) + 'px'; box.appendChild(ln);
@@ -174,14 +183,16 @@
       var h = el('div', 'eu-x-h'), hl = el('span'); hl.appendChild(document.createTextNode('#' + r.n + ' ')); if (M.strip(x.what)) hl.appendChild(V.typed(M.strip(x.what))); h.appendChild(hl); h.appendChild(el('span', null, typeof x.amt === 'number' && x.amt >= 0 && x.amt % 1 === 0 ? money(x.amt) : '')); d.appendChild(h);
       var ids = E.parts(st, x);
       if (r.ok) {
-        var meta = el('div', 'eu-x-meta'); meta.appendChild(tpl(C.auditLine, { payer: nameNode(x.payer), amount: money(x.amt), expense: V.typed(M.strip(x.what)), people: listNodes(ids) }));
-        meta.appendChild(document.createTextNode(' ' + (x.mode === 'w' ? C.splitModes.weighted : C.splitModes.equal)));
-        if (x.mode === 'w') { meta.appendChild(document.createTextNode(': ')); ids.forEach(function (id, i) { if (i) meta.appendChild(document.createTextNode(', ')); meta.appendChild(nameNode(id)); meta.appendChild(document.createTextNode(' ' + E.fmtWeight(x.w[id]))); }); }
-        if (r.out.length) { meta.appendChild(document.createTextNode(' \u00B7 ')); meta.appendChild(tpl(C.notInIt, { names: listNodes(r.out) })); }
-        d.appendChild(meta);
+        var meta = el('div', 'eu-x-meta'); meta.appendChild(tpl(C.auditLine, { payer: nameNode(x.payer), amount: money(x.amt), expense: V.typed(M.strip(x.what)), mode: x.mode === 'w' ? C.splitModesInline.weighted : C.splitModesInline.equal, people: listNodes(ids) }));
+        d.appendChild(meta); meta = el('div', 'eu-x-meta'); // QA E6: nothing after the sentence's full stop; weights / not-in-it on their own line
+        if (x.mode === 'w') { meta.appendChild(document.createTextNode(C.splitModes.weighted + ': ')); ids.forEach(function (id, i) { if (i) meta.appendChild(document.createTextNode(', ')); meta.appendChild(nameNode(id)); meta.appendChild(document.createTextNode(' ' + E.fmtWeight(x.w[id]))); }); }
+        if (r.out.length) { if (meta.firstChild) meta.appendChild(document.createTextNode(' \u00B7 ')); meta.appendChild(tpl(C.notInIt, { names: listNodes(r.out) })); }
+        if (meta.firstChild) d.appendChild(meta);
         var dl = el('dl');
-        r.shares.forEach(function (s) { var dt = el('dt'); dt.appendChild(nameNode(s.id)); var dd = el('dd', null, money(s.c)); if (s.extra) dd.appendChild(el('span', 'eu-resid', ' +' + money(1))); dl.appendChild(dt); dl.appendChild(dd); });
-        dl.appendChild(el('dt', 'eu-total', C.tapeShares)); dl.appendChild(el('dd', 'eu-total', money(r.total) + ' \u2713')); d.appendChild(dl);
+        r.shares.forEach(function (s) { var dt = el('dt'); dt.appendChild(nameNode(s.id)); var dd = el('dd'); dd.appendChild(el('span', 'eu-amt', money(s.c)));
+          // QA E5: the final share is the figure; the rounding cent is Writer's note after it (screen readers: residualMarkAria)
+          if (s.extra) { var mk = el('span', 'eu-rmark', C.residualMark); mk.setAttribute('aria-hidden', 'true'); dd.appendChild(el('span', 'eu-sr', ', ' + C.residualMarkAria)); dd.appendChild(mk); } else dd.appendChild(el('span', 'eu-rmark')); dl.appendChild(dt); dl.appendChild(dd); });
+        dl.appendChild(el('dt', 'eu-total', C.tapeShares)); var tdd = el('dd', 'eu-total'); tdd.appendChild(el('span', 'eu-amt', money(r.total) + ' \u2713')); tdd.appendChild(el('span', 'eu-rmark')); dl.appendChild(tdd); d.appendChild(dl);
         if (r.residual) { var rs = el('div', 'eu-x-meta eu-resid'); var who = r.shares.filter(function (s) { return s.extra; }).map(function (s) { return s.id; }); rs.appendChild(tpl(M.plural(C.auditResidual, r.residual), { names: listNodes(who) })); d.appendChild(rs); }
       } else { var er = el('p', 'eu-err'); er.id = 'xe-' + x.id; er.appendChild(errNodes(x, r.err)); d.appendChild(er); }
       if (mode === 'own') {
@@ -271,7 +282,7 @@
       else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(function () { toast(C.copied); }, function () { toast(C.copyFail); showLink(u); });
       else { toast(C.copyFail); showLink(u); } });
     $('b-reset').addEventListener('click', function () { if (!window.confirm(C.resetConfirm)) return; clearHash(); load(''); toast(C.resetDone); $('ev').focus(); });
-    $('own-copy').addEventListener('click', function () { mode = 'own'; clearHash(); $('banner-t').textContent = C.copyTakenNote; $('banner-n').hidden = true; $('own-copy').hidden = true; form = blankForm(); drawPeople(); drawForm(); refresh(); $('ev').focus(); });
+    $('own-copy').addEventListener('click', function () { mode = 'own'; clearHash(); $('banner-t').textContent = C.copyTakenNote; $('banner-n').hidden = true; $('banner-n').textContent = ''; $('own-copy').hidden = true; form = blankForm(); drawPeople(); drawForm(); refresh(); $('ev').focus(); });
     var rt = 0; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { if (lastC) layoutLines(lastC); }, 60); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (lastC) layoutLines(lastC); });
     V.route(load);
@@ -280,9 +291,11 @@
   function load(h) {
     st = E.blank(); mode = 'own'; editing = null; touched = {}; showAll = false; prevSide = {};
     V.clearInputs(document); V.clearErrors(document, '.eu-err'); $('banner').hidden = true; $('banner-n').hidden = true; $('own-copy').hidden = true;
+    $('banner-t').textContent = ''; $('banner-n').textContent = ''; // QA E3: a hidden banner keeps nothing from an earlier link
     $('linkbox').hidden = true; $('link').value = ''; $('fbwrap').hidden = true; $('fallback').value = ''; $('rods').textContent = ''; rodKey = ''; rodEls = {};
     if (h) {
-      var d = E.decode(h), bt = $('banner-t');
+      // QA E4: the WHOLE URL (origin + path + # + fragment) against the same 2,000 cap as sending (MILLVIEW.linkFor, D7)
+      var d = V.linkFor(h.replace(/^#/, '')) ? E.decode(h) : { ok: false, why: 'tooLong' }, bt = $('banner-t');
       if (d.ok) { st = d.data; mode = 'recv'; $('banner').hidden = false; bt.textContent = ''; bt.appendChild(tpl(C.receiverIntro, { event: eventNode() })); $('banner-n').textContent = C.receiverNote; $('banner-n').hidden = false; $('own-copy').hidden = false; }
       else if (d.why !== 'empty') { $('banner').hidden = false; bt.textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; }
     }
