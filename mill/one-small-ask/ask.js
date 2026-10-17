@@ -1,5 +1,6 @@
 'use strict';
-// One Small Ask: pure model + link codec. Ask link "#a1.<b64url JSON>.<ck>", reply link "#r1.<b64url JSON>.<ck>", each <= 2000 chars.
+// One Small Ask: pure model + link codec. Ask link "#a1.<b64url JSON>.<ck>", reply link "#r1.<b64url JSON>.<ck>", each fragment <= 2000 chars.
+// Cap: origin+path+fragment ≤ 2,000 chars. Not a literal full-URL cap. An appended ?query is ignored; pieces never generate a query, and no visitor content is ever in a query string (never parsed, shown or echoed).
 // Ask JSON  {w: favor, e: effort number, u: 'min'|'hr', d: day text, s: 'HH:MM', t: 'HH:MM', h: where ('' = none), f: from, o: to}
 // Reply JSON {a: <ask>, v: 'y'|'p'|'n', p: <offer {w,e,u,d,s,t,h}> | null, n: note}
 //   y: p null, note optional. p: offer required and must differ from the ask in at least one term. n: p null, note must be '' (no reason).

@@ -5,7 +5,8 @@
 // touching) before intersecting. Intersections are open: an end meeting a start is a touch, not an overlap.
 // A day with no entries for a person is UNKNOWN, never free; unknown people never join an intersection.
 (function (root, factory) { var m = factory(root.MILL || (typeof require === 'function' ? require('../shared/core.js') : null)); if (typeof module === 'object' && module.exports) module.exports = m; else root.TSH = m; })(this, function (M) {
-  var LIM = { pMin: 2, pMax: 6, name: 24, title: 40, ivPer: 21, minMax: 1440, hrMax: 24, frag: 2000 }; // frag: decode limit; the app caps the FULL URL at 2,000 (QA D7)
+  var LIM = { pMin: 2, pMax: 6, name: 24, title: 40, ivPer: 21, minMax: 1440, hrMax: 24, frag: 2000 }; // frag: decode limit; the app caps origin+path+fragment at 2,000 (QA D7)
+  // Cap: origin+path+fragment ≤ 2,000 chars. Not a literal full-URL cap. An appended ?query is ignored; pieces never generate a query, and no visitor content is ever in a query string (never parsed, shown or echoed).
   var DAY = 864e5, MIN = 6e4;
   var fmts = {};
   // QA local-715aa3a D1: current IANA names and their legacy aliases both work; links and the picker always use the current

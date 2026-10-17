@@ -55,7 +55,7 @@ t('PM 2: stops differing only in capitals/spacing are never grouped; Same stop? 
   assert.ok(!('ns' in JSON.parse(Buffer.from(O.encode(s).split('.')[1], 'base64url').toString()))); });
 t('D10: a merge an edit dissolved stays dissolved when the edit is reversed', () => { const s = ex(); O.merge(s, 'Corner Co-op', O.mkey('Oat milk', 'carton')); assert.ok(O.compute(s).stops[0].lines[0].merged);
   s.r[1].u = 'litre'; assert.ok(O.prune(s)); s.r[1].u = 'carton'; O.prune(s); const c = O.compute(s); assert.ok(c.stops[0].lines.every(l => !l.merged)); assert.equal(c.stops[0].offers.length, 1); });
-t('D11: whole URL capped at 2,000 (maxLen = room after origin+path+#); max-length list opens', () => {
+t('D11: origin+path+fragment capped at 2,000 (maxLen = room after origin+path+#); max-length list opens', () => {
   const prefix = 'https://cantrip-studio.pages.dev/mill/one-less-trip/#', room = O.URL_MAX - prefix.length;
   // grow a list one row at a time until the next row would overflow: the last fitting link is <= 2000 and opens; one more is refused
   const rows = []; let last = null;

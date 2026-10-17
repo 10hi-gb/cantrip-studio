@@ -6,7 +6,8 @@
 // 'sender' (whoever made the link that was opened) or 'earlier' (carried in that link from someone before them).
 // When is a specific date (YYYY-MM-DD) with an optional time (HH:MM). Questions come ONLY from COPY templates + own questions.
 // Link "#b2.<b64url JSON>.<ck>": one value per fact (the answer if confirmed, else the typed value) + state + origin.
-// Limits are in "spaces" = UTF-8 bytes (+1 for " and \, which JSON escapes), so the worst-case full URL stays <= 2000.
+// Limits are in "spaces" = UTF-8 bytes (+1 for " and \, which JSON escapes), so the worst-case origin+path+fragment stays <= 2000.
+// Cap: origin+path+fragment ≤ 2,000 chars. Not a literal full-URL cap. An appended ?query is ignored; pieces never generate a query, and no visitor content is ever in a query string (never parsed, shown or echoed).
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('../shared/core.js'));
   else root.BYG = factory(root.MILL);

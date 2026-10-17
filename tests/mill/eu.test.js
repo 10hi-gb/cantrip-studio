@@ -1,5 +1,5 @@
 // node tests/mill/eu.test.js — Even Up model: integer cents, deterministic leftover cents, zero-sum balances, a settlement
-// that zeroes every balance, validation, and the versioned link codec (full rejection of malformed input, 2,000-char URL cap).
+// that zeroes every balance, validation, and the versioned link codec (full rejection of malformed input, 2,000-char origin+path+fragment cap).
 const assert = require('assert'), fs = require('fs'), path = require('path'); const E = require('../../mill/even-up/eu.js'), M = require('../../mill/shared/core.js');
 const C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/even-up/copy.js', 'utf8') + ';COPY');
 let n = 0; const t = (name, f) => { f(); n++; console.log('ok', n, name); };
@@ -89,7 +89,7 @@ t('link: malformed input fully rejected', () => {
   const f = M.pack('e', 1, ok); assert.equal(E.decode(f.slice(0, -1)).why, 'bad'); assert.equal(E.decode(f.slice(0, 20)).why, 'bad'); assert.equal(E.decode(f.replace('.', '..')).why, 'bad');
   assert.equal(E.decode(f.slice(0, -6) + 'zzzzzz').why, 'bad'); assert.equal(E.decode('e1.' + Buffer.from('[1,2]').toString('base64url') + '.000000').why, 'bad'); assert.equal(E.decode(M.pack('t', 1, ok)).why, 'bad');
   assert.equal(E.decode(M.pack('e', 1, [1])).why, 'bad'); assert.equal(E.decode('e1.' + 'A'.repeat(2100) + '.abcdef').why, 'tooLong'); assert.equal(E.decode('%%%').why, 'bad'); });
-t('URL cap: whole URL (64-char origin + path + # + fragment) never over 2,000; too-long -> "" (no silent cut)', () => {
+t('URL cap: origin+path+fragment (64-char origin) never over 2,000; too-long -> "" (no silent cut)', () => {
   const origin = 'https://' + 'o'.repeat(64 - 'https://'.length - 4) + '.dev'; assert.equal(origin.length, 64); const prefix = origin + '/mill/even-up/#';
   const big = mk(Array.from({ length: 8 }, (_, i) => 'Person ' + 'x'.repeat(14) + i), Array.from({ length: 20 }, (_, i) => ['Expense number ' + i + ' ' + 'y'.repeat(20), '99999.99', i % 8, 'w', Array.from({ length: 8 }, (_, k) => [k, '999.99'])]), 'E'.repeat(60));
   assert.ok(E.canShare(big)); const raw = E.rawFragment(big); assert.ok(prefix.length + raw.length > E.URL_MAX); assert.equal(E.encode(big, prefix.length), '');

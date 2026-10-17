@@ -1,5 +1,5 @@
 // node tests/mill/byg.test.js — Before You Go model (QA 83a2ebcd + PM 10:33): 5 essentials, states, per-fact attribution,
-// date-specific When, strict phone detection, limits that keep the worst-case full URL <= 2000, Writer text templates verbatim.
+// date-specific When, strict phone detection, limits that keep the worst-case origin+path+fragment <= 2000, Writer text templates verbatim.
 const assert = require('assert'); const B = require('../../mill/before-you-go/byg.js'), M = require('../../mill/shared/core.js');
 const C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/before-you-go/copy.js', 'utf8') + ';COPY');
 let n = 0; const t = (name, f) => { f(); n++; console.log('ok', n, name); };
@@ -50,14 +50,14 @@ t('limits: caps listed; overCaps names fields; encode refuses over-limit (never 
   const s = st({ top: { k: 'x'.repeat(61), by: 'y'.repeat(25) }, f: { place: { v: 'z'.repeat(121) } } });
   assert.deepEqual(B.overCaps(s).map(o => o.key + ':' + o.over), ['pickup:1', 'by:1', 'place:1']); assert.equal(B.encode(s), null);
   assert.equal(B.room('😀'), 4); assert.equal(B.room('é'), 2); assert.equal(B.room('中'), 3); assert.equal(B.room('"'), 2); assert.equal(B.room('a'), 1); });
-t('max-everything link: worst-case full URL (longest origin + path) is <= 2000 for ASCII, quotes, accents, CJK and emoji', () => {
+t('max-everything link: worst-case origin+path+fragment (longest origin + path) is <= 2000 for ASCII, quotes, accents, CJK and emoji', () => {
   const origin = 'https://' + 'a'.repeat(B.ORIGIN_BUDGET - 8), path = '/mill/before-you-go/#';
   for (const [nm, ch] of [['ascii', 'z'], ['quote', '"'], ['accent', 'é'], ['cjk', '中'], ['emoji', '😀']]) {
     for (const conf of [false, true]) {
       const fill = cap => ch.repeat(Math.floor(cap / B.room(ch))); const s = B.blank(); s.k = fill(B.CAP.pickup); s.by = fill(B.CAP.by); s.o = Array.from({ length: 5 }, () => fill(B.CAP.own));
       for (const k of B.ALL) { if (k === 'window') { Object.assign(s.f.window, conf ? { a: '2026-10-24 14:30', c: true, cby: 'sender' } : { v: '2026-10-24 14:30', vby: 'sender' }); continue; } Object.assign(s.f[k], conf ? { a: fill(B.CAP[k]), c: true, cby: 'sender' } : { v: fill(B.CAP[k]), vby: 'sender' }); }
       const f = B.encode(s); assert.ok(f, nm); const url = origin + path + f; assert.ok(url.length <= 2000, nm + ' ' + url.length); assert.ok(B.decode(f).ok, nm);
-      if (nm === 'emoji' && conf) console.log('   worst-case full URL length', url.length, '(origin budget', B.ORIGIN_BUDGET + ')'); } } });
+      if (nm === 'emoji' && conf) console.log('   worst-case origin+path+fragment length', url.length, '(origin budget', B.ORIGIN_BUDGET + ')'); } } });
 t('decode refuses malformed, old version, unknown slot shapes, bad When, over caps', () => {
   const ok = B.encode(st({ top: { k: 'Bike' }, f: { place: { v: 'Pine' } } })); assert.ok(B.decode(ok).ok);
   const F = () => Array(9).fill(0);

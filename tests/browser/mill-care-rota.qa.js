@@ -1,7 +1,7 @@
 // node tests/browser/mill-care-rota.qa.js <host[:port]> <ip> [scheme] — Care Rota r1c @320/390/1280 (ENGINEER SELF-CHECK, localhost-preview)
 // Worked example (Jess / Priya & Sam), the build rules (two needs / "and" between names -> to fix, never placed), the stamp on
 // all four outputs incl. copied text (zone label, PDT and PST), Nov 1 2026 DST range, per-helper notes, set-aside pocket,
-// reading table, print (sheet only), the household-sheet-only link (warning, 2,000-char whole-URL cap, malformed/old links),
+// reading table, print (sheet only), the household-sheet-only link (warning, 2,000-char origin+path+fragment cap, malformed/old links),
 // recipient read-only (shared readOnly, recipientAccess), typedAudit incl. the PM Q1 spoof case, validation + in-page error
 // links landing focus, reset, toast reset on route change, no storage / no network, no sideways scroll.
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
@@ -108,7 +108,7 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     ck(w + ' link: linkWarning + linkHolds shown before "Make the link"', t.warn === C.linkWarning && t.holds === C.linkHolds && t.order, t);
     await p.click('#b-link'); await sleep(150); t = await p.evaluate(() => ({ v: document.getElementById('link').value, clip: window.__clip.slice(-1)[0], hash: location.hash }));
     const frag = t.v.split('#')[1] || '', dec = CR.decodeSheet(frag), raw = frag ? M.b64d(frag.split('.')[1]) : '';
-    ck(w + ' link: made with the shared linkFor (whole URL ≤ 2,000), copied, address bar untouched; carries only the household sheet (no notes, no plan lines)', t.v.startsWith(BASE + '#cr2.') && t.v.length <= 2000 && t.clip === t.v && t.hash === '' && dec.ok && dec.data.sheet.length === 7 && !/nuts|Pediatrician|harness|walk Fatima|dinner Ana/.test(raw) && Object.keys(JSON.parse(raw)).sort().join() === 'a,b,d,f,o,s', { v: t.v.length, raw });
+    ck(w + ' link: made with the shared linkFor (origin+path+fragment ≤ 2,000), copied, address bar untouched; carries only the household sheet (no notes, no plan lines)', t.v.startsWith(BASE + '#cr2.') && t.v.length <= 2000 && t.clip === t.v && t.hash === '' && dec.ok && dec.data.sheet.length === 7 && !/nuts|Pediatrician|harness|walk Fatima|dinner Ana/.test(raw) && Object.keys(JSON.parse(raw)).sort().join() === 'a,b,d,f,o,s', { v: t.v.length, raw });
     // ---------- recipient
     await p.goto('about:blank'); await p.goto(t.v, { waitUntil: 'load' }); await sleep(250);
     t = await p.evaluate(() => ({ on: [...document.querySelectorAll('section')].filter(s => getComputedStyle(s).display !== 'none').map(s => s.id), intro: document.getElementById('recv-intro').textContent, note: document.getElementById('recv-note').textContent, typed: document.querySelector('#recv-intro .mill-typed') && document.querySelector('#recv-intro .mill-typed').textContent,
@@ -168,14 +168,14 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     await p.goto('about:blank'); await p.goto(link, { waitUntil: 'load' }); await sleep(250);
     a = await typedAudit(p, [SF, SO, SN, SN2, SG]);
     ck(w + ' typedAudit recipient view (spoof seeds): every typed value quoted, display form present', a.ok, a.hits);
-    // URL cap: 28 days × long names -> the whole link would pass 2,000 chars -> no link, tooLongLink
+    // URL cap: 28 days × long names -> origin+path+fragment would pass 2,000 chars -> no link, tooLongLink
     await p.goto(BASE, { waitUntil: 'load' }); await sleep(200);
     const big = []; for (let d = 1; d <= 28; d++) for (const nm of ['Alexandria-Long', 'Bartholomew-Long']) big.push(`Oct ${d} dinner ${nm}${d}`);
     await form(p, { forName: 'f'.repeat(40), org: 'o'.repeat(24), first: '2026-10-01', last: '2026-10-28', needs: [{ key: 'dinner', rule: 'every' }], lines: big.slice(0, 60) });
     await check(p); await p.click('#b-link'); await sleep(120);
     t = await p.evaluate(() => ({ box: document.getElementById('link-box').hidden, msg: document.getElementById('link-long').textContent, toast: document.getElementById('toast').textContent, clip: window.__clip.length, hash: location.hash }));
     if (w === W[W.length - 1]) { const pdf = await p.pdf({ format: 'letter' }); const pages = pdfPages(pdf); ck(w + ' print: a full 28-day sheet fits one Letter page', pages === 1, pages); }
-    ck(w + ' URL cap: a household sheet whose whole link would pass 2,000 chars gets no link; tooLongLink shown + toast; print still offered', t.box && t.msg === C.tooLongLink && t.toast === C.tooLongLink && t.clip === 0 && t.hash === '', t);
+    ck(w + ' URL cap: a household sheet whose origin+path+fragment would pass 2,000 chars gets no link; tooLongLink shown + toast; print still offered', t.box && t.msg === C.tooLongLink && t.toast === C.tooLongLink && t.clip === 0 && t.hash === '', t);
     // reset
     await p.click('#b-reset'); await sleep(150); t = await p.evaluate(() => ({ on: [...document.querySelectorAll('section')].filter(s => getComputedStyle(s).display !== 'none').map(s => s.id), v: document.getElementById('f-plan').value + document.getElementById('f-for').value, toast: document.getElementById('toast').textContent, n: document.querySelectorAll('#n-dinner:checked').length }));
     ck(w + ' Start over (confirm): everything cleared, results gone, toast "Cleared."', t.on.join() === 's1' && t.v === '' && t.toast === C.resetDone && !t.n, t);
@@ -294,7 +294,7 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
     ck('C10 session: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
   }
   {
-    // C1: the WHOLE URL is capped at 2,000, made side and received side, at 1999 / 2000 / 2001 chars, via a long path on a local
+    // C1: origin+path+fragment is capped at 2,000, made side and received side, at 1999 / 2000 / 2001 chars, via a long path on a local
     // throwaway server (nested dirs + a symlink to the repo). Date.now frozen so the made fragment is stable.
     const os = require('os'), path = require('path'), { spawn } = require('child_process'), REPO = path.resolve(__dirname, '../..');
     const root = fs.mkdtempSync(os.tmpdir() + '/cr-long-'); const srv = spawn('python3', ['-u', '-m', 'http.server', '0', '--bind', '127.0.0.1', '--directory', root], { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -318,12 +318,12 @@ const state = p => p.evaluate(() => ({ tally: document.getElementById('tally').t
       // received side: a valid fragment (from the app) on a long path; and a long-path variant of the 120-day-ish real sheet
       const R2 = pathOf(total - ORIGIN.length - 1 - frag.length); recv[total] = await openAt(ORIGIN + R2 + '#' + frag);
     }
-    // received side with a fragment well inside cr.js's own cap but a path long enough to push the WHOLE URL over (the QA case)
+    // received side with a fragment well inside cr.js's own cap but a path long enough to push origin+path+fragment over (the QA case)
     const r = CR.check({ forName: 'Priya', org: 'Jess', first: '2026-10-01', last: '2026-10-28', needs: [{ key: 'dinner', label: 'Dinner', rule: 'every', days: [] }] }, Array.from({ length: 28 }, (_, i) => `Oct ${i + 1} dinner Helper${i}`)); r.stamp = 'Sat Oct 17, 10:04 AM PDT';
     const big = CR.encodeSheet(r, { forName: 'Priya', org: 'Jess', first: '2026-10-01', last: '2026-10-28' }); const bigOver = await openAt(ORIGIN + pathOf(2001 - ORIGIN.length - 1 - big.length) + '#' + big), bigAt = await openAt(ORIGIN + pathOf(2000 - ORIGIN.length - 1 - big.length) + '#' + big);
-    ck('QA C1 made side: whole link 1999 and 2000 -> link made with exactly that length and the app accepts it; 2001 -> no link, tooLongLink',
+    ck('QA C1 made side: origin+path+fragment 1999 and 2000 -> link made with exactly that length and the app accepts it; 2001 -> no link, tooLongLink',
       made[1999].box && made[1999].len === 1999 && made[1999].reopened.sheet === 1 && made[2000].box && made[2000].len === 2000 && made[2000].reopened.sheet === 1 && !made[2001].box && made[2001].long, made);
-    ck('QA C1 received side: whole URL 1999 and 2000 open the sheet; 2001 (long path) -> badLink, nothing shown', recv[1999].sheet === 1 && recv[1999].len === 1999 && recv[2000].sheet === 1 && recv[2000].len === 2000 && !recv[2001].sheet && recv[2001].bad === C.badLink && recv[2001].len === 2001, recv);
+    ck('QA C1 received side: origin+path+fragment 1999 and 2000 open the sheet; 2001 (long path) -> badLink, nothing shown', recv[1999].sheet === 1 && recv[1999].len === 1999 && recv[2000].sheet === 1 && recv[2000].len === 2000 && !recv[2001].sheet && recv[2001].bad === C.badLink && recv[2001].len === 2001, recv);
     ck('QA C1 received side, long real sheet (fragment ' + big.length + ' chars, under cr.js\'s own cap): 2000 opens, 2001 refused', bigAt.sheet === 28 && bigAt.len === 2000 && !bigOver.sheet && bigOver.bad === C.badLink && bigOver.len === 2001, { bigAt, bigOver });
     await s.b.close(); srv.kill(); fs.rmSync(root, { recursive: true, force: true });
   }

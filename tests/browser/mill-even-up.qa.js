@@ -1,7 +1,7 @@
 // node tests/browser/mill-even-up.qa.js <host[:port]> <ip> [scheme] — Even Up @320/390/1280 (ENGINEER SELF-CHECK, localhost-preview)
 // Flows (brief test, odd cent, excluded + weighted, invalid input, payer removed + in-page error link), copy / copy failure,
 // share cancel, recipient read-only (recipientAccess), typedAudit incl. the PM Q1 spoof case, malformed links, reset,
-// no storage / no network, the 2,000-char URL cap, toast reset on route change, 320 fit, print.
+// no storage / no network, the 2,000-char origin+path+fragment cap, toast reset on route change, 320 fit, print.
 const H = process.argv[2], IP = process.argv[3], SCHEME = process.argv[4] || 'https';
 const { typedAudit, recipientAccess, sameTabBadLink, mouseAt, errsOf, W, sleep, session, overflow, typeInto, tabReach, storage, netCheck, result, reallyHidden } = require('./mill-common');
 const C = require('vm').runInNewContext(require('fs').readFileSync(__dirname + '/../../mill/even-up/copy.js', 'utf8') + ';COPY');
@@ -315,17 +315,17 @@ async function fits(p) { return p.evaluate(() => { const w = document.documentEl
       !overlap && !nameOut && !nameTouch && Math.max(...rodOff, ...nameOff) <= 2 && Math.max(...tokOff) <= 2 && ends.length && Math.max(...endOff) <= 2, { overlap, nameOut, nameTouch, rodOff: Math.max(...rodOff).toFixed(1), nameOff: Math.max(...nameOff).toFixed(1), tokOff: Math.max(...tokOff).toFixed(1), endOff: Math.max(...endOff).toFixed(1), n: ends.length });
     ck(w + ' Creative 9daa483 block: no page errors', !errsOf(s, SCHEME).length, errsOf(s, SCHEME)); await s.b.close();
   }
-  // E4: whole-URL cap on the receiving side, from a 64-character origin: 2,000 opens, 2,001 is refused as damaged
+  // E4: origin+path+fragment cap on the receiving side, from a 64-character origin: 2,000 opens, 2,001 is refused as damaged
   { const port = (H.split(':')[1] || ''), tail = port ? ':' + port : '', hn = 'x'.repeat(64 - (SCHEME + '://').length - tail.length - '.eu-cap.test'.length) + '.eu-cap.test', O = SCHEME + '://' + hn + tail;
     const s = await session(hn, IP); const p = s.p; await p.setViewport({ width: 390, height: 900 }); await p.goto(O + '/mill/even-up/', { waitUntil: 'load' }); await sleep(200);
-    const fr = await p.evaluate(() => { const pre = (location.origin + location.pathname + '#').length, want = { 2000: null, 2001: null }; // pad the event / names until the whole URL is exactly 2,000 and 2,001
+    const fr = await p.evaluate(() => { const pre = (location.origin + location.pathname + '#').length, want = { 2000: null, 2001: null }; // pad the event / names until origin+path+fragment is exactly 2,000 and 2,001
       for (let n = 1; n <= 20 && (!want[2000] || !want[2001]); n++) for (let e = 0; e <= 60; e++) for (let k = 0; k <= 22; k++) { const o = { e: 'E'.repeat(e), c: 0, p: Array.from({ length: 8 }, (_, i) => 'N'.repeat(k) + i), x: Array.from({ length: n }, (_, i) => ['W'.repeat(38) + 'x', 9999999, i % 8, 0, [0, 1, 2, 3, 4, 5, 6, 7]]) };
         const f = MILL.pack('e', 1, o), L = pre + f.length; if ((L === 2000 || L === 2001) && !want[L]) want[L] = f; }
       return { origin: location.origin, oLen: location.origin.length, pre, want }; });
     const r = {}; for (const L of [2000, 2001]) { await p.goto('about:blank'); await p.goto(O + '/mill/even-up/#' + fr.want[L], { waitUntil: 'load' }); await sleep(300);
       r[L] = await p.evaluate(() => ({ len: location.href.length, b: document.getElementById('banner-t').textContent, recv: document.getElementById('people').hidden, x: document.querySelectorAll('#xs .eu-x').length })); }
-    ck('QA E4: 64-char origin: whole URL 2,000 opens as a received event', fr.oLen === 64 && r[2000].len === 2000 && r[2000].recv && r[2000].b.startsWith('Evening up:'), { o: fr.origin, r: r[2000] });
-    ck('QA E4: 64-char origin: whole URL 2,001 refused as damaged (badLink), nothing opened', r[2001].len === 2001 && r[2001].b === C.badLink && !r[2001].recv && r[2001].x === 0, r[2001]);
+    ck('QA E4: 64-char origin: origin+path+fragment 2,000 opens as a received event', fr.oLen === 64 && r[2000].len === 2000 && r[2000].recv && r[2000].b.startsWith('Evening up:'), { o: fr.origin, r: r[2000] });
+    ck('QA E4: 64-char origin: origin+path+fragment 2,001 refused as damaged (badLink), nothing opened', r[2001].len === 2001 && r[2001].b === C.badLink && !r[2001].recv && r[2001].x === 0, r[2001]);
     await s.b.close(); }
   // PM 04:30 query-string ruling: the 2,000 cap covers origin + path + '#' + fragment and an appended ?query is ignored. Links this piece generates carry
   // no '?'; a received link with ?q=<marker> appended (normal path, and a 2,002-char total on a long path = 2,002 minus the query without it) opens, and the

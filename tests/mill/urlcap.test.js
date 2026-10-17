@@ -1,6 +1,7 @@
-// node tests/mill/urlcap.test.js — QA TSH D7 (all pieces): the WHOLE link stays <= 2,000 characters from a 64-character origin.
+// node tests/mill/urlcap.test.js — QA TSH D7 (all pieces): origin+path+fragment stays <= 2,000 characters from a 64-character origin.
 // Fixed-shape pieces (Sack, the Ask itself) fit by their per-field limits at worst case (4-byte emoji in every field);
-// open-ended ones (TSH, the Ask reply, OLT, BYG) are refused at runtime by the full-URL check (MILLVIEW.linkFor / URL_MAX).
+// open-ended ones (TSH, the Ask reply, OLT, BYG) are refused at runtime by the origin+path+fragment check (MILLVIEW.linkFor / URL_MAX).
+// Cap: origin+path+fragment ≤ 2,000 chars. Not a literal full-URL cap. An appended ?query is ignored; pieces never generate a query, and no visitor content is ever in a query string (never parsed, shown or echoed).
 const assert = require('assert'), fs = require('fs'), vm = require('vm');
 const L = require('../../mill/split-the-sack/link.js'), S = require('../../mill/split-the-sack/sack.js'), A = require('../../mill/one-small-ask/ask.js');
 let n = 0; const t = (name, f) => { f(); n++; console.log('ok', n, name); };
@@ -13,7 +14,7 @@ t('Split the Sack worst case (8 households, every field at its cap, emoji) <= 2,
 t('One Small Ask: the ask at worst case <= 2,000 in total from a 64-char origin', () => {
   for (const ch of ['😀', '"', '中']) { const f = A.encodeAsk({ w: E(A.CAP.w, ch), e: 600, u: 'min', d: E(A.CAP.d, ch), s: '16:00', t: '18:00', h: E(A.CAP.h, ch), f: E(A.CAP.name, ch), o: E(A.CAP.name, ch) });
     assert.ok(f); assert.ok(url('/mill/one-small-ask/', f).length <= 2000, ch); } });
-t('shared MILLVIEW.linkFor caps the whole URL at exactly 2,000 (Sack, Ask, TSH share through it; BYG/OLT have their own URL_MAX)', () => {
+t('shared MILLVIEW.linkFor caps origin+path+fragment at exactly 2,000 (Sack, Ask, TSH share through it; BYG/OLT have their own URL_MAX)', () => {
   const ctx = { location: { origin: ORIGIN, pathname: '/mill/the-same-hour/' }, window: {} }; ctx.window = ctx; ctx.MILL = require('../../mill/shared/core.js');
   vm.runInNewContext(fs.readFileSync(__dirname + '/../../mill/shared/view.js', 'utf8'), ctx); const V = ctx.MILLVIEW, pre = (ORIGIN + '/mill/the-same-hour/#').length;
   assert.equal(V.URL_MAX, 2000); assert.equal(V.linkFor('x'.repeat(2000 - pre)).length, 2000); assert.equal(V.linkFor('x'.repeat(2001 - pre)), null);

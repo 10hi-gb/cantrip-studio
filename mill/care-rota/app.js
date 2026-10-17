@@ -150,7 +150,8 @@
   function fresh() { last = null; lastCfg = null; prevPatch = {}; clearSheet(); $('quilts').textContent = ''; $('cards').textContent = ''; $('tags').textContent = ''; $('readas').tBodies[0].textContent = ''; $('link-box').hidden = true; $('link').value = ''; V.readOnly($('form'), false); V.clearInputs($('form')); buildNeeds(); clearErrs(); hideFb();
     ['s2', 's3', 's4', 's5'].forEach(function (s) { show(s, false); }); show('s1', true); $('recv').hidden = true; $('bad').hidden = true; $('share').hidden = false; $('privacy').hidden = false; document.body.classList.remove('is-recv'); }
   function routeTo(h) { fresh(); if (!h) return;
-    // QA C1: the WHOLE received URL is capped at 2,000 like every piece (shared linkFor), not just the fragment
+    // QA C1: received origin+path+fragment is capped at 2,000 like every piece (shared linkFor), not just the fragment
+    // Cap: origin+path+fragment ≤ 2,000 chars. Not a literal full-URL cap. An appended ?query is ignored; pieces never generate a query, and no visitor content is ever in a query string (never parsed, shown or echoed).
     var d = V.linkFor(String(h).replace(/^#/, '')) ? CR.decodeSheet(h) : { ok: false, why: 'bad' }; if (!d.ok) { $('bad-t').textContent = d.why === 'oldVersion' ? C.oldVersion : C.badLink; $('bad').hidden = false; return; }
     var s = d.data; document.body.classList.add('is-recv');
     // recipient: the household sheet only, read-only; the organizer form is disabled in the DOM (shared readOnly) and not shown

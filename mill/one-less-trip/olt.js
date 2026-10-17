@@ -114,7 +114,8 @@
     return L.join('\n');
   }
   // Link "#t1.<b64url>.<ck>": {h:[names], r:[[ownerIdx,item,qty,unit,stop]], m:[[rowIdx..]]}. Only for a fully valid list.
-  // maxLen: room left for the fragment so the WHOLE URL stays within URL_MAX (2,000). '' = too long, null = not shareable.
+  // maxLen: room left for the fragment so origin+path+fragment stays within URL_MAX (2,000). '' = too long, null = not shareable.
+  // Cap: origin+path+fragment ≤ 2,000 chars. Not a literal full-URL cap. An appended ?query is ignored; pieces never generate a query, and no visitor content is ever in a query string (never parsed, shown or echoed).
   // N4: the uncapped fragment, so the UI can show a link's real length; encode() applies the cap.
   function rawFragment(st) {
     if (!canShare(st)) return null; var hi = {}; st.h.forEach(function (h, i) { hi[h.id] = i; }); var ri = {}; st.r.forEach(function (r, i) { ri[r.id] = i; });
