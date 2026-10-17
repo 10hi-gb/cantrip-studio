@@ -24,7 +24,8 @@
     "Recipients see a read-only split. \"Change my amount\" makes a new link on the recipient's device; it does not update or notify the sender.",
     "QA all-9 NOT TESTED: the 11px “was” line drawn by .is-changed .qty::after (CSS-generated text); the Change my amount cap check ran in Chrome only, at 1280 without queries (query variants at 390).",
     "QA local-b8da1ad NOT TESTED: the 2,000-char cap (not re-run; carried forward, JS identical); real screen readers, real devices, forced colours; e7fb101 (superseded).",
-    "e7fb101 superseded: QA built it but never tested it; no verdict for e7fb101 (QA local-b8da1ad)."
+    "e7fb101 superseded: QA built it but never tested it; no verdict for e7fb101 (QA local-b8da1ad).",
+    "QA worst-pixel sweep PASS @b8da1ad (no new defects): qa/split-the-sack/wp-sweep-b8da1ad/WP-SWEEP-b8da1ad.md"
    ],
    "engineer": "ENGINEER SELF-CHECK on localhost-preview 134da28501527078776b63b0ffdc973de96b110e: unit 21+8; browser sack 410/410 at 305/320/390/600/1280 (incl. QA D7r received origin+path+fragment cap at 1999/2000/2001/2040, normal and long path; D10-r5 at-cap names in full, no ellipsis, sender/recipient/change/print + Letter PDF; D2 kept); quote-spoof 63/63, recipient-a11y 87/87, sender-typed 12/12. Not QA.",
    "status": "NOT READY (W-3, W-4, rounding note and zero state fixed; open W-8a Medium (By amount has no visible focus ring); deployed pin FAIL)",
@@ -102,7 +103,8 @@
    "limits": [
     "No comment mentions a counteroffer.",
     "Replies travel only by a link the recipient chooses to send back. It never tells the asker anything by itself.",
-    "QA local-798352d NOT TESTED: print media (the theme has print overrides that were not exercised); physical phones, Firefox, Safari/WebKit, forced-colours, zoom, real screen readers; focus-ring contrast."
+    "QA local-798352d NOT TESTED: print media (the theme has print overrides that were not exercised); physical phones, Firefox, Safari/WebKit, forced-colours, zoom, real screen readers; focus-ring contrast.",
+    "QA wp-sweep-798352d NOT TESTED: DPR 2/3, print, forced-colors, and hover/focus-visible/active colours (the .15s choice transition was measured after settle); native date/time picker popups (OS-drawn); plain flat-colour text (not re-measured, as ruled). \"Yes\" pressed has no sub-line, so it is not affected."
    ],
    "engineer": {
     "pin": "83a2ebcd",
@@ -110,19 +112,19 @@
     "tree": "f83c650c08b683a712f9d700e4ff76e66f756316",
     "result": "unit tests 11 pass; live browser check 81/81 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "READY ON LOCALHOST-PREVIEW (W-2 fixed; deployed pin FAIL)",
+   "status": "NOT READY (open W-9a Low (pressed-choice sub-line 3.22:1 on amber); deployed pin FAIL)",
    "qaLocal": {
+    "verdict": "NOT READY",
+    "label": "LOCALHOST-PREVIEW",
+    "sha": "798352db0e2f5937bda6305bb49fef7206c2b909",
+    "report": "qa/one-small-ask/wp-sweep-798352d/WP-SWEEP-798352d.md",
+    "note": "open W-9a Low (pressed-choice sub-line 3.22:1 on amber)"
+   },
+   "qaPrevious": {
     "verdict": "READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "798352db0e2f5937bda6305bb49fef7206c2b909",
-    "report": "qa/one-small-ask/local-798352d/QA-local-798352d.md",
-    "note": "W-2 fixed"
-   },
-   "qaPrevious": {
-    "verdict": "NOT READY",
-    "label": "LOCALHOST-PREVIEW",
-    "sha": "f893087c7ac397638e17c9aaa084374809f02130",
-    "report": "qa/all9/local-f893087/QA-all9-f893087.md (one-small-ask tree f780c94, unchanged at c07008e) (earlier: qa/one-small-ask/local-eade562/QA-local-eade562.md: eade562ddc783558ad2068f927f7aa576e60dd50 READY)"
+    "report": "qa/one-small-ask/local-798352d/QA-local-798352d.md (pressed-choice state not exercised) (earlier: qa/all9/local-f893087/QA-all9-f893087.md (one-small-ask tree f780c94, unchanged at c07008e) (earlier: qa/one-small-ask/local-eade562/QA-local-eade562.md: eade562ddc783558ad2068f927f7aa576e60dd50 READY): f893087c7ac397638e17c9aaa084374809f02130 NOT READY)"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
@@ -142,7 +144,8 @@
     "No map, routing or live list.",
     "Stop names that differ only in capital letters or spaces are treated as the same stop.",
     "Merging needs an exact item name and unit match; near-matches (\"Oat milks\", \"litre\" vs \"l\") stay separate.",
-    "QA local-5235a1c NOT TESTED: the unknown-stop tray and the same-stop warning states (not set up; the contrast scan covered the 5 views listed); print media; physical phones, Firefox, Safari/WebKit, forced-colours, zoom, real screen readers; focus-ring contrast."
+    "History (superseded by QA local-68e592f): QA local-5235a1c NOT TESTED: the unknown-stop tray and the same-stop warning states (not set up; the contrast scan covered the 5 views listed); print media; physical phones, Firefox, Safari/WebKit, forced-colours, zoom, real screen readers; focus-ring contrast.",
+    "QA local-68e592f NOT TESTED: Firefox, Safari/WebKit, other Chrome versions, physical phones or tablets, and real share sheets (navigator.share, clipboard and print were stubbed); forced colours / high contrast, browser zoom and text-size settings, and other DPRs (1× only); print media (the belt shadow is removed in print CSS; not checked); real screen readers; focus-ring contrast; motion-on animation frames (contrast measured after animations settle); the tray resolving while the page is open (editing the unknown row's stop in place; tray shown and hidden were covered as separate loads); the same-stop warning and #fix error states; other pieces in the build (unchanged for P004)."
    ],
    "engineer": {
     "pin": "83a2ebcd",
@@ -150,19 +153,19 @@
     "tree": "b436439c6fafa24c13bf8e20dc5a3f34a660b771",
     "result": "unit tests 15 pass; live browser check 84/84 at 320/390/1280; byte-compare 65/65."
    },
-   "status": "NOT READY (W-6 median pass recorded; open W-6b: darkest 5% under line 1 is 3.72 (darkest pixel 3.25, belt shadow); fix pending; deployed pin FAIL)",
+   "status": "NOT READY (W-6b partly fixed (4.33 at 320/1280); open W-6c Low (tray ? 2.45 vs 3:1); deployed pin FAIL)",
    "qaLocal": {
     "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
-    "sha": "5235a1c77bd9fc9cdeb47a8360712cb6888b5082",
-    "report": "qa/one-less-trip/local-5235a1c/QA-local-5235a1c.md",
-    "note": "W-6 median pass recorded; open W-6b: darkest 5% under line 1 is 3.72 (darkest pixel 3.25, belt shadow); fix pending"
+    "sha": "68e592fb65701d968289fa5323609b164fb862dc",
+    "report": "qa/one-less-trip/local-68e592f/VERDICT-P004-local-68e592f.md",
+    "note": "W-6b partly fixed (4.33 at 320/1280); open W-6c Low (tray ? 2.45 vs 3:1)"
    },
    "qaPrevious": {
-    "verdict": "READY",
+    "verdict": "NOT READY",
     "label": "LOCALHOST-PREVIEW",
     "sha": "5235a1c77bd9fc9cdeb47a8360712cb6888b5082",
-    "report": "qa/one-less-trip/local-5235a1c/QA-local-5235a1c.md (median-background rule only) (earlier: qa/all9/local-f893087/QA-all9-f893087.md (one-less-trip tree 217f188, unchanged at c07008e) (earlier: qa/one-less-trip/local-6169c34/QA-local-6169c34.md: 6169c34f07ac2c8b51e4066d3acc76e5fee1a3f9 READY): f893087c7ac397638e17c9aaa084374809f02130 NOT READY)"
+    "report": "qa/one-less-trip/local-5235a1c/QA-local-5235a1c.md (W-6b: darkest 5% 3.72, darkest pixel 3.25) (earlier: qa/one-less-trip/local-5235a1c/QA-local-5235a1c.md (median-background rule only) (earlier: qa/all9/local-f893087/QA-all9-f893087.md (one-less-trip tree 217f188, unchanged at c07008e) (earlier: qa/one-less-trip/local-6169c34/QA-local-6169c34.md: 6169c34f07ac2c8b51e4066d3acc76e5fee1a3f9 READY): f893087c7ac397638e17c9aaa084374809f02130 NOT READY): 5235a1c77bd9fc9cdeb47a8360712cb6888b5082 READY)"
    },
    "qaDeployed": {
     "pin": "83a2ebcd",
