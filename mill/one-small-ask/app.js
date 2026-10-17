@@ -61,7 +61,7 @@
   function compose() {
     mode = 'compose'; page(C.title, C.invitation); var d = draft, x = $('x');
     x.appendChild(el('span', 'osa-seamline')).setAttribute('aria-hidden', 'true');
-    x.appendChild(heads(head('ask', initial(d.f), M.strip(d.f) || C.fromLabel, C.previewHeading), head('ans', initial(d.o), M.strip(d.o) || C.toLabel, C.ghostAnswer)));
+    x.appendChild(heads(head('ask', initial(d.f), M.strip(d.f) ? V.quote(M.strip(d.f)) : C.fromLabel, C.previewHeading), head('ans', initial(d.o), M.strip(d.o) ? V.quote(M.strip(d.o)) : C.toLabel, C.ghostAnswer)));
     function bind(e, k) { e.addEventListener('input', function () { draft[k] = e.value; touched[k] = 1; edited(); }); e.addEventListener('blur', function () { touched[k] = 1; V.afterPointer(validate); }); return e; }
     function wrap(nodes) { var w = el('div'); nodes.forEach(function (n) { w.appendChild(n); }); return w; }
     var ghost = el('span', 'ghost', C.ghostAnswer), none = function () { return el('span', 'none', '—'); };
@@ -90,7 +90,7 @@
     var ok = !Object.keys(e).length; setText('');
     if (ok) { var c = A.cleanTerms(draftAsk(draft)); c.f = M.strip(draft.f); c.o = M.strip(draft.o); setText(A.textAsk(C, c)); }
     $('b-text').disabled = !ok;
-    var hd = $('x').querySelectorAll('.osa-heads b'); if (hd[0]) { hd[0].textContent = M.strip(draft.f) || C.fromLabel; hd[1].textContent = M.strip(draft.o) || C.toLabel; var ini = $('x').querySelectorAll('.osa-heads .osa-ini'); ini[0].textContent = initial(draft.f); ini[1].textContent = initial(draft.o); }
+    var hd = $('x').querySelectorAll('.osa-heads b'); if (hd[0]) { hd[0].textContent = M.strip(draft.f) ? V.quote(M.strip(draft.f)) : C.fromLabel; hd[1].textContent = M.strip(draft.o) ? V.quote(M.strip(draft.o)) : C.toLabel; /* D14 class: typed names quoted in the compose preview */ var ini = $('x').querySelectorAll('.osa-heads .osa-ini'); ini[0].textContent = initial(draft.f); ini[1].textContent = initial(draft.o); }
   }
   function edited() { if (location.hash) history.replaceState(null, '', location.pathname + location.search); $('linkbox').hidden = true; $('banner').hidden = true; validate(); }
   // ---------- answer (#a1) ----------
